@@ -45,7 +45,7 @@ Contains a list of COMPAS lines with the following attributes:
 
 ---
 
-### 3. Timber Design (`fabrication/`)
+### 3. Timber Design (`design/timber_design`)
 
 1. Import COMPAS lines from structure output
 2. Convert to **compas_timber** model
