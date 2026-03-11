@@ -1,4 +1,4 @@
-# LLHIL T2 Fabrication
+# Living Lab HIL MAS DFAB T2 Fabrication
 
 ## Folder Structure
 
