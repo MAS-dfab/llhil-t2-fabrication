@@ -23,6 +23,95 @@ def _pick_list(payload: Dict[str, Any], *keys: str) -> List[Dict[str, Any]]:
     return []
 
 
+def _edge_or_node_guid(item: Dict[str, Any]) -> Optional[str]:
+    attrs = item.get("attributes") if isinstance(item.get("attributes"), dict) else {}
+    for key in (
+        "guid",
+        "rhino_guid",
+        "proxy_guid",
+        "point_guid",
+        "pt_guid",
+        "curve_guid",
+        "line_guid",
+        "area_guid",
+        "mesh_guid",
+    ):
+        value = item.get(key)
+        if value not in (None, ""):
+            return str(value)
+        attr_value = attrs.get(key)
+        if attr_value not in (None, ""):
+            return str(attr_value)
+    return None
+
+
+def _coerce_proxy_map(value: Any) -> Dict[str, str]:
+    result: Dict[str, str] = {}
+    if isinstance(value, dict):
+        for key, map_value in value.items():
+            if key in (None, "") or map_value in (None, ""):
+                continue
+            result[str(key)] = str(map_value)
+        return result
+
+    if isinstance(value, list):
+        for item in value:
+            if not isinstance(item, dict):
+                continue
+            guid = item.get("guid") or item.get("proxy_guid")
+            target_id = item.get("id") or item.get("target_id")
+            if guid in (None, "") or target_id in (None, ""):
+                continue
+            result[str(guid)] = str(target_id)
+    return result
+
+
+def _extract_input_proxy_maps(payload: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
+    proxies = {
+        "pt": {},
+        "curve": {},
+        "area": {},
+    }
+
+    nested = payload.get("guid_proxies") if isinstance(payload.get("guid_proxies"), dict) else {}
+
+    point_sources = [
+        payload.get("pt_guid_proxies"),
+        payload.get("pt_guid_proxy"),
+        payload.get("point_guid_proxies"),
+        payload.get("point_guid_proxy"),
+        nested.get("pt"),
+        nested.get("points"),
+    ]
+    curve_sources = [
+        payload.get("curve_guid_proxies"),
+        payload.get("curve_guid_proxy"),
+        payload.get("line_guid_proxies"),
+        payload.get("line_guid_proxy"),
+        nested.get("curve"),
+        nested.get("curves"),
+        nested.get("lines"),
+    ]
+    area_sources = [
+        payload.get("area_guid_proxies"),
+        payload.get("area_guid_proxy"),
+        payload.get("mesh_guid_proxies"),
+        payload.get("mesh_guid_proxy"),
+        nested.get("area"),
+        nested.get("areas"),
+        nested.get("meshes"),
+    ]
+
+    for source in point_sources:
+        proxies["pt"].update(_coerce_proxy_map(source))
+    for source in curve_sources:
+        proxies["curve"].update(_coerce_proxy_map(source))
+    for source in area_sources:
+        proxies["area"].update(_coerce_proxy_map(source))
+
+    return proxies
+
+
 def _resolve_node_id(node: Dict[str, Any], index: int, prefix: str = "N") -> str:
     for key in ("id", "node_id", "identifier"):
         value = node.get(key)
@@ -86,19 +175,22 @@ def _edge_node_ids(edge: Dict[str, Any], node_ids: List[str]) -> Optional[tuple[
 
 
 def build_structure_export_json(
-    karamba_payload: Dict[str, Any],
+    model: Dict[str, Any],
     *,
     schema: str = "structure_model_v1",
 ) -> Dict[str, Any]:
-    """Build export JSON with nodes, edges and member breps from Karamba-like payload."""
-    nodes_in = _pick_list(karamba_payload, "nodes", "vertices", "points")
-    edges_in = _pick_list(karamba_payload, "edges", "lines", "members", "beams")
-    member_elements_in = _pick_list(karamba_payload, "member_elements", "elements", "beam_elements")
-    member_breps_in = _pick_list(karamba_payload, "member_breps", "breps")
-    sections_in = _pick_list(karamba_payload, "cross_sections", "sections")
+    """Build export JSON with nodes, edges, meshes and member breps from a Karamba model."""
+    nodes_in = _pick_list(model, "nodes", "vertices", "points")
+    edges_in = _pick_list(model, "edges", "lines", "members", "beams")
+    meshes_in = _pick_list(model, "meshes", "areas", "shells", "faces")
+    member_elements_in = _pick_list(model, "member_elements", "elements", "beam_elements")
+    member_breps_in = _pick_list(model, "member_breps", "breps")
+    sections_in = _pick_list(model, "cross_sections", "sections")
+    input_proxies = _extract_input_proxy_maps(model)
 
     node_records: List[Dict[str, Any]] = []
     node_ids: List[str] = []
+    point_guid_proxy: Dict[str, str] = dict(input_proxies["pt"])
 
     for index, node in enumerate(nodes_in):
         node_id = _resolve_node_id(node, index)
@@ -116,6 +208,10 @@ def build_structure_export_json(
                 record[key] = node[key]
 
         node_records.append(record)
+
+        node_guid = _edge_or_node_guid(node)
+        if node_guid is not None:
+            point_guid_proxy[node_guid] = node_id
 
     section_by_edge: Dict[str, Any] = {}
     for entry in sections_in:
@@ -142,6 +238,7 @@ def build_structure_export_json(
 
     edge_records: List[Dict[str, Any]] = []
     export_breps: List[Dict[str, Any]] = []
+    curve_guid_proxy: Dict[str, str] = dict(input_proxies["curve"])
 
     for index, edge in enumerate(edges_in):
         edge_id = _resolve_edge_id(edge, index)
@@ -169,6 +266,10 @@ def build_structure_export_json(
 
         edge_records.append(edge_record)
 
+        edge_guid = _edge_or_node_guid(edge)
+        if edge_guid is not None:
+            curve_guid_proxy[edge_guid] = edge_id
+
         for brep in breps_by_edge.get(edge_id, []):
             export_breps.append(
                 {
@@ -178,19 +279,72 @@ def build_structure_export_json(
                 }
             )
 
+    mesh_records: List[Dict[str, Any]] = []
+    area_guid_proxy: Dict[str, str] = dict(input_proxies["area"])
+    for index, mesh in enumerate(meshes_in):
+        mesh_id = str(mesh.get("id") or mesh.get("mesh_id") or f"M{index + 1}")
+        attrs = mesh.get("attributes") if isinstance(mesh.get("attributes"), dict) else {}
+        preserved_attrs = {k: v for k, v in attrs.items() if k not in ("guid", "rhino_guid", "area_guid", "mesh_guid")}
+
+        mesh_record: Dict[str, Any] = {
+            "id": mesh_id,
+            "attributes": preserved_attrs,
+        }
+        for key in ("vertices", "faces", "mesh", "geometry", "brep"):
+            if key in mesh:
+                mesh_record[key] = mesh[key]
+
+        mesh_records.append(mesh_record)
+
+        mesh_guid = _edge_or_node_guid(mesh)
+        if mesh_guid is not None:
+            area_guid_proxy[mesh_guid] = mesh_id
+
+    member_line_ids = [edge["id"] for edge in edge_records]
+    area_mesh_ids = [mesh["id"] for mesh in mesh_records]
+    point_ids = [node["id"] for node in node_records]
+
     return {
         "schema": schema,
         "nodes": node_records,
         "edges": edge_records,
+        "meshes": mesh_records,
         "member_breps": export_breps,
+        "output_lists": {
+            "member_lines": member_line_ids,
+            "area_load_meshes": area_mesh_ids,
+            "linear_load_lines": list(member_line_ids),
+            "point_load_points": point_ids,
+            "boundary_points": list(point_ids),
+        },
+        "guid_proxies": {
+            "pt": dict(sorted(point_guid_proxy.items())),
+            "curve": dict(sorted(curve_guid_proxy.items())),
+            "area": dict(sorted(area_guid_proxy.items())),
+        },
         "metadata": {
             "source": "karamba",
             "input_nodes": len(nodes_in),
             "input_edges": len(edges_in),
+            "input_meshes": len(meshes_in),
             "output_nodes": len(node_records),
             "output_edges": len(edge_records),
+            "output_meshes": len(mesh_records),
             "output_member_breps": len(export_breps),
         },
+    }
+
+
+def as_output_lists(model: Dict[str, Any]) -> Dict[str, List[str]]:
+    """Return GH-friendly validation lists from the normalized export payload."""
+    payload = build_structure_export_json(model)
+    lists = payload.get("output_lists", {})
+    return {
+        "MemberLines": list(lists.get("member_lines", [])),
+        "AreaLoadMeshes": list(lists.get("area_load_meshes", [])),
+        "LinearLoadLines": list(lists.get("linear_load_lines", [])),
+        "PointLoadPoints": list(lists.get("point_load_points", [])),
+        "BoundaryPoints": list(lists.get("boundary_points", [])),
     }
 
 
@@ -208,7 +362,7 @@ def _write_json(path: str, payload: Dict[str, Any]) -> None:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Export Karamba-like model payload to structure JSON.")
+    parser = argparse.ArgumentParser(description="Export Karamba model payload to structure JSON.")
     parser.add_argument("--input", required=True, help="Path to Karamba model JSON source file.")
     parser.add_argument("--output", required=True, help="Path to output structure model JSON file.")
     parser.add_argument("--schema", default="structure_model_v1", help="Schema name written into output JSON.")
@@ -219,9 +373,31 @@ def main() -> None:
     parser = _build_parser()
     args = parser.parse_args()
 
-    source = _read_json(args.input)
-    payload = build_structure_export_json(source, schema=args.schema)
+    model = _read_json(args.input)
+    payload = build_structure_export_json(model=model, schema=args.schema)
     _write_json(args.output, payload)
+
+
+# GH Py3 auto-run block: input `model` (or `Model`) -> JSON payload + validation lists.
+_g = globals()
+if "model" in _g or "Model" in _g:
+    _model_input = _g.get("model", _g.get("Model"))
+    if isinstance(_model_input, dict):
+        ExportJson = build_structure_export_json(model=_model_input)
+        _lists = as_output_lists(_model_input)
+        MemberLines = _lists["MemberLines"]
+        AreaLoadMeshes = _lists["AreaLoadMeshes"]
+        LinearLoadLines = _lists["LinearLoadLines"]
+        PointLoadPoints = _lists["PointLoadPoints"]
+        BoundaryPoints = _lists["BoundaryPoints"]
+        out = (
+            "Exported nodes: {}, edges: {}, meshes: {}, member_breps: {}"
+        ).format(
+            len(ExportJson.get("nodes", [])),
+            len(ExportJson.get("edges", [])),
+            len(ExportJson.get("meshes", [])),
+            len(ExportJson.get("member_breps", [])),
+        )
 
 
 if __name__ == "__main__":
