@@ -1,9 +1,14 @@
 # Minimal Input Cheat-Sheet (Importer)
 # - GH input names: model (or Model)
-# - Optional GH proxy inputs: pt_guid_proxies, curve_guid_proxies, area_guid_proxies
-#   (also accepted aliases: PtGuidProxies/PointGuidProxies, CurveGuidProxies/LineGuidProxies,
-#   AreaGuidProxies/MeshGuidProxies)
-# - Function call: import_line_model_json(payload=..., pt_guid_proxies=..., curve_guid_proxies=..., area_guid_proxies=...)
+# - Optional GH proxy inputs:
+#     pt_guid_proxies         (aliases: PtGuidProxies, PointGuidProxies)
+#     curve_guid_proxies      (aliases: CurveGuidProxies, LineGuidProxies)
+#     area_guid_proxies       (aliases: AreaGuidProxies, MeshGuidProxies)
+#     point_load_guid_proxies (alias: PointLoadGuidProxies) -> filters PointLoadPoints
+#     boundary_guid_proxies   (alias: BoundaryGuidProxies)  -> filters BoundaryPoints
+# - Function call: import_line_model_json(payload=..., pt_guid_proxies=...,
+#     curve_guid_proxies=..., area_guid_proxies=...,
+#     point_load_guid_proxies=..., boundary_guid_proxies=...)
 # - Minimal runnable input: {}
 # - Minimal useful topology input:
 #   {"lines": [{"start": [0, 0, 0], "end": [1, 0, 0]}]}
@@ -147,6 +152,49 @@ def _edge_or_node_guid(item: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+def _resolve_filtered_node_ids(
+    value: Any, guid_map: Dict[str, str]
+) -> Optional[List[str]]:
+    """Resolve a GUID proxy input to a filtered list of node IDs.
+
+    Returns None when no input is provided, so the caller can fall back to all
+    node IDs. Supports:
+    - list of GUID strings -> looked up in guid_map
+    - dict {guid: node_id} -> node_id used directly (guid_map as fallback)
+    - list of {guid, id} dicts -> id value used directly
+    """
+    if value is None:
+        return None
+
+    node_ids: List[str] = []
+
+    if isinstance(value, dict):
+        for guid, node_id in value.items():
+            if guid in (None, ""):
+                continue
+            resolved = str(node_id) if node_id not in (None, "") else guid_map.get(str(guid))
+            if resolved:
+                node_ids.append(resolved)
+        return node_ids if node_ids else None
+
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            if isinstance(item, str) and item:
+                resolved = guid_map.get(item)
+                if resolved:
+                    node_ids.append(resolved)
+            elif isinstance(item, dict):
+                guid = item.get("guid") or item.get("proxy_guid")
+                node_id = item.get("id") or item.get("target_id") or item.get("node_id")
+                if node_id not in (None, ""):
+                    node_ids.append(str(node_id))
+                elif guid and str(guid) in guid_map:
+                    node_ids.append(guid_map[str(guid)])
+        return node_ids if node_ids else None
+
+    return None
+
+
 def _coerce_proxy_map(value: Any) -> Dict[str, str]:
     result: Dict[str, str] = {}
     if isinstance(value, dict):
@@ -224,6 +272,8 @@ def import_line_model_json(
     pt_guid_proxies: Any = None,
     curve_guid_proxies: Any = None,
     area_guid_proxies: Any = None,
+    point_load_guid_proxies: Any = None,
+    boundary_guid_proxies: Any = None,
 ) -> Dict[str, Any]:
     """Normalize line-model JSON into deduplicated vertices/edges and analysis target lists."""
     vertices = _extract_vertices(payload)
@@ -394,6 +444,11 @@ def import_line_model_json(
     area_mesh_ids = [mesh["id"] for mesh in mesh_records]
     point_ids = [node["id"] for node in node_records]
 
+    # Resolve explicitly tagged GUID inputs to filtered node ID lists.
+    # Falls back to all node IDs when the proxy input is not provided.
+    _pl_ids = _resolve_filtered_node_ids(point_load_guid_proxies, point_guid_proxy)
+    _bp_ids = _resolve_filtered_node_ids(boundary_guid_proxies, point_guid_proxy)
+
     return {
         "schema": "structure_model_v1",
         "nodes": node_records,
@@ -404,8 +459,8 @@ def import_line_model_json(
             "member_lines": member_line_ids,
             "area_load_meshes": area_mesh_ids,
             "linear_load_lines": list(member_line_ids),
-            "point_load_points": point_ids,
-            "boundary_points": list(point_ids),
+            "point_load_points": _pl_ids if _pl_ids is not None else point_ids,
+            "boundary_points": _bp_ids if _bp_ids is not None else point_ids,
             "joint_nodes": [joint["node_id"] for joint in joint_records],
         },
         "guid_proxies": {
@@ -488,12 +543,16 @@ if "model" in _g or "Model" in _g:
         _pt_proxies = _g.get("pt_guid_proxies", _g.get("PtGuidProxies", _g.get("PointGuidProxies")))
         _curve_proxies = _g.get("curve_guid_proxies", _g.get("CurveGuidProxies", _g.get("LineGuidProxies")))
         _area_proxies = _g.get("area_guid_proxies", _g.get("AreaGuidProxies", _g.get("MeshGuidProxies")))
+        _pl_proxies = _g.get("point_load_guid_proxies", _g.get("PointLoadGuidProxies"))
+        _bp_proxies = _g.get("boundary_guid_proxies", _g.get("BoundaryGuidProxies"))
 
         ImportJson = import_line_model_json(
             _model_input,
             pt_guid_proxies=_pt_proxies,
             curve_guid_proxies=_curve_proxies,
             area_guid_proxies=_area_proxies,
+            point_load_guid_proxies=_pl_proxies,
+            boundary_guid_proxies=_bp_proxies,
         )
         _lists = ImportJson.get("output_lists", {})
         MemberLines = list(_lists.get("member_lines", []))

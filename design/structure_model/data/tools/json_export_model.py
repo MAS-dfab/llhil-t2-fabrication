@@ -6,7 +6,7 @@
 #   {"nodes": [{"id": "N1", "x": 0, "y": 0, "z": 0}, {"id": "N2", "x": 1, "y": 0, "z": 0}],
 #    "edges": [{"id": "E1", "start_node": "N1", "end_node": "N2"}]}
 # - GH outputs: ExportJson, MemberLines, AreaLoadMeshes, LinearLoadLines, PointLoadPoints,
-#   BoundaryPoints, out
+#   BoundaryPoints, JointNodes, out
 from __future__ import annotations
 
 import argparse
