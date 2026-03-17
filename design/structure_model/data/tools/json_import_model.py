@@ -318,6 +318,34 @@ def import_line_model_json(
         if edge_guid is not None:
             curve_guid_proxy[edge_guid] = edge_id
 
+    node_by_id: Dict[str, Dict[str, Any]] = {node["id"]: node for node in node_records}
+    connected_edges_by_node: Dict[str, List[str]] = {}
+    for edge in edge_records:
+        start_node = str(edge["start_node"])
+        end_node = str(edge["end_node"])
+        connected_edges_by_node.setdefault(start_node, []).append(str(edge["id"]))
+        connected_edges_by_node.setdefault(end_node, []).append(str(edge["id"]))
+
+    joint_records: List[Dict[str, Any]] = []
+    for node_id, connected_edges in sorted(connected_edges_by_node.items()):
+        # A joint is a node where at least two member lines meet.
+        unique_edges = sorted(set(connected_edges))
+        if len(unique_edges) < 2:
+            continue
+
+        node = node_by_id.get(node_id, {})
+        joint_records.append(
+            {
+                "id": f"J{len(joint_records) + 1}",
+                "node_id": node_id,
+                "x": node.get("x"),
+                "y": node.get("y"),
+                "z": node.get("z"),
+                "connected_edges": unique_edges,
+                "degree": len(unique_edges),
+            }
+        )
+
     mesh_records: List[Dict[str, Any]] = []
     area_guid_proxy: Dict[str, str] = dict(input_proxies["area"])
     for raw_mesh in meshes:
@@ -353,12 +381,14 @@ def import_line_model_json(
         "nodes": node_records,
         "edges": edge_records,
         "meshes": mesh_records,
+        "joints": joint_records,
         "output_lists": {
             "member_lines": member_line_ids,
             "area_load_meshes": area_mesh_ids,
             "linear_load_lines": list(member_line_ids),
             "point_load_points": point_ids,
             "boundary_points": list(point_ids),
+            "joint_nodes": [joint["node_id"] for joint in joint_records],
         },
         "guid_proxies": {
             "pt": dict(sorted(point_guid_proxy.items())),
@@ -372,9 +402,24 @@ def import_line_model_json(
             "output_nodes": len(node_records),
             "output_edges": len(edge_records),
             "output_meshes": len(mesh_records),
+            "output_joints": len(joint_records),
             "deduplicated_nodes": max(0, len(vertices) - len(node_records)),
             "deduplicated_edges": max(0, len(edges) - len(edge_records)),
         },
+    }
+
+
+def as_output_lists(model: Dict[str, Any]) -> Dict[str, List[str]]:
+    """Return GH-friendly validation lists from the normalized import payload."""
+    payload = import_line_model_json(model)
+    lists = payload.get("output_lists", {})
+    return {
+        "MemberLines": list(lists.get("member_lines", [])),
+        "AreaLoadMeshes": list(lists.get("area_load_meshes", [])),
+        "LinearLoadLines": list(lists.get("linear_load_lines", [])),
+        "PointLoadPoints": list(lists.get("point_load_points", [])),
+        "BoundaryPoints": list(lists.get("boundary_points", [])),
+        "JointNodes": list(lists.get("joint_nodes", [])),
     }
 
 
@@ -415,6 +460,29 @@ def main() -> None:
         mesh_prefix=args.mesh_prefix,
     )
     _write_json(args.output, normalized)
+
+
+# GH Py3 auto-run block: input `model` (or `Model`) -> JSON payload + validation lists.
+_g = globals()
+if "model" in _g or "Model" in _g:
+    _model_input = _g.get("model", _g.get("Model"))
+    if isinstance(_model_input, dict):
+        ImportJson = import_line_model_json(_model_input)
+        _lists = as_output_lists(_model_input)
+        MemberLines = _lists["MemberLines"]
+        AreaLoadMeshes = _lists["AreaLoadMeshes"]
+        LinearLoadLines = _lists["LinearLoadLines"]
+        PointLoadPoints = _lists["PointLoadPoints"]
+        BoundaryPoints = _lists["BoundaryPoints"]
+        JointNodes = _lists["JointNodes"]
+        out = (
+            "Imported nodes: {}, edges: {}, meshes: {}, joints: {}"
+        ).format(
+            len(ImportJson.get("nodes", [])),
+            len(ImportJson.get("edges", [])),
+            len(ImportJson.get("meshes", [])),
+            len(ImportJson.get("joints", [])),
+        )
 
 
 if __name__ == "__main__":
