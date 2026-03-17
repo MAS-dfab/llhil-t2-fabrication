@@ -1,3 +1,14 @@
+# Minimal Input Cheat-Sheet (Importer)
+# - GH input names: model (or Model)
+# - Optional GH proxy inputs: pt_guid_proxies, curve_guid_proxies, area_guid_proxies
+#   (also accepted aliases: PtGuidProxies/PointGuidProxies, CurveGuidProxies/LineGuidProxies,
+#   AreaGuidProxies/MeshGuidProxies)
+# - Function call: import_line_model_json(payload=..., pt_guid_proxies=..., curve_guid_proxies=..., area_guid_proxies=...)
+# - Minimal runnable input: {}
+# - Minimal useful topology input:
+#   {"lines": [{"start": [0, 0, 0], "end": [1, 0, 0]}]}
+# - GH outputs: ImportJson, MemberLines, AreaLoadMeshes, LinearLoadLines, PointLoadPoints,
+#   BoundaryPoints, JointNodes, out
 from __future__ import annotations
 
 import argparse
@@ -210,12 +221,19 @@ def import_line_model_json(
     node_prefix: str = "N",
     edge_prefix: str = "E",
     mesh_prefix: str = "M",
+    pt_guid_proxies: Any = None,
+    curve_guid_proxies: Any = None,
+    area_guid_proxies: Any = None,
 ) -> Dict[str, Any]:
     """Normalize line-model JSON into deduplicated vertices/edges and analysis target lists."""
     vertices = _extract_vertices(payload)
     edges = _extract_edges(payload)
     meshes = _extract_meshes(payload)
     input_proxies = _extract_input_proxy_maps(payload)
+    # Explicit proxy inputs override/extend proxies embedded in the model payload.
+    input_proxies["pt"].update(_coerce_proxy_map(pt_guid_proxies))
+    input_proxies["curve"].update(_coerce_proxy_map(curve_guid_proxies))
+    input_proxies["area"].update(_coerce_proxy_map(area_guid_proxies))
 
     # Fallback for models that only contain lines with embedded start/end node data.
     if not vertices and not edges:
@@ -467,14 +485,23 @@ _g = globals()
 if "model" in _g or "Model" in _g:
     _model_input = _g.get("model", _g.get("Model"))
     if isinstance(_model_input, dict):
-        ImportJson = import_line_model_json(_model_input)
-        _lists = as_output_lists(_model_input)
-        MemberLines = _lists["MemberLines"]
-        AreaLoadMeshes = _lists["AreaLoadMeshes"]
-        LinearLoadLines = _lists["LinearLoadLines"]
-        PointLoadPoints = _lists["PointLoadPoints"]
-        BoundaryPoints = _lists["BoundaryPoints"]
-        JointNodes = _lists["JointNodes"]
+        _pt_proxies = _g.get("pt_guid_proxies", _g.get("PtGuidProxies", _g.get("PointGuidProxies")))
+        _curve_proxies = _g.get("curve_guid_proxies", _g.get("CurveGuidProxies", _g.get("LineGuidProxies")))
+        _area_proxies = _g.get("area_guid_proxies", _g.get("AreaGuidProxies", _g.get("MeshGuidProxies")))
+
+        ImportJson = import_line_model_json(
+            _model_input,
+            pt_guid_proxies=_pt_proxies,
+            curve_guid_proxies=_curve_proxies,
+            area_guid_proxies=_area_proxies,
+        )
+        _lists = ImportJson.get("output_lists", {})
+        MemberLines = list(_lists.get("member_lines", []))
+        AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
+        LinearLoadLines = list(_lists.get("linear_load_lines", []))
+        PointLoadPoints = list(_lists.get("point_load_points", []))
+        BoundaryPoints = list(_lists.get("boundary_points", []))
+        JointNodes = list(_lists.get("joint_nodes", []))
         out = (
             "Imported nodes: {}, edges: {}, meshes: {}, joints: {}"
         ).format(

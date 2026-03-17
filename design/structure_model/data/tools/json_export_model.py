@@ -1,3 +1,12 @@
+# Minimal Input Cheat-Sheet (Exporter)
+# - GH input names: model (or Model)
+# - Function call: build_structure_export_json(model=...)
+# - Minimal runnable input: {}
+# - Minimal useful topology input:
+#   {"nodes": [{"id": "N1", "x": 0, "y": 0, "z": 0}, {"id": "N2", "x": 1, "y": 0, "z": 0}],
+#    "edges": [{"id": "E1", "start_node": "N1", "end_node": "N2"}]}
+# - GH outputs: ExportJson, MemberLines, AreaLoadMeshes, LinearLoadLines, PointLoadPoints,
+#   BoundaryPoints, out
 from __future__ import annotations
 
 import argparse
@@ -304,18 +313,48 @@ def build_structure_export_json(
     area_mesh_ids = [mesh["id"] for mesh in mesh_records]
     point_ids = [node["id"] for node in node_records]
 
+    node_by_id: Dict[str, Dict[str, Any]] = {node["id"]: node for node in node_records}
+    connected_edges_by_node: Dict[str, List[str]] = {}
+    for edge in edge_records:
+        start_node = str(edge["start_node"])
+        end_node = str(edge["end_node"])
+        connected_edges_by_node.setdefault(start_node, []).append(str(edge["id"]))
+        connected_edges_by_node.setdefault(end_node, []).append(str(edge["id"]))
+
+    joint_records: List[Dict[str, Any]] = []
+    for node_id, connected_edges in sorted(connected_edges_by_node.items()):
+        # A joint is a node where at least two member lines meet.
+        unique_edges = sorted(set(connected_edges))
+        if len(unique_edges) < 2:
+            continue
+
+        node = node_by_id.get(node_id, {})
+        joint_records.append(
+            {
+                "id": f"J{len(joint_records) + 1}",
+                "node_id": node_id,
+                "x": node.get("x"),
+                "y": node.get("y"),
+                "z": node.get("z"),
+                "connected_edges": unique_edges,
+                "degree": len(unique_edges),
+            }
+        )
+
     return {
         "schema": schema,
         "nodes": node_records,
         "edges": edge_records,
         "meshes": mesh_records,
         "member_breps": export_breps,
+        "joints": joint_records,
         "output_lists": {
             "member_lines": member_line_ids,
             "area_load_meshes": area_mesh_ids,
             "linear_load_lines": list(member_line_ids),
             "point_load_points": point_ids,
             "boundary_points": list(point_ids),
+            "joint_nodes": [joint["node_id"] for joint in joint_records],
         },
         "guid_proxies": {
             "pt": dict(sorted(point_guid_proxy.items())),
@@ -331,6 +370,7 @@ def build_structure_export_json(
             "output_edges": len(edge_records),
             "output_meshes": len(mesh_records),
             "output_member_breps": len(export_breps),
+            "output_joints": len(joint_records),
         },
     }
 
@@ -345,6 +385,7 @@ def as_output_lists(model: Dict[str, Any]) -> Dict[str, List[str]]:
         "LinearLoadLines": list(lists.get("linear_load_lines", [])),
         "PointLoadPoints": list(lists.get("point_load_points", [])),
         "BoundaryPoints": list(lists.get("boundary_points", [])),
+        "JointNodes": list(lists.get("joint_nodes", [])),
     }
 
 
@@ -390,13 +431,15 @@ if "model" in _g or "Model" in _g:
         LinearLoadLines = _lists["LinearLoadLines"]
         PointLoadPoints = _lists["PointLoadPoints"]
         BoundaryPoints = _lists["BoundaryPoints"]
+        JointNodes = _lists["JointNodes"]
         out = (
-            "Exported nodes: {}, edges: {}, meshes: {}, member_breps: {}"
+            "Exported nodes: {}, edges: {}, meshes: {}, member_breps: {}, joints: {}"
         ).format(
             len(ExportJson.get("nodes", [])),
             len(ExportJson.get("edges", [])),
             len(ExportJson.get("meshes", [])),
             len(ExportJson.get("member_breps", [])),
+            len(ExportJson.get("joints", [])),
         )
 
 
