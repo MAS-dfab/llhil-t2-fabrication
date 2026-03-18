@@ -1,5 +1,6 @@
 # Minimal Input Cheat-Sheet (Importer)
 # - GH input names: model (or Model)
+#   (can be a parsed JSON object/list OR a file path string to JSON)
 # - Optional GH proxy inputs:
 #     pt_guid_proxies         (aliases: PtGuidProxies, PointGuidProxies)
 #     curve_guid_proxies      (aliases: CurveGuidProxies, LineGuidProxies)
@@ -20,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
@@ -127,6 +129,17 @@ def _normalize_compas_line_record(item: Dict[str, Any]) -> Dict[str, Any]:
         normalized["id"] = str(line.get("name"))
 
     return normalized
+
+
+def _load_payload_from_path(payload: Any) -> Any:
+    if isinstance(payload, str):
+        candidate = payload.strip()
+        if candidate:
+            path = Path(candidate)
+            if path.is_file():
+                with open(path, "r", encoding="utf-8") as stream:
+                    return json.load(stream)
+    return payload
 
 
 def _normalize_input_payload(payload: Any) -> Dict[str, Any]:
@@ -331,6 +344,7 @@ def import_line_model_json(
     boundary_guid_proxies: Any = None,
 ) -> Dict[str, Any]:
     """Normalize line-model JSON into deduplicated vertices/edges and analysis target lists."""
+    payload = _load_payload_from_path(payload)
     payload = _normalize_input_payload(payload)
     vertices = _extract_vertices(payload)
     edges = _extract_edges(payload)
@@ -538,7 +552,7 @@ def import_line_model_json(
     }
 
 
-def as_output_lists(model: Dict[str, Any]) -> Dict[str, List[str]]:
+def as_output_lists(model: Any) -> Dict[str, List[str]]:
     """Return GH-friendly validation lists from the normalized import payload."""
     payload = import_line_model_json(model)
     lists = payload.get("output_lists", {})
@@ -592,7 +606,7 @@ def main() -> None:
 _g = globals()
 if "model" in _g or "Model" in _g:
     _model_input = _g.get("model", _g.get("Model"))
-    if isinstance(_model_input, dict):
+    if _model_input not in (None, ""):
         _pt_proxies = _g.get("pt_guid_proxies", _g.get("PtGuidProxies", _g.get("PointGuidProxies")))
         _curve_proxies = _g.get("curve_guid_proxies", _g.get("CurveGuidProxies", _g.get("LineGuidProxies")))
         _area_proxies = _g.get("area_guid_proxies", _g.get("AreaGuidProxies", _g.get("MeshGuidProxies")))
