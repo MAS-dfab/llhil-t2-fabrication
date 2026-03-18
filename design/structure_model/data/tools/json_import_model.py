@@ -612,6 +612,9 @@ _g = globals()
 
 # Always initialize outputs so GH does not show empty outputs without context.
 ImportJson = "{}"
+Vertices = []
+Edges = []
+Meshes = []
 MemberLines = []
 AreaLoadMeshes = []
 LinearLoadLines = []
@@ -661,6 +664,9 @@ if "model" in _g or "Model" in _g:
                 },
             }
             ImportJson = json.dumps(_summary_payload, separators=(",", ":"))
+            Vertices = list(_import_payload.get("nodes", []))
+            Edges = list(_import_payload.get("edges", []))
+            Meshes = list(_import_payload.get("meshes", []))
             _lists = _import_payload.get("output_lists", {})
             MemberLines = list(_lists.get("member_lines", []))
             AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
@@ -668,6 +674,7 @@ if "model" in _g or "Model" in _g:
             PointLoadPoints = list(_lists.get("point_load_points", []))
             BoundaryPoints = list(_lists.get("boundary_points", []))
             JointNodes = list(_lists.get("joint_nodes", []))
+
             out = (
                 "Imported nodes: {}, edges: {}, meshes: {}, joints: {}"
             ).format(
