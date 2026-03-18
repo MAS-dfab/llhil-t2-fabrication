@@ -940,6 +940,46 @@ def _point_geometry_from_node_ids(node_ids: List[str], nodes: List[Dict[str, Any
     return out
 
 
+def _dedupe_node_ids_by_position(
+    node_ids: List[str],
+    nodes: List[Dict[str, Any]],
+    *,
+    tol: float = 1e-6,
+) -> List[str]:
+    """Return node IDs deduplicated by spatial position.
+
+    This avoids creating overlapping supports/loads when multiple node IDs share
+    the same coordinates.
+    """
+    if not node_ids:
+        return []
+
+    index = _node_index(nodes)
+    unique_ids: List[str] = []
+    unique_xyz: List[Point] = []
+
+    for node_id in node_ids:
+        node = index.get(str(node_id))
+        if not node:
+            continue
+        xyz = _point_from_node_record(node)
+        if xyz is None:
+            continue
+
+        duplicate = False
+        for ux, uy, uz in unique_xyz:
+            if abs(xyz[0] - ux) <= tol and abs(xyz[1] - uy) <= tol and abs(xyz[2] - uz) <= tol:
+                duplicate = True
+                break
+        if duplicate:
+            continue
+
+        unique_ids.append(str(node_id))
+        unique_xyz.append(xyz)
+
+    return unique_ids
+
+
 def _line_geometry_from_edge_ids(edge_ids: List[str], edges: List[Dict[str, Any]], nodes: List[Dict[str, Any]]) -> List[Any]:
     if rg is None:
         return []
@@ -1245,6 +1285,11 @@ def import_line_model_json(
     if _bp_filter_connected and _boundary_output_ids is None:
         _boundary_output_ids = []
 
+    # Boundary supports should be unique by position, not only by node ID.
+    _boundary_output_ids = _dedupe_node_ids_by_position(
+        list(_boundary_output_ids), node_records, tol=max(10.0 ** (-decimals), 1e-6)
+    )
+
     return {
         "schema": "structure_model_v1",
         "nodes": node_records,
@@ -1412,6 +1457,9 @@ if "model" in _g or "Model" in _g:
             _boundary_node_ids = list(_lists.get("boundary_points", []))
             _joint_node_ids = list(_lists.get("joint_nodes", []))
 
+            # Ensure supports are unique per spatial location for solver compatibility.
+            _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=1e-6)
+
             # Default outputs (CLI/no-Rhino fallback): ID lists.
             MemberLines = list(_member_line_ids)
             LinearLoadLines = list(_linear_line_ids)
@@ -1446,6 +1494,9 @@ if "model" in _g or "Model" in _g:
                 _rhino_bp = _resolve_node_ids_from_rhino_points(_bp_proxies, _nodes)
                 if _rhino_bp is not None:
                     _boundary_node_ids = _rhino_bp
+
+                # Re-apply positional deduplication after Rhino-proxy override.
+                _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=1e-6)
 
                 # GH-facing outputs should be geometry for direct Karamba compatibility.
                 MemberLines = _line_geometry_from_edge_ids(_member_line_ids, _edges, _nodes)
