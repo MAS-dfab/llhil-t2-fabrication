@@ -300,6 +300,78 @@ def _coerce_proxy_map(value: Any) -> Dict[str, str]:
     return result
 
 
+def _extract_area_records_from_proxy_input(value: Any) -> List[Dict[str, Any]]:
+    """Extract area-like records from proxy input when geometry is supplied directly.
+
+    This allows GH inputs like MeshGuidProxies/area_guid_proxies to carry
+    actual surface/mesh geometry objects (or dict payloads) in addition to
+    simple guid->id mappings.
+    """
+    records: List[Dict[str, Any]] = []
+
+    if value is None:
+        return records
+
+    if isinstance(value, (list, tuple)):
+        items = list(value)
+    else:
+        items = [value]
+
+    for item in items:
+        if item is None:
+            continue
+
+        # Dict payload style.
+        if isinstance(item, dict):
+            record: Dict[str, Any] = {}
+            if "id" in item and item.get("id") not in (None, ""):
+                record["id"] = item.get("id")
+
+            attrs = item.get("attributes") if isinstance(item.get("attributes"), dict) else {}
+            merged_attrs: Dict[str, Any] = dict(attrs)
+
+            guid = item.get("guid") or item.get("mesh_guid") or item.get("area_guid") or attrs.get("guid")
+            if guid not in (None, ""):
+                record["guid"] = guid
+
+            added_payload = False
+            for key in ("vertices", "faces", "mesh", "geometry", "brep", "surface"):
+                if key in item and item.get(key) is not None:
+                    record[key] = item.get(key)
+                    added_payload = True
+
+            if added_payload:
+                merged_attrs["source"] = "area_proxy_geometry"
+                record["attributes"] = merged_attrs
+                records.append(record)
+                continue
+
+            # dict was likely guid->id proxy; skip as geometry record.
+            continue
+
+        # Direct Rhino geometry objects from GH object params.
+        geo = _try_coerce_rhino_geometry(item)
+        if geo is None:
+            continue
+
+        record = {
+            "attributes": {
+                "source": "area_proxy_geometry",
+            }
+        }
+        if rg is not None and isinstance(geo, rg.Mesh):
+            record["mesh"] = geo
+        elif rg is not None and isinstance(geo, rg.Brep):
+            record["brep"] = geo
+        elif rg is not None and isinstance(geo, rg.Surface):
+            record["surface"] = geo
+        else:
+            continue
+        records.append(record)
+
+    return records
+
+
 def _to_bool(value: Any, default: bool = False) -> bool:
     if value is None:
         return default
@@ -646,6 +718,8 @@ def import_line_model_json(
     vertices = _extract_vertices(payload)
     edges = _extract_edges(payload)
     meshes = _extract_meshes(payload)
+    # Area proxy input may carry real area geometry objects (GH workflow).
+    meshes.extend(_extract_area_records_from_proxy_input(area_guid_proxies))
     input_proxies = _extract_input_proxy_maps(payload)
     # Explicit proxy inputs override/extend proxies embedded in the model payload.
     input_proxies["pt"].update(_coerce_proxy_map(pt_guid_proxies))
