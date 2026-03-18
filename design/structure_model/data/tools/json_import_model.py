@@ -1280,6 +1280,9 @@ def import_line_model_json(
     _point_output_ids = _pl_ids if _pl_filter_connected else point_ids
     if _pl_filter_connected and _point_output_ids is None:
         _point_output_ids = []
+    _point_output_ids = _dedupe_node_ids_by_position(
+        list(_point_output_ids), node_records, tol=max(10.0 ** (-decimals), 1e-6)
+    )
 
     _boundary_output_ids = _bp_ids if _bp_filter_connected else point_ids
     if _bp_filter_connected and _boundary_output_ids is None:
@@ -1288,6 +1291,10 @@ def import_line_model_json(
     # Boundary supports should be unique by position, not only by node ID.
     _boundary_output_ids = _dedupe_node_ids_by_position(
         list(_boundary_output_ids), node_records, tol=max(10.0 ** (-decimals), 1e-6)
+    )
+
+    _joint_output_ids = _dedupe_node_ids_by_position(
+        [joint["node_id"] for joint in joint_records], node_records, tol=max(10.0 ** (-decimals), 1e-6)
     )
 
     return {
@@ -1303,7 +1310,7 @@ def import_line_model_json(
             "segmented_linear_load_lines": list(segmented_edge_ids),
             "point_load_points": list(_point_output_ids),
             "boundary_points": list(_boundary_output_ids),
-            "joint_nodes": [joint["node_id"] for joint in joint_records],
+            "joint_nodes": list(_joint_output_ids),
         },
         "guid_proxies": {
             "pt": dict(sorted(point_guid_proxy.items())),
@@ -1473,8 +1480,15 @@ if "model" in _g or "Model" in _g:
             Meshes = _meshes
             PreviewGeometry = []
 
-            # Ensure supports are unique per spatial location for solver compatibility.
+            # Ensure solver-facing point lists are unique per spatial location.
+            _point_node_ids = _dedupe_node_ids_by_position(_point_node_ids, _nodes, tol=1e-6)
             _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=1e-6)
+            _joint_node_ids = _dedupe_node_ids_by_position(_joint_node_ids, _nodes, tol=1e-6)
+
+            # Keep fallback ID outputs synchronized with deduplicated IDs.
+            PointLoadPoints = list(_point_node_ids)
+            BoundaryPoints = list(_boundary_node_ids)
+            JointNodes = list(_joint_node_ids)
 
             # Geometry-based proxy resolution: when GH curve proxies are connected,
             # generate perimeter linear edges by segmenting those curves against model nodes.
@@ -1495,8 +1509,10 @@ if "model" in _g or "Model" in _g:
                 if _rhino_bp is not None:
                     _boundary_node_ids = _rhino_bp
 
-                # Re-apply positional deduplication after Rhino-proxy override.
+                # Re-apply positional deduplication after Rhino-proxy overrides.
+                _point_node_ids = _dedupe_node_ids_by_position(_point_node_ids, _nodes, tol=1e-6)
                 _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=1e-6)
+                _joint_node_ids = _dedupe_node_ids_by_position(_joint_node_ids, _nodes, tol=1e-6)
 
                 # GH-facing outputs should be geometry for direct Karamba compatibility.
                 MemberLines = _line_geometry_from_edge_ids(_member_line_ids, _edges, _nodes)
