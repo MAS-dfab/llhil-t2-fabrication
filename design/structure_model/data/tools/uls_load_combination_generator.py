@@ -172,6 +172,42 @@ def _normalize_mode(mode: object) -> str:
     return "exact_listed"
 
 
+def _resolve_mode_from_globals(globals_dict: Dict[str, object]) -> str:
+    """Resolve mode from GH inputs, preferring any LLF-driven signal.
+
+    This avoids a common GH wiring issue where one port still emits an
+    exact-mode label (for example "ULSMode") while another emits
+    "LLFDriven".
+    """
+    candidates = [
+        "mode",
+        "Mode",
+        "ll_driven",
+        "LLDriven",
+        "llf_driven",
+        "LLFDriven",
+        "UseLLMode",
+        "UseLLFMode",
+        "ULSMode",
+    ]
+
+    normalized_values: List[str] = []
+    for key in candidates:
+        if key not in globals_dict:
+            continue
+        value = globals_dict.get(key)
+        if value is None:
+            continue
+        normalized_values.append(_normalize_mode(value))
+
+    # Any explicit LLF-driven signal wins.
+    if any(mode_value == "llf_llrf_driven" for mode_value in normalized_values):
+        return "llf_llrf_driven"
+
+    # Otherwise use exact-listed as safe default.
+    return "exact_listed"
+
+
 def _format_expression(terms: TermMap) -> str:
     def lc_sort_key(item: Tuple[str, float]) -> int:
         name = item[0]
@@ -449,14 +485,7 @@ try:
         SLF_3=_g.get("SLF_3"),
         SLF_4=_g.get("SLF_4"),
         loads=_g.get("Loads"),
-        mode=(
-            _g.get("mode")
-            or _g.get("Mode")
-            or _g.get("ULSMode")
-            or _g.get("llf_driven")
-            or _g.get("LLFDriven")
-            or _g.get("UseLLFMode")
-        ),
+        mode=_resolve_mode_from_globals(_g),
     )
 except NameError:
     # Not running inside GH component inputs; keep module import-safe.
