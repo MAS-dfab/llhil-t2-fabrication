@@ -18,6 +18,8 @@
 #     joints      -> (no extra input)              -> JointNodes
 #     areas       -> area_geometry                 -> AreaLoadMeshes
 #     all         -> all of the above              -> PreviewGeometry
+#               ("all" shows: members + joints + areas; select specific kinds for
+#                point_loads/boundary/linear to avoid redundant all-node point clouds)
 # - Function call: import_line_model_json(payload=...,
 #     curve_guid_proxies=..., point_load_guid_proxies=..., boundary_guid_proxies=...)
 # - Minimal runnable input: {}
@@ -300,6 +302,303 @@ def _resolve_filtered_node_ids(
     return None
 
 
+def _has_connected_filter_input(value: Any) -> bool:
+    """Return True when a GH input is connected with a non-empty value."""
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return value.strip() != ""
+    if isinstance(value, (list, tuple)):
+        return any(_has_connected_filter_input(item) for item in value)
+    if isinstance(value, dict):
+        return len(value) > 0
+    return True
+
+
+def _has_guid_like_filter_input(value: Any) -> bool:
+    """Return True when input can be interpreted as GUID->ID filter data."""
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return value.strip() != ""
+    if isinstance(value, dict):
+        return len(value) > 0
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            if isinstance(item, str) and item.strip() != "":
+                return True
+            if isinstance(item, dict) and len(item) > 0:
+                return True
+        return False
+    return False
+
+
+def _resolve_edge_ids_from_rhino_curves(
+    value: Any,
+    edge_records: List[Dict[str, Any]],
+    nodes: List[Dict[str, Any]],
+    *,
+    tol: float = 1e-3,
+) -> Optional[List[str]]:
+    """Match Rhino Curve objects to edge IDs using distance-based endpoint matching.
+
+    For each input curve, finds the nearest model node within *tol* distance for
+    both endpoints, then looks up the edge connecting those two nodes.
+    Returns None when value is None or contains no Rhino Curve instances.
+    """
+    if rg is None or value is None:
+        return None
+
+    items = list(value) if isinstance(value, (list, tuple)) else [value]
+    curve_items: List[Any] = []
+    for item in items:
+        curve = _try_coerce_rhino_curve(item)
+        if curve is not None:
+            curve_items.append(curve)
+    if not curve_items:
+        return None
+
+    # Flat list of (x, y, z, node_id) for nearest-neighbour search.
+    node_coords: List[Tuple[float, float, float, str]] = []
+    for node in nodes:
+        xyz = _point_from_node_record(node)
+        if xyz is not None:
+            node_coords.append((xyz[0], xyz[1], xyz[2], str(node.get("id", ""))))
+
+    if not node_coords:
+        return None
+
+    tol2 = tol * tol
+
+    def _nearest_node_id(px: float, py: float, pz: float) -> Optional[str]:
+        best_id: Optional[str] = None
+        best_d2 = tol2
+        for nx, ny, nz, nid in node_coords:
+            d2 = (nx - px) ** 2 + (ny - py) ** 2 + (nz - pz) ** 2
+            if d2 < best_d2:
+                best_d2 = d2
+                best_id = nid
+        return best_id
+
+    # Bidirectional lookup: (start_node_id, end_node_id) -> edge_id.
+    edge_lookup: Dict[Tuple[str, str], str] = {}
+    for edge in edge_records:
+        sn = str(edge.get("start_node", ""))
+        en = str(edge.get("end_node", ""))
+        eid = str(edge.get("id", ""))
+        if sn and en and eid:
+            edge_lookup[(sn, en)] = eid
+            edge_lookup[(en, sn)] = eid
+
+    matched: List[str] = []
+    seen: set = set()
+
+    # First pass: exact node-to-node matching (fast path for simple line proxies).
+    for crv in curve_items:
+        ps = crv.PointAtStart
+        pe = crv.PointAtEnd
+        sn_id = _nearest_node_id(float(ps.X), float(ps.Y), float(ps.Z))
+        en_id = _nearest_node_id(float(pe.X), float(pe.Y), float(pe.Z))
+        if sn_id is None or en_id is None or sn_id == en_id:
+            continue
+        eid = edge_lookup.get((sn_id, en_id))
+        if eid is not None and eid not in seen:
+            matched.append(eid)
+            seen.add(eid)
+
+    # Second pass: perimeter/polycurve matching.
+    # Include any edge whose start/end nodes lie on at least one input proxy curve.
+    n_index = _node_index(nodes)
+    for edge in edge_records:
+        eid = str(edge.get("id", ""))
+        if not eid or eid in seen:
+            continue
+        sn = n_index.get(str(edge.get("start_node", "")))
+        en = n_index.get(str(edge.get("end_node", "")))
+        if not sn or not en:
+            continue
+        a = _point_from_node_record(sn)
+        b = _point_from_node_record(en)
+        if a is None or b is None:
+            continue
+
+        pa = rg.Point3d(a[0], a[1], a[2])
+        pb = rg.Point3d(b[0], b[1], b[2])
+        for crv in curve_items:
+            ok_a, ta = crv.ClosestPoint(pa)
+            if not ok_a:
+                continue
+            qa = crv.PointAt(ta)
+            if qa.DistanceTo(pa) > tol:
+                continue
+
+            ok_b, tb = crv.ClosestPoint(pb)
+            if not ok_b:
+                continue
+            qb = crv.PointAt(tb)
+            if qb.DistanceTo(pb) > tol:
+                continue
+
+            # Guard against both endpoints collapsing to the same curve parameter.
+            if abs(float(tb) - float(ta)) <= 1e-9 and pa.DistanceTo(pb) > tol:
+                continue
+
+            matched.append(eid)
+            seen.add(eid)
+            break
+
+    return matched if matched else None
+
+
+def _resolve_node_ids_from_rhino_points(
+    value: Any,
+    nodes: List[Dict[str, Any]],
+    *,
+    tol: float = 1e-3,
+) -> Optional[List[str]]:
+    """Match Rhino Point3d objects to node IDs using distance-based nearest-neighbour search.
+
+    Returns None when value is None or contains no Rhino Point3d instances.
+    """
+    if rg is None or value is None:
+        return None
+
+    items = list(value) if isinstance(value, (list, tuple)) else [value]
+    point_items: List[Any] = []
+    for item in items:
+        if isinstance(item, rg.Point3d):
+            point_items.append(item)
+        elif isinstance(item, rg.Point):
+            point_items.append(item.Location)
+    if not point_items:
+        return None
+
+    node_coords: List[Tuple[float, float, float, str]] = []
+    for node in nodes:
+        xyz = _point_from_node_record(node)
+        if xyz is not None:
+            node_coords.append((xyz[0], xyz[1], xyz[2], str(node.get("id", ""))))
+
+    if not node_coords:
+        return None
+
+    tol2 = tol * tol
+    matched: List[str] = []
+    seen: set = set()
+    for pt in point_items:
+        px, py, pz = float(pt.X), float(pt.Y), float(pt.Z)
+        best_id: Optional[str] = None
+        best_d2 = tol2
+        for nx, ny, nz, nid in node_coords:
+            d2 = (nx - px) ** 2 + (ny - py) ** 2 + (nz - pz) ** 2
+            if d2 < best_d2:
+                best_d2 = d2
+                best_id = nid
+        if best_id is not None and best_id not in seen:
+            matched.append(best_id)
+            seen.add(best_id)
+    return matched if matched else None
+
+
+def _build_linear_edges_from_curve_proxies(
+    value: Any,
+    nodes: List[Dict[str, Any]],
+    edge_records: List[Dict[str, Any]],
+    *,
+    decimals: int = 6,
+    tol: float = 1e-3,
+) -> Optional[List[str]]:
+    """Create/update linear edge records from proxy-curve segmentation.
+
+    Returns None when no usable curve proxies are present.
+    Returns [] when proxies are present but no segments can be resolved to nodes.
+    """
+    if rg is None or value is None:
+        return None
+
+    items = list(value) if isinstance(value, (list, tuple)) else [value]
+    curve_items: List[Any] = []
+    for item in items:
+        curve = _try_coerce_rhino_curve(item)
+        if curve is not None:
+            curve_items.append(curve)
+    if not curve_items:
+        return None
+
+    tol2 = tol * tol
+
+    node_coords: List[Tuple[float, float, float, str]] = []
+    for node in nodes:
+        xyz = _point_from_node_record(node)
+        nid = str(node.get("id", ""))
+        if xyz is not None and nid:
+            node_coords.append((xyz[0], xyz[1], xyz[2], nid))
+
+    if not node_coords:
+        return []
+
+    def _nearest_node_id(px: float, py: float, pz: float) -> Optional[str]:
+        best_id: Optional[str] = None
+        best_d2 = tol2
+        for nx, ny, nz, nid in node_coords:
+            d2 = (nx - px) ** 2 + (ny - py) ** 2 + (nz - pz) ** 2
+            if d2 < best_d2:
+                best_d2 = d2
+                best_id = nid
+        return best_id
+
+    pair_to_edge: Dict[Tuple[str, str], str] = {}
+    existing_ids: set = set()
+    for edge in edge_records:
+        eid = str(edge.get("id", ""))
+        sn = str(edge.get("start_node", ""))
+        en = str(edge.get("end_node", ""))
+        if not eid or not sn or not en:
+            continue
+        pair_to_edge[tuple(sorted((sn, en)))] = eid
+        existing_ids.add(eid)
+
+    def _new_edge_id() -> str:
+        idx = 1
+        while True:
+            candidate = "LP{}".format(idx)
+            if candidate not in existing_ids:
+                existing_ids.add(candidate)
+                return candidate
+            idx += 1
+
+    linear_ids: List[str] = []
+    seen_linear: set = set()
+    for crv in curve_items:
+        for a, b in _segment_curve_by_neighbor_nodes(crv, nodes, decimals=decimals):
+            sn = _nearest_node_id(a[0], a[1], a[2])
+            en = _nearest_node_id(b[0], b[1], b[2])
+            if sn is None or en is None or sn == en:
+                continue
+
+            pair = tuple(sorted((sn, en)))
+            eid = pair_to_edge.get(pair)
+            if eid is None:
+                eid = _new_edge_id()
+                pair_to_edge[pair] = eid
+                edge_records.append(
+                    {
+                        "id": eid,
+                        "start_node": sn,
+                        "end_node": en,
+                        "attributes": {
+                            "generated": "linear_proxy_segment",
+                        },
+                    }
+                )
+
+            if eid not in seen_linear:
+                linear_ids.append(eid)
+                seen_linear.add(eid)
+
+    return linear_ids
+
+
 def _coerce_proxy_map(value: Any) -> Dict[str, str]:
     result: Dict[str, str] = {}
     if isinstance(value, dict):
@@ -367,6 +666,24 @@ def _try_coerce_rhino_geometry(value: Any) -> Optional[Any]:
 def _try_coerce_rhino_curve(value: Any) -> Optional[Any]:
     if rg is None or value is None:
         return None
+
+    # GH wrapper objects often expose underlying Rhino geometry via Value/ScriptVariable.
+    wrapped = getattr(value, "Value", None)
+    if wrapped is not None and wrapped is not value:
+        coerced = _try_coerce_rhino_curve(wrapped)
+        if coerced is not None:
+            return coerced
+
+    script_var = getattr(value, "ScriptVariable", None)
+    if callable(script_var):
+        try:
+            sv = script_var()
+        except Exception:
+            sv = None
+        if sv is not None and sv is not value:
+            coerced = _try_coerce_rhino_curve(sv)
+            if coerced is not None:
+                return coerced
 
     if isinstance(value, rg.Curve):
         return value
@@ -898,10 +1215,28 @@ def import_line_model_json(
     area_mesh_ids = [mesh["id"] for mesh in mesh_records]
     point_ids = [node["id"] for node in node_records]
 
+    _curve_filter_connected = _has_guid_like_filter_input(curve_guid_proxies)
+    _pl_filter_connected = _has_guid_like_filter_input(point_load_guid_proxies)
+    _bp_filter_connected = _has_guid_like_filter_input(boundary_guid_proxies)
+
     # Resolve explicitly tagged GUID inputs to filtered node ID lists.
     # Falls back to all node IDs when the proxy input is not provided.
     _pl_ids = _resolve_filtered_node_ids(point_load_guid_proxies, point_guid_proxy)
     _bp_ids = _resolve_filtered_node_ids(boundary_guid_proxies, point_guid_proxy)
+    # Filter linear load lines by curve GUID proxies when provided; falls back to all member edges.
+    _ll_ids = _resolve_filtered_node_ids(curve_guid_proxies, curve_guid_proxy)
+
+    _linear_output_ids = _ll_ids if _curve_filter_connected else list(member_line_ids)
+    if _curve_filter_connected and _linear_output_ids is None:
+        _linear_output_ids = []
+
+    _point_output_ids = _pl_ids if _pl_filter_connected else point_ids
+    if _pl_filter_connected and _point_output_ids is None:
+        _point_output_ids = []
+
+    _boundary_output_ids = _bp_ids if _bp_filter_connected else point_ids
+    if _bp_filter_connected and _boundary_output_ids is None:
+        _boundary_output_ids = []
 
     return {
         "schema": "structure_model_v1",
@@ -912,10 +1247,10 @@ def import_line_model_json(
         "output_lists": {
             "member_lines": member_line_ids,
             "area_load_meshes": area_mesh_ids,
-            "linear_load_lines": list(member_line_ids),
+            "linear_load_lines": list(_linear_output_ids),
             "segmented_linear_load_lines": list(segmented_edge_ids),
-            "point_load_points": _pl_ids if _pl_ids is not None else point_ids,
-            "boundary_points": _bp_ids if _bp_ids is not None else point_ids,
+            "point_load_points": list(_point_output_ids),
+            "boundary_points": list(_boundary_output_ids),
             "joint_nodes": [joint["node_id"] for joint in joint_records],
         },
         "guid_proxies": {
@@ -1064,7 +1399,8 @@ if "model" in _g or "Model" in _g:
             _lists = _import_payload.get("output_lists", {})
             MemberLines = list(_lists.get("member_lines", []))
             AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
-            LinearLoadLines = list(_lists.get("linear_load_lines", []))
+            _segmented_linear_ids = list(_lists.get("segmented_linear_load_lines", []))
+            LinearLoadLines = _segmented_linear_ids if _segmented_linear_ids else list(_lists.get("linear_load_lines", []))
             PointLoadPoints = list(_lists.get("point_load_points", []))
             BoundaryPoints = list(_lists.get("boundary_points", []))
             JointNodes = list(_lists.get("joint_nodes", []))
@@ -1077,6 +1413,28 @@ if "model" in _g or "Model" in _g:
             Edges = _edges
             Meshes = _meshes
             PreviewGeometry = []
+
+            # Geometry-based proxy resolution: when GH curve proxies are connected,
+            # generate perimeter linear edges by segmenting those curves against model nodes.
+            if rg is not None:
+                _generated_linear_ids = _build_linear_edges_from_curve_proxies(
+                    _curve_proxies, _nodes, _edges, decimals=6
+                )
+                if _generated_linear_ids is not None:
+                    LinearLoadLines = _generated_linear_ids
+                elif _has_guid_like_filter_input(_curve_proxies):
+                    # Connected GUID-like filter with no matches should not fall back to all members.
+                    LinearLoadLines = []
+
+                _rhino_pl = _resolve_node_ids_from_rhino_points(_pl_proxies, _nodes)
+                if _rhino_pl is not None:
+                    PointLoadPoints = _rhino_pl
+                _rhino_bp = _resolve_node_ids_from_rhino_points(_bp_proxies, _nodes)
+                if _rhino_bp is not None:
+                    BoundaryPoints = _rhino_bp
+
+            # Publish potentially augmented edges (includes generated linear proxy segments).
+            Edges = _edges
 
             # AreaLoadMeshes: actual Rhino Mesh objects built from JSON mesh records and/or
             # area_geometry input (surfaces/breps). Runs unconditionally so the output is usable
@@ -1095,11 +1453,11 @@ if "model" in _g or "Model" in _g:
                 _preview_items: List[Any] = []
 
                 _kind = _preview_kind
-                if _kind in ("member", "member_line", "member_lines", "lines"):
+                if _kind in ("member", "member_line", "member_lines"):
                     _kind = "members"
-                elif _kind in ("area", "area_load", "area_loads", "meshes"):
+                elif _kind in ("area", "area_load", "area_loads"):
                     _kind = "areas"
-                elif _kind in ("linear", "linear_load", "linear_loads", "linear_load_lines"):
+                elif _kind in ("linear", "linear_load", "linear_loads", "linear_load_lines", "lines", "load_lines"):
                     _kind = "linear"
                 elif _kind in ("point", "point_load", "point_loads", "point_load_points"):
                     _kind = "point_loads"
@@ -1107,19 +1465,22 @@ if "model" in _g or "Model" in _g:
                     _kind = "boundary"
                 elif _kind in ("joint", "joint_node", "joint_nodes"):
                     _kind = "joints"
-                elif _kind not in ("members", "areas", "all"):
+                elif _kind not in ("members", "areas", "linear", "point_loads", "boundary", "joints", "all"):
                     _kind = "members"
 
                 if _kind in ("members", "all"):
                     _preview_items.extend(_line_geometry_from_edge_ids(MemberLines, _edges, _nodes))
 
-                if _kind in ("linear", "all"):
+                # "linear" is a filtered subset of members — shown on its own, not duplicated in "all".
+                if _kind == "linear":
                     _preview_items.extend(_line_geometry_from_edge_ids(LinearLoadLines, _edges, _nodes))
 
-                if _kind in ("point_loads", "all"):
+                # point_loads / boundary default to all nodes when no proxy is connected,
+                # so they are excluded from "all" to avoid full-node point-cloud duplication.
+                if _kind == "point_loads":
                     _preview_items.extend(_point_geometry_from_node_ids(PointLoadPoints, _nodes))
 
-                if _kind in ("boundary", "all"):
+                if _kind == "boundary":
                     _preview_items.extend(_point_geometry_from_node_ids(BoundaryPoints, _nodes))
 
                 if _kind in ("joints", "all"):
