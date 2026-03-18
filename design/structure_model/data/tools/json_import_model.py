@@ -892,7 +892,7 @@ def import_line_model_json(
             "attributes": preserved_attrs,
         }
 
-        for key in ("vertices", "faces", "mesh", "geometry", "brep"):
+        for key in ("vertices", "faces", "mesh", "geometry", "brep", "surface"):
             if key in raw_mesh:
                 mesh_record[key] = raw_mesh[key]
 
