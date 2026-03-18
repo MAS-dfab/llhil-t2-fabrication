@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -132,8 +133,12 @@ def _normalize_compas_line_record(item: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _load_payload_from_path(payload: Any) -> Any:
-    if isinstance(payload, str):
-        candidate = payload.strip()
+    # GH may pass path-like values that are not strict Python str instances.
+    if payload is None:
+        return payload
+
+    if not isinstance(payload, (dict, list, tuple)):
+        candidate = str(payload).strip()
         if candidate:
             path = Path(candidate)
             if path.is_file():
@@ -662,5 +667,5 @@ if "model" in _g or "Model" in _g:
             out = "Import failed: {}".format(ex)
 
 
-if __name__ == "__main__" and "model" not in globals() and "Model" not in globals():
+if __name__ == "__main__" and any(arg.startswith("--input") for arg in sys.argv[1:]):
     main()
