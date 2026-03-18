@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import traceback
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -719,7 +720,11 @@ def import_line_model_json(
     edges = _extract_edges(payload)
     meshes = _extract_meshes(payload)
     # Area proxy input may carry real area geometry objects (GH workflow).
-    meshes.extend(_extract_area_records_from_proxy_input(area_guid_proxies))
+    try:
+        meshes.extend(_extract_area_records_from_proxy_input(area_guid_proxies))
+    except Exception:
+        # Keep base import path alive even if proxy payload is malformed.
+        pass
     input_proxies = _extract_input_proxy_maps(payload)
     # Explicit proxy inputs override/extend proxies embedded in the model payload.
     input_proxies["pt"].update(_coerce_proxy_map(pt_guid_proxies))
@@ -1074,10 +1079,15 @@ if "model" in _g or "Model" in _g:
             _lists = _import_payload.get("output_lists", {})
             MemberLines = list(_lists.get("member_lines", []))
             AreaLoadMeshIds = list(_lists.get("area_load_meshes", []))
-            AreaLoadMeshes = _build_area_mesh_geometry(
-                Meshes,
-                auto_mesh_areas=_to_bool(_auto_mesh_areas, default=True),
-            )
+            _area_mesh_error = None
+            try:
+                AreaLoadMeshes = _build_area_mesh_geometry(
+                    Meshes,
+                    auto_mesh_areas=_to_bool(_auto_mesh_areas, default=True),
+                )
+            except Exception as _ex_area:
+                AreaLoadMeshes = []
+                _area_mesh_error = str(_ex_area)
             LinearLoadLines = list(_lists.get("linear_load_lines", []))
             SegmentedLinearLoadLines = list(_lists.get("segmented_linear_load_lines", []))
             SegmentedEdgeCount = int(_import_payload.get("metadata", {}).get("segmented_edge_count", 0))
@@ -1103,7 +1113,7 @@ if "model" in _g or "Model" in _g:
                 PreviewGeometry = []
 
             out = (
-                "Imported nodes: {}, edges: {}, meshes: {}, area_mesh_geo: {}, joints: {}, segmented: {}, preview: {}"
+                "Imported nodes: {}, edges: {}, meshes: {}, area_mesh_geo: {}, joints: {}, segmented: {}, preview: {}{}"
             ).format(
                 len(_import_payload.get("nodes", [])),
                 len(_import_payload.get("edges", [])),
@@ -1112,9 +1122,10 @@ if "model" in _g or "Model" in _g:
                 len(_import_payload.get("joints", [])),
                 int(_import_payload.get("metadata", {}).get("segmented_edge_count", 0)),
                 "on" if _to_bool(_preview_toggle, default=False) else "off",
+                ("; area_mesh_error: " + _area_mesh_error) if _area_mesh_error else "",
             )
         except Exception as ex:
-            out = "Import failed: {}".format(ex)
+            out = "Import failed: {} | {}".format(ex, traceback.format_exc().splitlines()[-1])
 
 
 if __name__ == "__main__" and any(arg.startswith("--input") for arg in sys.argv[1:]):
