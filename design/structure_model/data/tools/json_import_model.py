@@ -12,6 +12,8 @@
 # - Minimal runnable input: {}
 # - Minimal useful topology input:
 #   {"lines": [{"start": [0, 0, 0], "end": [1, 0, 0]}]}
+# - Also accepts COMPAS-style root arrays with entries like:
+#   {"line": {"data": {"start": [...], "end": [...]}, "guid": "...", "name": "..."}, "type": "..."}
 # - GH outputs: ImportJson, MemberLines, AreaLoadMeshes, LinearLoadLines, PointLoadPoints,
 #   BoundaryPoints, JointNodes, out
 from __future__ import annotations
@@ -99,6 +101,59 @@ def _normalize_item_list(value: Any) -> List[Dict[str, Any]]:
     if isinstance(value, dict):
         return [value]
     return []
+
+
+def _normalize_compas_line_record(item: Dict[str, Any]) -> Dict[str, Any]:
+    line = item.get("line") if isinstance(item.get("line"), dict) else {}
+    data = line.get("data") if isinstance(line.get("data"), dict) else {}
+
+    attributes: Dict[str, Any] = {}
+    if item.get("type") is not None:
+        attributes["type"] = item.get("type")
+    if line.get("dtype") is not None:
+        attributes["dtype"] = line.get("dtype")
+    if line.get("name") is not None:
+        attributes["source_name"] = line.get("name")
+
+    normalized: Dict[str, Any] = {
+        "start": data.get("start"),
+        "end": data.get("end"),
+        "attributes": attributes,
+    }
+
+    if line.get("guid") is not None:
+        normalized["guid"] = line.get("guid")
+    if line.get("name") is not None:
+        normalized["id"] = str(line.get("name"))
+
+    return normalized
+
+
+def _normalize_input_payload(payload: Any) -> Dict[str, Any]:
+    if isinstance(payload, list):
+        lines: List[Dict[str, Any]] = []
+        for item in payload:
+            if not isinstance(item, dict):
+                continue
+            if isinstance(item.get("line"), dict):
+                lines.append(_normalize_compas_line_record(item))
+            else:
+                lines.append(item)
+        return {"lines": lines}
+
+    if not isinstance(payload, dict):
+        raise ValueError("Input JSON root must be an object or list.")
+
+    normalized = dict(payload)
+    for key in ("lines", "edges", "members", "segments"):
+        items = normalized.get(key)
+        if not isinstance(items, list):
+            continue
+        normalized[key] = [
+            _normalize_compas_line_record(item) if isinstance(item, dict) and isinstance(item.get("line"), dict) else item
+            for item in items
+        ]
+    return normalized
 
 
 def _extract_vertices(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -263,7 +318,7 @@ def _extract_input_proxy_maps(payload: Dict[str, Any]) -> Dict[str, Dict[str, st
 
 
 def import_line_model_json(
-    payload: Dict[str, Any],
+    payload: Any,
     *,
     decimals: int = 6,
     node_prefix: str = "N",
@@ -276,6 +331,7 @@ def import_line_model_json(
     boundary_guid_proxies: Any = None,
 ) -> Dict[str, Any]:
     """Normalize line-model JSON into deduplicated vertices/edges and analysis target lists."""
+    payload = _normalize_input_payload(payload)
     vertices = _extract_vertices(payload)
     edges = _extract_edges(payload)
     meshes = _extract_meshes(payload)
@@ -496,12 +552,9 @@ def as_output_lists(model: Dict[str, Any]) -> Dict[str, List[str]]:
     }
 
 
-def _read_json(path: str) -> Dict[str, Any]:
+def _read_json(path: str) -> Any:
     with open(path, "r", encoding="utf-8") as stream:
-        data = json.load(stream)
-    if not isinstance(data, dict):
-        raise ValueError("Input JSON root must be an object.")
-    return data
+        return json.load(stream)
 
 
 def _write_json(path: str, payload: Dict[str, Any]) -> None:
