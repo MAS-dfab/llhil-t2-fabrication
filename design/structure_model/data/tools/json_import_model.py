@@ -570,7 +570,7 @@ def _build_linear_edges_from_curve_proxies(
     linear_ids: List[str] = []
     seen_linear: set = set()
     for crv in curve_items:
-        for a, b in _segment_curve_by_neighbor_nodes(crv, nodes, decimals=decimals):
+        for a, b in _segment_curve_by_neighbor_nodes(crv, nodes, decimals=decimals, snap_tol=tol):
             sn = _nearest_node_id(a[0], a[1], a[2])
             en = _nearest_node_id(b[0], b[1], b[2])
             if sn is None or en is None or sn == en:
@@ -720,11 +720,18 @@ def _extract_curve_from_edge(raw_edge: Dict[str, Any]) -> Optional[Any]:
     return None
 
 
-def _segment_curve_by_neighbor_nodes(curve: Any, nodes: List[Dict[str, Any]], *, decimals: int) -> List[Tuple[Point, Point]]:
+def _segment_curve_by_neighbor_nodes(
+    curve: Any,
+    nodes: List[Dict[str, Any]],
+    *,
+    decimals: int,
+    snap_tol: Optional[float] = None,
+) -> List[Tuple[Point, Point]]:
     if rg is None:
         return []
 
-    tol = max(10.0 ** (-decimals), 1e-6)
+    dedup_tol = max(10.0 ** (-decimals), 1e-6)
+    _snap_tol = snap_tol if snap_tol is not None else dedup_tol
     t0 = float(curve.Domain.T0)
     t1 = float(curve.Domain.T1)
     start = curve.PointAtStart
@@ -746,7 +753,7 @@ def _segment_curve_by_neighbor_nodes(curve: Any, nodes: List[Dict[str, Any]], *,
             continue
 
         on_curve = curve.PointAt(t)
-        if on_curve.DistanceTo(test_pt) <= tol:
+        if on_curve.DistanceTo(test_pt) <= _snap_tol:
             candidates.append((float(t), xyz))
 
     # Sort by curve parameter and remove near-duplicates.
@@ -754,11 +761,11 @@ def _segment_curve_by_neighbor_nodes(curve: Any, nodes: List[Dict[str, Any]], *,
     ordered: List[Point] = []
     last_t: Optional[float] = None
     for t, xyz in candidates:
-        if last_t is not None and abs(t - last_t) <= tol:
+        if last_t is not None and abs(t - last_t) <= dedup_tol:
             continue
         if ordered:
             prev = ordered[-1]
-            if abs(prev[0] - xyz[0]) <= tol and abs(prev[1] - xyz[1]) <= tol and abs(prev[2] - xyz[2]) <= tol:
+            if abs(prev[0] - xyz[0]) <= dedup_tol and abs(prev[1] - xyz[1]) <= dedup_tol and abs(prev[2] - xyz[2]) <= dedup_tol:
                 last_t = t
                 continue
         ordered.append(xyz)
@@ -768,7 +775,7 @@ def _segment_curve_by_neighbor_nodes(curve: Any, nodes: List[Dict[str, Any]], *,
     for idx in range(len(ordered) - 1):
         a = ordered[idx]
         b = ordered[idx + 1]
-        if abs(a[0] - b[0]) <= tol and abs(a[1] - b[1]) <= tol and abs(a[2] - b[2]) <= tol:
+        if abs(a[0] - b[0]) <= dedup_tol and abs(a[1] - b[1]) <= dedup_tol and abs(a[2] - b[2]) <= dedup_tol:
             continue
         segments.append((a, b))
     return segments
@@ -1397,13 +1404,20 @@ if "model" in _g or "Model" in _g:
 
             # Compressed list-first outputs.
             _lists = _import_payload.get("output_lists", {})
-            MemberLines = list(_lists.get("member_lines", []))
+            _member_line_ids = list(_lists.get("member_lines", []))
             AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
             _segmented_linear_ids = list(_lists.get("segmented_linear_load_lines", []))
-            LinearLoadLines = _segmented_linear_ids if _segmented_linear_ids else list(_lists.get("linear_load_lines", []))
-            PointLoadPoints = list(_lists.get("point_load_points", []))
-            BoundaryPoints = list(_lists.get("boundary_points", []))
-            JointNodes = list(_lists.get("joint_nodes", []))
+            _linear_line_ids = _segmented_linear_ids if _segmented_linear_ids else list(_lists.get("linear_load_lines", []))
+            _point_node_ids = list(_lists.get("point_load_points", []))
+            _boundary_node_ids = list(_lists.get("boundary_points", []))
+            _joint_node_ids = list(_lists.get("joint_nodes", []))
+
+            # Default outputs (CLI/no-Rhino fallback): ID lists.
+            MemberLines = list(_member_line_ids)
+            LinearLoadLines = list(_linear_line_ids)
+            PointLoadPoints = list(_point_node_ids)
+            BoundaryPoints = list(_boundary_node_ids)
+            JointNodes = list(_joint_node_ids)
 
             # Raw geometry records for downstream ID→geometry mapping.
             _nodes = list(_import_payload.get("nodes", []))
@@ -1421,17 +1435,24 @@ if "model" in _g or "Model" in _g:
                     _curve_proxies, _nodes, _edges, decimals=6
                 )
                 if _generated_linear_ids is not None:
-                    LinearLoadLines = _generated_linear_ids
+                    _linear_line_ids = _generated_linear_ids
                 elif _has_guid_like_filter_input(_curve_proxies):
                     # Connected GUID-like filter with no matches should not fall back to all members.
-                    LinearLoadLines = []
+                    _linear_line_ids = []
 
                 _rhino_pl = _resolve_node_ids_from_rhino_points(_pl_proxies, _nodes)
                 if _rhino_pl is not None:
-                    PointLoadPoints = _rhino_pl
+                    _point_node_ids = _rhino_pl
                 _rhino_bp = _resolve_node_ids_from_rhino_points(_bp_proxies, _nodes)
                 if _rhino_bp is not None:
-                    BoundaryPoints = _rhino_bp
+                    _boundary_node_ids = _rhino_bp
+
+                # GH-facing outputs should be geometry for direct Karamba compatibility.
+                MemberLines = _line_geometry_from_edge_ids(_member_line_ids, _edges, _nodes)
+                LinearLoadLines = _line_geometry_from_edge_ids(_linear_line_ids, _edges, _nodes)
+                PointLoadPoints = _point_geometry_from_node_ids(_point_node_ids, _nodes)
+                BoundaryPoints = _point_geometry_from_node_ids(_boundary_node_ids, _nodes)
+                JointNodes = _point_geometry_from_node_ids(_joint_node_ids, _nodes)
 
             # Publish potentially augmented edges (includes generated linear proxy segments).
             Edges = _edges
@@ -1469,22 +1490,22 @@ if "model" in _g or "Model" in _g:
                     _kind = "members"
 
                 if _kind in ("members", "all"):
-                    _preview_items.extend(_line_geometry_from_edge_ids(MemberLines, _edges, _nodes))
+                    _preview_items.extend(_line_geometry_from_edge_ids(_member_line_ids, _edges, _nodes))
 
                 # "linear" is a filtered subset of members — shown on its own, not duplicated in "all".
                 if _kind == "linear":
-                    _preview_items.extend(_line_geometry_from_edge_ids(LinearLoadLines, _edges, _nodes))
+                    _preview_items.extend(_line_geometry_from_edge_ids(_linear_line_ids, _edges, _nodes))
 
                 # point_loads / boundary default to all nodes when no proxy is connected,
                 # so they are excluded from "all" to avoid full-node point-cloud duplication.
                 if _kind == "point_loads":
-                    _preview_items.extend(_point_geometry_from_node_ids(PointLoadPoints, _nodes))
+                    _preview_items.extend(_point_geometry_from_node_ids(_point_node_ids, _nodes))
 
                 if _kind == "boundary":
-                    _preview_items.extend(_point_geometry_from_node_ids(BoundaryPoints, _nodes))
+                    _preview_items.extend(_point_geometry_from_node_ids(_boundary_node_ids, _nodes))
 
                 if _kind in ("joints", "all"):
-                    _preview_items.extend(_point_geometry_from_node_ids(JointNodes, _nodes))
+                    _preview_items.extend(_point_geometry_from_node_ids(_joint_node_ids, _nodes))
 
                 if _kind in ("areas", "all"):
                     _preview_items.extend(AreaLoadMeshes)
