@@ -135,23 +135,41 @@ def _normalize_mode(mode: object) -> str:
     if isinstance(mode, (int, float)):
         return "llf_llrf_driven" if float(mode) != 0.0 else "exact_listed"
 
-    text = str(mode).strip().lower().replace("-", "_").replace(" ", "_")
+    text = str(mode).strip().strip('"\'').lower().replace("-", "_").replace(" ", "_")
+    compact = text.replace("_", "")
     aliases = {
         "exact": "exact_listed",
         "listed": "exact_listed",
         "exact_listed": "exact_listed",
+        "ulsmode": "exact_listed",
+        "mode": "exact_listed",
         "false": "exact_listed",
         "0": "exact_listed",
         "off": "exact_listed",
         "llf": "llf_llrf_driven",
+        "ll": "llf_llrf_driven",
+        "ll_driven": "llf_llrf_driven",
+        "ll_driven_mode": "llf_llrf_driven",
         "llf_driven": "llf_llrf_driven",
         "llf_llrf": "llf_llrf_driven",
         "llf_llrf_driven": "llf_llrf_driven",
         "true": "llf_llrf_driven",
         "1": "llf_llrf_driven",
         "on": "llf_llrf_driven",
+        "llfdriven": "llf_llrf_driven",
+        "use_llf_mode": "llf_llrf_driven",
+        "usellfmode": "llf_llrf_driven",
     }
-    return aliases.get(text, "exact_listed")
+    if text in aliases:
+        return aliases[text]
+    if compact in aliases:
+        return aliases[compact]
+
+    # Fuzzy fallback for ad-hoc labels containing both keywords.
+    if "llf" in compact and "driven" in compact:
+        return "llf_llrf_driven"
+
+    return "exact_listed"
 
 
 def _format_expression(terms: TermMap) -> str:
