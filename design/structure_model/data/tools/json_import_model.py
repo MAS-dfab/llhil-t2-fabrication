@@ -8,8 +8,8 @@
 # - Optional GH proxy / geometry inputs:
 #     curve_guid_proxies      (alias: LineGuidProxies)      -> linear load line filtering
 #     area_geometry           (aliases: AreaGeometry, AreaMeshes, AreaSurfaces) -> area meshes
-#     point_load_guid_proxies (alias: PointLoadGuidProxies) -> filters PointLoadPoints
-#     boundary_guid_proxies   (alias: BoundaryGuidProxies)  -> filters BoundaryPoints
+#     point_load_guid_proxies (alias: PointLoadGuidProxies) -> filters PointLoadPoints (empty when not connected)
+#     boundary_guid_proxies   (alias: BoundaryGuidProxies)  -> filters BoundaryPoints (empty when not connected)
 # - preview_kind values and their GH input / output correspondence:
 #     members     -> (no extra input)              -> MemberLines
 #     linear      -> LineGuidProxies               -> LinearLoadLines
@@ -1267,7 +1267,7 @@ def import_line_model_json(
     _bp_filter_connected = _has_guid_like_filter_input(boundary_guid_proxies)
 
     # Resolve explicitly tagged GUID inputs to filtered node ID lists.
-    # Falls back to all node IDs when the proxy input is not provided.
+    # Point-load/boundary lists are opt-in and remain empty when no proxy input is provided.
     _pl_ids = _resolve_filtered_node_ids(point_load_guid_proxies, point_guid_proxy)
     _bp_ids = _resolve_filtered_node_ids(boundary_guid_proxies, point_guid_proxy)
     # Filter linear load lines by curve GUID proxies when provided; falls back to all member edges.
@@ -1277,14 +1277,14 @@ def import_line_model_json(
     if _curve_filter_connected and _linear_output_ids is None:
         _linear_output_ids = []
 
-    _point_output_ids = _pl_ids if _pl_filter_connected else point_ids
+    _point_output_ids = _pl_ids if _pl_filter_connected else []
     if _pl_filter_connected and _point_output_ids is None:
         _point_output_ids = []
     _point_output_ids = _dedupe_node_ids_by_position(
         list(_point_output_ids), node_records, tol=max(10.0 ** (-decimals), 1e-6)
     )
 
-    _boundary_output_ids = _bp_ids if _bp_filter_connected else point_ids
+    _boundary_output_ids = _bp_ids if _bp_filter_connected else []
     if _bp_filter_connected and _boundary_output_ids is None:
         _boundary_output_ids = []
 
@@ -1563,8 +1563,7 @@ if "model" in _g or "Model" in _g:
                 if _kind == "linear":
                     _preview_items.extend(_line_geometry_from_edge_ids(_linear_line_ids, _edges, _nodes))
 
-                # point_loads / boundary default to all nodes when no proxy is connected,
-                # so they are excluded from "all" to avoid full-node point-cloud duplication.
+                # point_loads / boundary are opt-in and remain empty unless their proxy input is connected.
                 if _kind == "point_loads":
                     _preview_items.extend(_point_geometry_from_node_ids(_point_node_ids, _nodes))
 
