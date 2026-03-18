@@ -604,38 +604,62 @@ def main() -> None:
 
 # GH Py3 auto-run block: input `model` (or `Model`) -> JSON payload + validation lists.
 _g = globals()
-if "model" in _g or "Model" in _g:
-    _model_input = _g.get("model", _g.get("Model"))
-    if _model_input not in (None, ""):
-        _pt_proxies = _g.get("pt_guid_proxies", _g.get("PtGuidProxies", _g.get("PointGuidProxies")))
-        _curve_proxies = _g.get("curve_guid_proxies", _g.get("CurveGuidProxies", _g.get("LineGuidProxies")))
-        _area_proxies = _g.get("area_guid_proxies", _g.get("AreaGuidProxies", _g.get("MeshGuidProxies")))
-        _pl_proxies = _g.get("point_load_guid_proxies", _g.get("PointLoadGuidProxies"))
-        _bp_proxies = _g.get("boundary_guid_proxies", _g.get("BoundaryGuidProxies"))
 
-        ImportJson = import_line_model_json(
-            _model_input,
-            pt_guid_proxies=_pt_proxies,
-            curve_guid_proxies=_curve_proxies,
-            area_guid_proxies=_area_proxies,
-            point_load_guid_proxies=_pl_proxies,
-            boundary_guid_proxies=_bp_proxies,
-        )
-        _lists = ImportJson.get("output_lists", {})
-        MemberLines = list(_lists.get("member_lines", []))
-        AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
-        LinearLoadLines = list(_lists.get("linear_load_lines", []))
-        PointLoadPoints = list(_lists.get("point_load_points", []))
-        BoundaryPoints = list(_lists.get("boundary_points", []))
-        JointNodes = list(_lists.get("joint_nodes", []))
-        out = (
-            "Imported nodes: {}, edges: {}, meshes: {}, joints: {}"
-        ).format(
-            len(ImportJson.get("nodes", [])),
-            len(ImportJson.get("edges", [])),
-            len(ImportJson.get("meshes", [])),
-            len(ImportJson.get("joints", [])),
-        )
+# Always initialize outputs so GH does not show empty outputs without context.
+ImportJson = None
+MemberLines = []
+AreaLoadMeshes = []
+LinearLoadLines = []
+PointLoadPoints = []
+BoundaryPoints = []
+JointNodes = []
+out = "Waiting for Model input."
+
+
+def _get_first_input(globals_dict: Dict[str, Any], names: List[str]) -> Any:
+    for name in names:
+        if name in globals_dict:
+            return globals_dict.get(name)
+    return None
+
+
+if "model" in _g or "Model" in _g:
+    _model_input = _get_first_input(_g, ["model", "Model"])
+    if _model_input in (None, ""):
+        out = "Model input is empty. Provide a JSON path or parsed JSON object/list."
+    else:
+        try:
+            _pt_proxies = _get_first_input(_g, ["pt_guid_proxies", "PtGuidProxies", "PointGuidProxies"])
+            _curve_proxies = _get_first_input(_g, ["curve_guid_proxies", "CurveGuidProxies", "LineGuidProxies"])
+            _area_proxies = _get_first_input(_g, ["area_guid_proxies", "AreaGuidProxies", "MeshGuidProxies"])
+            _pl_proxies = _get_first_input(_g, ["point_load_guid_proxies", "PointLoadGuidProxies"])
+            _bp_proxies = _get_first_input(_g, ["boundary_guid_proxies", "BoundaryGuidProxies"])
+
+            ImportJson = import_line_model_json(
+                _model_input,
+                pt_guid_proxies=_pt_proxies,
+                curve_guid_proxies=_curve_proxies,
+                area_guid_proxies=_area_proxies,
+                point_load_guid_proxies=_pl_proxies,
+                boundary_guid_proxies=_bp_proxies,
+            )
+            _lists = ImportJson.get("output_lists", {})
+            MemberLines = list(_lists.get("member_lines", []))
+            AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
+            LinearLoadLines = list(_lists.get("linear_load_lines", []))
+            PointLoadPoints = list(_lists.get("point_load_points", []))
+            BoundaryPoints = list(_lists.get("boundary_points", []))
+            JointNodes = list(_lists.get("joint_nodes", []))
+            out = (
+                "Imported nodes: {}, edges: {}, meshes: {}, joints: {}"
+            ).format(
+                len(ImportJson.get("nodes", [])),
+                len(ImportJson.get("edges", [])),
+                len(ImportJson.get("meshes", [])),
+                len(ImportJson.get("joints", [])),
+            )
+        except Exception as ex:
+            out = "Import failed: {}".format(ex)
 
 
 if __name__ == "__main__" and "model" not in globals() and "Model" not in globals():
