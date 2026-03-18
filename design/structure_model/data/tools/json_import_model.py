@@ -1457,9 +1457,6 @@ if "model" in _g or "Model" in _g:
             _boundary_node_ids = list(_lists.get("boundary_points", []))
             _joint_node_ids = list(_lists.get("joint_nodes", []))
 
-            # Ensure supports are unique per spatial location for solver compatibility.
-            _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=1e-6)
-
             # Default outputs (CLI/no-Rhino fallback): ID lists.
             MemberLines = list(_member_line_ids)
             LinearLoadLines = list(_linear_line_ids)
@@ -1475,6 +1472,9 @@ if "model" in _g or "Model" in _g:
             Edges = _edges
             Meshes = _meshes
             PreviewGeometry = []
+
+            # Ensure supports are unique per spatial location for solver compatibility.
+            _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=1e-6)
 
             # Geometry-based proxy resolution: when GH curve proxies are connected,
             # generate perimeter linear edges by segmenting those curves against model nodes.
