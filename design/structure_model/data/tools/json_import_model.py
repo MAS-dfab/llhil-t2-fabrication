@@ -638,5 +638,5 @@ if "model" in _g or "Model" in _g:
         )
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and "model" not in globals() and "Model" not in globals():
     main()
