@@ -611,7 +611,7 @@ def main() -> None:
 _g = globals()
 
 # Always initialize outputs so GH does not show empty outputs without context.
-ImportJson = ""
+ImportJson = "{}"
 MemberLines = []
 AreaLoadMeshes = []
 LinearLoadLines = []
@@ -648,7 +648,19 @@ if "model" in _g or "Model" in _g:
                 point_load_guid_proxies=_pl_proxies,
                 boundary_guid_proxies=_bp_proxies,
             )
-            ImportJson = json.dumps(_import_payload, indent=2)
+            _summary_payload = {
+                "schema": _import_payload.get("schema", "structure_model_v1"),
+                "metadata": dict(_import_payload.get("metadata", {})),
+                "output_list_counts": {
+                    "member_lines": len(_import_payload.get("output_lists", {}).get("member_lines", [])),
+                    "area_load_meshes": len(_import_payload.get("output_lists", {}).get("area_load_meshes", [])),
+                    "linear_load_lines": len(_import_payload.get("output_lists", {}).get("linear_load_lines", [])),
+                    "point_load_points": len(_import_payload.get("output_lists", {}).get("point_load_points", [])),
+                    "boundary_points": len(_import_payload.get("output_lists", {}).get("boundary_points", [])),
+                    "joint_nodes": len(_import_payload.get("output_lists", {}).get("joint_nodes", [])),
+                },
+            }
+            ImportJson = json.dumps(_summary_payload, separators=(",", ":"))
             _lists = _import_payload.get("output_lists", {})
             MemberLines = list(_lists.get("member_lines", []))
             AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
