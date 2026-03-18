@@ -643,6 +643,190 @@ def _point_from_node_record(node: Dict[str, Any]) -> Optional[Point]:
         return None
 
 
+def _points_are_close(a: Point, b: Point, tol: float) -> bool:
+    return abs(a[0] - b[0]) <= tol and abs(a[1] - b[1]) <= tol and abs(a[2] - b[2]) <= tol
+
+
+def _dedupe_sorted_scalars(values: List[float], tol: float) -> List[float]:
+    if not values:
+        return []
+
+    ordered = sorted(float(value) for value in values)
+    unique = [ordered[0]]
+    for value in ordered[1:]:
+        if abs(value - unique[-1]) > tol:
+            unique.append(value)
+    return unique
+
+
+def _face_relation_is_exterior(relation: Any) -> bool:
+    if relation is None:
+        return True
+
+    text = str(relation).lower()
+    if "exterior" in text:
+        return True
+    if "interior" in text or "inside" in text or "boundary" in text:
+        return False
+
+    try:
+        return int(relation) == 0
+    except Exception:
+        return False
+
+
+def _closest_face_uv(face: Any, point: Any, *, tol: float) -> Optional[Tuple[float, float]]:
+    try:
+        closest = face.ClosestPoint(point)
+    except Exception:
+        return None
+
+    if not isinstance(closest, tuple):
+        return None
+
+    ok = True
+    if len(closest) >= 3 and isinstance(closest[0], bool):
+        ok = bool(closest[0])
+        if not ok:
+            return None
+        u = float(closest[1])
+        v = float(closest[2])
+    elif len(closest) >= 2:
+        u = float(closest[0])
+        v = float(closest[1])
+    else:
+        return None
+
+    projected = face.PointAt(u, v)
+    if projected.DistanceTo(point) > tol:
+        return None
+    if _face_relation_is_exterior(face.IsPointOnFace(u, v)):
+        return None
+    return (u, v)
+
+
+def _collect_face_seed_parameters(face: Any, nodes: List[Dict[str, Any]], *, tol: float) -> List[Tuple[float, float]]:
+    if rg is None:
+        return []
+
+    seeds: List[Tuple[float, float]] = []
+    face_brep = None
+    try:
+        face_brep = face.DuplicateFace(False)
+    except Exception:
+        face_brep = None
+
+    if face_brep is not None:
+        for vertex in face_brep.Vertices:
+            uv = _closest_face_uv(face, vertex.Location, tol=tol)
+            if uv is not None:
+                seeds.append(uv)
+
+    for node in nodes:
+        xyz = _point_from_node_record(node)
+        if xyz is None:
+            continue
+        uv = _closest_face_uv(face, rg.Point3d(xyz[0], xyz[1], xyz[2]), tol=tol)
+        if uv is not None:
+            seeds.append(uv)
+
+    return seeds
+
+
+def _build_node_aware_mesh_for_face(face: Any, nodes: List[Dict[str, Any]], *, tol: float) -> Optional[Any]:
+    if rg is None:
+        return None
+
+    seeds = _collect_face_seed_parameters(face, nodes, tol=tol)
+    if not seeds:
+        return None
+
+    uv_tol = 1e-9
+    u_values = _dedupe_sorted_scalars([u for u, _ in seeds], uv_tol)
+    v_values = _dedupe_sorted_scalars([v for _, v in seeds], uv_tol)
+    if len(u_values) < 2 or len(v_values) < 2:
+        return None
+
+    mesh = rg.Mesh()
+    vertex_index_by_key: Dict[Tuple[float, float, float], int] = {}
+
+    def _vertex_index(u: float, v: float) -> Optional[int]:
+        if _face_relation_is_exterior(face.IsPointOnFace(u, v)):
+            return None
+
+        point = face.PointAt(u, v)
+        key = (round(float(point.X), 9), round(float(point.Y), 9), round(float(point.Z), 9))
+        existing = vertex_index_by_key.get(key)
+        if existing is not None:
+            return existing
+
+        index = mesh.Vertices.Add(float(point.X), float(point.Y), float(point.Z))
+        vertex_index_by_key[key] = index
+        return index
+
+    for ui in range(len(u_values) - 1):
+        u0 = u_values[ui]
+        u1 = u_values[ui + 1]
+        if abs(u1 - u0) <= uv_tol:
+            continue
+
+        for vi in range(len(v_values) - 1):
+            v0 = v_values[vi]
+            v1 = v_values[vi + 1]
+            if abs(v1 - v0) <= uv_tol:
+                continue
+
+            center_u = 0.5 * (u0 + u1)
+            center_v = 0.5 * (v0 + v1)
+            if _face_relation_is_exterior(face.IsPointOnFace(center_u, center_v)):
+                continue
+
+            indices: List[int] = []
+            for corner_u, corner_v in ((u0, v0), (u1, v0), (u1, v1), (u0, v1)):
+                index = _vertex_index(corner_u, corner_v)
+                if index is None:
+                    indices = []
+                    break
+                indices.append(index)
+
+            if not indices:
+                continue
+
+            ordered_unique: List[int] = []
+            for index in indices:
+                if index not in ordered_unique:
+                    ordered_unique.append(index)
+
+            if len(ordered_unique) == 3:
+                mesh.Faces.AddFace(ordered_unique[0], ordered_unique[1], ordered_unique[2])
+            elif len(ordered_unique) == 4:
+                mesh.Faces.AddFace(ordered_unique[0], ordered_unique[1], ordered_unique[2], ordered_unique[3])
+
+    if mesh.Vertices.Count == 0 or mesh.Faces.Count == 0:
+        return None
+
+    mesh.Normals.ComputeNormals()
+    mesh.Compact()
+    return mesh
+
+
+def _build_node_aware_meshes_from_brep(
+    brep: Any,
+    nodes: Optional[List[Dict[str, Any]]],
+    *,
+    tol: float,
+) -> List[Any]:
+    if rg is None or brep is None or not nodes:
+        return []
+
+    meshes: List[Any] = []
+    for face in brep.Faces:
+        mesh = _build_node_aware_mesh_for_face(face, nodes, tol=tol)
+        if mesh is not None:
+            meshes.append(mesh)
+    return meshes
+
+
 def _try_coerce_rhino_geometry(value: Any) -> Optional[Any]:
     if rg is None or value is None:
         return None
@@ -781,7 +965,12 @@ def _segment_curve_by_neighbor_nodes(
     return segments
 
 
-def _meshes_from_area_payload(raw_area: Dict[str, Any]) -> List[Any]:
+def _meshes_from_area_payload(
+    raw_area: Dict[str, Any],
+    *,
+    nodes: Optional[List[Dict[str, Any]]] = None,
+    tol: float = 1e-3,
+) -> List[Any]:
     if rg is None:
         return []
 
@@ -814,6 +1003,11 @@ def _meshes_from_area_payload(raw_area: Dict[str, Any]) -> List[Any]:
         if brep is None:
             continue
 
+        seeded_meshes = _build_node_aware_meshes_from_brep(brep, nodes, tol=tol)
+        if seeded_meshes:
+            out_meshes.extend(seeded_meshes)
+            continue
+
         try:
             parts = rg.Mesh.CreateFromBrep(brep, rg.MeshingParameters.FastRenderMesh)
         except Exception:
@@ -829,7 +1023,12 @@ def _meshes_from_area_payload(raw_area: Dict[str, Any]) -> List[Any]:
     return out_meshes
 
 
-def _mesh_record_to_rhino_meshes(raw_mesh: Dict[str, Any], *, auto_mesh_areas: bool) -> List[Any]:
+def _mesh_record_to_rhino_meshes(
+    raw_mesh: Dict[str, Any],
+    *,
+    auto_mesh_areas: bool,
+    nodes: Optional[List[Dict[str, Any]]] = None,
+) -> List[Any]:
     if rg is None:
         return []
 
@@ -866,18 +1065,28 @@ def _mesh_record_to_rhino_meshes(raw_mesh: Dict[str, Any], *, auto_mesh_areas: b
         return []
 
     if auto_mesh_areas:
-        return _meshes_from_area_payload(raw_mesh)
+        return _meshes_from_area_payload(raw_mesh, nodes=nodes)
     return []
 
 
-def _build_area_mesh_geometry(meshes: List[Dict[str, Any]], *, auto_mesh_areas: bool = True) -> List[Any]:
+def _build_area_mesh_geometry(
+    meshes: List[Dict[str, Any]],
+    *,
+    auto_mesh_areas: bool = True,
+    nodes: Optional[List[Dict[str, Any]]] = None,
+) -> List[Any]:
     mesh_geometry: List[Any] = []
     for mesh in meshes:
-        mesh_geometry.extend(_mesh_record_to_rhino_meshes(mesh, auto_mesh_areas=auto_mesh_areas))
+        mesh_geometry.extend(_mesh_record_to_rhino_meshes(mesh, auto_mesh_areas=auto_mesh_areas, nodes=nodes))
     return mesh_geometry
 
 
-def _build_area_mesh_geometry_from_input(value: Any, *, auto_mesh_areas: bool = True) -> List[Any]:
+def _build_area_mesh_geometry_from_input(
+    value: Any,
+    *,
+    auto_mesh_areas: bool = True,
+    nodes: Optional[List[Dict[str, Any]]] = None,
+) -> List[Any]:
     """Convert direct GH area geometry input into Rhino meshes."""
     if value is None:
         return []
@@ -912,7 +1121,7 @@ def _build_area_mesh_geometry_from_input(value: Any, *, auto_mesh_areas: bool = 
         elif rg is not None and isinstance(geo, rg.Surface):
             mesh_records.append({"surface": geo})
 
-    return _build_area_mesh_geometry(mesh_records, auto_mesh_areas=auto_mesh_areas)
+    return _build_area_mesh_geometry(mesh_records, auto_mesh_areas=auto_mesh_areas, nodes=nodes)
 
 
 def _node_index(nodes: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
@@ -1085,8 +1294,16 @@ def import_line_model_json(
     node_by_key: Dict[Tuple[float, float, float], str] = {}
     node_records: List[Dict[str, Any]] = []
     point_guid_proxy: Dict[str, str] = dict(input_proxies["pt"])
+    node_merge_tol = max(10.0 ** (-decimals), 1e-5)
 
     def ensure_node_id(point: Point) -> str:
+        # First pass: tolerant weld to collapse near-coincident endpoints to a shared node ID.
+        for node in node_records:
+            xyz = _point_from_node_record(node)
+            if xyz is not None and _points_are_close(point, xyz, node_merge_tol):
+                return str(node["id"])
+
+        # Second pass: exact rounded-key lookup for deterministic IDs.
         rounded = (round(point[0], decimals), round(point[1], decimals), round(point[2], decimals))
         existing = node_by_key.get(rounded)
         if existing is not None:
@@ -1281,7 +1498,7 @@ def import_line_model_json(
     if _pl_filter_connected and _point_output_ids is None:
         _point_output_ids = []
     _point_output_ids = _dedupe_node_ids_by_position(
-        list(_point_output_ids), node_records, tol=max(10.0 ** (-decimals), 1e-6)
+        list(_point_output_ids), node_records, tol=node_merge_tol
     )
 
     _boundary_output_ids = _bp_ids if _bp_filter_connected else []
@@ -1290,11 +1507,11 @@ def import_line_model_json(
 
     # Boundary supports should be unique by position, not only by node ID.
     _boundary_output_ids = _dedupe_node_ids_by_position(
-        list(_boundary_output_ids), node_records, tol=max(10.0 ** (-decimals), 1e-6)
+        list(_boundary_output_ids), node_records, tol=node_merge_tol
     )
 
     _joint_output_ids = _dedupe_node_ids_by_position(
-        [joint["node_id"] for joint in joint_records], node_records, tol=max(10.0 ** (-decimals), 1e-6)
+        [joint["node_id"] for joint in joint_records], node_records, tol=node_merge_tol
     )
 
     return {
@@ -1481,9 +1698,10 @@ if "model" in _g or "Model" in _g:
             PreviewGeometry = []
 
             # Ensure solver-facing point lists are unique per spatial location.
-            _point_node_ids = _dedupe_node_ids_by_position(_point_node_ids, _nodes, tol=1e-6)
-            _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=1e-6)
-            _joint_node_ids = _dedupe_node_ids_by_position(_joint_node_ids, _nodes, tol=1e-6)
+            _runtime_dedupe_tol = 1e-5
+            _point_node_ids = _dedupe_node_ids_by_position(_point_node_ids, _nodes, tol=_runtime_dedupe_tol)
+            _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=_runtime_dedupe_tol)
+            _joint_node_ids = _dedupe_node_ids_by_position(_joint_node_ids, _nodes, tol=_runtime_dedupe_tol)
 
             # Keep fallback ID outputs synchronized with deduplicated IDs.
             PointLoadPoints = list(_point_node_ids)
@@ -1510,9 +1728,9 @@ if "model" in _g or "Model" in _g:
                     _boundary_node_ids = _rhino_bp
 
                 # Re-apply positional deduplication after Rhino-proxy overrides.
-                _point_node_ids = _dedupe_node_ids_by_position(_point_node_ids, _nodes, tol=1e-6)
-                _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=1e-6)
-                _joint_node_ids = _dedupe_node_ids_by_position(_joint_node_ids, _nodes, tol=1e-6)
+                _point_node_ids = _dedupe_node_ids_by_position(_point_node_ids, _nodes, tol=_runtime_dedupe_tol)
+                _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=_runtime_dedupe_tol)
+                _joint_node_ids = _dedupe_node_ids_by_position(_joint_node_ids, _nodes, tol=_runtime_dedupe_tol)
 
                 # GH-facing outputs should be geometry for direct Karamba compatibility.
                 MemberLines = _line_geometry_from_edge_ids(_member_line_ids, _edges, _nodes)
@@ -1528,9 +1746,11 @@ if "model" in _g or "Model" in _g:
             # area_geometry input (surfaces/breps). Runs unconditionally so the output is usable
             # without enabling preview. Falls back to string IDs when rg is unavailable (CLI).
             if rg is not None:
-                _area_geo_built = _build_area_mesh_geometry(_meshes, auto_mesh_areas=_auto_mesh_areas)
+                _area_geo_built = _build_area_mesh_geometry(
+                    _meshes, auto_mesh_areas=_auto_mesh_areas, nodes=_nodes
+                )
                 _area_geo_built += _build_area_mesh_geometry_from_input(
-                    _area_geometry_input, auto_mesh_areas=_auto_mesh_areas
+                    _area_geometry_input, auto_mesh_areas=_auto_mesh_areas, nodes=_nodes
                 )
                 AreaLoadMeshes = _area_geo_built
             else:
