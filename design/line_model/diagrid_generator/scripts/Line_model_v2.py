@@ -30,20 +30,18 @@ class VertexList:
         A list of points representing the nodes.
         
         Args:
-            vertices (list of Point)
+            vertices (list of Point): The list of vertices representing the nodes of the diagrid.
             pairs (list of tuple): (start_idx, end_idx) representing the edges between the vertices.
         """
         self.vertices = []
         self.pairs = []
 
 
-    def add(self, vertex):
-        if not isinstance(vertex, Point):
-            raise ValueError("Only compas Point instances can be added to VertexList.")
-        self.vertices.append(vertex)
-    
     def __getitem__(self, idx):
         return self.vertices[idx]
+
+    def __setitem__(self, idx, value):
+        self.vertices[idx] = value
 
     def __len__(self):
         return len(self.vertices)
@@ -51,7 +49,60 @@ class VertexList:
     def __iter__(self):
         return iter(self.vertices)
 
+
+    def add_vertices(self, vertices):
+        if not isinstance(vertices, list):
+            vertices = [vertices]
+
+        for vertex in vertices:
+            if not isinstance(vertex, Point):
+                raise ValueError("Only compas Point instances can be added to VertexList.")
+            self.vertices.append(vertex)
+
+    def add_pairs(self, pairs):
+        if not isinstance(pairs, list):
+            pairs = [pairs]
+            
+        for pair in pairs:
+            if not isinstance(pair, tuple) or len(pair) != 2:
+                raise ValueError("Pairs must be tuples of two vertex indices.")
+            self.pairs.append(pair)
+            
+    def skip(self, indices):
+        """
+        Remove edges that are connected to the specified vertex indices.
+        
+        Args:
+            indices (int or list of int): The vertex indices to skip. Can be a single index or a list of indices.
+        """
+        if not isinstance(indices, list):
+            indices = [indices]
+        for idx in indices:
+            self.pairs = [pair for pair in self.pairs if idx not in pair]
+
+    def move(self, indices, vectors):
+        if not isinstance(indices, list):
+            indices = [indices]
+            vectors = [vectors]
+        for idx, vector in zip(indices, vectors):
+            self.vertices[idx] += vector
+
+
     def compute_diagrid(self, boundary, division_x=4, division_y=6, height=8.6, height_list=[]):
+        """
+        Compute the vertices and edge pairs for a diagrid structure based on the given boundary and divisions.
+        Args:
+            boundary (Polyline): A closed polyline representing the boundary of the diagrid.
+            division_x (int): Number of divisions along the x-axis.
+            division_y (int): Number of divisions along the y-axis.
+            height (float): The total height of the diagrid structure.
+            height_list (list of float)(optional): A list of heights representing the point.z values for each level. If not provided, the height will be divided equally. The length of height_list should be equal to (division_x + 1) if provided.
+
+        Returns:
+            vertices (list of Point): The computed vertices of the diagrid.
+            pairs (list of tuple): The computed edge pairs representing the connections between the vertices.
+        """
+
         if height_list and len(height_list) != division_x + 1:
             raise ValueError("Length of height_list must be equal to (division_x + 1).")
         if self.vertices:
@@ -132,14 +183,12 @@ class VertexList:
                     self.pairs.append((idx4, target_idx))
             curr_div_x -= 1
             curr_div_y -= 1
-
         return self.vertices, self.pairs
-    
-    def remove_pair(self, idx):
-        for pair in self.pairs:
-            if idx in pair:
-                del pair
-                
+
+
+
+
+
 class BeamCategory:
     @property
     def main_out(self):
@@ -160,6 +209,14 @@ class BeamCategory:
 
 class Beam:
     def __init__(self, start_idx, end_idx, vertex_list):
+        """
+        Beam defined by start and end vertex indices.
+
+        Args:
+            start_idx (int): The index of the start vertex in the vertex list.
+            end_idx (int): The index of the end vertex in the vertex list.
+            vertex_list (VertexList)(list of Points): Entire list of vertices in space.
+        """
         self.start_idx = start_idx
         self.end_idx = end_idx
         self.v_list = vertex_list
@@ -180,6 +237,10 @@ class Beam:
         return self.v_list[self.end_idx]
     
     @property
+    def mid(self):
+        return self.start + (self.end - self.start) / 2
+    
+    @property
     def axis(self):
         return Line(self.start, self.end)
     
@@ -190,3 +251,4 @@ class Beam:
     @property
     def length(self):
         return self.axis.length
+
