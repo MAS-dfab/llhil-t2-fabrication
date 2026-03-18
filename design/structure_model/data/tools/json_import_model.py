@@ -611,7 +611,7 @@ def main() -> None:
 _g = globals()
 
 # Always initialize outputs so GH does not show empty outputs without context.
-ImportJson = None
+ImportJson = ""
 MemberLines = []
 AreaLoadMeshes = []
 LinearLoadLines = []
@@ -640,7 +640,7 @@ if "model" in _g or "Model" in _g:
             _pl_proxies = _get_first_input(_g, ["point_load_guid_proxies", "PointLoadGuidProxies"])
             _bp_proxies = _get_first_input(_g, ["boundary_guid_proxies", "BoundaryGuidProxies"])
 
-            ImportJson = import_line_model_json(
+            _import_payload = import_line_model_json(
                 _model_input,
                 pt_guid_proxies=_pt_proxies,
                 curve_guid_proxies=_curve_proxies,
@@ -648,7 +648,8 @@ if "model" in _g or "Model" in _g:
                 point_load_guid_proxies=_pl_proxies,
                 boundary_guid_proxies=_bp_proxies,
             )
-            _lists = ImportJson.get("output_lists", {})
+            ImportJson = json.dumps(_import_payload, indent=2)
+            _lists = _import_payload.get("output_lists", {})
             MemberLines = list(_lists.get("member_lines", []))
             AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
             LinearLoadLines = list(_lists.get("linear_load_lines", []))
@@ -658,10 +659,10 @@ if "model" in _g or "Model" in _g:
             out = (
                 "Imported nodes: {}, edges: {}, meshes: {}, joints: {}"
             ).format(
-                len(ImportJson.get("nodes", [])),
-                len(ImportJson.get("edges", [])),
-                len(ImportJson.get("meshes", [])),
-                len(ImportJson.get("joints", [])),
+                len(_import_payload.get("nodes", [])),
+                len(_import_payload.get("edges", [])),
+                len(_import_payload.get("meshes", [])),
+                len(_import_payload.get("joints", [])),
             )
         except Exception as ex:
             out = "Import failed: {}".format(ex)
