@@ -1,6 +1,10 @@
 # Minimal Input Cheat-Sheet (Importer)
 # - GH input names: model (or Model)
 #   (can be a parsed JSON object/list OR a file path string to JSON)
+# - Optional GH preview toggle:
+#     preview_geometry (aliases: PreviewGeometry, BuildPreviewGeometry) -> default false
+# - Optional GH area auto-mesh toggle (preview path):
+#     auto_mesh_areas (aliases: AutoMeshAreas, AutoMeshAreaLoads) -> default true
 # - Optional GH proxy inputs:
 #     pt_guid_proxies         (aliases: PtGuidProxies, PointGuidProxies)
 #     curve_guid_proxies      (aliases: CurveGuidProxies, LineGuidProxies)
@@ -15,8 +19,10 @@
 #   {"lines": [{"start": [0, 0, 0], "end": [1, 0, 0]}]}
 # - Also accepts COMPAS-style root arrays with entries like:
 #   {"line": {"data": {"start": [...], "end": [...]}, "guid": "...", "name": "..."}, "type": "..."}
-# - GH outputs: ImportJson, MemberLines, AreaLoadMeshes, LinearLoadLines, PointLoadPoints,
-#   BoundaryPoints, JointNodes, out
+# - GH outputs: ImportJson, Vertices, Edges, Meshes, MemberLines, AreaLoadMeshes,
+#   AreaLoadMeshIds, LinearLoadLines, SegmentedLinearLoadLines, SegmentedEdgeCount,
+#   PointLoadPoints, BoundaryPoints, JointNodes,
+#   PreviewPoints, PreviewLines, PreviewMeshes, PreviewGeometry, out
 from __future__ import annotations
 
 import argparse
@@ -24,6 +30,11 @@ import json
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+try:
+    import Rhino.Geometry as rg  # type: ignore
+except Exception:  # pragma: no cover - Rhino is not available in CLI environments.
+    rg = None
 
 
 Point = Tuple[float, float, float]
@@ -289,6 +300,287 @@ def _coerce_proxy_map(value: Any) -> Dict[str, str]:
     return result
 
 
+def _to_bool(value: Any, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        text = value.strip().lower()
+        if text in ("1", "true", "yes", "y", "on"):
+            return True
+        if text in ("0", "false", "no", "n", "off", ""):
+            return False
+    return default
+
+
+def _point_from_node_record(node: Dict[str, Any]) -> Optional[Point]:
+    try:
+        return (float(node.get("x", 0.0)), float(node.get("y", 0.0)), float(node.get("z", 0.0)))
+    except (TypeError, ValueError):
+        return None
+
+
+def _try_coerce_rhino_geometry(value: Any) -> Optional[Any]:
+    if rg is None or value is None:
+        return None
+
+    # Direct RhinoCommon geometry object (GH object input path).
+    if isinstance(value, (rg.Mesh, rg.Brep, rg.Surface)):
+        return value
+
+    # Optional: decode simple JSON geometry when available.
+    if isinstance(value, dict):
+        encoded = value.get("rhino") or value.get("rhino_json") or value.get("rhinoJson")
+        if isinstance(encoded, str) and encoded:
+            try:
+                return rg.GeometryBase.FromJSON(encoded)
+            except Exception:
+                return None
+
+    return None
+
+
+def _try_coerce_rhino_curve(value: Any) -> Optional[Any]:
+    if rg is None or value is None:
+        return None
+
+    if isinstance(value, rg.Curve):
+        return value
+    if isinstance(value, rg.Line):
+        return rg.LineCurve(value)
+
+    geo = _try_coerce_rhino_geometry(value)
+    if geo is None:
+        return None
+    if isinstance(geo, rg.Curve):
+        return geo
+    if isinstance(geo, rg.Line):
+        return rg.LineCurve(geo)
+    return None
+
+
+def _extract_curve_from_edge(raw_edge: Dict[str, Any]) -> Optional[Any]:
+    attrs = raw_edge.get("attributes") if isinstance(raw_edge.get("attributes"), dict) else {}
+    candidates = [
+        raw_edge.get("curve"),
+        raw_edge.get("line"),
+        raw_edge.get("geometry"),
+        raw_edge.get("rhino_curve"),
+        attrs.get("curve"),
+        attrs.get("line"),
+        attrs.get("geometry"),
+        attrs.get("rhino_curve"),
+    ]
+
+    for candidate in candidates:
+        curve = _try_coerce_rhino_curve(candidate)
+        if curve is not None:
+            return curve
+    return None
+
+
+def _segment_curve_by_neighbor_nodes(curve: Any, nodes: List[Dict[str, Any]], *, decimals: int) -> List[Tuple[Point, Point]]:
+    if rg is None:
+        return []
+
+    tol = max(10.0 ** (-decimals), 1e-6)
+    t0 = float(curve.Domain.T0)
+    t1 = float(curve.Domain.T1)
+    start = curve.PointAtStart
+    end = curve.PointAtEnd
+
+    candidates: List[Tuple[float, Point]] = [
+        (t0, (float(start.X), float(start.Y), float(start.Z))),
+        (t1, (float(end.X), float(end.Y), float(end.Z))),
+    ]
+
+    for node in nodes:
+        xyz = _point_from_node_record(node)
+        if xyz is None:
+            continue
+
+        test_pt = rg.Point3d(xyz[0], xyz[1], xyz[2])
+        ok, t = curve.ClosestPoint(test_pt)
+        if not ok:
+            continue
+
+        on_curve = curve.PointAt(t)
+        if on_curve.DistanceTo(test_pt) <= tol:
+            candidates.append((float(t), xyz))
+
+    # Sort by curve parameter and remove near-duplicates.
+    candidates.sort(key=lambda item: item[0])
+    ordered: List[Point] = []
+    last_t: Optional[float] = None
+    for t, xyz in candidates:
+        if last_t is not None and abs(t - last_t) <= tol:
+            continue
+        if ordered:
+            prev = ordered[-1]
+            if abs(prev[0] - xyz[0]) <= tol and abs(prev[1] - xyz[1]) <= tol and abs(prev[2] - xyz[2]) <= tol:
+                last_t = t
+                continue
+        ordered.append(xyz)
+        last_t = t
+
+    segments: List[Tuple[Point, Point]] = []
+    for idx in range(len(ordered) - 1):
+        a = ordered[idx]
+        b = ordered[idx + 1]
+        if abs(a[0] - b[0]) <= tol and abs(a[1] - b[1]) <= tol and abs(a[2] - b[2]) <= tol:
+            continue
+        segments.append((a, b))
+    return segments
+
+
+def _meshes_from_area_payload(raw_area: Dict[str, Any]) -> List[Any]:
+    if rg is None:
+        return []
+
+    sources = [
+        raw_area.get("mesh"),
+        raw_area.get("geometry"),
+        raw_area.get("brep"),
+        raw_area.get("surface"),
+    ]
+
+    out_meshes: List[Any] = []
+    for source in sources:
+        geo = _try_coerce_rhino_geometry(source)
+        if geo is None:
+            continue
+
+        if isinstance(geo, rg.Mesh):
+            out_meshes.append(geo)
+            continue
+
+        brep = None
+        if isinstance(geo, rg.Brep):
+            brep = geo
+        elif isinstance(geo, rg.Surface):
+            try:
+                brep = geo.ToBrep()
+            except Exception:
+                brep = None
+
+        if brep is None:
+            continue
+
+        try:
+            parts = rg.Mesh.CreateFromBrep(brep, rg.MeshingParameters.FastRenderMesh)
+        except Exception:
+            parts = None
+
+        if not parts:
+            continue
+
+        for part in parts:
+            if part is not None and part.Vertices.Count > 0 and part.Faces.Count > 0:
+                out_meshes.append(part)
+
+    return out_meshes
+
+
+def _mesh_record_to_rhino_meshes(raw_mesh: Dict[str, Any], *, auto_mesh_areas: bool) -> List[Any]:
+    if rg is None:
+        return []
+
+    vertices = raw_mesh.get("vertices") if isinstance(raw_mesh.get("vertices"), list) else None
+    faces = raw_mesh.get("faces") if isinstance(raw_mesh.get("faces"), list) else None
+    if vertices and faces:
+        rh_mesh = rg.Mesh()
+        valid = True
+        for vertex in vertices:
+            pt = _as_point(vertex)
+            if pt is None:
+                valid = False
+                break
+            rh_mesh.Vertices.Add(pt[0], pt[1], pt[2])
+        if not valid:
+            return []
+
+        for face in faces:
+            if not isinstance(face, (list, tuple)):
+                continue
+            try:
+                idx = [int(i) for i in face]
+            except (TypeError, ValueError):
+                continue
+            if len(idx) == 3:
+                rh_mesh.Faces.AddFace(idx[0], idx[1], idx[2])
+            elif len(idx) >= 4:
+                rh_mesh.Faces.AddFace(idx[0], idx[1], idx[2], idx[3])
+
+        if rh_mesh.Vertices.Count > 0 and rh_mesh.Faces.Count > 0:
+            rh_mesh.Normals.ComputeNormals()
+            rh_mesh.Compact()
+            return [rh_mesh]
+        return []
+
+    if auto_mesh_areas:
+        return _meshes_from_area_payload(raw_mesh)
+    return []
+
+
+def _build_area_mesh_geometry(meshes: List[Dict[str, Any]], *, auto_mesh_areas: bool = True) -> List[Any]:
+    mesh_geometry: List[Any] = []
+    for mesh in meshes:
+        mesh_geometry.extend(_mesh_record_to_rhino_meshes(mesh, auto_mesh_areas=auto_mesh_areas))
+    return mesh_geometry
+
+
+def _build_preview_geometry(
+    nodes: List[Dict[str, Any]],
+    edges: List[Dict[str, Any]],
+    meshes: List[Dict[str, Any]],
+    *,
+    auto_mesh_areas: bool = True,
+) -> Dict[str, List[Any]]:
+    if rg is None:
+        return {
+            "points": [],
+            "lines": [],
+            "meshes": [],
+            "all": [],
+        }
+
+    points: List[Any] = []
+    lines: List[Any] = []
+    mesh_geometry: List[Any] = []
+
+    node_xyz: Dict[str, Tuple[float, float, float]] = {}
+    for node in nodes:
+        node_id = str(node.get("id", ""))
+        if not node_id:
+            continue
+        try:
+            xyz = (float(node.get("x", 0.0)), float(node.get("y", 0.0)), float(node.get("z", 0.0)))
+        except (TypeError, ValueError):
+            continue
+        node_xyz[node_id] = xyz
+        points.append(rg.Point3d(*xyz))
+
+    for edge in edges:
+        start = node_xyz.get(str(edge.get("start_node", "")))
+        end = node_xyz.get(str(edge.get("end_node", "")))
+        if start is None or end is None:
+            continue
+        lines.append(rg.LineCurve(rg.Point3d(*start), rg.Point3d(*end)))
+
+    for mesh in meshes:
+        mesh_geometry.extend(_mesh_record_to_rhino_meshes(mesh, auto_mesh_areas=auto_mesh_areas))
+
+    return {
+        "points": points,
+        "lines": lines,
+        "meshes": mesh_geometry,
+        "all": points + lines + mesh_geometry,
+    }
+
+
 def _extract_input_proxy_maps(payload: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
     proxies = {
         "pt": {},
@@ -400,11 +692,13 @@ def import_line_model_json(
             point_guid_proxy[vertex_guid] = new_id
 
     edge_records: List[Dict[str, Any]] = []
+    segmented_edge_ids: List[str] = []
     seen_edge_pairs: Dict[Tuple[str, str], str] = {}
     curve_guid_proxy: Dict[str, str] = dict(input_proxies["curve"])
 
     for raw_edge in edges:
         attrs = raw_edge.get("attributes") if isinstance(raw_edge.get("attributes"), dict) else {}
+        from_curve_segmentation = False
 
         start_id = None
         end_id = None
@@ -420,46 +714,69 @@ def import_line_model_json(
                 end_id = source_vertex_id_to_new[str(value)]
                 break
 
-        if start_id is None or end_id is None:
+        segment_node_pairs: List[Tuple[str, str]] = []
+
+        if start_id is not None and end_id is not None and start_id != end_id:
+            segment_node_pairs.append((start_id, end_id))
+        else:
             start_point, end_point = _line_start_end(raw_edge)
-            if start_id is None and start_point is not None:
-                start_id = ensure_node_id(start_point)
-            if end_id is None and end_point is not None:
-                end_id = ensure_node_id(end_point)
 
-        if start_id is None or end_id is None or start_id == end_id:
+            if (start_point is None or end_point is None) and rg is not None:
+                curve = _extract_curve_from_edge(raw_edge)
+                if curve is not None:
+                    curve_segments = _segment_curve_by_neighbor_nodes(curve, node_records, decimals=decimals)
+                    if len(curve_segments) > 1:
+                        from_curve_segmentation = True
+                    for seg_start, seg_end in curve_segments:
+                        seg_start_id = ensure_node_id(seg_start)
+                        seg_end_id = ensure_node_id(seg_end)
+                        if seg_start_id != seg_end_id:
+                            segment_node_pairs.append((seg_start_id, seg_end_id))
+
+            if not segment_node_pairs:
+                if start_id is None and start_point is not None:
+                    start_id = ensure_node_id(start_point)
+                if end_id is None and end_point is not None:
+                    end_id = ensure_node_id(end_point)
+                if start_id is not None and end_id is not None and start_id != end_id:
+                    segment_node_pairs.append((start_id, end_id))
+
+        if not segment_node_pairs:
             continue
-
-        pair = tuple(sorted((start_id, end_id)))
-        if pair in seen_edge_pairs:
-            continue
-
-        edge_id = f"{edge_prefix}{len(edge_records) + 1}"
-        seen_edge_pairs[pair] = edge_id
 
         preserved_attrs = {k: v for k, v in attrs.items() if k not in ("start", "end", "start_node", "end_node")}
 
-        edge_record = {
-            "id": edge_id,
-            "start_node": start_id,
-            "end_node": end_id,
-            "attributes": preserved_attrs,
-        }
+        for seg_start_id, seg_end_id in segment_node_pairs:
+            pair = tuple(sorted((seg_start_id, seg_end_id)))
+            if pair in seen_edge_pairs:
+                continue
 
-        source_edge_id = raw_edge.get("id")
-        if source_edge_id is not None:
-            edge_record["source_id"] = source_edge_id
+            edge_id = f"{edge_prefix}{len(edge_records) + 1}"
+            seen_edge_pairs[pair] = edge_id
 
-        if "cross_sections" in raw_edge:
-            edge_record["cross_sections"] = raw_edge["cross_sections"]
-        elif "cross_sections" in attrs:
-            edge_record["cross_sections"] = attrs.get("cross_sections")
+            edge_record = {
+                "id": edge_id,
+                "start_node": seg_start_id,
+                "end_node": seg_end_id,
+                "attributes": preserved_attrs,
+            }
 
-        edge_records.append(edge_record)
+            source_edge_id = raw_edge.get("id")
+            if source_edge_id is not None:
+                edge_record["source_id"] = source_edge_id
 
-        edge_guid = _edge_or_node_guid(raw_edge)
-        if edge_guid is not None:
-            curve_guid_proxy[edge_guid] = edge_id
+            if "cross_sections" in raw_edge:
+                edge_record["cross_sections"] = raw_edge["cross_sections"]
+            elif "cross_sections" in attrs:
+                edge_record["cross_sections"] = attrs.get("cross_sections")
+
+            edge_records.append(edge_record)
+            if from_curve_segmentation:
+                segmented_edge_ids.append(edge_id)
+
+            edge_guid = _edge_or_node_guid(raw_edge)
+            if edge_guid is not None:
+                curve_guid_proxy[edge_guid] = edge_id
 
     node_by_id: Dict[str, Dict[str, Any]] = {node["id"]: node for node in node_records}
     connected_edges_by_node: Dict[str, List[str]] = {}
@@ -534,6 +851,7 @@ def import_line_model_json(
             "member_lines": member_line_ids,
             "area_load_meshes": area_mesh_ids,
             "linear_load_lines": list(member_line_ids),
+            "segmented_linear_load_lines": list(segmented_edge_ids),
             "point_load_points": _pl_ids if _pl_ids is not None else point_ids,
             "boundary_points": _bp_ids if _bp_ids is not None else point_ids,
             "joint_nodes": [joint["node_id"] for joint in joint_records],
@@ -551,6 +869,7 @@ def import_line_model_json(
             "output_edges": len(edge_records),
             "output_meshes": len(mesh_records),
             "output_joints": len(joint_records),
+            "segmented_edge_count": len(segmented_edge_ids),
             "deduplicated_nodes": max(0, len(vertices) - len(node_records)),
             "deduplicated_edges": max(0, len(edges) - len(edge_records)),
         },
@@ -565,6 +884,7 @@ def as_output_lists(model: Any) -> Dict[str, List[str]]:
         "MemberLines": list(lists.get("member_lines", [])),
         "AreaLoadMeshes": list(lists.get("area_load_meshes", [])),
         "LinearLoadLines": list(lists.get("linear_load_lines", [])),
+        "SegmentedLinearLoadLines": list(lists.get("segmented_linear_load_lines", [])),
         "PointLoadPoints": list(lists.get("point_load_points", [])),
         "BoundaryPoints": list(lists.get("boundary_points", [])),
         "JointNodes": list(lists.get("joint_nodes", [])),
@@ -617,10 +937,17 @@ Edges = []
 Meshes = []
 MemberLines = []
 AreaLoadMeshes = []
+AreaLoadMeshIds = []
 LinearLoadLines = []
+SegmentedLinearLoadLines = []
+SegmentedEdgeCount = 0
 PointLoadPoints = []
 BoundaryPoints = []
 JointNodes = []
+PreviewPoints = []
+PreviewLines = []
+PreviewMeshes = []
+PreviewGeometry = []
 out = "Waiting for Model input."
 
 
@@ -642,6 +969,8 @@ if "model" in _g or "Model" in _g:
             _area_proxies = _get_first_input(_g, ["area_guid_proxies", "AreaGuidProxies", "MeshGuidProxies"])
             _pl_proxies = _get_first_input(_g, ["point_load_guid_proxies", "PointLoadGuidProxies"])
             _bp_proxies = _get_first_input(_g, ["boundary_guid_proxies", "BoundaryGuidProxies"])
+            _preview_toggle = _get_first_input(_g, ["preview_geometry", "PreviewGeometry", "BuildPreviewGeometry"])
+            _auto_mesh_areas = _get_first_input(_g, ["auto_mesh_areas", "AutoMeshAreas", "AutoMeshAreaLoads"])
 
             _import_payload = import_line_model_json(
                 _model_input,
@@ -658,6 +987,7 @@ if "model" in _g or "Model" in _g:
                     "member_lines": len(_import_payload.get("output_lists", {}).get("member_lines", [])),
                     "area_load_meshes": len(_import_payload.get("output_lists", {}).get("area_load_meshes", [])),
                     "linear_load_lines": len(_import_payload.get("output_lists", {}).get("linear_load_lines", [])),
+                    "segmented_linear_load_lines": len(_import_payload.get("output_lists", {}).get("segmented_linear_load_lines", [])),
                     "point_load_points": len(_import_payload.get("output_lists", {}).get("point_load_points", [])),
                     "boundary_points": len(_import_payload.get("output_lists", {}).get("boundary_points", [])),
                     "joint_nodes": len(_import_payload.get("output_lists", {}).get("joint_nodes", [])),
@@ -669,19 +999,45 @@ if "model" in _g or "Model" in _g:
             Meshes = list(_import_payload.get("meshes", []))
             _lists = _import_payload.get("output_lists", {})
             MemberLines = list(_lists.get("member_lines", []))
-            AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
+            AreaLoadMeshIds = list(_lists.get("area_load_meshes", []))
+            AreaLoadMeshes = _build_area_mesh_geometry(
+                Meshes,
+                auto_mesh_areas=_to_bool(_auto_mesh_areas, default=True),
+            )
             LinearLoadLines = list(_lists.get("linear_load_lines", []))
+            SegmentedLinearLoadLines = list(_lists.get("segmented_linear_load_lines", []))
+            SegmentedEdgeCount = int(_import_payload.get("metadata", {}).get("segmented_edge_count", 0))
             PointLoadPoints = list(_lists.get("point_load_points", []))
             BoundaryPoints = list(_lists.get("boundary_points", []))
             JointNodes = list(_lists.get("joint_nodes", []))
 
+            if _to_bool(_preview_toggle, default=False):
+                _preview = _build_preview_geometry(
+                    Vertices,
+                    Edges,
+                    Meshes,
+                    auto_mesh_areas=_to_bool(_auto_mesh_areas, default=True),
+                )
+                PreviewPoints = list(_preview.get("points", []))
+                PreviewLines = list(_preview.get("lines", []))
+                PreviewMeshes = list(_preview.get("meshes", []))
+                PreviewGeometry = list(_preview.get("all", []))
+            else:
+                PreviewPoints = []
+                PreviewLines = []
+                PreviewMeshes = []
+                PreviewGeometry = []
+
             out = (
-                "Imported nodes: {}, edges: {}, meshes: {}, joints: {}"
+                "Imported nodes: {}, edges: {}, meshes: {}, area_mesh_geo: {}, joints: {}, segmented: {}, preview: {}"
             ).format(
                 len(_import_payload.get("nodes", [])),
                 len(_import_payload.get("edges", [])),
                 len(_import_payload.get("meshes", [])),
+                len(AreaLoadMeshes),
                 len(_import_payload.get("joints", [])),
+                int(_import_payload.get("metadata", {}).get("segmented_edge_count", 0)),
+                "on" if _to_bool(_preview_toggle, default=False) else "off",
             )
         except Exception as ex:
             out = "Import failed: {}".format(ex)
