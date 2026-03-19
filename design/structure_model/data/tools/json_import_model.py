@@ -86,8 +86,72 @@ def _first_point(*candidates: Any) -> Optional[Point]:
     return None
 
 
+def _line_endpoints_from_guid(guid_text: Any) -> Tuple[Optional[Point], Optional[Point]]:
+    """Resolve a Rhino curve GUID string to start/end points when available."""
+    if rg is None or guid_text in (None, ""):
+        return None, None
+
+    try:
+        import scriptcontext as sc  # type: ignore
+        import System  # type: ignore
+        import Rhino  # type: ignore
+    except Exception:
+        return None, None
+
+    try:
+        gid = System.Guid(str(guid_text))
+    except Exception:
+        return None, None
+
+    docs = []
+    try:
+        if getattr(sc, "doc", None) is not None:
+            docs.append(sc.doc)
+    except Exception:
+        pass
+
+    try:
+        active_doc = Rhino.RhinoDoc.ActiveDoc
+        if active_doc is not None and active_doc not in docs:
+            docs.append(active_doc)
+    except Exception:
+        pass
+
+    for doc in docs:
+        try:
+            obj = doc.Objects.FindId(gid)
+        except Exception:
+            obj = None
+        if obj is None:
+            continue
+
+        curve = None
+        try:
+            if hasattr(obj, "Geometry") and isinstance(obj.Geometry, rg.Curve):
+                curve = obj.Geometry
+        except Exception:
+            curve = None
+
+        if curve is None:
+            continue
+
+        try:
+            a = curve.PointAtStart
+            b = curve.PointAtEnd
+            return (float(a.X), float(a.Y), float(a.Z)), (float(b.X), float(b.Y), float(b.Z))
+        except Exception:
+            continue
+
+    return None, None
+
+
 def _line_start_end(line: Dict[str, Any]) -> Tuple[Optional[Point], Optional[Point]]:
     attrs = line.get("attributes") if isinstance(line.get("attributes"), dict) else {}
+    line_value = line.get("line")
+
+    nested_line_data = {}
+    if isinstance(line_value, dict):
+        nested_line_data = line_value.get("data") if isinstance(line_value.get("data"), dict) else {}
 
     start = _first_point(
         line.get("start"),
@@ -97,6 +161,8 @@ def _line_start_end(line: Dict[str, Any]) -> Tuple[Optional[Point], Optional[Poi
         line.get("start_point"),
         line.get("startPoint"),
         line.get("start_node"),
+        line_value.get("start") if isinstance(line_value, dict) else None,
+        nested_line_data.get("start"),
         attrs.get("start"),
         attrs.get("start_point"),
         attrs.get("start_node"),
@@ -110,10 +176,20 @@ def _line_start_end(line: Dict[str, Any]) -> Tuple[Optional[Point], Optional[Poi
         line.get("end_point"),
         line.get("endPoint"),
         line.get("end_node"),
+        line_value.get("end") if isinstance(line_value, dict) else None,
+        nested_line_data.get("end"),
         attrs.get("end"),
         attrs.get("end_point"),
         attrs.get("end_node"),
     )
+
+    # Compatibility path: some exporters store only the Rhino curve GUID in "line".
+    if (start is None or end is None) and isinstance(line_value, str):
+        guid_start, guid_end = _line_endpoints_from_guid(line_value)
+        if start is None:
+            start = guid_start
+        if end is None:
+            end = guid_end
 
     return start, end
 
