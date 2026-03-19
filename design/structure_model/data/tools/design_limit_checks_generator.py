@@ -37,15 +37,6 @@ FIRE_STANDARD_CHECKS: List[LimitCheckSpec] = [
 ]
 
 
-DEFAULT_DS_INDEX_SPECS: Dict[int, str] = {
-    1: "1-8",
-    2: "9-16",
-    3: "17-21",
-    4: "22",
-    5: "",
-}
-
-
 def _to_list(value: object) -> List[str]:
     """Normalize GH input (None/string/list) into a cleaned list of strings."""
     if value is None:
@@ -107,89 +98,6 @@ def _split_equation_bucket(value: str) -> List[str]:
     for token in [";", "\t"]:
         text = text.replace(token, "\n")
     return [part.strip() for part in text.split("\n") if part.strip()]
-
-
-def _parse_index_spec(spec: str) -> List[int]:
-    text = (spec or "").strip()
-    if not text:
-        return []
-
-    indices: List[int] = []
-    for chunk in text.replace(";", ",").split(","):
-        token = chunk.strip()
-        if not token:
-            continue
-        if "-" in token:
-            left, right = token.split("-", 1)
-            try:
-                start = int(left.strip())
-                end = int(right.strip())
-            except ValueError:
-                continue
-            if start <= 0 or end <= 0:
-                continue
-            if start <= end:
-                indices.extend(range(start, end + 1))
-            else:
-                indices.extend(range(end, start + 1))
-            continue
-        try:
-            idx = int(token)
-        except ValueError:
-            continue
-        if idx > 0:
-            indices.append(idx)
-    return indices
-
-
-def _parse_ds_order(ds_id: str) -> int | None:
-    digits = "".join(ch for ch in str(ds_id) if ch.isdigit())
-    if not digits:
-        return None
-    try:
-        return int(digits)
-    except ValueError:
-        return None
-
-
-def _rebuild_missing_ds_combo_equations(ds_ids: List[str]) -> List[str]:
-    """Fallback for GH definitions that don't wire DSComboEquations.
-
-    Reconstruct DS equation buckets from the canonical ULS_C1..ULS_C22 list.
-    This keeps Karamba's load input populated even when only DS metadata is wired.
-    """
-    try:
-        from design.structure_model.data.tools.uls_load_combination_generator import (
-            as_name_and_equation_lists,
-        )
-    except Exception:
-        try:
-            from uls_load_combination_generator import as_name_and_equation_lists
-        except Exception:
-            return ["" for _ in ds_ids]
-
-    try:
-        _, combo_equations = as_name_and_equation_lists()
-    except Exception:
-        return ["" for _ in ds_ids]
-
-    rebuilt: List[str] = []
-    for ds_id in ds_ids:
-        order = _parse_ds_order(ds_id)
-        if order is None:
-            rebuilt.append("")
-            continue
-
-        spec = DEFAULT_DS_INDEX_SPECS.get(order, "")
-        idxs = _parse_index_spec(spec)
-        if not idxs:
-            rebuilt.append("")
-            continue
-
-        selected = [combo_equations[i - 1] for i in idxs if 0 < i <= len(combo_equations)]
-        rebuilt.append("; ".join(selected) if selected else "")
-
-    return rebuilt
 
 
 def _norm(text: str) -> str:
@@ -258,10 +166,6 @@ def generate_design_limit_checks(
         combo_equations.extend([""] * (n - len(combo_equations)))
     if len(profiles) < n:
         profiles.extend([""] * (n - len(profiles)))
-
-    # Fallback path for GH definitions where DSComboEquations is not wired.
-    if n > 0 and not any((eq or "").strip() for eq in combo_equations):
-        combo_equations = _rebuild_missing_ds_combo_equations(ids)
 
     records: List[Dict[str, str]] = []
     for i in range(n):

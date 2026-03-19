@@ -38,101 +38,17 @@ def _normalize_compas_line_record(item: Dict[str, Any]) -> Dict[str, Any]:
     return normalized
 
 
-def _build_common_attributes(item: Dict[str, Any], dtype: Any, source_name: Any) -> Dict[str, Any]:
-    attributes: Dict[str, Any] = {}
-    if item.get("type") is not None:
-        attributes["type"] = item.get("type")
-    if dtype is not None:
-        attributes["dtype"] = dtype
-    if source_name is not None:
-        attributes["source_name"] = source_name
-    return attributes
-
-
-def _normalize_geometry_record(item: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
-    geometry = item.get("geometry") if isinstance(item.get("geometry"), dict) else {}
-    data = geometry.get("data")
-    dtype = str(geometry.get("dtype") or "")
-    dtype_lower = dtype.lower()
-    geometry_type = str(item.get("geometry_type") or "").lower()
-    guid = geometry.get("guid")
-    source_name = geometry.get("name")
-
-    attributes = _build_common_attributes(item, dtype if dtype else None, source_name)
-
-    out: Dict[str, List[Dict[str, Any]]] = {"lines": [], "points": [], "meshes": []}
-
-    if "line" in dtype_lower or geometry_type == "line":
-        if isinstance(data, dict) and data.get("start") is not None and data.get("end") is not None:
-            line_record: Dict[str, Any] = {
-                "start": data.get("start"),
-                "end": data.get("end"),
-                "attributes": attributes,
-            }
-            if guid is not None:
-                line_record["guid"] = guid
-            if source_name is not None:
-                line_record["id"] = str(source_name)
-            out["lines"].append(line_record)
-        return out
-
-    if "point" in dtype_lower:
-        point_record: Dict[str, Any] = {
-            "point": data,
-            "attributes": attributes,
-        }
-        if guid is not None:
-            point_record["guid"] = guid
-        if source_name is not None:
-            point_record["id"] = str(source_name)
-        out["points"].append(point_record)
-        return out
-
-    if any(token in dtype_lower for token in ("mesh", "surface", "brep")) or geometry_type in (
-        "mesh",
-        "surface",
-        "brep",
-        "face",
-        "area",
-        "panel",
-    ):
-        mesh_record: Dict[str, Any] = {
-            "geometry": data,
-            "attributes": attributes,
-        }
-        if guid is not None:
-            mesh_record["guid"] = guid
-        if source_name is not None:
-            mesh_record["id"] = str(source_name)
-        out["meshes"].append(mesh_record)
-        return out
-
-    return out
-
-
 def adapt_compas_line_model(payload: Any) -> Dict[str, Any]:
     if isinstance(payload, list):
         lines: List[Dict[str, Any]] = []
-        points: List[Dict[str, Any]] = []
-        meshes: List[Dict[str, Any]] = []
         for item in payload:
             if not isinstance(item, dict):
                 continue
             if isinstance(item.get("line"), dict):
                 lines.append(_normalize_compas_line_record(item))
-            elif isinstance(item.get("geometry"), dict):
-                normalized = _normalize_geometry_record(item)
-                lines.extend(normalized["lines"])
-                points.extend(normalized["points"])
-                meshes.extend(normalized["meshes"])
             else:
                 lines.append(item)
-        out: Dict[str, Any] = {"lines": lines}
-        if points:
-            out["points"] = points
-        if meshes:
-            out["meshes"] = meshes
-        return out
+        return {"lines": lines}
 
     if isinstance(payload, dict):
         if isinstance(payload.get("lines"), list):

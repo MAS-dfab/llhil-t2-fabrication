@@ -1,29 +1,17 @@
 # Minimal Input Cheat-Sheet (Exporter)
-# - GH input names: model (or Model), save (or Save), output_path (or OutputPath)
-#   - save: wire a GH Button → triggers JSON export to disk when True
-#   - output_path: wire a GH Panel with the full file path (e.g. .../Files_Out/out_model.json)
+# - GH input names: model (or Model)
 # - Function call: build_structure_export_json(model=...)
 # - Minimal runnable input: {}
 # - Minimal useful topology input:
 #   {"nodes": [{"id": "N1", "x": 0, "y": 0, "z": 0}, {"id": "N2", "x": 1, "y": 0, "z": 0}],
 #    "edges": [{"id": "E1", "start_node": "N1", "end_node": "N2"}]}
 # - GH outputs: ExportJson, MemberLines, AreaLoadMeshes, LinearLoadLines, PointLoadPoints,
-#   BoundaryPoints, JointNodes, GHLineCurves, GHNodes, GHLoadPoints, GHSurfaces, out
+#   BoundaryPoints, JointNodes, out
 from __future__ import annotations
 
 import argparse
 import json
-import os
-import traceback
-from typing import Any, Dict, List, Optional, Tuple
-
-try:
-    import Rhino.Geometry as rg  # type: ignore
-except Exception:  # pragma: no cover - Rhino is not available in CLI environments.
-    rg = None
-
-
-Point = Tuple[float, float, float]
+from typing import Any, Dict, List, Optional
 
 
 def _normalize_dict_list(value: Any) -> List[Dict[str, Any]]:
@@ -42,127 +30,6 @@ def _pick_list(payload: Dict[str, Any], *keys: str) -> List[Dict[str, Any]]:
         if items:
             return items
     return []
-
-
-def _as_point(value: Any) -> Optional[Point]:
-    if value is None:
-        return None
-
-    if isinstance(value, dict):
-        if all(axis in value for axis in ("x", "y", "z")):
-            try:
-                return (float(value["x"]), float(value["y"]), float(value["z"]))
-            except (TypeError, ValueError):
-                return None
-
-        for key in ("point", "xyz", "coords", "position"):
-            if key in value:
-                return _as_point(value[key])
-
-        return None
-
-    if isinstance(value, (list, tuple)) and len(value) >= 3:
-        try:
-            return (float(value[0]), float(value[1]), float(value[2]))
-        except (TypeError, ValueError):
-            return None
-
-    return None
-
-
-def _first_point(*candidates: Any) -> Optional[Point]:
-    for candidate in candidates:
-        point = _as_point(candidate)
-        if point is not None:
-            return point
-    return None
-
-
-def _node_point(node: Dict[str, Any]) -> Optional[Point]:
-    attrs = node.get("attributes") if isinstance(node.get("attributes"), dict) else {}
-    return _first_point(node, node.get("point"), attrs.get("point"), attrs.get("xyz"))
-
-
-def _line_start_end(edge: Dict[str, Any], node_by_id: Dict[str, Dict[str, Any]]) -> Tuple[Optional[Point], Optional[Point]]:
-    attrs = edge.get("attributes") if isinstance(edge.get("attributes"), dict) else {}
-    start_id = edge.get("start_node") or edge.get("u") or edge.get("from") or attrs.get("start_node")
-    end_id = edge.get("end_node") or edge.get("v") or edge.get("to") or attrs.get("end_node")
-
-    start_node = node_by_id.get(str(start_id)) if start_id not in (None, "") else None
-    end_node = node_by_id.get(str(end_id)) if end_id not in (None, "") else None
-    return _node_point(start_node or {}), _node_point(end_node or {})
-
-
-def _point_to_output(point: Point) -> Any:
-    if rg is None:
-        return point
-    return rg.Point3d(point[0], point[1], point[2])
-
-
-def _edge_to_output_curve(edge: Dict[str, Any], node_by_id: Dict[str, Dict[str, Any]]) -> Optional[Any]:
-    start, end = _line_start_end(edge, node_by_id)
-    if start is None or end is None:
-        return None
-    if rg is None:
-        return {"start": start, "end": end}
-    return rg.LineCurve(_point_to_output(start), _point_to_output(end))
-
-
-def _mesh_geometry_candidates(mesh: Dict[str, Any]) -> List[Any]:
-    return [
-        mesh.get("mesh"),
-        mesh.get("geometry"),
-        mesh.get("brep"),
-        mesh.get("surface"),
-    ]
-
-
-def _mesh_to_output_geometry(mesh: Dict[str, Any]) -> Optional[Any]:
-    vertices = mesh.get("vertices") if isinstance(mesh.get("vertices"), list) else None
-    faces = mesh.get("faces") if isinstance(mesh.get("faces"), list) else None
-
-    if rg is not None:
-        for candidate in _mesh_geometry_candidates(mesh):
-            if candidate is None:
-                continue
-            if isinstance(candidate, (rg.Mesh, rg.Brep, rg.Surface)):
-                return candidate
-            if hasattr(candidate, "ToBrep"):
-                try:
-                    return candidate.ToBrep()
-                except Exception:
-                    pass
-
-        if vertices and faces:
-            rh_mesh = rg.Mesh()
-            for vertex in vertices:
-                point = _as_point(vertex)
-                if point is None:
-                    continue
-                rh_mesh.Vertices.Add(point[0], point[1], point[2])
-
-            for face in faces:
-                if not isinstance(face, (list, tuple)):
-                    continue
-                indices = [int(value) for value in face[:4]]
-                if len(indices) == 3:
-                    rh_mesh.Faces.AddFace(indices[0], indices[1], indices[2])
-                elif len(indices) == 4:
-                    rh_mesh.Faces.AddFace(indices[0], indices[1], indices[2], indices[3])
-
-            if rh_mesh.Vertices.Count > 0 and rh_mesh.Faces.Count > 0:
-                rh_mesh.Normals.ComputeNormals()
-                rh_mesh.Compact()
-                return rh_mesh
-
-    for candidate in _mesh_geometry_candidates(mesh):
-        if candidate is not None:
-            return candidate
-
-    if vertices and faces:
-        return {"vertices": vertices, "faces": faces}
-
-    return None
 
 
 def _edge_or_node_guid(item: Dict[str, Any]) -> Optional[str]:
@@ -314,241 +181,6 @@ def _edge_node_ids(edge: Dict[str, Any], node_ids: List[str]) -> Optional[tuple[
         return None
 
     return start, end
-
-
-def _coerce_point3_like(value: Any) -> Optional[Point]:
-    if value is None:
-        return None
-    p = _as_point(value)
-    if p is not None:
-        return p
-    for keys in (("X", "Y", "Z"), ("x", "y", "z")):
-        if all(hasattr(value, k) for k in keys):
-            try:
-                return (float(getattr(value, keys[0])), float(getattr(value, keys[1])), float(getattr(value, keys[2])))
-            except Exception:
-                return None
-    return None
-
-
-def _unwrap_model_candidate(value: Any) -> Any:
-    def _extract_tree_items(tree_like: Any) -> List[Any]:
-        items: List[Any] = []
-        if tree_like is None:
-            return items
-
-        # Grasshopper DataTree/GH_Structure patterns.
-        if hasattr(tree_like, "DataCount") and hasattr(tree_like, "BranchCount"):
-            try:
-                branch_count = int(getattr(tree_like, "BranchCount"))
-            except Exception:
-                branch_count = 0
-            if branch_count > 0 and hasattr(tree_like, "Branch"):
-                for i in range(branch_count):
-                    try:
-                        branch = tree_like.Branch(i)
-                        items.extend(_iter_sequence_candidate(branch))
-                    except Exception:
-                        pass
-                if items:
-                    return items
-
-            if hasattr(tree_like, "AllData"):
-                try:
-                    data = tree_like.AllData()
-                    items.extend(_iter_sequence_candidate(data))
-                except Exception:
-                    pass
-                if items:
-                    return items
-
-        if hasattr(tree_like, "Branches"):
-            try:
-                for branch in _iter_sequence_candidate(getattr(tree_like, "Branches")):
-                    items.extend(_iter_sequence_candidate(branch))
-            except Exception:
-                pass
-        return items
-
-    current = value
-    for _ in range(6):
-        changed = False
-
-        tree_items = _extract_tree_items(current)
-        if len(tree_items) == 1:
-            current = tree_items[0]
-            changed = True
-        elif len(tree_items) > 1 and not isinstance(current, (list, tuple)):
-            current = tree_items
-            changed = True
-
-        if isinstance(current, (list, tuple)) and len(current) == 1:
-            current = current[0]
-            changed = True
-
-        # GH Goo wrappers often expose the payload as .Value
-        if hasattr(current, "Value"):
-            try:
-                maybe = getattr(current, "Value")
-                if maybe is not None and maybe is not current:
-                    current = maybe
-                    changed = True
-            except Exception:
-                pass
-
-        # Some wrappers expose ScriptVariable() to provide the runtime value.
-        if hasattr(current, "ScriptVariable"):
-            try:
-                maybe = current.ScriptVariable()
-                if maybe is not None and maybe is not current:
-                    current = maybe
-                    changed = True
-            except Exception:
-                pass
-
-        if not changed:
-            break
-    return current
-
-
-def _iter_sequence_candidate(value: Any) -> List[Any]:
-    if value is None:
-        return []
-    if isinstance(value, (list, tuple)):
-        return list(value)
-    try:
-        return list(value)
-    except Exception:
-        return []
-
-
-def _coerce_model_to_payload(model_input: Any) -> Tuple[Optional[Dict[str, Any]], str]:
-    raw = _unwrap_model_candidate(model_input)
-
-    if isinstance(raw, dict):
-        return raw, "dict"
-
-    if isinstance(raw, (list, tuple)) and raw:
-        # Common GH tree/list case: one payload object packed in a branch list.
-        if len(raw) == 1:
-            return _coerce_model_to_payload(raw[0])
-        # If a dict payload exists in the list, prefer it.
-        for item in raw:
-            if isinstance(item, dict):
-                return item, "dict-from-list"
-
-    if isinstance(raw, str):
-        text = raw.strip()
-        if text.startswith("{") and text.endswith("}"):
-            try:
-                parsed = json.loads(text)
-                if isinstance(parsed, dict):
-                    return parsed, "json-string"
-            except Exception:
-                pass
-
-    # Try generic Karamba-like object conversion: nodes + elements/shells.
-    node_source = None
-    for key in ("nodes", "Nodes"):
-        if hasattr(raw, key):
-            node_source = getattr(raw, key)
-            break
-
-    elem_source = None
-    for key in ("elems", "Elems", "elements", "Elements"):
-        if hasattr(raw, key):
-            elem_source = getattr(raw, key)
-            break
-
-    nodes_seq = _iter_sequence_candidate(node_source)
-    elems_seq = _iter_sequence_candidate(elem_source)
-    if not nodes_seq:
-        return None, "unsupported-model-type:{}".format(type(raw).__name__)
-
-    nodes: List[Dict[str, Any]] = []
-    node_ids: List[str] = []
-    for i, node in enumerate(nodes_seq):
-        point = _coerce_point3_like(node)
-        if point is None:
-            # try common node-position properties
-            for pos_key in ("pos", "Pos", "point", "Point"):
-                if hasattr(node, pos_key):
-                    point = _coerce_point3_like(getattr(node, pos_key))
-                    if point is not None:
-                        break
-        if point is None:
-            continue
-        node_id = "N{}".format(i + 1)
-        node_ids.append(node_id)
-        nodes.append({"id": node_id, "x": point[0], "y": point[1], "z": point[2]})
-
-    if not nodes:
-        return None, "unsupported-node-layout:{}".format(type(raw).__name__)
-
-    edges: List[Dict[str, Any]] = []
-    shell_faces: List[List[int]] = []
-    for e_i, elem in enumerate(elems_seq):
-        node_inds = None
-        for key in (
-            "node_inds",
-            "nodeInds",
-            "NodeInds",
-            "node_indices",
-            "nodeIndices",
-            "NodeIndices",
-            "node_ind",
-            "nodeInd",
-            "NodeInd",
-            "ind",
-            "Ind",
-        ):
-            if hasattr(elem, key):
-                try:
-                    raw_inds = getattr(elem, key)
-                    if callable(raw_inds):
-                        raw_inds = raw_inds()
-                    node_inds = list(raw_inds)
-                    break
-                except Exception:
-                    pass
-        if not node_inds:
-            continue
-
-        try:
-            idx = [int(v) for v in node_inds]
-        except Exception:
-            continue
-
-        # Beam-like: use first and last node as line connectivity.
-        if len(idx) >= 2:
-            a = idx[0]
-            b = idx[-1]
-            if 0 <= a < len(node_ids) and 0 <= b < len(node_ids) and a != b:
-                edges.append({"id": "E{}".format(len(edges) + 1), "start_node": node_ids[a], "end_node": node_ids[b]})
-
-        # Shell-like: triangulate polygonal faces for stable Rhino mesh reconstruction.
-        if len(idx) >= 3:
-            face = [j for j in idx if 0 <= j < len(node_ids)]
-            if len(face) >= 3:
-                anchor = face[0]
-                for k in range(1, len(face) - 1):
-                    tri = [anchor, face[k], face[k + 1]]
-                    if len(set(tri)) == 3:
-                        shell_faces.append(tri)
-
-    meshes: List[Dict[str, Any]] = []
-    if shell_faces:
-        used_node_indices = sorted({index for face in shell_faces for index in face})
-        remap = {old_i: new_i for new_i, old_i in enumerate(used_node_indices)}
-
-        vertices = [[nodes[i]["x"], nodes[i]["y"], nodes[i]["z"]] for i in used_node_indices]
-        faces = [[remap[i] for i in face] for face in shell_faces]
-        meshes.append({"id": "M1", "vertices": vertices, "faces": faces})
-
-    payload: Dict[str, Any] = {"nodes": nodes, "edges": edges}
-    if meshes:
-        payload["meshes"] = meshes
-    return payload, "coerced-{}".format(type(raw).__name__)
 
 
 def build_structure_export_json(
@@ -743,47 +375,10 @@ def build_structure_export_json(
     }
 
 
-def as_output_lists(model: Dict[str, Any]) -> Dict[str, List[Any]]:
-    """Return GH-friendly validation and preview geometry lists from the export payload."""
+def as_output_lists(model: Dict[str, Any]) -> Dict[str, List[str]]:
+    """Return GH-friendly validation lists from the normalized export payload."""
     payload = build_structure_export_json(model)
     lists = payload.get("output_lists", {})
-    nodes = _pick_list(payload, "nodes")
-    edges = _pick_list(payload, "edges")
-    meshes = _pick_list(payload, "meshes")
-    node_by_id: Dict[str, Dict[str, Any]] = {str(node.get("id")): node for node in nodes if node.get("id") not in (None, "")}
-    boundary_point_ids = [str(node_id) for node_id in list(lists.get("boundary_points", []))]
-    point_load_ids = [str(node_id) for node_id in list(lists.get("point_load_points", []))]
-
-    gh_nodes: List[Any] = []
-    for node_id in boundary_point_ids:
-        node = node_by_id.get(node_id)
-        if not isinstance(node, dict):
-            continue
-        point = _node_point(node)
-        if point is not None:
-            gh_nodes.append(_point_to_output(point))
-
-    gh_load_points: List[Any] = []
-    for node_id in point_load_ids:
-        node = node_by_id.get(node_id)
-        if not isinstance(node, dict):
-            continue
-        point = _node_point(node)
-        if point is not None:
-            gh_load_points.append(_point_to_output(point))
-
-    gh_line_curves: List[Any] = []
-    for edge in edges:
-        curve = _edge_to_output_curve(edge, node_by_id)
-        if curve is not None:
-            gh_line_curves.append(curve)
-
-    gh_surfaces: List[Any] = []
-    for mesh in meshes:
-        geometry = _mesh_to_output_geometry(mesh)
-        if geometry is not None:
-            gh_surfaces.append(geometry)
-
     return {
         "MemberLines": list(lists.get("member_lines", [])),
         "AreaLoadMeshes": list(lists.get("area_load_meshes", [])),
@@ -791,10 +386,6 @@ def as_output_lists(model: Dict[str, Any]) -> Dict[str, List[Any]]:
         "PointLoadPoints": list(lists.get("point_load_points", [])),
         "BoundaryPoints": list(lists.get("boundary_points", [])),
         "JointNodes": list(lists.get("joint_nodes", [])),
-        "GHLineCurves": gh_line_curves,
-        "GHNodes": gh_nodes,
-        "GHLoadPoints": gh_load_points,
-        "GHSurfaces": gh_surfaces,
     }
 
 
@@ -807,35 +398,8 @@ def _read_json(path: str) -> Dict[str, Any]:
 
 
 def _write_json(path: str, payload: Dict[str, Any]) -> None:
-    parent = os.path.dirname(path)
-    if parent:
-        os.makedirs(parent, exist_ok=True)
     with open(path, "w", encoding="utf-8") as stream:
         json.dump(payload, stream, indent=2)
-
-
-def _resolve_output_file_path(path: str) -> str:
-    cleaned = str(path).replace("\r", "").replace("\n", "").strip().strip('"').strip("'")
-    normalized = os.path.abspath(cleaned)
-    if normalized.lower().endswith(".json"):
-        return normalized
-    if os.path.isdir(normalized) or normalized.endswith(("\\", "/")):
-        return os.path.join(normalized, "out_model.json")
-    return normalized + ".json"
-
-
-def _coerce_bool(value: Any) -> bool:
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, (int, float)):
-        return value != 0
-    if isinstance(value, str):
-        text = value.strip().lower()
-        if text in ("", "0", "false", "no", "off", "none", "null"):
-            return False
-        if text in ("1", "true", "yes", "on"):
-            return True
-    return bool(value)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -857,75 +421,27 @@ def main() -> None:
 
 # GH Py3 auto-run block: input `model` (or `Model`) -> JSON payload + validation lists.
 _g = globals()
-try:
-    if "model" in _g or "Model" in _g:
-        _model_input = _g.get("model", _g.get("Model"))
-        _save_flag = _coerce_bool(_g.get("save", _g.get("Save", False)))
-        _out_path_raw = _g.get("output_path", _g.get("OutputPath", _g.get("file_path", _g.get("FilePath"))))
-        _out_path = str(_out_path_raw).strip() if _out_path_raw not in (None, "") else ""
-        _payload_input, _payload_source = _coerce_model_to_payload(_model_input)
-        _input_type = type(_model_input).__name__
-
-        if isinstance(_payload_input, dict):
-            ExportJson = build_structure_export_json(model=_payload_input)
-            _lists = as_output_lists(_payload_input)
-            MemberLines = _lists["MemberLines"]
-            AreaLoadMeshes = _lists["AreaLoadMeshes"]
-            LinearLoadLines = _lists["LinearLoadLines"]
-            PointLoadPoints = _lists["PointLoadPoints"]
-            BoundaryPoints = _lists["BoundaryPoints"]
-            JointNodes = _lists["JointNodes"]
-            GHLineCurves = _lists["GHLineCurves"]
-            GHNodes = _lists["GHNodes"]
-            GHLoadPoints = _lists["GHLoadPoints"]
-            GHSurfaces = _lists["GHSurfaces"]
-            out = (
-                "Exported nodes: {}, edges: {}, meshes: {}, member_breps: {}, joints: {}, gh_lines: {}, gh_nodes: {}, gh_load_points: {}, gh_surfaces: {}"
-            ).format(
-                len(ExportJson.get("nodes", [])),
-                len(ExportJson.get("edges", [])),
-                len(ExportJson.get("meshes", [])),
-                len(ExportJson.get("member_breps", [])),
-                len(ExportJson.get("joints", [])),
-                len(GHLineCurves),
-                len(GHNodes),
-                len(GHLoadPoints),
-                len(GHSurfaces),
-            )
-            _mesh_face_count = 0
-            _mesh_vertex_count = 0
-            for _m in list(ExportJson.get("meshes", [])):
-                if not isinstance(_m, dict):
-                    continue
-                _mesh_vertex_count += len(_m.get("vertices", [])) if isinstance(_m.get("vertices"), list) else 0
-                _mesh_face_count += len(_m.get("faces", [])) if isinstance(_m.get("faces"), list) else 0
-            out += "\nMesh topology: vertices={}, faces={}".format(_mesh_vertex_count, _mesh_face_count)
-            out += "\nInput type: {}".format(_input_type)
-            out += "\nPayload source: {}".format(_payload_source)
-            if _save_flag:
-                if _out_path:
-                    try:
-                        _resolved_path = _resolve_output_file_path(_out_path)
-                        _write_json(_resolved_path, ExportJson)
-                        out += "\nSaved -> {}".format(_resolved_path)
-                    except Exception as _e:
-                        out += "\nSave FAILED: {}".format(_e)
-                else:
-                    out += "\nSave triggered - no output_path wired."
-            else:
-                out += "\nSave not triggered (set save=True or click Button)."
-        else:
-            out = "Model input could not be coerced to payload (got {}).".format(type(_model_input).__name__)
-            if _save_flag:
-                out += " Save ignored because export payload was not built."
-            if _out_path:
-                out += " output_path='{}'".format(_out_path)
-            out += " payload_source='{}'".format(_payload_source)
-    else:
-        out = "No model input detected. Wire Karamba model to 'model' (or 'Model')."
-except Exception as _runtime_error:
-    out = "Runtime error: {}\n{}".format(_runtime_error, traceback.format_exc())
+if "model" in _g or "Model" in _g:
+    _model_input = _g.get("model", _g.get("Model"))
+    if isinstance(_model_input, dict):
+        ExportJson = build_structure_export_json(model=_model_input)
+        _lists = as_output_lists(_model_input)
+        MemberLines = _lists["MemberLines"]
+        AreaLoadMeshes = _lists["AreaLoadMeshes"]
+        LinearLoadLines = _lists["LinearLoadLines"]
+        PointLoadPoints = _lists["PointLoadPoints"]
+        BoundaryPoints = _lists["BoundaryPoints"]
+        JointNodes = _lists["JointNodes"]
+        out = (
+            "Exported nodes: {}, edges: {}, meshes: {}, member_breps: {}, joints: {}"
+        ).format(
+            len(ExportJson.get("nodes", [])),
+            len(ExportJson.get("edges", [])),
+            len(ExportJson.get("meshes", [])),
+            len(ExportJson.get("member_breps", [])),
+            len(ExportJson.get("joints", [])),
+        )
 
 
-if __name__ == "__main__" and "model" not in globals() and "Model" not in globals():
+if __name__ == "__main__":
     main()

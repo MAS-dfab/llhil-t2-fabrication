@@ -125,89 +125,6 @@ def _merge_terms(*term_maps: TermMap) -> TermMap:
     return merged
 
 
-def _normalize_mode(mode: object) -> str:
-    if mode is None:
-        return "exact_listed"
-
-    if isinstance(mode, bool):
-        return "llf_llrf_driven" if mode else "exact_listed"
-
-    if isinstance(mode, (int, float)):
-        return "llf_llrf_driven" if float(mode) != 0.0 else "exact_listed"
-
-    text = str(mode).strip().strip('"\'').lower().replace("-", "_").replace(" ", "_")
-    compact = text.replace("_", "")
-    aliases = {
-        "exact": "exact_listed",
-        "listed": "exact_listed",
-        "exact_listed": "exact_listed",
-        "ulsmode": "exact_listed",
-        "mode": "exact_listed",
-        "false": "exact_listed",
-        "0": "exact_listed",
-        "off": "exact_listed",
-        "llf": "llf_llrf_driven",
-        "ll": "llf_llrf_driven",
-        "ll_driven": "llf_llrf_driven",
-        "ll_driven_mode": "llf_llrf_driven",
-        "llf_driven": "llf_llrf_driven",
-        "llf_llrf": "llf_llrf_driven",
-        "llf_llrf_driven": "llf_llrf_driven",
-        "true": "llf_llrf_driven",
-        "1": "llf_llrf_driven",
-        "on": "llf_llrf_driven",
-        "llfdriven": "llf_llrf_driven",
-        "use_llf_mode": "llf_llrf_driven",
-        "usellfmode": "llf_llrf_driven",
-    }
-    if text in aliases:
-        return aliases[text]
-    if compact in aliases:
-        return aliases[compact]
-
-    # Fuzzy fallback for ad-hoc labels containing both keywords.
-    if "llf" in compact and "driven" in compact:
-        return "llf_llrf_driven"
-
-    return "exact_listed"
-
-
-def _resolve_mode_from_globals(globals_dict: Dict[str, object]) -> str:
-    """Resolve mode from GH inputs, preferring any LLF-driven signal.
-
-    This avoids a common GH wiring issue where one port still emits an
-    exact-mode label (for example "ULSMode") while another emits
-    "LLFDriven".
-    """
-    candidates = [
-        "mode",
-        "Mode",
-        "ll_driven",
-        "LLDriven",
-        "llf_driven",
-        "LLFDriven",
-        "UseLLMode",
-        "UseLLFMode",
-        "ULSMode",
-    ]
-
-    normalized_values: List[str] = []
-    for key in candidates:
-        if key not in globals_dict:
-            continue
-        value = globals_dict.get(key)
-        if value is None:
-            continue
-        normalized_values.append(_normalize_mode(value))
-
-    # Any explicit LLF-driven signal wins.
-    if any(mode_value == "llf_llrf_driven" for mode_value in normalized_values):
-        return "llf_llrf_driven"
-
-    # Otherwise use exact-listed as safe default.
-    return "exact_listed"
-
-
 def _format_expression(terms: TermMap) -> str:
     def lc_sort_key(item: Tuple[str, float]) -> int:
         name = item[0]
@@ -224,7 +141,6 @@ def generate_uls_combinations(
     designators: LoadDesignators | None = None,
     loads: object = None,
     combo_prefix: str = "ULS_C",
-    mode: str = "exact_listed",
 ) -> List[Dict[str, object]]:
     """Generate load combinations named ULS_C1..ULS_C22.
 
@@ -234,11 +150,7 @@ def generate_uls_combinations(
         factors: Numeric factors (defaults match your screenshot values).
         designators: Optional load designators for dead/live/wind/snow labels.
         loads: Optional load designator input (list/dict) from GH.
-                combo_prefix: Prefix for the combination names, default "ULS_C".
-                mode: Combination generation mode:
-                        - "exact_listed": matches the fixed ULS_C1..ULS_C22 list exactly.
-                        - "llf_llrf_driven": keeps the same list structure but uses LLF for
-                            non-roof cases and LLF_rf for roof/snow-including cases.
+        combo_prefix: Prefix for the combination names, default "ULS_C".
 
     Returns:
         List of dicts with keys: name, terms, expression.
@@ -246,48 +158,50 @@ def generate_uls_combinations(
     f = factors or LoadFactors()
     base_designators = designators or LoadDesignators()
     d = _resolve_designators_from_loads(loads, base_designators)
-    selected_mode = _normalize_mode(mode)
 
-    if selected_mode == "llf_llrf_driven":
-        base_uls = {d.DL_T: f.DLF, d.DL_FD: f.DLF, d.LL: f.LLF}
-        base_uls_rf = {d.DL_T: f.DLF, d.DL_FD: f.DLF, d.LL: f.LLF_rf}
-        base_clf = {d.DL_T: f.CLF, d.DL_FD: f.CLF, d.LL: f.LLF}
-        base_clf_rf = {d.DL_T: f.CLF, d.DL_FD: f.CLF, d.LL: f.LLF_rf}
-    else:
-        base_uls = {d.DL_T: f.DLF, d.DL_FD: f.DLF, d.LL: f.DLF}
-        base_uls_rf = dict(base_uls)
-        base_clf = {d.DL_T: f.CLF, d.DL_FD: f.CLF, d.LL: f.CLF}
-        base_clf_rf = dict(base_clf)
+    base_uls = {
+        d.DL_T: f.DLF,
+        d.DL_FD: f.DLF,
+        d.LL: f.DLF,
+    }
+    base_sr = {
+        d.DL_T: f.CLF,
+        d.DL_FD: f.CLF,
+        d.LL: f.CLF,
+    }
+    winds = [d.WL_X, d.WL_Y]
 
-    base_1 = {d.DL_T: 1.0, d.DL_FD: 1.0, d.LL: 1.0}
+    combinations: List[TermMap] = []
 
-    combinations: List[TermMap] = [
-        # ULS_C1 .. ULS_C8
-        _merge_terms(base_uls),
-        _merge_terms(base_uls, {d.WL_X: f.WLF_1}),
-        _merge_terms(base_uls, {d.WL_Y: f.WLF_1}),
-        _merge_terms(base_uls_rf, {d.WL_X: f.WLF_1, d.SL: f.SLF_1}),
-        _merge_terms(base_uls_rf, {d.WL_Y: f.WLF_1, d.SL: f.SLF_1}),
-        _merge_terms(base_uls_rf, {d.SL: f.SLF_2}),
-        _merge_terms(base_uls_rf, {d.WL_X: f.WLF_4, d.SL: f.SLF_2}),
-        _merge_terms(base_uls_rf, {d.WL_Y: f.WLF_4, d.SL: f.SLF_2}),
-        # ULS_C9 .. ULS_C16
-        _merge_terms(base_clf),
-        _merge_terms(base_clf, {d.WL_X: f.WLF_2}),
-        _merge_terms(base_clf, {d.WL_Y: f.WLF_2}),
-        _merge_terms(base_clf_rf, {d.WL_X: f.WLF_2, d.SL: f.SLF_1}),
-        _merge_terms(base_clf_rf, {d.WL_Y: f.WLF_2, d.SL: f.SLF_1}),
-        _merge_terms(base_clf_rf, {d.SL: f.SLF_3}),
-        _merge_terms(base_clf_rf, {d.WL_X: f.WLF_4, d.SL: f.SLF_3}),
-        _merge_terms(base_clf_rf, {d.WL_Y: f.WLF_4, d.SL: f.SLF_3}),
-        # ULS_C17 .. ULS_C22
-        _merge_terms(base_clf),
-        _merge_terms(base_clf, {d.WL_X: f.WLF_5}),
-        _merge_terms(base_clf, {d.WL_Y: f.WLF_5}),
-        _merge_terms(base_clf_rf, {d.SL: f.SLF_4}),
-        _merge_terms(base_clf),
-        _merge_terms(base_1),
-    ]
+    # C1..C8 family
+    combinations.append(_merge_terms(base_uls))
+    for wind in winds:
+        combinations.append(_merge_terms(base_uls, {wind: f.WLF_1}))
+    for wind in winds:
+        combinations.append(_merge_terms(base_uls, {wind: f.WLF_1, d.SL: f.WLF_3}))
+    combinations.append(_merge_terms(base_uls, {d.SL: f.WLF_1}))
+    for wind in winds:
+        combinations.append(_merge_terms(base_uls, {wind: f.WLF_4, d.SL: f.WLF_1}))
+
+    # C9..C16 family
+    combinations.append(_merge_terms(base_sr))
+    for wind in winds:
+        combinations.append(_merge_terms(base_sr, {wind: f.WLF_2}))
+    for wind in winds:
+        combinations.append(_merge_terms(base_sr, {wind: f.WLF_2, d.SL: f.SLF_1}))
+    combinations.append(_merge_terms(base_sr, {d.SL: f.SLF_3}))
+    for wind in winds:
+        combinations.append(_merge_terms(base_sr, {wind: f.WLF_4, d.SL: f.SLF_3}))
+
+    # C17..C21 family
+    combinations.append(_merge_terms(base_sr))
+    for wind in winds:
+        combinations.append(_merge_terms(base_sr, {wind: f.WLF_5}))
+    combinations.append(_merge_terms(base_sr, {d.SL: f.SLF_4}))
+    combinations.append(_merge_terms(base_sr))
+
+    # C22 fallback/base
+    combinations.append({d.DL_T: 1.0, d.DL_FD: 1.0, d.LL: 1.0})
 
     result: List[Dict[str, object]] = []
     for idx, terms in enumerate(combinations, start=1):
@@ -307,7 +221,6 @@ def as_expression_list(
     designators: LoadDesignators | None = None,
     loads: object = None,
     combo_prefix: str = "ULS_C",
-    mode: str = "exact_listed",
 ) -> List[str]:
     """Convenience output: ['ULS_C1 = ...', 'ULS_C2 = ...', ...]."""
     combos = generate_uls_combinations(
@@ -315,7 +228,6 @@ def as_expression_list(
         designators=designators,
         loads=loads,
         combo_prefix=combo_prefix,
-        mode=mode,
     )
     return [f"{combo['name']} = {combo['expression']}" for combo in combos]
 
@@ -325,7 +237,6 @@ def as_rfem_rows(
     designators: LoadDesignators | None = None,
     loads: object = None,
     combo_prefix: str = "ULS_C",
-    mode: str = "exact_listed",
 ) -> List[List[str]]:
     """RFEM-friendly rows: [[name, expression], ...]."""
     combos = generate_uls_combinations(
@@ -333,7 +244,6 @@ def as_rfem_rows(
         designators=designators,
         loads=loads,
         combo_prefix=combo_prefix,
-        mode=mode,
     )
     return [[str(combo["name"]), str(combo["expression"])] for combo in combos]
 
@@ -343,7 +253,6 @@ def as_rfem_records(
     designators: LoadDesignators | None = None,
     loads: object = None,
     combo_prefix: str = "ULS_C",
-    mode: str = "exact_listed",
 ) -> List[Dict[str, str]]:
     """RFEM-friendly records: [{"name": ..., "equation": ...}, ...]."""
     combos = generate_uls_combinations(
@@ -351,7 +260,6 @@ def as_rfem_records(
         designators=designators,
         loads=loads,
         combo_prefix=combo_prefix,
-        mode=mode,
     )
     return [
         {
@@ -367,7 +275,6 @@ def as_name_and_equation_lists(
     designators: LoadDesignators | None = None,
     loads: object = None,
     combo_prefix: str = "ULS_C",
-    mode: str = "exact_listed",
 ) -> Tuple[List[str], List[str]]:
     """Return two parallel outputs: ComboNames and ComboEquations."""
     combos = generate_uls_combinations(
@@ -375,7 +282,6 @@ def as_name_and_equation_lists(
         designators=designators,
         loads=loads,
         combo_prefix=combo_prefix,
-        mode=mode,
     )
     combo_names = [str(combo["name"]) for combo in combos]
     combo_equations = [str(combo["expression"]) for combo in combos]
@@ -438,7 +344,6 @@ def slider_inputs_to_name_and_equation_lists(
     loads: object = None,
     designators: LoadDesignators | None = None,
     combo_prefix: str = "ULS_C",
-    mode: str = "exact_listed",
 ) -> Tuple[List[str], List[str]]:
     """One-call GH adapter: slider inputs -> (ComboNames, ComboEquations)."""
     factors = factors_from_slider_inputs(
@@ -462,7 +367,6 @@ def slider_inputs_to_name_and_equation_lists(
         designators=designators,
         loads=loads,
         combo_prefix=combo_prefix,
-        mode=mode,
     )
 
 
@@ -485,7 +389,6 @@ try:
         SLF_3=_g.get("SLF_3"),
         SLF_4=_g.get("SLF_4"),
         loads=_g.get("Loads"),
-        mode=_resolve_mode_from_globals(_g),
     )
 except NameError:
     # Not running inside GH component inputs; keep module import-safe.
