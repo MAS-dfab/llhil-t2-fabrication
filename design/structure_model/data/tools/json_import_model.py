@@ -336,8 +336,52 @@ def _lookup_guid_map(guid_map: Dict[str, str], guid: Any) -> Optional[str]:
     return None
 
 
+def _flatten_proxy_items(value: Any) -> List[Any]:
+    """Flatten common GH/Python container inputs into scalar/dict proxy items."""
+    if value is None:
+        return []
+
+    flat: List[Any] = []
+    queue: List[Any] = [value]
+
+    while queue:
+        current = queue.pop(0)
+        if current is None:
+            continue
+
+        if isinstance(current, (str, bytes, dict)):
+            flat.append(current)
+            continue
+
+        if isinstance(current, (list, tuple, set)):
+            queue.extend(list(current))
+            continue
+
+        # GH DataTree style path.
+        if hasattr(current, "AllData"):
+            try:
+                queue.extend(list(current.AllData()))
+                continue
+            except Exception:
+                pass
+
+        # Generic iterable path (e.g. .NET lists of Guid).
+        try:
+            seq = list(current)
+        except Exception:
+            flat.append(current)
+            continue
+
+        if seq:
+            queue.extend(seq)
+        else:
+            flat.append(current)
+
+    return flat
+
+
 def _resolve_filtered_node_ids(
-    value: Any, guid_map: Dict[str, str]
+    value: Any, guid_map: Dict[str, str], valid_ids: Optional[List[str]] = None
 ) -> Optional[List[str]]:
     """Resolve a GUID proxy input to a filtered list of node IDs.
 
@@ -361,28 +405,40 @@ def _resolve_filtered_node_ids(
                 node_ids.append(resolved)
         return _unique_str_list(node_ids) if node_ids else None
 
-    if isinstance(value, (list, tuple)):
-        for item in value:
-            if isinstance(item, str) and item:
-                resolved = _lookup_guid_map(guid_map, item)
-                if resolved:
-                    node_ids.append(resolved)
-            elif isinstance(item, dict):
-                guid = item.get("guid") or item.get("proxy_guid")
-                node_id = item.get("id") or item.get("target_id") or item.get("node_id")
-                if node_id not in (None, ""):
-                    node_ids.append(str(node_id))
-                else:
-                    resolved = _lookup_guid_map(guid_map, guid)
-                    if resolved:
-                        node_ids.append(resolved)
-        return _unique_str_list(node_ids) if node_ids else None
+    valid_id_set = set(valid_ids or [])
+    for item in _flatten_proxy_items(value):
+        if isinstance(item, dict):
+            guid = item.get("guid") or item.get("proxy_guid")
+            node_id = item.get("id") or item.get("target_id") or item.get("node_id")
+            if node_id not in (None, ""):
+                node_ids.append(str(node_id))
+                continue
+
+            resolved = _lookup_guid_map(guid_map, guid)
+            if resolved:
+                node_ids.append(resolved)
+            continue
+
+        token = str(item).strip()
+        if not token:
+            continue
+
+        resolved = _lookup_guid_map(guid_map, token)
+        if resolved:
+            node_ids.append(resolved)
+            continue
+
+        # Accept direct node IDs passed through the proxy input.
+        if token in valid_id_set:
+            node_ids.append(token)
+
+    return _unique_str_list(node_ids) if node_ids else None
 
     return None
 
 
 def _resolve_filtered_edge_ids(
-    value: Any, guid_map: Dict[str, str]
+    value: Any, guid_map: Dict[str, str], valid_ids: Optional[List[str]] = None
 ) -> Optional[List[str]]:
     if value is None:
         return None
@@ -398,22 +454,34 @@ def _resolve_filtered_edge_ids(
                 edge_ids.append(resolved)
         return _unique_str_list(edge_ids) if edge_ids else None
 
-    if isinstance(value, (list, tuple)):
-        for item in value:
-            if isinstance(item, str) and item:
-                resolved = _lookup_guid_map(guid_map, item)
-                if resolved:
-                    edge_ids.append(resolved)
-            elif isinstance(item, dict):
-                guid = item.get("guid") or item.get("proxy_guid")
-                edge_id = item.get("id") or item.get("target_id") or item.get("edge_id") or item.get("line_id")
-                if edge_id not in (None, ""):
-                    edge_ids.append(str(edge_id))
-                else:
-                    resolved = _lookup_guid_map(guid_map, guid)
-                    if resolved:
-                        edge_ids.append(resolved)
-        return _unique_str_list(edge_ids) if edge_ids else None
+    valid_id_set = set(valid_ids or [])
+    for item in _flatten_proxy_items(value):
+        if isinstance(item, dict):
+            guid = item.get("guid") or item.get("proxy_guid")
+            edge_id = item.get("id") or item.get("target_id") or item.get("edge_id") or item.get("line_id")
+            if edge_id not in (None, ""):
+                edge_ids.append(str(edge_id))
+                continue
+
+            resolved = _lookup_guid_map(guid_map, guid)
+            if resolved:
+                edge_ids.append(resolved)
+            continue
+
+        token = str(item).strip()
+        if not token:
+            continue
+
+        resolved = _lookup_guid_map(guid_map, token)
+        if resolved:
+            edge_ids.append(resolved)
+            continue
+
+        # Accept direct edge IDs passed through the proxy input.
+        if token in valid_id_set:
+            edge_ids.append(token)
+
+    return _unique_str_list(edge_ids) if edge_ids else None
 
     return None
 
@@ -446,7 +514,7 @@ def _proxy_input_count(value: Any) -> int:
     if isinstance(value, dict):
         return sum(1 for key in value.keys() if key not in (None, ""))
 
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, (list, tuple, set)):
         count = 0
         for item in value:
             if isinstance(item, str) and item.strip():
@@ -454,6 +522,25 @@ def _proxy_input_count(value: Any) -> int:
             elif isinstance(item, dict):
                 guid = item.get("guid") or item.get("proxy_guid")
                 if guid not in (None, ""):
+                    count += 1
+        return count
+
+    # Generic GH/.NET iterable fallback.
+    try:
+        flattened = _flatten_proxy_items(value)
+    except Exception:
+        flattened = []
+
+    if flattened:
+        count = 0
+        for item in flattened:
+            if isinstance(item, dict):
+                guid = item.get("guid") or item.get("proxy_guid")
+                if guid not in (None, ""):
+                    count += 1
+            else:
+                token = str(item).strip()
+                if token:
                     count += 1
         return count
 
@@ -1050,9 +1137,9 @@ def import_line_model_json(
     joint_node_ids = _unique_str_list([joint["node_id"] for joint in joint_records])
 
     # Resolve explicitly tagged GUID inputs to filtered node ID lists.
-    _ll_ids = _resolve_filtered_edge_ids(curve_guid_proxies, curve_guid_proxy)
-    _pl_ids = _resolve_filtered_node_ids(point_load_guid_proxies, point_guid_proxy)
-    _bp_ids = _resolve_filtered_node_ids(boundary_guid_proxies, point_guid_proxy)
+    _ll_ids = _resolve_filtered_edge_ids(curve_guid_proxies, curve_guid_proxy, valid_ids=member_line_ids)
+    _pl_ids = _resolve_filtered_node_ids(point_load_guid_proxies, point_guid_proxy, valid_ids=point_ids)
+    _bp_ids = _resolve_filtered_node_ids(boundary_guid_proxies, point_guid_proxy, valid_ids=point_ids)
 
     # Never default linear load lines to all members.
     linear_load_lines = _ll_ids if _ll_ids is not None else []
