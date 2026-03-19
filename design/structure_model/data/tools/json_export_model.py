@@ -332,9 +332,55 @@ def _coerce_point3_like(value: Any) -> Optional[Point]:
 
 
 def _unwrap_model_candidate(value: Any) -> Any:
+    def _extract_tree_items(tree_like: Any) -> List[Any]:
+        items: List[Any] = []
+        if tree_like is None:
+            return items
+
+        # Grasshopper DataTree/GH_Structure patterns.
+        if hasattr(tree_like, "DataCount") and hasattr(tree_like, "BranchCount"):
+            try:
+                branch_count = int(getattr(tree_like, "BranchCount"))
+            except Exception:
+                branch_count = 0
+            if branch_count > 0 and hasattr(tree_like, "Branch"):
+                for i in range(branch_count):
+                    try:
+                        branch = tree_like.Branch(i)
+                        items.extend(_iter_sequence_candidate(branch))
+                    except Exception:
+                        pass
+                if items:
+                    return items
+
+            if hasattr(tree_like, "AllData"):
+                try:
+                    data = tree_like.AllData()
+                    items.extend(_iter_sequence_candidate(data))
+                except Exception:
+                    pass
+                if items:
+                    return items
+
+        if hasattr(tree_like, "Branches"):
+            try:
+                for branch in _iter_sequence_candidate(getattr(tree_like, "Branches")):
+                    items.extend(_iter_sequence_candidate(branch))
+            except Exception:
+                pass
+        return items
+
     current = value
     for _ in range(6):
         changed = False
+
+        tree_items = _extract_tree_items(current)
+        if len(tree_items) == 1:
+            current = tree_items[0]
+            changed = True
+        elif len(tree_items) > 1 and not isinstance(current, (list, tuple)):
+            current = tree_items
+            changed = True
 
         if isinstance(current, (list, tuple)) and len(current) == 1:
             current = current[0]
@@ -381,6 +427,15 @@ def _coerce_model_to_payload(model_input: Any) -> Tuple[Optional[Dict[str, Any]]
 
     if isinstance(raw, dict):
         return raw, "dict"
+
+    if isinstance(raw, (list, tuple)) and raw:
+        # Common GH tree/list case: one payload object packed in a branch list.
+        if len(raw) == 1:
+            return _coerce_model_to_payload(raw[0])
+        # If a dict payload exists in the list, prefer it.
+        for item in raw:
+            if isinstance(item, dict):
+                return item, "dict-from-list"
 
     if isinstance(raw, str):
         text = raw.strip()
@@ -787,6 +842,7 @@ try:
         _out_path_raw = _g.get("output_path", _g.get("OutputPath", _g.get("file_path", _g.get("FilePath"))))
         _out_path = str(_out_path_raw).strip() if _out_path_raw not in (None, "") else ""
         _payload_input, _payload_source = _coerce_model_to_payload(_model_input)
+        _input_type = type(_model_input).__name__
 
         if isinstance(_payload_input, dict):
             ExportJson = build_structure_export_json(model=_payload_input)
@@ -814,6 +870,7 @@ try:
                 len(GHLoadPoints),
                 len(GHSurfaces),
             )
+            out += "\nInput type: {}".format(_input_type)
             out += "\nPayload source: {}".format(_payload_source)
             if _save_flag:
                 if _out_path:
