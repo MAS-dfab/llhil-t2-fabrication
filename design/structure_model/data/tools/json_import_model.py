@@ -292,6 +292,50 @@ def _edge_or_node_guid(item: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+def _normalize_guid_token(value: Any) -> Optional[str]:
+    if value in (None, ""):
+        return None
+
+    text = str(value).strip()
+    if not text:
+        return None
+
+    if text.startswith("{") and text.endswith("}"):
+        text = text[1:-1].strip()
+    if not text:
+        return None
+
+    return text.lower()
+
+
+def _register_guid_mapping(guid_map: Dict[str, str], guid: Any, target_id: Any) -> None:
+    if guid in (None, "") or target_id in (None, ""):
+        return
+
+    key_raw = str(guid)
+    value = str(target_id)
+    guid_map[key_raw] = value
+
+    key_norm = _normalize_guid_token(key_raw)
+    if key_norm:
+        guid_map[key_norm] = value
+
+
+def _lookup_guid_map(guid_map: Dict[str, str], guid: Any) -> Optional[str]:
+    if guid in (None, ""):
+        return None
+
+    key_raw = str(guid)
+    if key_raw in guid_map:
+        return guid_map.get(key_raw)
+
+    key_norm = _normalize_guid_token(key_raw)
+    if key_norm and key_norm in guid_map:
+        return guid_map.get(key_norm)
+
+    return None
+
+
 def _resolve_filtered_node_ids(
     value: Any, guid_map: Dict[str, str]
 ) -> Optional[List[str]]:
@@ -312,7 +356,7 @@ def _resolve_filtered_node_ids(
         for guid, node_id in value.items():
             if guid in (None, ""):
                 continue
-            resolved = str(node_id) if node_id not in (None, "") else guid_map.get(str(guid))
+            resolved = str(node_id) if node_id not in (None, "") else _lookup_guid_map(guid_map, guid)
             if resolved:
                 node_ids.append(resolved)
         return _unique_str_list(node_ids) if node_ids else None
@@ -320,7 +364,7 @@ def _resolve_filtered_node_ids(
     if isinstance(value, (list, tuple)):
         for item in value:
             if isinstance(item, str) and item:
-                resolved = guid_map.get(item)
+                resolved = _lookup_guid_map(guid_map, item)
                 if resolved:
                     node_ids.append(resolved)
             elif isinstance(item, dict):
@@ -328,9 +372,48 @@ def _resolve_filtered_node_ids(
                 node_id = item.get("id") or item.get("target_id") or item.get("node_id")
                 if node_id not in (None, ""):
                     node_ids.append(str(node_id))
-                elif guid and str(guid) in guid_map:
-                    node_ids.append(guid_map[str(guid)])
+                else:
+                    resolved = _lookup_guid_map(guid_map, guid)
+                    if resolved:
+                        node_ids.append(resolved)
         return _unique_str_list(node_ids) if node_ids else None
+
+    return None
+
+
+def _resolve_filtered_edge_ids(
+    value: Any, guid_map: Dict[str, str]
+) -> Optional[List[str]]:
+    if value is None:
+        return None
+
+    edge_ids: List[str] = []
+
+    if isinstance(value, dict):
+        for guid, edge_id in value.items():
+            if guid in (None, ""):
+                continue
+            resolved = str(edge_id) if edge_id not in (None, "") else _lookup_guid_map(guid_map, guid)
+            if resolved:
+                edge_ids.append(resolved)
+        return _unique_str_list(edge_ids) if edge_ids else None
+
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            if isinstance(item, str) and item:
+                resolved = _lookup_guid_map(guid_map, item)
+                if resolved:
+                    edge_ids.append(resolved)
+            elif isinstance(item, dict):
+                guid = item.get("guid") or item.get("proxy_guid")
+                edge_id = item.get("id") or item.get("target_id") or item.get("edge_id") or item.get("line_id")
+                if edge_id not in (None, ""):
+                    edge_ids.append(str(edge_id))
+                else:
+                    resolved = _lookup_guid_map(guid_map, guid)
+                    if resolved:
+                        edge_ids.append(resolved)
+        return _unique_str_list(edge_ids) if edge_ids else None
 
     return None
 
@@ -341,7 +424,7 @@ def _coerce_proxy_map(value: Any) -> Dict[str, str]:
         for key, map_value in value.items():
             if key in (None, "") or map_value in (None, ""):
                 continue
-            result[str(key)] = str(map_value)
+            _register_guid_mapping(result, key, map_value)
         return result
 
     if isinstance(value, list):
@@ -352,8 +435,30 @@ def _coerce_proxy_map(value: Any) -> Dict[str, str]:
             target_id = item.get("id") or item.get("target_id")
             if guid in (None, "") or target_id in (None, ""):
                 continue
-            result[str(guid)] = str(target_id)
+            _register_guid_mapping(result, guid, target_id)
     return result
+
+
+def _proxy_input_count(value: Any) -> int:
+    if value is None:
+        return 0
+
+    if isinstance(value, dict):
+        return sum(1 for key in value.keys() if key not in (None, ""))
+
+    if isinstance(value, (list, tuple)):
+        count = 0
+        for item in value:
+            if isinstance(item, str) and item.strip():
+                count += 1
+            elif isinstance(item, dict):
+                guid = item.get("guid") or item.get("proxy_guid")
+                if guid not in (None, ""):
+                    count += 1
+        return count
+
+    text = str(value).strip()
+    return 1 if text else 0
 
 
 def _unique_str_list(values: List[str]) -> List[str]:
@@ -796,7 +901,7 @@ def import_line_model_json(
             source_vertex_id_to_new[str(source_id)] = new_id
         vertex_guid = _edge_or_node_guid(vertex)
         if vertex_guid is not None:
-            point_guid_proxy[vertex_guid] = new_id
+            _register_guid_mapping(point_guid_proxy, vertex_guid, new_id)
 
     edge_records: List[Dict[str, Any]] = []
     segmented_edge_ids: List[str] = []
@@ -883,7 +988,7 @@ def import_line_model_json(
 
             edge_guid = _edge_or_node_guid(raw_edge)
             if edge_guid is not None:
-                curve_guid_proxy[edge_guid] = edge_id
+                _register_guid_mapping(curve_guid_proxy, edge_guid, edge_id)
 
     node_by_id: Dict[str, Dict[str, Any]] = {node["id"]: node for node in node_records}
     connected_edges_by_node: Dict[str, List[str]] = {}
@@ -937,7 +1042,7 @@ def import_line_model_json(
 
         mesh_guid = _edge_or_node_guid(raw_mesh)
         if mesh_guid is not None:
-            area_guid_proxy[mesh_guid] = mesh_id
+            _register_guid_mapping(area_guid_proxy, mesh_guid, mesh_id)
 
     member_line_ids = _unique_str_list([edge["id"] for edge in edge_records])
     area_mesh_ids = _unique_str_list([mesh["id"] for mesh in mesh_records])
@@ -945,9 +1050,12 @@ def import_line_model_json(
     joint_node_ids = _unique_str_list([joint["node_id"] for joint in joint_records])
 
     # Resolve explicitly tagged GUID inputs to filtered node ID lists.
+    _ll_ids = _resolve_filtered_edge_ids(curve_guid_proxies, curve_guid_proxy)
     _pl_ids = _resolve_filtered_node_ids(point_load_guid_proxies, point_guid_proxy)
     _bp_ids = _resolve_filtered_node_ids(boundary_guid_proxies, point_guid_proxy)
 
+    # Never default linear load lines to all members.
+    linear_load_lines = _ll_ids if _ll_ids is not None else []
     # Never default point loads to all nodes.
     point_load_points = _pl_ids if _pl_ids is not None else []
     # Never default supports/boundaries to all nodes.
@@ -962,7 +1070,7 @@ def import_line_model_json(
         "output_lists": {
             "member_lines": member_line_ids,
             "area_load_meshes": area_mesh_ids,
-            "linear_load_lines": list(member_line_ids),
+            "linear_load_lines": list(linear_load_lines),
             "segmented_linear_load_lines": list(segmented_edge_ids),
             "point_load_points": list(point_load_points),
             "boundary_points": list(boundary_points),
@@ -1120,6 +1228,14 @@ if "model" in _g or "Model" in _g:
             _point_node_ids = list(_lists.get("point_load_points", []))
             _boundary_node_ids = list(_lists.get("boundary_points", []))
             _joint_node_ids = list(_lists.get("joint_nodes", []))
+            _debug_suffix = " | proxies(linear {}/{}, point {}/{}, boundary {}/{})".format(
+                len(_linear_line_ids),
+                _proxy_input_count(_curve_proxies),
+                len(_point_node_ids),
+                _proxy_input_count(_pl_proxies),
+                len(_boundary_node_ids),
+                _proxy_input_count(_bp_proxies),
+            )
 
             MemberLines = list(_member_line_ids)
             AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
@@ -1179,19 +1295,19 @@ if "model" in _g or "Model" in _g:
                     _kind = "members"
 
                 if _kind in ("members", "all"):
-                    _preview_items.extend(_line_geometry_from_edge_ids(_member_line_ids, _edges, _nodes))
+                    _preview_items.extend(MemberLines)
 
                 if _kind in ("linear", "all"):
-                    _preview_items.extend(_line_geometry_from_edge_ids(_linear_line_ids, _edges, _nodes))
+                    _preview_items.extend(LinearLoadLines)
 
                 if _kind in ("point_loads", "all"):
-                    _preview_items.extend(_point_geometry_from_node_ids(_point_node_ids, _nodes))
+                    _preview_items.extend(PointLoadPoints)
 
                 if _kind in ("boundary", "all"):
-                    _preview_items.extend(_point_geometry_from_node_ids(_boundary_node_ids, _nodes))
+                    _preview_items.extend(BoundaryPoints)
 
                 if _kind in ("joints", "all"):
-                    _preview_items.extend(_point_geometry_from_node_ids(_joint_node_ids, _nodes))
+                    _preview_items.extend(JointNodes)
 
                 if _kind in ("areas", "all"):
                     _preview_items.extend(AreaLoadMeshes)
@@ -1200,7 +1316,7 @@ if "model" in _g or "Model" in _g:
 
             if _preview_enabled:
                 out = (
-                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {} | preview({}): {} | rhino_geo: {} | fast_mode: {}"
+                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {} | preview({}): {} | rhino_geo: {} | fast_mode: {}{}"
                 ).format(
                     len(MemberLines),
                     len(AreaLoadMeshes),
@@ -1212,10 +1328,11 @@ if "model" in _g or "Model" in _g:
                     len(PreviewGeometry),
                     "on" if rg is not None else "off",
                     "on" if _fast_mode else "off",
+                    _debug_suffix,
                 )
             else:
                 out = (
-                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {} | rhino_geo: {} | fast_mode: {}"
+                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {} | rhino_geo: {} | fast_mode: {}{}"
                 ).format(
                     len(MemberLines),
                     len(AreaLoadMeshes),
@@ -1225,6 +1342,7 @@ if "model" in _g or "Model" in _g:
                     len(JointNodes),
                     "on" if rg is not None else "off",
                     "on" if _fast_mode else "off",
+                    _debug_suffix,
                 )
 
             # Explicitly signal when outputs are IDs (no Rhino geometry backend) so GH wiring can be corrected.
