@@ -5,6 +5,10 @@
 #     preview_geometry (aliases: PreviewGeometry, BuildPreviewGeometry) -> default false
 # - Optional GH area auto-mesh toggle (preview path):
 #     auto_mesh_areas (aliases: AutoMeshAreas, AutoMeshAreaLoads) -> default true
+# - Optional GH fast solve toggle:
+#     fast_mode (aliases: FastMode, FastSolveMode) -> default false
+#     when true: bypasses proxy-driven linear/point/boundary/area outputs while
+#     keeping member lines + joints active (references stay stored)
 # - Optional GH proxy / geometry inputs:
 #     curve_guid_proxies      (alias: LineGuidProxies)      -> linear load line filtering
 #     area_geometry           (aliases: AreaGeometry, AreaMeshes, AreaSurfaces) -> area meshes
@@ -1755,6 +1759,10 @@ if "model" in _g or "Model" in _g:
                 _get_first_input(_g, ["auto_mesh_areas", "AutoMeshAreas", "AutoMeshAreaLoads"]),
                 default=True,
             )
+            _fast_mode = _to_bool(
+                _get_first_input(_g, ["fast_mode", "FastMode", "FastSolveMode"]),
+                default=False,
+            )
             _area_geometry_input = _get_first_input(_g, ["area_geometry", "AreaGeometry", "AreaMeshes", "AreaSurfaces"])
 
             _import_payload = import_line_model_json(
@@ -1776,6 +1784,7 @@ if "model" in _g or "Model" in _g:
                 },
                 "runtime": {
                     "rhino_geometry_available": rg is not None,
+                    "fast_mode": _fast_mode,
                 },
             }
             ImportJson = json.dumps(_summary_payload, separators=(",", ":"))
@@ -1820,33 +1829,45 @@ if "model" in _g or "Model" in _g:
             # Geometry-based proxy resolution: when GH curve proxies are connected,
             # generate perimeter linear edges by segmenting those curves against model nodes.
             if rg is not None:
-                _generated_linear_ids = _build_linear_edges_from_curve_proxies(
-                    _curve_proxies, _nodes, _edges, decimals=6
-                )
-                if _generated_linear_ids is not None:
-                    _linear_line_ids = _generated_linear_ids
-                elif _has_guid_like_filter_input(_curve_proxies):
-                    # Connected GUID-like filter with no matches should not fall back to all members.
+                if _fast_mode:
+                    # Fast mode keeps core analysis geometry and bypasses proxy-driven load/support branches.
                     _linear_line_ids = []
+                    _point_node_ids = []
+                    _boundary_node_ids = []
 
-                _rhino_pl = _resolve_node_ids_from_rhino_points(_pl_proxies, _nodes)
-                if _rhino_pl is not None:
-                    _point_node_ids = _rhino_pl
-                _rhino_bp = _resolve_node_ids_from_rhino_points(_bp_proxies, _nodes)
-                if _rhino_bp is not None:
-                    _boundary_node_ids = _rhino_bp
+                    MemberLines = _line_geometry_from_edge_ids(_member_line_ids, _edges, _nodes)
+                    LinearLoadLines = []
+                    PointLoadPoints = []
+                    BoundaryPoints = []
+                    JointNodes = _point_geometry_from_node_ids(_joint_node_ids, _nodes)
+                else:
+                    _generated_linear_ids = _build_linear_edges_from_curve_proxies(
+                        _curve_proxies, _nodes, _edges, decimals=6
+                    )
+                    if _generated_linear_ids is not None:
+                        _linear_line_ids = _generated_linear_ids
+                    elif _has_guid_like_filter_input(_curve_proxies):
+                        # Connected GUID-like filter with no matches should not fall back to all members.
+                        _linear_line_ids = []
 
-                # Re-apply positional deduplication after Rhino-proxy overrides.
-                _point_node_ids = _dedupe_node_ids_by_position(_point_node_ids, _nodes, tol=_runtime_dedupe_tol)
-                _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=_runtime_dedupe_tol)
-                _joint_node_ids = _dedupe_node_ids_by_position(_joint_node_ids, _nodes, tol=_runtime_dedupe_tol)
+                    _rhino_pl = _resolve_node_ids_from_rhino_points(_pl_proxies, _nodes)
+                    if _rhino_pl is not None:
+                        _point_node_ids = _rhino_pl
+                    _rhino_bp = _resolve_node_ids_from_rhino_points(_bp_proxies, _nodes)
+                    if _rhino_bp is not None:
+                        _boundary_node_ids = _rhino_bp
 
-                # GH-facing outputs should be geometry for direct Karamba compatibility.
-                MemberLines = _line_geometry_from_edge_ids(_member_line_ids, _edges, _nodes)
-                LinearLoadLines = _line_geometry_from_edge_ids(_linear_line_ids, _edges, _nodes)
-                PointLoadPoints = _point_geometry_from_node_ids(_point_node_ids, _nodes)
-                BoundaryPoints = _point_geometry_from_node_ids(_boundary_node_ids, _nodes)
-                JointNodes = _point_geometry_from_node_ids(_joint_node_ids, _nodes)
+                    # Re-apply positional deduplication after Rhino-proxy overrides.
+                    _point_node_ids = _dedupe_node_ids_by_position(_point_node_ids, _nodes, tol=_runtime_dedupe_tol)
+                    _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=_runtime_dedupe_tol)
+                    _joint_node_ids = _dedupe_node_ids_by_position(_joint_node_ids, _nodes, tol=_runtime_dedupe_tol)
+
+                    # GH-facing outputs should be geometry for direct Karamba compatibility.
+                    MemberLines = _line_geometry_from_edge_ids(_member_line_ids, _edges, _nodes)
+                    LinearLoadLines = _line_geometry_from_edge_ids(_linear_line_ids, _edges, _nodes)
+                    PointLoadPoints = _point_geometry_from_node_ids(_point_node_ids, _nodes)
+                    BoundaryPoints = _point_geometry_from_node_ids(_boundary_node_ids, _nodes)
+                    JointNodes = _point_geometry_from_node_ids(_joint_node_ids, _nodes)
 
             # Publish potentially augmented edges (includes generated linear proxy segments).
             Edges = _edges
@@ -1855,13 +1876,16 @@ if "model" in _g or "Model" in _g:
             # area_geometry input (surfaces/breps). Runs unconditionally so the output is usable
             # without enabling preview. Falls back to string IDs when rg is unavailable (CLI).
             if rg is not None:
-                _area_geo_built = _build_area_mesh_geometry(
-                    _meshes, auto_mesh_areas=_auto_mesh_areas, nodes=_nodes
-                )
-                _area_geo_built += _build_area_mesh_geometry_from_input(
-                    _area_geometry_input, auto_mesh_areas=_auto_mesh_areas, nodes=_nodes
-                )
-                AreaLoadMeshes = _area_geo_built
+                if _fast_mode:
+                    AreaLoadMeshes = []
+                else:
+                    _area_geo_built = _build_area_mesh_geometry(
+                        _meshes, auto_mesh_areas=_auto_mesh_areas, nodes=_nodes
+                    )
+                    _area_geo_built += _build_area_mesh_geometry_from_input(
+                        _area_geometry_input, auto_mesh_areas=_auto_mesh_areas, nodes=_nodes
+                    )
+                    AreaLoadMeshes = _area_geo_built
             else:
                 AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
 
@@ -1909,7 +1933,7 @@ if "model" in _g or "Model" in _g:
 
             if _preview_enabled:
                 out = (
-                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {} | preview({}): {} | rhino_geo: {}"
+                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {} | preview({}): {} | rhino_geo: {} | fast_mode: {}"
                 ).format(
                     len(MemberLines),
                     len(AreaLoadMeshes),
@@ -1920,10 +1944,11 @@ if "model" in _g or "Model" in _g:
                     _preview_kind,
                     len(PreviewGeometry),
                     "on" if rg is not None else "off",
+                    "on" if _fast_mode else "off",
                 )
             else:
                 out = (
-                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {} | rhino_geo: {}"
+                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {} | rhino_geo: {} | fast_mode: {}"
                 ).format(
                     len(MemberLines),
                     len(AreaLoadMeshes),
@@ -1932,6 +1957,7 @@ if "model" in _g or "Model" in _g:
                     len(BoundaryPoints),
                     len(JointNodes),
                     "on" if rg is not None else "off",
+                    "on" if _fast_mode else "off",
                 )
 
             # Explicitly signal when outputs are IDs (no Rhino geometry backend) so GH wiring can be corrected.
