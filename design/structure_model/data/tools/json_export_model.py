@@ -892,6 +892,14 @@ try:
                 len(GHLoadPoints),
                 len(GHSurfaces),
             )
+            _mesh_face_count = 0
+            _mesh_vertex_count = 0
+            for _m in list(ExportJson.get("meshes", [])):
+                if not isinstance(_m, dict):
+                    continue
+                _mesh_vertex_count += len(_m.get("vertices", [])) if isinstance(_m.get("vertices"), list) else 0
+                _mesh_face_count += len(_m.get("faces", [])) if isinstance(_m.get("faces"), list) else 0
+            out += "\nMesh topology: vertices={}, faces={}".format(_mesh_vertex_count, _mesh_face_count)
             out += "\nInput type: {}".format(_input_type)
             out += "\nPayload source: {}".format(_payload_source)
             if _save_flag:
