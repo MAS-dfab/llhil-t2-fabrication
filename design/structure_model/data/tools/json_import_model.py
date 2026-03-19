@@ -5,24 +5,33 @@
 #     preview_geometry (aliases: PreviewGeometry, BuildPreviewGeometry) -> default false
 # - Optional GH area auto-mesh toggle (preview path):
 #     auto_mesh_areas (aliases: AutoMeshAreas, AutoMeshAreaLoads) -> default true
-# - Optional GH proxy inputs:
-#     pt_guid_proxies         (aliases: PtGuidProxies, PointGuidProxies)
-#     curve_guid_proxies      (aliases: CurveGuidProxies, LineGuidProxies)
-#     area_guid_proxies       (aliases: AreaGuidProxies, MeshGuidProxies)
+# - Optional GH proxy / geometry inputs:
+#     curve_guid_proxies      (alias: LineGuidProxies)      -> linear load line filtering
+#     area_geometry           (aliases: AreaGeometry, AreaMeshes, AreaSurfaces) -> area meshes
 #     point_load_guid_proxies (alias: PointLoadGuidProxies) -> filters PointLoadPoints
 #     boundary_guid_proxies   (alias: BoundaryGuidProxies)  -> filters BoundaryPoints
-# - Function call: import_line_model_json(payload=..., pt_guid_proxies=...,
-#     curve_guid_proxies=..., area_guid_proxies=...,
-#     point_load_guid_proxies=..., boundary_guid_proxies=...)
+# - preview_kind values and their GH input / output correspondence:
+#     members     -> (no extra input)              -> MemberLines
+#     linear      -> LineGuidProxies               -> LinearLoadLines
+#     point_loads -> point_load_guid_proxies       -> PointLoadPoints
+#     boundary    -> boundary_guid_proxies         -> BoundaryPoints
+#     joints      -> (no extra input)              -> JointNodes
+#     areas       -> area_geometry                 -> AreaLoadMeshes
+#     all         -> all of the above              -> PreviewGeometry
+# - Function call: import_line_model_json(payload=...,
+#     curve_guid_proxies=..., point_load_guid_proxies=..., boundary_guid_proxies=...)
 # - Minimal runnable input: {}
 # - Minimal useful topology input:
 #   {"lines": [{"start": [0, 0, 0], "end": [1, 0, 0]}]}
 # - Also accepts COMPAS-style root arrays with entries like:
 #   {"line": {"data": {"start": [...], "end": [...]}, "guid": "...", "name": "..."}, "type": "..."}
-# - GH outputs: ImportJson, Vertices, Edges, Meshes, MemberLines, AreaLoadMeshes,
-#   AreaLoadMeshIds, LinearLoadLines, SegmentedLinearLoadLines, SegmentedEdgeCount,
-#   PointLoadPoints, BoundaryPoints, JointNodes,
-#   PreviewPoints, PreviewLines, PreviewMeshes, PreviewGeometry, out
+# - GH preferred outputs (compressed):
+#   ImportJson, MemberLines, AreaLoadMeshes, LinearLoadLines,
+#   PointLoadPoints, BoundaryPoints, JointNodes, out
+# - Optional preview bridge output:
+#   PreviewGeometry (enable with preview_geometry=true, set preview_kind)
+# - Geometry record outputs (for downstream ID→geometry mapping):
+#   Vertices (nodes), Edges (edges), Meshes (mesh records)
 from __future__ import annotations
 
 import argparse
@@ -150,7 +159,19 @@ def _load_payload_from_path(payload: Any) -> Any:
 
     if not isinstance(payload, (dict, list, tuple)):
         candidate = str(payload).strip()
+        if (
+            len(candidate) >= 2
+            and ((candidate[0] == '"' and candidate[-1] == '"') or (candidate[0] == "'" and candidate[-1] == "'"))
+        ):
+            candidate = candidate[1:-1].strip()
         if candidate:
+            # Allow direct JSON text passed from a panel.
+            if candidate.startswith("{") or candidate.startswith("["):
+                try:
+                    return json.loads(candidate)
+                except Exception:
+                    pass
+
             path = Path(candidate)
             if path.is_file():
                 with open(path, "r", encoding="utf-8") as stream:
@@ -298,78 +319,6 @@ def _coerce_proxy_map(value: Any) -> Dict[str, str]:
                 continue
             result[str(guid)] = str(target_id)
     return result
-
-
-def _extract_area_records_from_proxy_input(value: Any) -> List[Dict[str, Any]]:
-    """Extract area-like records from proxy input when geometry is supplied directly.
-
-    This allows GH inputs like MeshGuidProxies/area_guid_proxies to carry
-    actual surface/mesh geometry objects (or dict payloads) in addition to
-    simple guid->id mappings.
-    """
-    records: List[Dict[str, Any]] = []
-
-    if value is None:
-        return records
-
-    if isinstance(value, (list, tuple)):
-        items = list(value)
-    else:
-        items = [value]
-
-    for item in items:
-        if item is None:
-            continue
-
-        # Dict payload style.
-        if isinstance(item, dict):
-            record: Dict[str, Any] = {}
-            if "id" in item and item.get("id") not in (None, ""):
-                record["id"] = item.get("id")
-
-            attrs = item.get("attributes") if isinstance(item.get("attributes"), dict) else {}
-            merged_attrs: Dict[str, Any] = dict(attrs)
-
-            guid = item.get("guid") or item.get("mesh_guid") or item.get("area_guid") or attrs.get("guid")
-            if guid not in (None, ""):
-                record["guid"] = guid
-
-            added_payload = False
-            for key in ("vertices", "faces", "mesh", "geometry", "brep", "surface"):
-                if key in item and item.get(key) is not None:
-                    record[key] = item.get(key)
-                    added_payload = True
-
-            if added_payload:
-                merged_attrs["source"] = "area_proxy_geometry"
-                record["attributes"] = merged_attrs
-                records.append(record)
-                continue
-
-            # dict was likely guid->id proxy; skip as geometry record.
-            continue
-
-        # Direct Rhino geometry objects from GH object params.
-        geo = _try_coerce_rhino_geometry(item)
-        if geo is None:
-            continue
-
-        record = {
-            "attributes": {
-                "source": "area_proxy_geometry",
-            }
-        }
-        if rg is not None and isinstance(geo, rg.Mesh):
-            record["mesh"] = geo
-        elif rg is not None and isinstance(geo, rg.Brep):
-            record["brep"] = geo
-        elif rg is not None and isinstance(geo, rg.Surface):
-            record["surface"] = geo
-        else:
-            continue
-        records.append(record)
-
-    return records
 
 
 def _to_bool(value: Any, default: bool = False) -> bool:
@@ -604,53 +553,94 @@ def _build_area_mesh_geometry(meshes: List[Dict[str, Any]], *, auto_mesh_areas: 
     return mesh_geometry
 
 
-def _build_preview_geometry(
-    nodes: List[Dict[str, Any]],
-    edges: List[Dict[str, Any]],
-    meshes: List[Dict[str, Any]],
-    *,
-    auto_mesh_areas: bool = True,
-) -> Dict[str, List[Any]]:
+def _build_area_mesh_geometry_from_input(value: Any, *, auto_mesh_areas: bool = True) -> List[Any]:
+    """Convert direct GH area geometry input into Rhino meshes."""
+    if value is None:
+        return []
+
+    if isinstance(value, (list, tuple)):
+        items = list(value)
+    else:
+        items = [value]
+
+    mesh_records: List[Dict[str, Any]] = []
+    for item in items:
+        if item is None:
+            continue
+
+        if isinstance(item, dict):
+            record: Dict[str, Any] = {}
+            for key in ("vertices", "faces", "mesh", "geometry", "brep", "surface"):
+                if key in item and item.get(key) is not None:
+                    record[key] = item.get(key)
+            if record:
+                mesh_records.append(record)
+            continue
+
+        geo = _try_coerce_rhino_geometry(item)
+        if geo is None:
+            continue
+
+        if rg is not None and isinstance(geo, rg.Mesh):
+            mesh_records.append({"mesh": geo})
+        elif rg is not None and isinstance(geo, rg.Brep):
+            mesh_records.append({"brep": geo})
+        elif rg is not None and isinstance(geo, rg.Surface):
+            mesh_records.append({"surface": geo})
+
+    return _build_area_mesh_geometry(mesh_records, auto_mesh_areas=auto_mesh_areas)
+
+
+def _node_index(nodes: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    return {str(node.get("id")): node for node in nodes if node.get("id") not in (None, "")}
+
+
+def _edge_index(edges: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    return {str(edge.get("id")): edge for edge in edges if edge.get("id") not in (None, "")}
+
+
+def _point_geometry_from_node_ids(node_ids: List[str], nodes: List[Dict[str, Any]]) -> List[Any]:
     if rg is None:
-        return {
-            "points": [],
-            "lines": [],
-            "meshes": [],
-            "all": [],
-        }
+        return []
 
-    points: List[Any] = []
-    lines: List[Any] = []
-    mesh_geometry: List[Any] = []
-
-    node_xyz: Dict[str, Tuple[float, float, float]] = {}
-    for node in nodes:
-        node_id = str(node.get("id", ""))
-        if not node_id:
+    index = _node_index(nodes)
+    out: List[Any] = []
+    for node_id in node_ids:
+        node = index.get(str(node_id))
+        if not node:
             continue
-        try:
-            xyz = (float(node.get("x", 0.0)), float(node.get("y", 0.0)), float(node.get("z", 0.0)))
-        except (TypeError, ValueError):
+        xyz = _point_from_node_record(node)
+        if xyz is None:
             continue
-        node_xyz[node_id] = xyz
-        points.append(rg.Point3d(*xyz))
+        out.append(rg.Point3d(xyz[0], xyz[1], xyz[2]))
+    return out
 
-    for edge in edges:
-        start = node_xyz.get(str(edge.get("start_node", "")))
-        end = node_xyz.get(str(edge.get("end_node", "")))
-        if start is None or end is None:
+
+def _line_geometry_from_edge_ids(edge_ids: List[str], edges: List[Dict[str, Any]], nodes: List[Dict[str, Any]]) -> List[Any]:
+    if rg is None:
+        return []
+
+    n_index = _node_index(nodes)
+    e_index = _edge_index(edges)
+    out: List[Any] = []
+
+    for edge_id in edge_ids:
+        edge = e_index.get(str(edge_id))
+        if not edge:
             continue
-        lines.append(rg.LineCurve(rg.Point3d(*start), rg.Point3d(*end)))
 
-    for mesh in meshes:
-        mesh_geometry.extend(_mesh_record_to_rhino_meshes(mesh, auto_mesh_areas=auto_mesh_areas))
+        start_node = n_index.get(str(edge.get("start_node", "")))
+        end_node = n_index.get(str(edge.get("end_node", "")))
+        if not start_node or not end_node:
+            continue
 
-    return {
-        "points": points,
-        "lines": lines,
-        "meshes": mesh_geometry,
-        "all": points + lines + mesh_geometry,
-    }
+        a = _point_from_node_record(start_node)
+        b = _point_from_node_record(end_node)
+        if a is None or b is None:
+            continue
+        out.append(rg.LineCurve(rg.Point3d(a[0], a[1], a[2]), rg.Point3d(b[0], b[1], b[2])))
+
+    return out
 
 
 def _extract_input_proxy_maps(payload: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
@@ -718,8 +708,6 @@ def import_line_model_json(
     vertices = _extract_vertices(payload)
     edges = _extract_edges(payload)
     meshes = _extract_meshes(payload)
-    # Area proxy input may carry real area geometry objects (GH workflow).
-    meshes.extend(_extract_area_records_from_proxy_input(area_guid_proxies))
     input_proxies = _extract_input_proxy_maps(payload)
     # Explicit proxy inputs override/extend proxies embedded in the model payload.
     input_proxies["pt"].update(_coerce_proxy_map(pt_guid_proxies))
@@ -892,7 +880,7 @@ def import_line_model_json(
             "attributes": preserved_attrs,
         }
 
-        for key in ("vertices", "faces", "mesh", "geometry", "brep"):
+        for key in ("vertices", "faces", "mesh", "geometry", "brep", "surface"):
             if key in raw_mesh:
                 mesh_record[key] = raw_mesh[key]
 
@@ -1004,25 +992,21 @@ def main() -> None:
 # GH Py3 auto-run block: input `model` (or `Model`) -> JSON payload + validation lists.
 _g = globals()
 
-# Always initialize outputs so GH does not show empty outputs without context.
+# Preferred compact list outputs.
 ImportJson = "{}"
-Vertices = []
-Edges = []
-Meshes = []
 MemberLines = []
 AreaLoadMeshes = []
-AreaLoadMeshIds = []
 LinearLoadLines = []
-SegmentedLinearLoadLines = []
-SegmentedEdgeCount = 0
 PointLoadPoints = []
 BoundaryPoints = []
 JointNodes = []
-PreviewPoints = []
-PreviewLines = []
-PreviewMeshes = []
-PreviewGeometry = []
 out = "Waiting for Model input."
+
+# Geometry record outputs (for downstream ID→geometry mapping).
+Vertices = []
+Edges = []
+Meshes = []
+PreviewGeometry = []
 
 
 def _get_first_input(globals_dict: Dict[str, Any], names: List[str]) -> Any:
@@ -1038,19 +1022,27 @@ if "model" in _g or "Model" in _g:
         out = "Model input is empty. Provide a JSON path or parsed JSON object/list."
     else:
         try:
-            _pt_proxies = _get_first_input(_g, ["pt_guid_proxies", "PtGuidProxies", "PointGuidProxies"])
             _curve_proxies = _get_first_input(_g, ["curve_guid_proxies", "CurveGuidProxies", "LineGuidProxies"])
-            _area_proxies = _get_first_input(_g, ["area_guid_proxies", "AreaGuidProxies", "MeshGuidProxies"])
             _pl_proxies = _get_first_input(_g, ["point_load_guid_proxies", "PointLoadGuidProxies"])
             _bp_proxies = _get_first_input(_g, ["boundary_guid_proxies", "BoundaryGuidProxies"])
-            _preview_toggle = _get_first_input(_g, ["preview_geometry", "PreviewGeometry", "BuildPreviewGeometry"])
-            _auto_mesh_areas = _get_first_input(_g, ["auto_mesh_areas", "AutoMeshAreas", "AutoMeshAreaLoads"])
+            _preview_enabled = _to_bool(
+                _get_first_input(_g, ["preview_geometry", "PreviewGeometry", "BuildPreviewGeometry"]),
+                default=False,
+            )
+            _preview_kind_raw = _get_first_input(
+                _g,
+                ["preview_kind", "PreviewKind", "PreviewTarget", "PreviewSource"],
+            )
+            _preview_kind = str(_preview_kind_raw).strip().lower() if _preview_kind_raw not in (None, "") else "members"
+            _auto_mesh_areas = _to_bool(
+                _get_first_input(_g, ["auto_mesh_areas", "AutoMeshAreas", "AutoMeshAreaLoads"]),
+                default=True,
+            )
+            _area_geometry_input = _get_first_input(_g, ["area_geometry", "AreaGeometry", "AreaMeshes", "AreaSurfaces"])
 
             _import_payload = import_line_model_json(
                 _model_input,
-                pt_guid_proxies=_pt_proxies,
                 curve_guid_proxies=_curve_proxies,
-                area_guid_proxies=_area_proxies,
                 point_load_guid_proxies=_pl_proxies,
                 boundary_guid_proxies=_bp_proxies,
             )
@@ -1061,59 +1053,121 @@ if "model" in _g or "Model" in _g:
                     "member_lines": len(_import_payload.get("output_lists", {}).get("member_lines", [])),
                     "area_load_meshes": len(_import_payload.get("output_lists", {}).get("area_load_meshes", [])),
                     "linear_load_lines": len(_import_payload.get("output_lists", {}).get("linear_load_lines", [])),
-                    "segmented_linear_load_lines": len(_import_payload.get("output_lists", {}).get("segmented_linear_load_lines", [])),
                     "point_load_points": len(_import_payload.get("output_lists", {}).get("point_load_points", [])),
                     "boundary_points": len(_import_payload.get("output_lists", {}).get("boundary_points", [])),
                     "joint_nodes": len(_import_payload.get("output_lists", {}).get("joint_nodes", [])),
                 },
             }
             ImportJson = json.dumps(_summary_payload, separators=(",", ":"))
-            Vertices = list(_import_payload.get("nodes", []))
-            Edges = list(_import_payload.get("edges", []))
-            Meshes = list(_import_payload.get("meshes", []))
+
+            # Compressed list-first outputs.
             _lists = _import_payload.get("output_lists", {})
             MemberLines = list(_lists.get("member_lines", []))
-            AreaLoadMeshIds = list(_lists.get("area_load_meshes", []))
-            AreaLoadMeshes = _build_area_mesh_geometry(
-                Meshes,
-                auto_mesh_areas=_to_bool(_auto_mesh_areas, default=True),
-            )
+            AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
             LinearLoadLines = list(_lists.get("linear_load_lines", []))
-            SegmentedLinearLoadLines = list(_lists.get("segmented_linear_load_lines", []))
-            SegmentedEdgeCount = int(_import_payload.get("metadata", {}).get("segmented_edge_count", 0))
             PointLoadPoints = list(_lists.get("point_load_points", []))
             BoundaryPoints = list(_lists.get("boundary_points", []))
             JointNodes = list(_lists.get("joint_nodes", []))
 
-            if _to_bool(_preview_toggle, default=False):
-                _preview = _build_preview_geometry(
-                    Vertices,
-                    Edges,
-                    Meshes,
-                    auto_mesh_areas=_to_bool(_auto_mesh_areas, default=True),
-                )
-                PreviewPoints = list(_preview.get("points", []))
-                PreviewLines = list(_preview.get("lines", []))
-                PreviewMeshes = list(_preview.get("meshes", []))
-                PreviewGeometry = list(_preview.get("all", []))
-            else:
-                PreviewPoints = []
-                PreviewLines = []
-                PreviewMeshes = []
-                PreviewGeometry = []
+            # Raw geometry records for downstream ID→geometry mapping.
+            _nodes = list(_import_payload.get("nodes", []))
+            _edges = list(_import_payload.get("edges", []))
+            _meshes = list(_import_payload.get("meshes", []))
+            Vertices = _nodes
+            Edges = _edges
+            Meshes = _meshes
+            PreviewGeometry = []
 
-            out = (
-                "Imported nodes: {}, edges: {}, meshes: {}, area_mesh_geo: {}, joints: {}, segmented: {}, preview: {}"
-            ).format(
-                len(_import_payload.get("nodes", [])),
-                len(_import_payload.get("edges", [])),
-                len(_import_payload.get("meshes", [])),
-                len(AreaLoadMeshes),
-                len(_import_payload.get("joints", [])),
-                int(_import_payload.get("metadata", {}).get("segmented_edge_count", 0)),
-                "on" if _to_bool(_preview_toggle, default=False) else "off",
-            )
+            # AreaLoadMeshes: actual Rhino Mesh objects built from JSON mesh records and/or
+            # area_geometry input (surfaces/breps). Runs unconditionally so the output is usable
+            # without enabling preview. Falls back to string IDs when rg is unavailable (CLI).
+            if rg is not None:
+                _area_geo_built = _build_area_mesh_geometry(_meshes, auto_mesh_areas=_auto_mesh_areas)
+                _area_geo_built += _build_area_mesh_geometry_from_input(
+                    _area_geometry_input, auto_mesh_areas=_auto_mesh_areas
+                )
+                AreaLoadMeshes = _area_geo_built
+            else:
+                AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
+
+            # Optional single-stream preview geometry for Custom Preview.
+            if _preview_enabled and rg is not None:
+                _preview_items: List[Any] = []
+
+                _kind = _preview_kind
+                if _kind in ("member", "member_line", "member_lines", "lines"):
+                    _kind = "members"
+                elif _kind in ("area", "area_load", "area_loads", "meshes"):
+                    _kind = "areas"
+                elif _kind in ("linear", "linear_load", "linear_loads", "linear_load_lines"):
+                    _kind = "linear"
+                elif _kind in ("point", "point_load", "point_loads", "point_load_points"):
+                    _kind = "point_loads"
+                elif _kind in ("boundary", "boundary_point", "boundary_points"):
+                    _kind = "boundary"
+                elif _kind in ("joint", "joint_node", "joint_nodes"):
+                    _kind = "joints"
+                elif _kind not in ("members", "areas", "all"):
+                    _kind = "members"
+
+                if _kind in ("members", "all"):
+                    _preview_items.extend(_line_geometry_from_edge_ids(MemberLines, _edges, _nodes))
+
+                if _kind in ("linear", "all"):
+                    _preview_items.extend(_line_geometry_from_edge_ids(LinearLoadLines, _edges, _nodes))
+
+                if _kind in ("point_loads", "all"):
+                    _preview_items.extend(_point_geometry_from_node_ids(PointLoadPoints, _nodes))
+
+                if _kind in ("boundary", "all"):
+                    _preview_items.extend(_point_geometry_from_node_ids(BoundaryPoints, _nodes))
+
+                if _kind in ("joints", "all"):
+                    _preview_items.extend(_point_geometry_from_node_ids(JointNodes, _nodes))
+
+                if _kind in ("areas", "all"):
+                    _preview_items.extend(AreaLoadMeshes)
+
+                PreviewGeometry = _preview_items
+
+            if _preview_enabled:
+                out = (
+                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {} | preview({}): {}"
+                ).format(
+                    len(MemberLines),
+                    len(AreaLoadMeshes),
+                    len(LinearLoadLines),
+                    len(PointLoadPoints),
+                    len(BoundaryPoints),
+                    len(JointNodes),
+                    _preview_kind,
+                    len(PreviewGeometry),
+                )
+            else:
+                out = (
+                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {}"
+                ).format(
+                    len(MemberLines),
+                    len(AreaLoadMeshes),
+                    len(LinearLoadLines),
+                    len(PointLoadPoints),
+                    len(BoundaryPoints),
+                    len(JointNodes),
+                )
         except Exception as ex:
+            ImportJson = json.dumps(
+                {
+                    "schema": "structure_model_v1",
+                    "error": str(ex),
+                    "model_input_type": type(_model_input).__name__ if "_model_input" in locals() else "unknown",
+                },
+                separators=(",", ":"),
+            )
+            AreaLoadMeshes = []
+            LinearLoadLines = []
+            PointLoadPoints = []
+            BoundaryPoints = []
+            JointNodes = []
             out = "Import failed: {}".format(ex)
 
 
