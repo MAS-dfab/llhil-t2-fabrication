@@ -6,12 +6,20 @@
 #   {"nodes": [{"id": "N1", "x": 0, "y": 0, "z": 0}, {"id": "N2", "x": 1, "y": 0, "z": 0}],
 #    "edges": [{"id": "E1", "start_node": "N1", "end_node": "N2"}]}
 # - GH outputs: ExportJson, MemberLines, AreaLoadMeshes, LinearLoadLines, PointLoadPoints,
-#   BoundaryPoints, JointNodes, out
+#   BoundaryPoints, JointNodes, GHLineCurves, GHNodes, GHLoadPoints, GHSurfaces, out
 from __future__ import annotations
 
 import argparse
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+
+try:
+    import Rhino.Geometry as rg  # type: ignore
+except Exception:  # pragma: no cover - Rhino is not available in CLI environments.
+    rg = None
+
+
+Point = Tuple[float, float, float]
 
 
 def _normalize_dict_list(value: Any) -> List[Dict[str, Any]]:
@@ -30,6 +38,127 @@ def _pick_list(payload: Dict[str, Any], *keys: str) -> List[Dict[str, Any]]:
         if items:
             return items
     return []
+
+
+def _as_point(value: Any) -> Optional[Point]:
+    if value is None:
+        return None
+
+    if isinstance(value, dict):
+        if all(axis in value for axis in ("x", "y", "z")):
+            try:
+                return (float(value["x"]), float(value["y"]), float(value["z"]))
+            except (TypeError, ValueError):
+                return None
+
+        for key in ("point", "xyz", "coords", "position"):
+            if key in value:
+                return _as_point(value[key])
+
+        return None
+
+    if isinstance(value, (list, tuple)) and len(value) >= 3:
+        try:
+            return (float(value[0]), float(value[1]), float(value[2]))
+        except (TypeError, ValueError):
+            return None
+
+    return None
+
+
+def _first_point(*candidates: Any) -> Optional[Point]:
+    for candidate in candidates:
+        point = _as_point(candidate)
+        if point is not None:
+            return point
+    return None
+
+
+def _node_point(node: Dict[str, Any]) -> Optional[Point]:
+    attrs = node.get("attributes") if isinstance(node.get("attributes"), dict) else {}
+    return _first_point(node, node.get("point"), attrs.get("point"), attrs.get("xyz"))
+
+
+def _line_start_end(edge: Dict[str, Any], node_by_id: Dict[str, Dict[str, Any]]) -> Tuple[Optional[Point], Optional[Point]]:
+    attrs = edge.get("attributes") if isinstance(edge.get("attributes"), dict) else {}
+    start_id = edge.get("start_node") or edge.get("u") or edge.get("from") or attrs.get("start_node")
+    end_id = edge.get("end_node") or edge.get("v") or edge.get("to") or attrs.get("end_node")
+
+    start_node = node_by_id.get(str(start_id)) if start_id not in (None, "") else None
+    end_node = node_by_id.get(str(end_id)) if end_id not in (None, "") else None
+    return _node_point(start_node or {}), _node_point(end_node or {})
+
+
+def _point_to_output(point: Point) -> Any:
+    if rg is None:
+        return point
+    return rg.Point3d(point[0], point[1], point[2])
+
+
+def _edge_to_output_curve(edge: Dict[str, Any], node_by_id: Dict[str, Dict[str, Any]]) -> Optional[Any]:
+    start, end = _line_start_end(edge, node_by_id)
+    if start is None or end is None:
+        return None
+    if rg is None:
+        return {"start": start, "end": end}
+    return rg.LineCurve(_point_to_output(start), _point_to_output(end))
+
+
+def _mesh_geometry_candidates(mesh: Dict[str, Any]) -> List[Any]:
+    return [
+        mesh.get("mesh"),
+        mesh.get("geometry"),
+        mesh.get("brep"),
+        mesh.get("surface"),
+    ]
+
+
+def _mesh_to_output_geometry(mesh: Dict[str, Any]) -> Optional[Any]:
+    vertices = mesh.get("vertices") if isinstance(mesh.get("vertices"), list) else None
+    faces = mesh.get("faces") if isinstance(mesh.get("faces"), list) else None
+
+    if rg is not None:
+        for candidate in _mesh_geometry_candidates(mesh):
+            if candidate is None:
+                continue
+            if isinstance(candidate, (rg.Mesh, rg.Brep, rg.Surface)):
+                return candidate
+            if hasattr(candidate, "ToBrep"):
+                try:
+                    return candidate.ToBrep()
+                except Exception:
+                    pass
+
+        if vertices and faces:
+            rh_mesh = rg.Mesh()
+            for vertex in vertices:
+                point = _as_point(vertex)
+                if point is None:
+                    continue
+                rh_mesh.Vertices.Add(point[0], point[1], point[2])
+
+            for face in faces:
+                if not isinstance(face, (list, tuple)):
+                    continue
+                indices = [int(value) for value in face[:4]]
+                if len(indices) == 3:
+                    rh_mesh.Faces.AddFace(indices[0], indices[1], indices[2])
+                elif len(indices) == 4:
+                    rh_mesh.Faces.AddFace(indices[0], indices[1], indices[2], indices[3])
+
+            if rh_mesh.Vertices.Count > 0 and rh_mesh.Faces.Count > 0:
+                rh_mesh.Normals.ComputeNormals()
+                rh_mesh.Compact()
+                return rh_mesh
+
+    for candidate in _mesh_geometry_candidates(mesh):
+        if candidate is not None:
+            return candidate
+
+    if vertices and faces:
+        return {"vertices": vertices, "faces": faces}
+
+    return None
 
 
 def _edge_or_node_guid(item: Dict[str, Any]) -> Optional[str]:
@@ -375,10 +504,47 @@ def build_structure_export_json(
     }
 
 
-def as_output_lists(model: Dict[str, Any]) -> Dict[str, List[str]]:
-    """Return GH-friendly validation lists from the normalized export payload."""
+def as_output_lists(model: Dict[str, Any]) -> Dict[str, List[Any]]:
+    """Return GH-friendly validation and preview geometry lists from the export payload."""
     payload = build_structure_export_json(model)
     lists = payload.get("output_lists", {})
+    nodes = _pick_list(payload, "nodes")
+    edges = _pick_list(payload, "edges")
+    meshes = _pick_list(payload, "meshes")
+    node_by_id: Dict[str, Dict[str, Any]] = {str(node.get("id")): node for node in nodes if node.get("id") not in (None, "")}
+    boundary_point_ids = [str(node_id) for node_id in list(lists.get("boundary_points", []))]
+    point_load_ids = [str(node_id) for node_id in list(lists.get("point_load_points", []))]
+
+    gh_nodes: List[Any] = []
+    for node_id in boundary_point_ids:
+        node = node_by_id.get(node_id)
+        if not isinstance(node, dict):
+            continue
+        point = _node_point(node)
+        if point is not None:
+            gh_nodes.append(_point_to_output(point))
+
+    gh_load_points: List[Any] = []
+    for node_id in point_load_ids:
+        node = node_by_id.get(node_id)
+        if not isinstance(node, dict):
+            continue
+        point = _node_point(node)
+        if point is not None:
+            gh_load_points.append(_point_to_output(point))
+
+    gh_line_curves: List[Any] = []
+    for edge in edges:
+        curve = _edge_to_output_curve(edge, node_by_id)
+        if curve is not None:
+            gh_line_curves.append(curve)
+
+    gh_surfaces: List[Any] = []
+    for mesh in meshes:
+        geometry = _mesh_to_output_geometry(mesh)
+        if geometry is not None:
+            gh_surfaces.append(geometry)
+
     return {
         "MemberLines": list(lists.get("member_lines", [])),
         "AreaLoadMeshes": list(lists.get("area_load_meshes", [])),
@@ -386,6 +552,10 @@ def as_output_lists(model: Dict[str, Any]) -> Dict[str, List[str]]:
         "PointLoadPoints": list(lists.get("point_load_points", [])),
         "BoundaryPoints": list(lists.get("boundary_points", [])),
         "JointNodes": list(lists.get("joint_nodes", [])),
+        "GHLineCurves": gh_line_curves,
+        "GHNodes": gh_nodes,
+        "GHLoadPoints": gh_load_points,
+        "GHSurfaces": gh_surfaces,
     }
 
 
@@ -432,16 +602,24 @@ if "model" in _g or "Model" in _g:
         PointLoadPoints = _lists["PointLoadPoints"]
         BoundaryPoints = _lists["BoundaryPoints"]
         JointNodes = _lists["JointNodes"]
+        GHLineCurves = _lists["GHLineCurves"]
+        GHNodes = _lists["GHNodes"]
+        GHLoadPoints = _lists["GHLoadPoints"]
+        GHSurfaces = _lists["GHSurfaces"]
         out = (
-            "Exported nodes: {}, edges: {}, meshes: {}, member_breps: {}, joints: {}"
+            "Exported nodes: {}, edges: {}, meshes: {}, member_breps: {}, joints: {}, gh_lines: {}, gh_nodes: {}, gh_load_points: {}, gh_surfaces: {}"
         ).format(
             len(ExportJson.get("nodes", [])),
             len(ExportJson.get("edges", [])),
             len(ExportJson.get("meshes", [])),
             len(ExportJson.get("member_breps", [])),
             len(ExportJson.get("joints", [])),
+            len(GHLineCurves),
+            len(GHNodes),
+            len(GHLoadPoints),
+            len(GHSurfaces),
         )
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and "model" not in globals() and "Model" not in globals():
     main()
