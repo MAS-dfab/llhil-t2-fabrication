@@ -35,7 +35,8 @@ class VertexList:
         """
         self.vertices = []
         self.pairs = []
-
+        self.dir1 = None
+        self.dir2 = None
 
     def __getitem__(self, idx):
         return self.vertices[idx]
@@ -62,7 +63,7 @@ class VertexList:
     def add_pairs(self, pairs):
         if not isinstance(pairs, list):
             pairs = [pairs]
-            
+
         for pair in pairs:
             if not isinstance(pair, tuple) or len(pair) != 2:
                 raise ValueError("Pairs must be tuples of two vertex indices.")
@@ -115,7 +116,7 @@ class VertexList:
         vec_x.unitize()
         vec_y.unitize()
         vec_z.unitize()
-
+        
         dist_x = boundary[0].distance_to_point(boundary[1])
         dist_y = boundary[0].distance_to_point(boundary[-1])
         step_x = dist_x / division_x
@@ -126,6 +127,12 @@ class VertexList:
             height_list = consecutive_values(height_list) + [0]
 
         start = boundary[0]
+        p1 = start + (vec_x * step_x) + (vec_y * step_y)
+        p2 = start + (vec_x * step_x)
+        p3 = start + (vec_y * step_y)
+        self.dir1 = p1 - start
+        self.dir2 = p3 - p2
+
         div_x = division_x + 1
         div_y = division_y + 1
         div_z = division_x + 1
