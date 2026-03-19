@@ -48,6 +48,18 @@ except Exception:  # pragma: no cover - Rhino is not available in CLI environmen
     rg = None
 
 
+# Some GH Python runtimes fail the direct Rhino import even though RhinoCommon is available.
+# This fallback keeps geometry outputs alive in those environments.
+if rg is None:
+    try:  # pragma: no cover - only exercised in Rhino/GH runtime.
+        import clr  # type: ignore
+
+        clr.AddReference("RhinoCommon")
+        import Rhino.Geometry as rg  # type: ignore
+    except Exception:
+        rg = None
+
+
 Point = Tuple[float, float, float]
 
 
@@ -1762,6 +1774,9 @@ if "model" in _g or "Model" in _g:
                     "boundary_points": len(_import_payload.get("output_lists", {}).get("boundary_points", [])),
                     "joint_nodes": len(_import_payload.get("output_lists", {}).get("joint_nodes", [])),
                 },
+                "runtime": {
+                    "rhino_geometry_available": rg is not None,
+                },
             }
             ImportJson = json.dumps(_summary_payload, separators=(",", ":"))
 
@@ -1894,7 +1909,7 @@ if "model" in _g or "Model" in _g:
 
             if _preview_enabled:
                 out = (
-                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {} | preview({}): {}"
+                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {} | preview({}): {} | rhino_geo: {}"
                 ).format(
                     len(MemberLines),
                     len(AreaLoadMeshes),
@@ -1904,10 +1919,11 @@ if "model" in _g or "Model" in _g:
                     len(JointNodes),
                     _preview_kind,
                     len(PreviewGeometry),
+                    "on" if rg is not None else "off",
                 )
             else:
                 out = (
-                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {}"
+                    "Imported -> members: {}, areas: {}, linear: {}, load pts: {}, boundary: {}, joints: {} | rhino_geo: {}"
                 ).format(
                     len(MemberLines),
                     len(AreaLoadMeshes),
@@ -1915,7 +1931,12 @@ if "model" in _g or "Model" in _g:
                     len(PointLoadPoints),
                     len(BoundaryPoints),
                     len(JointNodes),
+                    "on" if rg is not None else "off",
                 )
+
+            # Explicitly signal when outputs are IDs (no Rhino geometry backend) so GH wiring can be corrected.
+            if rg is None:
+                out += "\nWarning: Rhino geometry backend is unavailable. MemberLines/LinearLoadLines are IDs, not curves."
         except Exception as ex:
             ImportJson = json.dumps(
                 {
