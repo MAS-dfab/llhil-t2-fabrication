@@ -1,5 +1,7 @@
 # Minimal Input Cheat-Sheet (Exporter)
-# - GH input names: model (or Model)
+# - GH input names: model (or Model), save (or Save), output_path (or OutputPath)
+#   - save: wire a GH Button → triggers JSON export to disk when True
+#   - output_path: wire a GH Panel with the full file path (e.g. .../Files_Out/out_model.json)
 # - Function call: build_structure_export_json(model=...)
 # - Minimal runnable input: {}
 # - Minimal useful topology input:
@@ -11,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
@@ -568,6 +571,9 @@ def _read_json(path: str) -> Dict[str, Any]:
 
 
 def _write_json(path: str, payload: Dict[str, Any]) -> None:
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
     with open(path, "w", encoding="utf-8") as stream:
         json.dump(payload, stream, indent=2)
 
@@ -593,6 +599,10 @@ def main() -> None:
 _g = globals()
 if "model" in _g or "Model" in _g:
     _model_input = _g.get("model", _g.get("Model"))
+    _save_flag = bool(_g.get("save", _g.get("Save", False)))
+    _out_path_raw = _g.get("output_path", _g.get("OutputPath", _g.get("file_path", _g.get("FilePath"))))
+    _out_path = str(_out_path_raw).strip() if _out_path_raw not in (None, "") else ""
+
     if isinstance(_model_input, dict):
         ExportJson = build_structure_export_json(model=_model_input)
         _lists = as_output_lists(_model_input)
@@ -619,6 +629,22 @@ if "model" in _g or "Model" in _g:
             len(GHLoadPoints),
             len(GHSurfaces),
         )
+        if _save_flag:
+            if _out_path:
+                try:
+                    _normalized_path = os.path.abspath(_out_path)
+                    _write_json(_normalized_path, ExportJson)
+                    out += "\nSaved -> {}".format(_normalized_path)
+                except Exception as _e:
+                    out += "\nSave FAILED: {}".format(_e)
+            else:
+                out += "\nSave triggered — no output_path wired."
+    else:
+        out = "Model input is not a dict (got {}).".format(type(_model_input).__name__)
+        if _save_flag:
+            out += " Save ignored because export payload was not built."
+        if _out_path:
+            out += " output_path='{}'".format(_out_path)
 
 
 if __name__ == "__main__" and "model" not in globals() and "Model" not in globals():
