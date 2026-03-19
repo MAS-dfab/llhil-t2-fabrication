@@ -66,6 +66,32 @@ if rg is None:
 Point = Tuple[float, float, float]
 
 
+def _unwrap_gh_value(value: Any) -> Any:
+    """Best-effort unwrap for GH goo/wrapper values (Guid, Point, etc.)."""
+    if value is None:
+        return None
+
+    # GH goo often exposes ScriptVariable() for native value extraction.
+    if hasattr(value, "ScriptVariable"):
+        try:
+            unwrapped = value.ScriptVariable()
+            if unwrapped is not None:
+                return unwrapped
+        except Exception:
+            pass
+
+    # Many wrappers expose a Value property.
+    if hasattr(value, "Value"):
+        try:
+            unwrapped = value.Value
+            if unwrapped is not None:
+                return unwrapped
+        except Exception:
+            pass
+
+    return value
+
+
 def _as_point(value: Any) -> Optional[Point]:
     """Convert common point formats into a 3D tuple."""
     if value is None:
@@ -94,6 +120,7 @@ def _as_point(value: Any) -> Optional[Point]:
 
 def _as_proxy_point(value: Any) -> Optional[Point]:
     """Convert proxy inputs that may carry coordinates (including Rhino Point3d)."""
+    value = _unwrap_gh_value(value)
     point = _as_point(value)
     if point is not None:
         return point
@@ -363,6 +390,9 @@ def _flatten_proxy_items(value: Any) -> List[Any]:
     if value is None:
         return []
 
+    def _is_point_like(item: Any) -> bool:
+        return hasattr(item, "X") and hasattr(item, "Y") and hasattr(item, "Z")
+
     flat: List[Any] = []
     queue: List[Any] = [value]
 
@@ -372,6 +402,12 @@ def _flatten_proxy_items(value: Any) -> List[Any]:
             continue
 
         if isinstance(current, (str, bytes, dict)):
+            flat.append(current)
+            continue
+
+        # Keep point-like objects atomic. Some types are iterable and would otherwise
+        # get exploded into [x, y, z] floats, breaking point proxy resolution.
+        if _is_point_like(current):
             flat.append(current)
             continue
 
@@ -433,21 +469,68 @@ def _resolve_filtered_node_ids(
 
     valid_id_set = set(valid_ids or [])
     point_map = node_point_map or {}
+    point_items = list(point_map.items())
+    point_tol = max(10.0 ** (-point_decimals), 1e-6)
+
+    def _candidate_node_ids_from_numeric(value: Any) -> List[str]:
+        candidates: List[str] = []
+        try:
+            f = float(value)
+        except Exception:
+            return candidates
+        if not (f == f):  # NaN guard
+            return candidates
+        i = int(round(f))
+        if abs(f - float(i)) > 1e-9:
+            return candidates
+
+        # Accept both raw numeric IDs and common N-prefixed IDs.
+        candidates.append(str(i))
+        if i >= 0:
+            candidates.append("N{}".format(i))
+            if i > 0:
+                candidates.append("N{}".format(i + 1))
+        return candidates
 
     def _try_point_lookup(candidate: Any) -> Optional[str]:
         pt = _as_proxy_point(candidate)
         if pt is None:
             return None
         key = (round(pt[0], point_decimals), round(pt[1], point_decimals), round(pt[2], point_decimals))
-        return point_map.get(key)
+        direct = point_map.get(key)
+        if direct is not None:
+            return direct
+
+        # Fallback for tiny numeric drifts between GH-provided proxy points and model nodes.
+        for node_key, node_id in point_items:
+            if (
+                abs(node_key[0] - pt[0]) <= point_tol
+                and abs(node_key[1] - pt[1]) <= point_tol
+                and abs(node_key[2] - pt[2]) <= point_tol
+            ):
+                return node_id
+
+        return None
 
     for item in _flatten_proxy_items(value):
+        item = _unwrap_gh_value(item)
         if isinstance(item, dict):
             guid = item.get("guid") or item.get("proxy_guid")
             node_id = item.get("id") or item.get("target_id") or item.get("node_id")
             if node_id not in (None, ""):
-                node_ids.append(str(node_id))
-                continue
+                node_id_text = str(node_id)
+                if node_id_text in valid_id_set:
+                    node_ids.append(node_id_text)
+                    continue
+                numeric_candidates = _candidate_node_ids_from_numeric(node_id)
+                matched_numeric = False
+                for candidate in numeric_candidates:
+                    if candidate in valid_id_set:
+                        node_ids.append(candidate)
+                        matched_numeric = True
+                        break
+                if matched_numeric:
+                    continue
 
             resolved = _lookup_guid_map(guid_map, guid)
             if resolved:
@@ -471,6 +554,17 @@ def _resolve_filtered_node_ids(
         # Accept direct node IDs passed through the proxy input.
         if token in valid_id_set:
             node_ids.append(token)
+            continue
+
+        # Accept numeric node references (e.g. 12 or 12.0 -> N12/N13 where available).
+        numeric_candidates = _candidate_node_ids_from_numeric(item)
+        matched_numeric = False
+        for candidate in numeric_candidates:
+            if candidate in valid_id_set:
+                node_ids.append(candidate)
+                matched_numeric = True
+                break
+        if matched_numeric:
             continue
 
         resolved = _try_point_lookup(item)
@@ -499,6 +593,7 @@ def _resolve_filtered_edge_ids(
 
     valid_id_set = set(valid_ids or [])
     for item in _flatten_proxy_items(value):
+        item = _unwrap_gh_value(item)
         if isinstance(item, dict):
             guid = item.get("guid") or item.get("proxy_guid")
             edge_id = item.get("id") or item.get("target_id") or item.get("edge_id") or item.get("line_id")
@@ -554,18 +649,26 @@ def _proxy_input_count(value: Any) -> int:
     if value is None:
         return 0
 
+    def _is_point_like(item: Any) -> bool:
+        return hasattr(item, "X") and hasattr(item, "Y") and hasattr(item, "Z")
+
     if isinstance(value, dict):
         return sum(1 for key in value.keys() if key not in (None, ""))
 
     if isinstance(value, (list, tuple, set)):
         count = 0
         for item in value:
+            item = _unwrap_gh_value(item)
             if isinstance(item, str) and item.strip():
                 count += 1
             elif isinstance(item, dict):
                 guid = item.get("guid") or item.get("proxy_guid")
                 if guid not in (None, ""):
                     count += 1
+            elif _is_point_like(item):
+                count += 1
+            elif isinstance(item, (int, float)):
+                count += 1
         return count
 
     # Generic GH/.NET iterable fallback.
@@ -577,18 +680,61 @@ def _proxy_input_count(value: Any) -> int:
     if flattened:
         count = 0
         for item in flattened:
+            item = _unwrap_gh_value(item)
             if isinstance(item, dict):
                 guid = item.get("guid") or item.get("proxy_guid")
                 if guid not in (None, ""):
                     count += 1
+            elif _is_point_like(item):
+                count += 1
             else:
-                token = str(item).strip()
-                if token:
+                if isinstance(item, (int, float)):
                     count += 1
+                else:
+                    token = str(item).strip()
+                    if token:
+                        count += 1
         return count
 
     text = str(value).strip()
     return 1 if text else 0
+
+
+def _proxy_input_type_hints(value: Any, max_items: int = 3) -> List[str]:
+    if value is None:
+        return []
+
+    hints: List[str] = []
+    try:
+        items = _flatten_proxy_items(value)
+    except Exception:
+        items = [value]
+
+    for item in items:
+        unwrapped = _unwrap_gh_value(item)
+        hint = type(unwrapped).__name__
+        if hint not in hints:
+            hints.append(hint)
+        if len(hints) >= max_items:
+            break
+
+    return hints
+
+
+def _incoming_key_type_hints(globals_dict: Dict[str, Any], tokens: List[str], max_items: int = 12) -> List[str]:
+    hints: List[str] = []
+    lowered_tokens = [t.lower() for t in tokens]
+
+    for key in sorted(globals_dict.keys()):
+        key_l = str(key).lower()
+        if not any(token in key_l for token in lowered_tokens):
+            continue
+        value = _unwrap_gh_value(globals_dict.get(key))
+        hints.append("{}:{}".format(key, type(value).__name__))
+        if len(hints) >= max_items:
+            break
+
+    return hints
 
 
 def _unique_str_list(values: List[str]) -> List[str]:
@@ -1333,13 +1479,20 @@ def _get_first_input(globals_dict: Dict[str, Any], names: List[str]) -> Any:
     return None
 
 
+def _get_first_input_with_name(globals_dict: Dict[str, Any], names: List[str]) -> Tuple[Optional[str], Any]:
+    for name in names:
+        if name in globals_dict:
+            return name, globals_dict.get(name)
+    return None, None
+
+
 if "model" in _incoming or "Model" in _incoming:
     _model_input = _get_first_input(_incoming, ["model", "Model"])
     if _model_input in (None, ""):
         out = "Model input is empty. Provide a JSON path or parsed JSON object/list."
     else:
         try:
-            _curve_proxies = _get_first_input(
+            _curve_proxy_key, _curve_proxies = _get_first_input_with_name(
                 _incoming,
                 [
                     "curve_guid_proxies",
@@ -1349,25 +1502,21 @@ if "model" in _incoming or "Model" in _incoming:
                     "LineGuids",
                 ],
             )
-            _pl_proxies = _get_first_input(
+            _pl_proxy_key, _pl_proxies = _get_first_input_with_name(
                 _incoming,
                 [
                     "point_load_guid_proxies",
                     "PointLoadGuidProxies",
-                    "point_load_points",
-                    "PointLoadPoints",
                     "point_guid_proxies",
                     "PointGuidProxies",
                     "PtGuidProxies",
                 ],
             )
-            _bp_proxies = _get_first_input(
+            _bp_proxy_key, _bp_proxies = _get_first_input_with_name(
                 _incoming,
                 [
                     "boundary_guid_proxies",
                     "BoundaryGuidProxies",
-                    "boundary_points",
-                    "BoundaryPoints",
                     "support_guid_proxies",
                     "SupportGuidProxies",
                 ],
@@ -1409,6 +1558,25 @@ if "model" in _incoming or "Model" in _incoming:
                 "runtime": {
                     "rhino_geometry_available": rg is not None,
                     "fast_mode": _fast_mode,
+                    "proxy_key_resolution": {
+                        "linear": _curve_proxy_key,
+                        "point": _pl_proxy_key,
+                        "boundary": _bp_proxy_key,
+                    },
+                    "proxy_input_counts": {
+                        "linear": _proxy_input_count(_curve_proxies),
+                        "point": _proxy_input_count(_pl_proxies),
+                        "boundary": _proxy_input_count(_bp_proxies),
+                    },
+                    "proxy_input_types": {
+                        "linear": _proxy_input_type_hints(_curve_proxies),
+                        "point": _proxy_input_type_hints(_pl_proxies),
+                        "boundary": _proxy_input_type_hints(_bp_proxies),
+                    },
+                    "incoming_key_types": _incoming_key_type_hints(
+                        _incoming,
+                        ["point", "boundary", "guid", "proxy", "line"],
+                    ),
                 },
             }
             ImportJson = json.dumps(_summary_payload, separators=(",", ":"))
