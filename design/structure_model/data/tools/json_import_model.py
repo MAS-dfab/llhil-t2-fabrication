@@ -1306,6 +1306,8 @@ def main() -> None:
 
 # GH Py3 auto-run block: input `model` (or `Model`) -> JSON payload + validation lists.
 _g = globals()
+# Snapshot incoming GH inputs before defining output variables with overlapping names.
+_incoming = dict(_g)
 
 # Preferred compact list outputs.
 ImportJson = "{}"
@@ -1331,14 +1333,14 @@ def _get_first_input(globals_dict: Dict[str, Any], names: List[str]) -> Any:
     return None
 
 
-if "model" in _g or "Model" in _g:
-    _model_input = _get_first_input(_g, ["model", "Model"])
+if "model" in _incoming or "Model" in _incoming:
+    _model_input = _get_first_input(_incoming, ["model", "Model"])
     if _model_input in (None, ""):
         out = "Model input is empty. Provide a JSON path or parsed JSON object/list."
     else:
         try:
             _curve_proxies = _get_first_input(
-                _g,
+                _incoming,
                 [
                     "curve_guid_proxies",
                     "CurveGuidProxies",
@@ -1348,39 +1350,44 @@ if "model" in _g or "Model" in _g:
                 ],
             )
             _pl_proxies = _get_first_input(
-                _g,
+                _incoming,
                 [
                     "point_load_guid_proxies",
                     "PointLoadGuidProxies",
                     "point_load_points",
+                    "PointLoadPoints",
                     "point_guid_proxies",
                     "PointGuidProxies",
                     "PtGuidProxies",
                 ],
             )
             _bp_proxies = _get_first_input(
-                _g,
+                _incoming,
                 [
                     "boundary_guid_proxies",
                     "BoundaryGuidProxies",
                     "boundary_points",
+                    "BoundaryPoints",
                     "support_guid_proxies",
                     "SupportGuidProxies",
                 ],
             )
             _preview_enabled = _to_bool(
-                _get_first_input(_g, ["preview_geometry", "PreviewGeometry", "BuildPreviewGeometry"]),
+                _get_first_input(_incoming, ["preview_geometry", "PreviewGeometry", "BuildPreviewGeometry"]),
                 default=False,
             )
             _preview_kind_raw = _get_first_input(
-                _g,
+                _incoming,
                 ["preview_kind", "PreviewKind", "PreviewTarget", "PreviewSource"],
             )
             _preview_kind = str(_preview_kind_raw).strip().lower() if _preview_kind_raw not in (None, "") else "members"
             # GH runtime is intentionally locked to fast mode to avoid exposing
             # extra toggles while keeping output behavior deterministic.
             _fast_mode = True
-            _area_geometry_input = _get_first_input(_g, ["area_geometry", "AreaGeometry", "AreaMeshes", "AreaSurfaces"])
+            _area_geometry_input = _get_first_input(
+                _incoming,
+                ["area_geometry", "AreaGeometry", "AreaMeshes", "AreaSurfaces"],
+            )
 
             _import_payload = import_line_model_json(
                 _model_input,
