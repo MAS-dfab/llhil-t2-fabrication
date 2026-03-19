@@ -3,17 +3,18 @@
 #   (can be a parsed JSON object/list OR a file path string to JSON)
 # - Optional GH preview toggle:
 #     preview_geometry (aliases: PreviewGeometry, BuildPreviewGeometry) -> default false
-# - Optional GH area auto-mesh toggle (preview path):
-#     auto_mesh_areas (aliases: AutoMeshAreas, AutoMeshAreaLoads) -> default true
 # - Optional GH fast solve toggle:
-#     fast_mode (aliases: FastMode, FastSolveMode) -> default false
-#     when true: bypasses proxy-driven linear/point/boundary/area outputs while
-#     keeping member lines + joints active (references stay stored)
+#     internal fast mode is always enabled in GH runtime
+#     keeps runtime behavior stable without exposing extra GH toggles
 # - Optional GH proxy / geometry inputs:
 #     curve_guid_proxies      (alias: LineGuidProxies)      -> linear load line filtering
 #     area_geometry           (aliases: AreaGeometry, AreaMeshes, AreaSurfaces) -> area meshes
 #     point_load_guid_proxies (alias: PointLoadGuidProxies) -> filters PointLoadPoints
 #     boundary_guid_proxies   (alias: BoundaryGuidProxies)  -> filters BoundaryPoints
+# - Point-load behavior is hard-gated:
+#     if point_load_guid_proxies are missing/unresolved -> PointLoadPoints is []
+# - Boundary behavior is hard-gated:
+#     if boundary_guid_proxies are missing/unresolved -> BoundaryPoints is []
 # - preview_kind values and their GH input / output correspondence:
 #     members     -> (no extra input)              -> MemberLines
 #     linear      -> LineGuidProxies               -> LinearLoadLines
@@ -314,7 +315,7 @@ def _resolve_filtered_node_ids(
             resolved = str(node_id) if node_id not in (None, "") else guid_map.get(str(guid))
             if resolved:
                 node_ids.append(resolved)
-        return node_ids if node_ids else None
+        return _unique_str_list(node_ids) if node_ids else None
 
     if isinstance(value, (list, tuple)):
         for item in value:
@@ -329,7 +330,7 @@ def _resolve_filtered_node_ids(
                     node_ids.append(str(node_id))
                 elif guid and str(guid) in guid_map:
                     node_ids.append(guid_map[str(guid)])
-        return node_ids if node_ids else None
+        return _unique_str_list(node_ids) if node_ids else None
 
     return None
 
@@ -353,6 +354,18 @@ def _coerce_proxy_map(value: Any) -> Dict[str, str]:
                 continue
             result[str(guid)] = str(target_id)
     return result
+
+
+def _unique_str_list(values: List[str]) -> List[str]:
+    seen: Dict[str, bool] = {}
+    out: List[str] = []
+    for value in values:
+        key = str(value)
+        if key in seen:
+            continue
+        seen[key] = True
+        out.append(key)
+    return out
 
 
 def _to_bool(value: Any, default: bool = False) -> bool:
@@ -539,7 +552,7 @@ def _meshes_from_area_payload(raw_area: Dict[str, Any]) -> List[Any]:
     return out_meshes
 
 
-def _mesh_record_to_rhino_meshes(raw_mesh: Dict[str, Any], *, auto_mesh_areas: bool) -> List[Any]:
+def _mesh_record_to_rhino_meshes(raw_mesh: Dict[str, Any]) -> List[Any]:
     if rg is None:
         return []
 
@@ -575,19 +588,17 @@ def _mesh_record_to_rhino_meshes(raw_mesh: Dict[str, Any], *, auto_mesh_areas: b
             return [rh_mesh]
         return []
 
-    if auto_mesh_areas:
-        return _meshes_from_area_payload(raw_mesh)
-    return []
+    return _meshes_from_area_payload(raw_mesh)
 
 
-def _build_area_mesh_geometry(meshes: List[Dict[str, Any]], *, auto_mesh_areas: bool = True) -> List[Any]:
+def _build_area_mesh_geometry(meshes: List[Dict[str, Any]]) -> List[Any]:
     mesh_geometry: List[Any] = []
     for mesh in meshes:
-        mesh_geometry.extend(_mesh_record_to_rhino_meshes(mesh, auto_mesh_areas=auto_mesh_areas))
+        mesh_geometry.extend(_mesh_record_to_rhino_meshes(mesh))
     return mesh_geometry
 
 
-def _build_area_mesh_geometry_from_input(value: Any, *, auto_mesh_areas: bool = True) -> List[Any]:
+def _build_area_mesh_geometry_from_input(value: Any) -> List[Any]:
     """Convert direct GH area geometry input into Rhino meshes."""
     if value is None:
         return []
@@ -622,7 +633,7 @@ def _build_area_mesh_geometry_from_input(value: Any, *, auto_mesh_areas: bool = 
         elif rg is not None and isinstance(geo, rg.Surface):
             mesh_records.append({"surface": geo})
 
-    return _build_area_mesh_geometry(mesh_records, auto_mesh_areas=auto_mesh_areas)
+    return _build_area_mesh_geometry(mesh_records)
 
 
 def _node_index(nodes: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
@@ -928,14 +939,19 @@ def import_line_model_json(
         if mesh_guid is not None:
             area_guid_proxy[mesh_guid] = mesh_id
 
-    member_line_ids = [edge["id"] for edge in edge_records]
-    area_mesh_ids = [mesh["id"] for mesh in mesh_records]
-    point_ids = [node["id"] for node in node_records]
+    member_line_ids = _unique_str_list([edge["id"] for edge in edge_records])
+    area_mesh_ids = _unique_str_list([mesh["id"] for mesh in mesh_records])
+    point_ids = _unique_str_list([node["id"] for node in node_records])
+    joint_node_ids = _unique_str_list([joint["node_id"] for joint in joint_records])
 
     # Resolve explicitly tagged GUID inputs to filtered node ID lists.
-    # Falls back to all node IDs when the proxy input is not provided.
     _pl_ids = _resolve_filtered_node_ids(point_load_guid_proxies, point_guid_proxy)
     _bp_ids = _resolve_filtered_node_ids(boundary_guid_proxies, point_guid_proxy)
+
+    # Never default point loads to all nodes.
+    point_load_points = _pl_ids if _pl_ids is not None else []
+    # Never default supports/boundaries to all nodes.
+    boundary_points = _bp_ids if _bp_ids is not None else []
 
     return {
         "schema": "structure_model_v1",
@@ -948,9 +964,9 @@ def import_line_model_json(
             "area_load_meshes": area_mesh_ids,
             "linear_load_lines": list(member_line_ids),
             "segmented_linear_load_lines": list(segmented_edge_ids),
-            "point_load_points": _pl_ids if _pl_ids is not None else point_ids,
-            "boundary_points": _bp_ids if _bp_ids is not None else point_ids,
-            "joint_nodes": [joint["node_id"] for joint in joint_records],
+            "point_load_points": list(point_load_points),
+            "boundary_points": list(boundary_points),
+            "joint_nodes": joint_node_ids,
         },
         "guid_proxies": {
             "pt": dict(sorted(point_guid_proxy.items())),
@@ -1068,14 +1084,9 @@ if "model" in _g or "Model" in _g:
                 ["preview_kind", "PreviewKind", "PreviewTarget", "PreviewSource"],
             )
             _preview_kind = str(_preview_kind_raw).strip().lower() if _preview_kind_raw not in (None, "") else "members"
-            _auto_mesh_areas = _to_bool(
-                _get_first_input(_g, ["auto_mesh_areas", "AutoMeshAreas", "AutoMeshAreaLoads"]),
-                default=True,
-            )
-            _fast_mode = _to_bool(
-                _get_first_input(_g, ["fast_mode", "FastMode", "FastSolveMode"]),
-                default=False,
-            )
+            # GH runtime is intentionally locked to fast mode to avoid exposing
+            # extra toggles while keeping output behavior deterministic.
+            _fast_mode = True
             _area_geometry_input = _get_first_input(_g, ["area_geometry", "AreaGeometry", "AreaMeshes", "AreaSurfaces"])
 
             _import_payload = import_line_model_json(
@@ -1104,12 +1115,18 @@ if "model" in _g or "Model" in _g:
 
             # Compressed list-first outputs.
             _lists = _import_payload.get("output_lists", {})
-            MemberLines = list(_lists.get("member_lines", []))
+            _member_line_ids = list(_lists.get("member_lines", []))
+            _linear_line_ids = list(_lists.get("linear_load_lines", []))
+            _point_node_ids = list(_lists.get("point_load_points", []))
+            _boundary_node_ids = list(_lists.get("boundary_points", []))
+            _joint_node_ids = list(_lists.get("joint_nodes", []))
+
+            MemberLines = list(_member_line_ids)
             AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
-            LinearLoadLines = list(_lists.get("linear_load_lines", []))
-            PointLoadPoints = list(_lists.get("point_load_points", []))
-            BoundaryPoints = list(_lists.get("boundary_points", []))
-            JointNodes = list(_lists.get("joint_nodes", []))
+            LinearLoadLines = list(_linear_line_ids)
+            PointLoadPoints = list(_point_node_ids)
+            BoundaryPoints = list(_boundary_node_ids)
+            JointNodes = list(_joint_node_ids)
 
             # Raw geometry records for downstream ID→geometry mapping.
             _nodes = list(_import_payload.get("nodes", []))
@@ -1120,88 +1137,24 @@ if "model" in _g or "Model" in _g:
             Meshes = _meshes
             PreviewGeometry = []
 
-<<<<<<< HEAD
-            # Ensure solver-facing point lists are unique per spatial location.
-            _runtime_dedupe_tol = 1e-5
-            _point_node_ids = _dedupe_node_ids_by_position(_point_node_ids, _nodes, tol=_runtime_dedupe_tol)
-            _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=_runtime_dedupe_tol)
-            _joint_node_ids = _dedupe_node_ids_by_position(_joint_node_ids, _nodes, tol=_runtime_dedupe_tol)
-
-            # Keep fallback ID outputs synchronized with deduplicated IDs.
-            PointLoadPoints = list(_point_node_ids)
-            BoundaryPoints = list(_boundary_node_ids)
-            JointNodes = list(_joint_node_ids)
-
-            # Geometry-based proxy resolution: when GH curve proxies are connected,
-            # generate perimeter linear edges by segmenting those curves against model nodes.
+            # When Rhino geometry is available, output direct geometry for downstream components.
             if rg is not None:
-                if _fast_mode:
-                    # Fast mode keeps core analysis geometry and bypasses proxy-driven load/support branches.
-                    _linear_line_ids = []
-                    _point_node_ids = []
-                    _boundary_node_ids = []
+                MemberLines = _line_geometry_from_edge_ids(_member_line_ids, _edges, _nodes)
+                LinearLoadLines = _line_geometry_from_edge_ids(_linear_line_ids, _edges, _nodes)
+                PointLoadPoints = _point_geometry_from_node_ids(_point_node_ids, _nodes)
+                BoundaryPoints = _point_geometry_from_node_ids(_boundary_node_ids, _nodes)
+                JointNodes = _point_geometry_from_node_ids(_joint_node_ids, _nodes)
 
-                    MemberLines = _line_geometry_from_edge_ids(_member_line_ids, _edges, _nodes)
-                    LinearLoadLines = []
-                    PointLoadPoints = []
-                    BoundaryPoints = []
-                    JointNodes = _point_geometry_from_node_ids(_joint_node_ids, _nodes)
-                else:
-                    _generated_linear_ids = _build_linear_edges_from_curve_proxies(
-                        _curve_proxies, _nodes, _edges, decimals=6
-                    )
-                    if _generated_linear_ids is not None:
-                        _linear_line_ids = _generated_linear_ids
-                    elif _has_guid_like_filter_input(_curve_proxies):
-                        # Connected GUID-like filter with no matches should not fall back to all members.
-                        _linear_line_ids = []
-
-                    _rhino_pl = _resolve_node_ids_from_rhino_points(_pl_proxies, _nodes)
-                    if _rhino_pl is not None:
-                        _point_node_ids = _rhino_pl
-                    _rhino_bp = _resolve_node_ids_from_rhino_points(_bp_proxies, _nodes)
-                    if _rhino_bp is not None:
-                        _boundary_node_ids = _rhino_bp
-
-                    # Re-apply positional deduplication after Rhino-proxy overrides.
-                    _point_node_ids = _dedupe_node_ids_by_position(_point_node_ids, _nodes, tol=_runtime_dedupe_tol)
-                    _boundary_node_ids = _dedupe_node_ids_by_position(_boundary_node_ids, _nodes, tol=_runtime_dedupe_tol)
-                    _joint_node_ids = _dedupe_node_ids_by_position(_joint_node_ids, _nodes, tol=_runtime_dedupe_tol)
-
-                    # GH-facing outputs should be geometry for direct Karamba compatibility.
-                    MemberLines = _line_geometry_from_edge_ids(_member_line_ids, _edges, _nodes)
-                    LinearLoadLines = _line_geometry_from_edge_ids(_linear_line_ids, _edges, _nodes)
-                    PointLoadPoints = _point_geometry_from_node_ids(_point_node_ids, _nodes)
-                    BoundaryPoints = _point_geometry_from_node_ids(_boundary_node_ids, _nodes)
-                    JointNodes = _point_geometry_from_node_ids(_joint_node_ids, _nodes)
-
-            # Publish potentially augmented edges (includes generated linear proxy segments).
+            # Publish parsed edges as records for downstream ID mapping.
             Edges = _edges
 
-=======
->>>>>>> 96d1928b978c41fa0d3e469c60d5d6398eba3ce9
             # AreaLoadMeshes: actual Rhino Mesh objects built from JSON mesh records and/or
             # area_geometry input (surfaces/breps). Runs unconditionally so the output is usable
             # without enabling preview. Falls back to string IDs when rg is unavailable (CLI).
             if rg is not None:
-<<<<<<< HEAD
-                if _fast_mode:
-                    AreaLoadMeshes = []
-                else:
-                    _area_geo_built = _build_area_mesh_geometry(
-                        _meshes, auto_mesh_areas=_auto_mesh_areas, nodes=_nodes
-                    )
-                    _area_geo_built += _build_area_mesh_geometry_from_input(
-                        _area_geometry_input, auto_mesh_areas=_auto_mesh_areas, nodes=_nodes
-                    )
-                    AreaLoadMeshes = _area_geo_built
-=======
-                _area_geo_built = _build_area_mesh_geometry(_meshes, auto_mesh_areas=_auto_mesh_areas)
-                _area_geo_built += _build_area_mesh_geometry_from_input(
-                    _area_geometry_input, auto_mesh_areas=_auto_mesh_areas
-                )
+                _area_geo_built = _build_area_mesh_geometry(_meshes)
+                _area_geo_built += _build_area_mesh_geometry_from_input(_area_geometry_input)
                 AreaLoadMeshes = _area_geo_built
->>>>>>> 96d1928b978c41fa0d3e469c60d5d6398eba3ce9
             else:
                 AreaLoadMeshes = list(_lists.get("area_load_meshes", []))
 
@@ -1226,19 +1179,19 @@ if "model" in _g or "Model" in _g:
                     _kind = "members"
 
                 if _kind in ("members", "all"):
-                    _preview_items.extend(_line_geometry_from_edge_ids(MemberLines, _edges, _nodes))
+                    _preview_items.extend(_line_geometry_from_edge_ids(_member_line_ids, _edges, _nodes))
 
                 if _kind in ("linear", "all"):
-                    _preview_items.extend(_line_geometry_from_edge_ids(LinearLoadLines, _edges, _nodes))
+                    _preview_items.extend(_line_geometry_from_edge_ids(_linear_line_ids, _edges, _nodes))
 
                 if _kind in ("point_loads", "all"):
-                    _preview_items.extend(_point_geometry_from_node_ids(PointLoadPoints, _nodes))
+                    _preview_items.extend(_point_geometry_from_node_ids(_point_node_ids, _nodes))
 
                 if _kind in ("boundary", "all"):
-                    _preview_items.extend(_point_geometry_from_node_ids(BoundaryPoints, _nodes))
+                    _preview_items.extend(_point_geometry_from_node_ids(_boundary_node_ids, _nodes))
 
                 if _kind in ("joints", "all"):
-                    _preview_items.extend(_point_geometry_from_node_ids(JointNodes, _nodes))
+                    _preview_items.extend(_point_geometry_from_node_ids(_joint_node_ids, _nodes))
 
                 if _kind in ("areas", "all"):
                     _preview_items.extend(AreaLoadMeshes)

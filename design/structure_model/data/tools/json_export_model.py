@@ -7,6 +7,9 @@
 #    "edges": [{"id": "E1", "start_node": "N1", "end_node": "N2"}]}
 # - GH outputs: ExportJson, MemberLines, AreaLoadMeshes, LinearLoadLines, PointLoadPoints,
 #   BoundaryPoints, JointNodes, out
+# - Point load / boundary behavior is strict:
+#   if output_lists.point_load_points or output_lists.boundary_points are absent,
+#   exported PointLoadPoints and BoundaryPoints stay empty
 from __future__ import annotations
 
 import argparse
@@ -74,6 +77,30 @@ def _coerce_proxy_map(value: Any) -> Dict[str, str]:
                 continue
             result[str(guid)] = str(target_id)
     return result
+
+
+def _unique_str_list(values: List[str]) -> List[str]:
+    seen: Dict[str, bool] = {}
+    out: List[str] = []
+    for value in values:
+        key = str(value)
+        if key in seen:
+            continue
+        seen[key] = True
+        out.append(key)
+    return out
+
+
+def _filter_existing_id_list(value: Any, allowed_ids: List[str]) -> List[str]:
+    allowed = {str(item) for item in allowed_ids}
+    items = value if isinstance(value, (list, tuple)) else []
+    filtered: List[str] = []
+    for item in items:
+        key = str(item)
+        if key not in allowed:
+            continue
+        filtered.append(key)
+    return _unique_str_list(filtered)
 
 
 def _extract_input_proxy_maps(payload: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
@@ -197,13 +224,18 @@ def build_structure_export_json(
     member_breps_in = _pick_list(model, "member_breps", "breps")
     sections_in = _pick_list(model, "cross_sections", "sections")
     input_proxies = _extract_input_proxy_maps(model)
+    input_lists = model.get("output_lists") if isinstance(model.get("output_lists"), dict) else {}
 
     node_records: List[Dict[str, Any]] = []
     node_ids: List[str] = []
     point_guid_proxy: Dict[str, str] = dict(input_proxies["pt"])
+    seen_node_ids: Dict[str, bool] = {}
 
     for index, node in enumerate(nodes_in):
         node_id = _resolve_node_id(node, index)
+        if node_id in seen_node_ids:
+            continue
+        seen_node_ids[node_id] = True
         node_ids.append(node_id)
 
         record = {
@@ -249,14 +281,23 @@ def build_structure_export_json(
     edge_records: List[Dict[str, Any]] = []
     export_breps: List[Dict[str, Any]] = []
     curve_guid_proxy: Dict[str, str] = dict(input_proxies["curve"])
+    seen_edge_ids: Dict[str, bool] = {}
+    seen_edge_pairs: Dict[tuple[str, str], bool] = {}
 
     for index, edge in enumerate(edges_in):
         edge_id = _resolve_edge_id(edge, index)
+        if edge_id in seen_edge_ids:
+            continue
         node_pair = _edge_node_ids(edge, node_ids)
         if node_pair is None:
             continue
 
         start_node, end_node = node_pair
+        pair_key = tuple(sorted((start_node, end_node)))
+        if pair_key in seen_edge_pairs:
+            continue
+        seen_edge_ids[edge_id] = True
+        seen_edge_pairs[pair_key] = True
         edge_record: Dict[str, Any] = {
             "id": edge_id,
             "start_node": start_node,
@@ -291,8 +332,12 @@ def build_structure_export_json(
 
     mesh_records: List[Dict[str, Any]] = []
     area_guid_proxy: Dict[str, str] = dict(input_proxies["area"])
+    seen_mesh_ids: Dict[str, bool] = {}
     for index, mesh in enumerate(meshes_in):
         mesh_id = str(mesh.get("id") or mesh.get("mesh_id") or f"M{index + 1}")
+        if mesh_id in seen_mesh_ids:
+            continue
+        seen_mesh_ids[mesh_id] = True
         attrs = mesh.get("attributes") if isinstance(mesh.get("attributes"), dict) else {}
         preserved_attrs = {k: v for k, v in attrs.items() if k not in ("guid", "rhino_guid", "area_guid", "mesh_guid")}
 
@@ -310,9 +355,9 @@ def build_structure_export_json(
         if mesh_guid is not None:
             area_guid_proxy[mesh_guid] = mesh_id
 
-    member_line_ids = [edge["id"] for edge in edge_records]
-    area_mesh_ids = [mesh["id"] for mesh in mesh_records]
-    point_ids = [node["id"] for node in node_records]
+    member_line_ids = _unique_str_list([edge["id"] for edge in edge_records])
+    area_mesh_ids = _unique_str_list([mesh["id"] for mesh in mesh_records])
+    point_ids = _unique_str_list([node["id"] for node in node_records])
 
     node_by_id: Dict[str, Dict[str, Any]] = {node["id"]: node for node in node_records}
     connected_edges_by_node: Dict[str, List[str]] = {}
@@ -342,6 +387,15 @@ def build_structure_export_json(
             }
         )
 
+    joint_node_ids = _unique_str_list([joint["node_id"] for joint in joint_records])
+
+    member_line_ids = _filter_existing_id_list(input_lists.get("member_lines"), member_line_ids) or member_line_ids
+    linear_load_line_ids = _filter_existing_id_list(input_lists.get("linear_load_lines"), member_line_ids) or list(member_line_ids)
+    area_mesh_ids = _filter_existing_id_list(input_lists.get("area_load_meshes"), area_mesh_ids) or area_mesh_ids
+    point_load_point_ids = _filter_existing_id_list(input_lists.get("point_load_points"), point_ids)
+    boundary_point_ids = _filter_existing_id_list(input_lists.get("boundary_points"), point_ids)
+    joint_node_ids = _filter_existing_id_list(input_lists.get("joint_nodes"), point_ids) or joint_node_ids
+
     return {
         "schema": schema,
         "nodes": node_records,
@@ -352,10 +406,10 @@ def build_structure_export_json(
         "output_lists": {
             "member_lines": member_line_ids,
             "area_load_meshes": area_mesh_ids,
-            "linear_load_lines": list(member_line_ids),
-            "point_load_points": point_ids,
-            "boundary_points": list(point_ids),
-            "joint_nodes": [joint["node_id"] for joint in joint_records],
+            "linear_load_lines": linear_load_line_ids,
+            "point_load_points": point_load_point_ids,
+            "boundary_points": boundary_point_ids,
+            "joint_nodes": joint_node_ids,
         },
         "guid_proxies": {
             "pt": dict(sorted(point_guid_proxy.items())),
@@ -372,6 +426,9 @@ def build_structure_export_json(
             "output_meshes": len(mesh_records),
             "output_member_breps": len(export_breps),
             "output_joints": len(joint_records),
+            "deduplicated_nodes": max(0, len(nodes_in) - len(node_records)),
+            "deduplicated_edges": max(0, len(edges_in) - len(edge_records)),
+            "deduplicated_meshes": max(0, len(meshes_in) - len(mesh_records)),
         },
     }
 
