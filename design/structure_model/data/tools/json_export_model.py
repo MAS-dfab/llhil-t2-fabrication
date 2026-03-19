@@ -486,13 +486,28 @@ def _coerce_model_to_payload(model_input: Any) -> Tuple[Optional[Dict[str, Any]]
         return None, "unsupported-node-layout:{}".format(type(raw).__name__)
 
     edges: List[Dict[str, Any]] = []
-    meshes: List[Dict[str, Any]] = []
+    shell_faces: List[List[int]] = []
     for e_i, elem in enumerate(elems_seq):
         node_inds = None
-        for key in ("node_inds", "nodeInds", "NodeInds", "NodeInds", "ind", "Ind"):
+        for key in (
+            "node_inds",
+            "nodeInds",
+            "NodeInds",
+            "node_indices",
+            "nodeIndices",
+            "NodeIndices",
+            "node_ind",
+            "nodeInd",
+            "NodeInd",
+            "ind",
+            "Ind",
+        ):
             if hasattr(elem, key):
                 try:
-                    node_inds = list(getattr(elem, key))
+                    raw_inds = getattr(elem, key)
+                    if callable(raw_inds):
+                        raw_inds = raw_inds()
+                    node_inds = list(raw_inds)
                     break
                 except Exception:
                     pass
@@ -511,17 +526,24 @@ def _coerce_model_to_payload(model_input: Any) -> Tuple[Optional[Dict[str, Any]]
             if 0 <= a < len(node_ids) and 0 <= b < len(node_ids) and a != b:
                 edges.append({"id": "E{}".format(len(edges) + 1), "start_node": node_ids[a], "end_node": node_ids[b]})
 
-        # Shell-like: capture polygon face when at least 3 nodes are present.
+        # Shell-like: triangulate polygonal faces for stable Rhino mesh reconstruction.
         if len(idx) >= 3:
             face = [j for j in idx if 0 <= j < len(node_ids)]
             if len(face) >= 3:
-                meshes.append(
-                    {
-                        "id": "M{}".format(len(meshes) + 1),
-                        "vertices": [[nodes[j]["x"], nodes[j]["y"], nodes[j]["z"]] for j in face],
-                        "faces": [list(range(len(face)))],
-                    }
-                )
+                anchor = face[0]
+                for k in range(1, len(face) - 1):
+                    tri = [anchor, face[k], face[k + 1]]
+                    if len(set(tri)) == 3:
+                        shell_faces.append(tri)
+
+    meshes: List[Dict[str, Any]] = []
+    if shell_faces:
+        used_node_indices = sorted({index for face in shell_faces for index in face})
+        remap = {old_i: new_i for new_i, old_i in enumerate(used_node_indices)}
+
+        vertices = [[nodes[i]["x"], nodes[i]["y"], nodes[i]["z"]] for i in used_node_indices]
+        faces = [[remap[i] for i in face] for face in shell_faces]
+        meshes.append({"id": "M1", "vertices": vertices, "faces": faces})
 
     payload: Dict[str, Any] = {"nodes": nodes, "edges": edges}
     if meshes:
