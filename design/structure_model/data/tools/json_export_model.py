@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import traceback
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
@@ -315,6 +316,164 @@ def _edge_node_ids(edge: Dict[str, Any], node_ids: List[str]) -> Optional[tuple[
     return start, end
 
 
+def _coerce_point3_like(value: Any) -> Optional[Point]:
+    if value is None:
+        return None
+    p = _as_point(value)
+    if p is not None:
+        return p
+    for keys in (("X", "Y", "Z"), ("x", "y", "z")):
+        if all(hasattr(value, k) for k in keys):
+            try:
+                return (float(getattr(value, keys[0])), float(getattr(value, keys[1])), float(getattr(value, keys[2])))
+            except Exception:
+                return None
+    return None
+
+
+def _unwrap_model_candidate(value: Any) -> Any:
+    current = value
+    for _ in range(6):
+        changed = False
+
+        if isinstance(current, (list, tuple)) and len(current) == 1:
+            current = current[0]
+            changed = True
+
+        # GH Goo wrappers often expose the payload as .Value
+        if hasattr(current, "Value"):
+            try:
+                maybe = getattr(current, "Value")
+                if maybe is not None and maybe is not current:
+                    current = maybe
+                    changed = True
+            except Exception:
+                pass
+
+        # Some wrappers expose ScriptVariable() to provide the runtime value.
+        if hasattr(current, "ScriptVariable"):
+            try:
+                maybe = current.ScriptVariable()
+                if maybe is not None and maybe is not current:
+                    current = maybe
+                    changed = True
+            except Exception:
+                pass
+
+        if not changed:
+            break
+    return current
+
+
+def _iter_sequence_candidate(value: Any) -> List[Any]:
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    try:
+        return list(value)
+    except Exception:
+        return []
+
+
+def _coerce_model_to_payload(model_input: Any) -> Tuple[Optional[Dict[str, Any]], str]:
+    raw = _unwrap_model_candidate(model_input)
+
+    if isinstance(raw, dict):
+        return raw, "dict"
+
+    if isinstance(raw, str):
+        text = raw.strip()
+        if text.startswith("{") and text.endswith("}"):
+            try:
+                parsed = json.loads(text)
+                if isinstance(parsed, dict):
+                    return parsed, "json-string"
+            except Exception:
+                pass
+
+    # Try generic Karamba-like object conversion: nodes + elements/shells.
+    node_source = None
+    for key in ("nodes", "Nodes"):
+        if hasattr(raw, key):
+            node_source = getattr(raw, key)
+            break
+
+    elem_source = None
+    for key in ("elems", "Elems", "elements", "Elements"):
+        if hasattr(raw, key):
+            elem_source = getattr(raw, key)
+            break
+
+    nodes_seq = _iter_sequence_candidate(node_source)
+    elems_seq = _iter_sequence_candidate(elem_source)
+    if not nodes_seq:
+        return None, "unsupported-model-type:{}".format(type(raw).__name__)
+
+    nodes: List[Dict[str, Any]] = []
+    node_ids: List[str] = []
+    for i, node in enumerate(nodes_seq):
+        point = _coerce_point3_like(node)
+        if point is None:
+            # try common node-position properties
+            for pos_key in ("pos", "Pos", "point", "Point"):
+                if hasattr(node, pos_key):
+                    point = _coerce_point3_like(getattr(node, pos_key))
+                    if point is not None:
+                        break
+        if point is None:
+            continue
+        node_id = "N{}".format(i + 1)
+        node_ids.append(node_id)
+        nodes.append({"id": node_id, "x": point[0], "y": point[1], "z": point[2]})
+
+    if not nodes:
+        return None, "unsupported-node-layout:{}".format(type(raw).__name__)
+
+    edges: List[Dict[str, Any]] = []
+    meshes: List[Dict[str, Any]] = []
+    for e_i, elem in enumerate(elems_seq):
+        node_inds = None
+        for key in ("node_inds", "nodeInds", "NodeInds", "NodeInds", "ind", "Ind"):
+            if hasattr(elem, key):
+                try:
+                    node_inds = list(getattr(elem, key))
+                    break
+                except Exception:
+                    pass
+        if not node_inds:
+            continue
+
+        try:
+            idx = [int(v) for v in node_inds]
+        except Exception:
+            continue
+
+        # Beam-like: use first and last node as line connectivity.
+        if len(idx) >= 2:
+            a = idx[0]
+            b = idx[-1]
+            if 0 <= a < len(node_ids) and 0 <= b < len(node_ids) and a != b:
+                edges.append({"id": "E{}".format(len(edges) + 1), "start_node": node_ids[a], "end_node": node_ids[b]})
+
+        # Shell-like: capture polygon face when at least 3 nodes are present.
+        if len(idx) >= 3:
+            face = [j for j in idx if 0 <= j < len(node_ids)]
+            if len(face) >= 3:
+                meshes.append(
+                    {
+                        "id": "M{}".format(len(meshes) + 1),
+                        "vertices": [[nodes[j]["x"], nodes[j]["y"], nodes[j]["z"]] for j in face],
+                        "faces": [list(range(len(face)))],
+                    }
+                )
+
+    payload: Dict[str, Any] = {"nodes": nodes, "edges": edges}
+    if meshes:
+        payload["meshes"] = meshes
+    return payload, "coerced-{}".format(type(raw).__name__)
+
+
 def build_structure_export_json(
     model: Dict[str, Any],
     *,
@@ -578,6 +737,30 @@ def _write_json(path: str, payload: Dict[str, Any]) -> None:
         json.dump(payload, stream, indent=2)
 
 
+def _resolve_output_file_path(path: str) -> str:
+    cleaned = str(path).replace("\r", "").replace("\n", "").strip().strip('"').strip("'")
+    normalized = os.path.abspath(cleaned)
+    if normalized.lower().endswith(".json"):
+        return normalized
+    if os.path.isdir(normalized) or normalized.endswith(("\\", "/")):
+        return os.path.join(normalized, "out_model.json")
+    return normalized + ".json"
+
+
+def _coerce_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        text = value.strip().lower()
+        if text in ("", "0", "false", "no", "off", "none", "null"):
+            return False
+        if text in ("1", "true", "yes", "on"):
+            return True
+    return bool(value)
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Export Karamba model payload to structure JSON.")
     parser.add_argument("--input", required=True, help="Path to Karamba model JSON source file.")
@@ -597,54 +780,64 @@ def main() -> None:
 
 # GH Py3 auto-run block: input `model` (or `Model`) -> JSON payload + validation lists.
 _g = globals()
-if "model" in _g or "Model" in _g:
-    _model_input = _g.get("model", _g.get("Model"))
-    _save_flag = bool(_g.get("save", _g.get("Save", False)))
-    _out_path_raw = _g.get("output_path", _g.get("OutputPath", _g.get("file_path", _g.get("FilePath"))))
-    _out_path = str(_out_path_raw).strip() if _out_path_raw not in (None, "") else ""
+try:
+    if "model" in _g or "Model" in _g:
+        _model_input = _g.get("model", _g.get("Model"))
+        _save_flag = _coerce_bool(_g.get("save", _g.get("Save", False)))
+        _out_path_raw = _g.get("output_path", _g.get("OutputPath", _g.get("file_path", _g.get("FilePath"))))
+        _out_path = str(_out_path_raw).strip() if _out_path_raw not in (None, "") else ""
+        _payload_input, _payload_source = _coerce_model_to_payload(_model_input)
 
-    if isinstance(_model_input, dict):
-        ExportJson = build_structure_export_json(model=_model_input)
-        _lists = as_output_lists(_model_input)
-        MemberLines = _lists["MemberLines"]
-        AreaLoadMeshes = _lists["AreaLoadMeshes"]
-        LinearLoadLines = _lists["LinearLoadLines"]
-        PointLoadPoints = _lists["PointLoadPoints"]
-        BoundaryPoints = _lists["BoundaryPoints"]
-        JointNodes = _lists["JointNodes"]
-        GHLineCurves = _lists["GHLineCurves"]
-        GHNodes = _lists["GHNodes"]
-        GHLoadPoints = _lists["GHLoadPoints"]
-        GHSurfaces = _lists["GHSurfaces"]
-        out = (
-            "Exported nodes: {}, edges: {}, meshes: {}, member_breps: {}, joints: {}, gh_lines: {}, gh_nodes: {}, gh_load_points: {}, gh_surfaces: {}"
-        ).format(
-            len(ExportJson.get("nodes", [])),
-            len(ExportJson.get("edges", [])),
-            len(ExportJson.get("meshes", [])),
-            len(ExportJson.get("member_breps", [])),
-            len(ExportJson.get("joints", [])),
-            len(GHLineCurves),
-            len(GHNodes),
-            len(GHLoadPoints),
-            len(GHSurfaces),
-        )
-        if _save_flag:
-            if _out_path:
-                try:
-                    _normalized_path = os.path.abspath(_out_path)
-                    _write_json(_normalized_path, ExportJson)
-                    out += "\nSaved -> {}".format(_normalized_path)
-                except Exception as _e:
-                    out += "\nSave FAILED: {}".format(_e)
+        if isinstance(_payload_input, dict):
+            ExportJson = build_structure_export_json(model=_payload_input)
+            _lists = as_output_lists(_payload_input)
+            MemberLines = _lists["MemberLines"]
+            AreaLoadMeshes = _lists["AreaLoadMeshes"]
+            LinearLoadLines = _lists["LinearLoadLines"]
+            PointLoadPoints = _lists["PointLoadPoints"]
+            BoundaryPoints = _lists["BoundaryPoints"]
+            JointNodes = _lists["JointNodes"]
+            GHLineCurves = _lists["GHLineCurves"]
+            GHNodes = _lists["GHNodes"]
+            GHLoadPoints = _lists["GHLoadPoints"]
+            GHSurfaces = _lists["GHSurfaces"]
+            out = (
+                "Exported nodes: {}, edges: {}, meshes: {}, member_breps: {}, joints: {}, gh_lines: {}, gh_nodes: {}, gh_load_points: {}, gh_surfaces: {}"
+            ).format(
+                len(ExportJson.get("nodes", [])),
+                len(ExportJson.get("edges", [])),
+                len(ExportJson.get("meshes", [])),
+                len(ExportJson.get("member_breps", [])),
+                len(ExportJson.get("joints", [])),
+                len(GHLineCurves),
+                len(GHNodes),
+                len(GHLoadPoints),
+                len(GHSurfaces),
+            )
+            out += "\nPayload source: {}".format(_payload_source)
+            if _save_flag:
+                if _out_path:
+                    try:
+                        _resolved_path = _resolve_output_file_path(_out_path)
+                        _write_json(_resolved_path, ExportJson)
+                        out += "\nSaved -> {}".format(_resolved_path)
+                    except Exception as _e:
+                        out += "\nSave FAILED: {}".format(_e)
+                else:
+                    out += "\nSave triggered - no output_path wired."
             else:
-                out += "\nSave triggered — no output_path wired."
+                out += "\nSave not triggered (set save=True or click Button)."
+        else:
+            out = "Model input could not be coerced to payload (got {}).".format(type(_model_input).__name__)
+            if _save_flag:
+                out += " Save ignored because export payload was not built."
+            if _out_path:
+                out += " output_path='{}'".format(_out_path)
+            out += " payload_source='{}'".format(_payload_source)
     else:
-        out = "Model input is not a dict (got {}).".format(type(_model_input).__name__)
-        if _save_flag:
-            out += " Save ignored because export payload was not built."
-        if _out_path:
-            out += " output_path='{}'".format(_out_path)
+        out = "No model input detected. Wire Karamba model to 'model' (or 'Model')."
+except Exception as _runtime_error:
+    out = "Runtime error: {}\n{}".format(_runtime_error, traceback.format_exc())
 
 
 if __name__ == "__main__" and "model" not in globals() and "Model" not in globals():
