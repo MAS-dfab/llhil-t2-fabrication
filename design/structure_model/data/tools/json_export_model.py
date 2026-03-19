@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from typing import Any, Dict, List, Optional
 
 
@@ -375,9 +376,10 @@ def build_structure_export_json(
     }
 
 
-def as_output_lists(model: Dict[str, Any]) -> Dict[str, List[str]]:
+def as_output_lists(model: Dict[str, Any], payload: Optional[Dict[str, Any]] = None) -> Dict[str, List[str]]:
     """Return GH-friendly validation lists from the normalized export payload."""
-    payload = build_structure_export_json(model)
+    if payload is None:
+        payload = build_structure_export_json(model)
     lists = payload.get("output_lists", {})
     return {
         "MemberLines": list(lists.get("member_lines", [])),
@@ -424,8 +426,11 @@ _g = globals()
 if "model" in _g or "Model" in _g:
     _model_input = _g.get("model", _g.get("Model"))
     if isinstance(_model_input, dict):
+        _t0 = time.perf_counter()
         ExportJson = build_structure_export_json(model=_model_input)
-        _lists = as_output_lists(_model_input)
+        _t1 = time.perf_counter()
+        _lists = as_output_lists(_model_input, payload=ExportJson)
+        _t2 = time.perf_counter()
         MemberLines = _lists["MemberLines"]
         AreaLoadMeshes = _lists["AreaLoadMeshes"]
         LinearLoadLines = _lists["LinearLoadLines"]
@@ -441,7 +446,12 @@ if "model" in _g or "Model" in _g:
             len(ExportJson.get("member_breps", [])),
             len(ExportJson.get("joints", [])),
         )
+        out += "\nTiming [ms] build_json={:.1f}, build_lists={:.1f}, total={:.1f}".format(
+            (_t1 - _t0) * 1000.0,
+            (_t2 - _t1) * 1000.0,
+            (_t2 - _t0) * 1000.0,
+        )
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and "model" not in globals() and "Model" not in globals():
     main()
