@@ -70,7 +70,6 @@ def _as_point(value: Any) -> Optional[Point]:
     """Convert common point formats into a 3D tuple."""
     if value is None:
         return None
-
     if isinstance(value, dict):
         if all(axis in value for axis in ("x", "y", "z")):
             try:
@@ -89,6 +88,21 @@ def _as_point(value: Any) -> Optional[Point]:
             return (float(value[0]), float(value[1]), float(value[2]))
         except (TypeError, ValueError):
             return None
+
+    return None
+
+
+def _as_proxy_point(value: Any) -> Optional[Point]:
+    """Convert proxy inputs that may carry coordinates (including Rhino Point3d)."""
+    point = _as_point(value)
+    if point is not None:
+        return point
+
+    try:
+        if hasattr(value, "X") and hasattr(value, "Y") and hasattr(value, "Z"):
+            return (float(value.X), float(value.Y), float(value.Z))
+    except Exception:
+        return None
 
     return None
 
@@ -270,6 +284,14 @@ def _extract_meshes(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     return []
 
 
+def _extract_payload_output_list(payload: Dict[str, Any], key: str) -> List[str]:
+    lists = payload.get("output_lists") if isinstance(payload.get("output_lists"), dict) else {}
+    values = lists.get(key)
+    if isinstance(values, list):
+        return [str(v) for v in values if v not in (None, "")]
+    return []
+
+
 def _edge_or_node_guid(item: Dict[str, Any]) -> Optional[str]:
     attrs = item.get("attributes") if isinstance(item.get("attributes"), dict) else {}
     for key in (
@@ -381,7 +403,11 @@ def _flatten_proxy_items(value: Any) -> List[Any]:
 
 
 def _resolve_filtered_node_ids(
-    value: Any, guid_map: Dict[str, str], valid_ids: Optional[List[str]] = None
+    value: Any,
+    guid_map: Dict[str, str],
+    valid_ids: Optional[List[str]] = None,
+    node_point_map: Optional[Dict[Tuple[float, float, float], str]] = None,
+    point_decimals: int = 6,
 ) -> Optional[List[str]]:
     """Resolve a GUID proxy input to a filtered list of node IDs.
 
@@ -406,6 +432,15 @@ def _resolve_filtered_node_ids(
         return _unique_str_list(node_ids) if node_ids else None
 
     valid_id_set = set(valid_ids or [])
+    point_map = node_point_map or {}
+
+    def _try_point_lookup(candidate: Any) -> Optional[str]:
+        pt = _as_proxy_point(candidate)
+        if pt is None:
+            return None
+        key = (round(pt[0], point_decimals), round(pt[1], point_decimals), round(pt[2], point_decimals))
+        return point_map.get(key)
+
     for item in _flatten_proxy_items(value):
         if isinstance(item, dict):
             guid = item.get("guid") or item.get("proxy_guid")
@@ -415,6 +450,11 @@ def _resolve_filtered_node_ids(
                 continue
 
             resolved = _lookup_guid_map(guid_map, guid)
+            if resolved:
+                node_ids.append(resolved)
+                continue
+
+            resolved = _try_point_lookup(item)
             if resolved:
                 node_ids.append(resolved)
             continue
@@ -431,10 +471,13 @@ def _resolve_filtered_node_ids(
         # Accept direct node IDs passed through the proxy input.
         if token in valid_id_set:
             node_ids.append(token)
+            continue
+
+        resolved = _try_point_lookup(item)
+        if resolved:
+            node_ids.append(resolved)
 
     return _unique_str_list(node_ids) if node_ids else None
-
-    return None
 
 
 def _resolve_filtered_edge_ids(
@@ -1135,18 +1178,45 @@ def import_line_model_json(
     area_mesh_ids = _unique_str_list([mesh["id"] for mesh in mesh_records])
     point_ids = _unique_str_list([node["id"] for node in node_records])
     joint_node_ids = _unique_str_list([joint["node_id"] for joint in joint_records])
+    node_point_map: Dict[Tuple[float, float, float], str] = {}
+    for node in node_records:
+        try:
+            key = (
+                round(float(node.get("x", 0.0)), decimals),
+                round(float(node.get("y", 0.0)), decimals),
+                round(float(node.get("z", 0.0)), decimals),
+            )
+            node_point_map[key] = str(node.get("id"))
+        except Exception:
+            continue
 
-    # Resolve explicitly tagged GUID inputs to filtered node ID lists.
+    # Resolve explicitly tagged GUID inputs to filtered node/edge ID lists.
     _ll_ids = _resolve_filtered_edge_ids(curve_guid_proxies, curve_guid_proxy, valid_ids=member_line_ids)
-    _pl_ids = _resolve_filtered_node_ids(point_load_guid_proxies, point_guid_proxy, valid_ids=point_ids)
-    _bp_ids = _resolve_filtered_node_ids(boundary_guid_proxies, point_guid_proxy, valid_ids=point_ids)
+    _pl_ids = _resolve_filtered_node_ids(
+        point_load_guid_proxies,
+        point_guid_proxy,
+        valid_ids=point_ids,
+        node_point_map=node_point_map,
+        point_decimals=decimals,
+    )
+    _bp_ids = _resolve_filtered_node_ids(
+        boundary_guid_proxies,
+        point_guid_proxy,
+        valid_ids=point_ids,
+        node_point_map=node_point_map,
+        point_decimals=decimals,
+    )
+
+    # Fallback to explicit selections embedded in payload output_lists.
+    _payload_point_ids = [pid for pid in _extract_payload_output_list(payload, "point_load_points") if pid in set(point_ids)]
+    _payload_boundary_ids = [pid for pid in _extract_payload_output_list(payload, "boundary_points") if pid in set(point_ids)]
 
     # Never default linear load lines to all members.
     linear_load_lines = _ll_ids if _ll_ids is not None else []
     # Never default point loads to all nodes.
-    point_load_points = _pl_ids if _pl_ids is not None else []
+    point_load_points = _pl_ids if _pl_ids is not None else _payload_point_ids
     # Never default supports/boundaries to all nodes.
-    boundary_points = _bp_ids if _bp_ids is not None else []
+    boundary_points = _bp_ids if _bp_ids is not None else _payload_boundary_ids
 
     return {
         "schema": "structure_model_v1",
@@ -1267,9 +1337,37 @@ if "model" in _g or "Model" in _g:
         out = "Model input is empty. Provide a JSON path or parsed JSON object/list."
     else:
         try:
-            _curve_proxies = _get_first_input(_g, ["curve_guid_proxies", "CurveGuidProxies", "LineGuidProxies"])
-            _pl_proxies = _get_first_input(_g, ["point_load_guid_proxies", "PointLoadGuidProxies"])
-            _bp_proxies = _get_first_input(_g, ["boundary_guid_proxies", "BoundaryGuidProxies"])
+            _curve_proxies = _get_first_input(
+                _g,
+                [
+                    "curve_guid_proxies",
+                    "CurveGuidProxies",
+                    "LineGuidProxies",
+                    "line_guid_proxies",
+                    "LineGuids",
+                ],
+            )
+            _pl_proxies = _get_first_input(
+                _g,
+                [
+                    "point_load_guid_proxies",
+                    "PointLoadGuidProxies",
+                    "point_load_points",
+                    "point_guid_proxies",
+                    "PointGuidProxies",
+                    "PtGuidProxies",
+                ],
+            )
+            _bp_proxies = _get_first_input(
+                _g,
+                [
+                    "boundary_guid_proxies",
+                    "BoundaryGuidProxies",
+                    "boundary_points",
+                    "support_guid_proxies",
+                    "SupportGuidProxies",
+                ],
+            )
             _preview_enabled = _to_bool(
                 _get_first_input(_g, ["preview_geometry", "PreviewGeometry", "BuildPreviewGeometry"]),
                 default=False,
