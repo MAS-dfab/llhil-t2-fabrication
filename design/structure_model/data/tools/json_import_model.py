@@ -235,6 +235,24 @@ def _load_payload_from_path(payload: Any) -> Any:
     if payload is None:
         return payload
 
+    # GH often provides item-accessed lists/trees for panel/file inputs.
+    # When those containers carry path strings, unwrap and load the file.
+    if isinstance(payload, (list, tuple)):
+        if len(payload) == 1:
+            return _load_payload_from_path(payload[0])
+
+        # If all items are path-like strings, prefer the first existing file.
+        all_text_items = True
+        for item in payload:
+            if isinstance(item, (dict, list, tuple)):
+                all_text_items = False
+                break
+        if all_text_items:
+            for item in payload:
+                loaded = _load_payload_from_path(item)
+                if isinstance(loaded, (dict, list)) and loaded is not item:
+                    return loaded
+
     if not isinstance(payload, (dict, list, tuple)):
         candidate = str(payload).strip()
         if (
