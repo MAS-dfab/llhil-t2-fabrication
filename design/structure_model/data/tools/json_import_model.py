@@ -1,42 +1,26 @@
-# Minimal Input Cheat-Sheet (Importer)
-# - GH input names: model (or Model)
-#   (can be a parsed JSON object/list OR a file path string to JSON)
-# - Optional GH preview toggle:
-#     preview_geometry (aliases: PreviewGeometry, BuildPreviewGeometry) -> default false
-# - Optional GH fast solve toggle:
-#     internal fast mode is always enabled in GH runtime
-#     keeps runtime behavior stable without exposing extra GH toggles
-# - Optional GH proxy / geometry inputs:
-#     curve_guid_proxies      (alias: LineGuidProxies)      -> linear load line filtering
-#     area_geometry           (aliases: AreaGeometry, AreaMeshes, AreaSurfaces) -> area meshes
-#     point_load_guid_proxies (alias: PointLoadGuidProxies) -> filters PointLoadPoints
-#     boundary_guid_proxies   (alias: BoundaryGuidProxies)  -> filters BoundaryPoints
-# - Point-load behavior is hard-gated:
-#     if point_load_guid_proxies are missing/unresolved -> PointLoadPoints is []
-# - Boundary behavior is hard-gated:
-#     if boundary_guid_proxies are missing/unresolved -> BoundaryPoints is []
-# - preview_kind values and their GH input / output correspondence:
-#     members     -> (no extra input)              -> MemberLines
-#     linear      -> LineGuidProxies               -> LinearLoadLines
-#     point_loads -> point_load_guid_proxies       -> PointLoadPoints
-#     boundary    -> boundary_guid_proxies         -> BoundaryPoints
-#     joints      -> (no extra input)              -> JointNodes
-#     areas       -> area_geometry                 -> AreaLoadMeshes
-#     all         -> all of the above              -> PreviewGeometry
-# - Function call: import_line_model_json(payload=...,
-#     curve_guid_proxies=..., point_load_guid_proxies=..., boundary_guid_proxies=...)
-# - Minimal runnable input: {}
-# - Minimal useful topology input:
-#   {"lines": [{"start": [0, 0, 0], "end": [1, 0, 0]}]}
-# - Also accepts COMPAS-style root arrays with entries like:
-#   {"line": {"data": {"start": [...], "end": [...]}, "guid": "...", "name": "..."}, "type": "..."}
-# - GH preferred outputs (compressed):
-#   ImportJson, MemberLines, AreaLoadMeshes, LinearLoadLines,
-#   PointLoadPoints, BoundaryPoints, JointNodes, out
-# - Optional preview bridge output:
-#   PreviewGeometry (enable with preview_geometry=true, set preview_kind)
-# - Geometry record outputs (for downstream ID→geometry mapping):
-#   Vertices (nodes), Edges (edges), Meshes (mesh records)
+# Importer I/O
+# Inputs:
+# - model (or Model)
+# - curve_guid_proxies (alias: LineGuidProxies)
+# - point_load_guid_proxies (alias: PointLoadGuidProxies)
+# - boundary_guid_proxies (alias: BoundaryGuidProxies)
+# - area_geometry (aliases: AreaGeometry, AreaMeshes, AreaSurfaces)
+# - preview_geometry (aliases: PreviewGeometry, BuildPreviewGeometry)
+# - preview_kind (aliases: PreviewKind, PreviewTarget, PreviewSource)
+#
+# Outputs:
+# - ImportJson
+# - MemberLines
+# - AreaLoadMeshes
+# - LinearLoadLines
+# - PointLoadPoints
+# - BoundaryPoints
+# - JointNodes
+# - Vertices
+# - Edges
+# - Meshes
+# - PreviewGeometry
+# - out
 from __future__ import annotations
 
 import argparse
