@@ -35,8 +35,15 @@ class VertexList:
         """
         self.vertices = []
         self.pairs = []
+
         self.dir1 = None
         self.dir2 = None
+        self.boundary = None
+        self.div_x = None
+        self.div_y = None
+        self.height = None
+        self.height_list = None
+
 
     def __getitem__(self, idx):
         return self.vertices[idx]
@@ -82,6 +89,9 @@ class VertexList:
             self.pairs = [pair for pair in self.pairs if idx not in pair]
 
     def move(self, indices, vectors):
+        if isinstance(indices, list) and not isinstance(vectors, list):
+            vectors = [vectors] * len(indices)
+
         if not isinstance(indices, list):
             indices = [indices]
             vectors = [vectors]
@@ -108,6 +118,12 @@ class VertexList:
             raise ValueError("Length of height_list must be equal to (division_x + 1).")
         if self.vertices:
             raise ValueError("Vertices already exist in the graph. Clear the graph before computing a new diagrid.")
+
+        self.boundary = boundary
+        self.div_x = division_x
+        self.div_y = division_y
+        self.height = height
+        self.height_list = height_list
 
         # 1. Populate vertices of the diagrid
         vec_x = boundary[1] - boundary[0]
@@ -192,7 +208,33 @@ class VertexList:
             curr_div_y -= 1
         return self.vertices, self.pairs
 
+    
+    def group_by_diamond(self):
+        """
+        Create a dictionary grouping vertices.
 
+        Returns:
+            groups (dict): {root0, [idx1, idx2, idx3, idx4], root1, [idx1, idx2, idx3, idx4], ...}
+        """
+
+        if self.div_x is None or self.div_y is None:
+            raise ValueError("compute_diagrid must be called before grouping vertices.")
+        
+        dx = self.div_x + 1
+        dy = self.div_y + 1
+        dz = self.div_x + 1
+
+        total = sum((dx - i) * (dy - i) for i in range(dz))
+        roots = list(range(dx * dy, total))
+
+        groups = {}
+        for root in roots:
+            for pair in self.pairs:
+                if root == pair[1]:
+                    groups.setdefault(root, []).append(pair[0])
+        return groups
+
+    
 
 
 
