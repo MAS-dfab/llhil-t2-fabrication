@@ -18,12 +18,12 @@ def divide_by_count(line, count):
 
     return pts
 
-def average_points(values):
-    if not values:
+def average_points(points):
+    if not points:
         return None
-    x = sum(point.x for point in values) / len(values)
-    y = sum(point.y for point in values) / len(values)
-    z = sum(point.z for point in values) / len(values)
+    x = sum(point.x for point in points) / len(points)
+    y = sum(point.y for point in points) / len(points)
+    z = sum(point.z for point in points) / len(points)
     return Point(x, y, z)
 
 
@@ -33,8 +33,13 @@ class VertexList:
     def __init__(self, boundary, division_x=4, division_y=6, height=8.6):
         """
         A list of points representing the nodes.
-        
         Args:
+            boundary (Polyline): A closed polyline representing the boundary of the diagrid.
+            division_x (int): Number of divisions along the x-axis.
+            division_y (int): Number of divisions along the y-axis.
+            height (float): The total height of the diagrid structure.
+            height_list (list of float)(optional): A list of heights representing the point.z values for each level. If not provided, the height will be divided equally. The length of height_list should be equal to (division_x + 1) if provided.
+
             vertices (list of Point): The list of vertices representing the nodes of the diagrid.
             pairs (list of tuple): (start_idx, end_idx) representing the edges between the vertices.
         """
@@ -45,12 +50,15 @@ class VertexList:
 
         self.vertices = []
         self.pairs = []
+        self.skip_indices = []
 
         self.dir1 = None
         self.dir2 = None
         self.height_list = []
-        self._original_z = []
+        self.default_z = []
 
+        self._default_vertices = []
+        self._default_pairs = []
 
     def __getitem__(self, idx):
         return self.vertices[idx]
@@ -65,6 +73,11 @@ class VertexList:
         return iter(self.vertices)
 
 
+    def reset_default(self):
+        self.vertices = self._default_vertices[:]
+        self.pairs = self._default_pairs[:]
+
+
     def add_vertices(self, vertices):
         if not isinstance(vertices, list):
             vertices = [vertices]
@@ -72,7 +85,10 @@ class VertexList:
         for vertex in vertices:
             if not isinstance(vertex, Point):
                 raise ValueError("Only compas Point instances can be added to VertexList.")
-            self.vertices.append(vertex)
+            
+            # self.vertices.append(vertex)
+            self.vertices = self.vertices + [vertex]
+
 
     def add_pairs(self, pairs):
         if not isinstance(pairs, list):
@@ -81,8 +97,10 @@ class VertexList:
         for pair in pairs:
             if not isinstance(pair, tuple) or len(pair) != 2:
                 raise ValueError("Pairs must be tuples of two vertex indices.")
+            
             self.pairs.append(pair)
             
+
     def skip(self, indices):
         """
         Remove edges that are connected to the specified vertex indices.
@@ -90,13 +108,16 @@ class VertexList:
         Args:
             indices (int or list of int): The vertex indices to skip. Can be a single index or a list of indices.
         """
+        self.skip_indices = []
+
         if not isinstance(indices, list):
             indices = [indices]
-        
+        self.skip_indices.extend(indices)
         
         for idx in indices:
-            self.vertices[idx] = None
             self.pairs = [pair for pair in self.pairs if idx not in pair]
+            # self.pairs[idx] = (None, None)
+
 
     def move(self, indices, vectors):
         if isinstance(indices, list) and not isinstance(vectors, list):
@@ -112,12 +133,6 @@ class VertexList:
     def compute_diagrid(self):
         """
         Compute the vertices and edge pairs for a diagrid structure based on the given boundary and divisions.
-        Args:
-            boundary (Polyline): A closed polyline representing the boundary of the diagrid.
-            division_x (int): Number of divisions along the x-axis.
-            division_y (int): Number of divisions along the y-axis.
-            height (float): The total height of the diagrid structure.
-            height_list (list of float)(optional): A list of heights representing the point.z values for each level. If not provided, the height will be divided equally. The length of height_list should be equal to (division_x + 1) if provided.
 
         Returns:
             vertices (list of Point): The computed vertices of the diagrid.
@@ -159,8 +174,10 @@ class VertexList:
             for j in range(div_x):
                 for k in range(div_y):
                     p = start + (vec_x * j * step_x) + (vec_y * k * step_y)
+                    p.name = f"pt_{i}_{j}_{k}"
+                    
                     self.vertices.append(p)
-                    self._original_z.append(p.z)
+                    self.default_z.append(p.z)
 
             start += vec_x * step_x / 2
             start += vec_y * step_y / 2
@@ -208,6 +225,9 @@ class VertexList:
                     self.pairs.append((idx4, target_idx))
             curr_div_x -= 1
             curr_div_y -= 1
+        
+        self._default_vertices = self.vertices
+        self._default_pairs = self.pairs
         return self.vertices, self.pairs
 
 
@@ -215,11 +235,9 @@ class VertexList:
         if not self.vertices:
             raise ValueError("Vertices have not been computed. Call compute_diagrid first.")
         
-        div_x = self.div_x + 1
-        div_y = self.div_y + 1
-        div_z = self.div_x + 1
         self.height_list = []
-        
+        div_z = self.div_x + 1
+
         if not height_list:
             height_list = [self.height / self.div_x * i for i in range(div_z)]
 
@@ -228,13 +246,11 @@ class VertexList:
         
         self.height_list = height_list
 
-        for i in range(div_z):
-            level_start = sum((div_x - j) * (div_y - j) for j in range(i))
-            level_end = sum((div_x - j) * (div_y - j) for j in range(i+1))
-            for idx in range(level_start, level_end):
-                if self.vertices[idx] is None:
-                    continue
-                self.vertices[idx].z = self._original_z[idx] - height_list[i]
+        for idx, vertex in enumerate(self._default_vertices):
+            if vertex is None:
+                continue
+            vertex.z = self.default_z[idx] - height_list[int(vertex.name.split('_')[1])]
+            # vertex.z -= height_list[int(vertex.name.split('_')[1])]
 
 
     def deform_roof(self, polygons):
@@ -366,6 +382,7 @@ class Beam:
             end_idx (int): The index of the end vertex in the vertex list.
             vertex_list (VertexList)(list of Points): Entire list of vertices in space.
         """
+        
         self.start_idx = start_idx
         self.end_idx = end_idx
         self.v_list = vertex_list
