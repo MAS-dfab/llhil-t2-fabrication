@@ -223,12 +223,19 @@ class VertexList:
         if not self.vertices:
             raise ValueError("Vertices have not been computed. Call compute_diagrid first.")
         
-        roof_indices = (self.div_x + 1) * (self.div_y + 1)
-        facade_indices = list(range(0, roof_indices, self.div_y + 1)) + list(range(self.div_y, roof_indices, self.div_y + 1))
+        max_indices = (self.div_x + 1) * (self.div_y + 1)
+        facade_indices = list(range(0, max_indices, self.div_y + 1)) + list(range(self.div_y, max_indices, self.div_y + 1))
 
         return [self.vertices[idx] for idx in facade_indices]
     
-    
+    @property
+    def roof_points(self):
+        if not self.vertices:
+            raise ValueError("Vertices have not been computed. Call compute_diagrid first.")
+        
+        max_indices = (self.div_x + 1) * (self.div_y + 1)
+        return self.vertices[:max_indices]
+        
         
     def group_by_diamond(self):
         """
