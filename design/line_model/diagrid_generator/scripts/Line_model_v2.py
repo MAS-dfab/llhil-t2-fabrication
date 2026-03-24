@@ -1,4 +1,6 @@
-from compas.geometry import Line, Vector, Box, Point
+### Edited by Jerry on 24 Mar 2026
+
+from compas.geometry import Line, Vector, Box, Point, Plane
 
 import math
 
@@ -21,6 +23,14 @@ def consecutive_values(lst):
     for i in range(len(lst) - 1):
         new_lst.append(lst[i+1] - lst[i])
     return new_lst
+
+def average_points(values):
+    if not values:
+        return None
+    x = sum(point.x for point in values) / len(values)
+    y = sum(point.y for point in values) / len(values)
+    z = sum(point.z for point in values) / len(values)
+    return Point(x, y, z)
 
 
 ##########-----------Class--------###########
@@ -127,14 +137,14 @@ class VertexList:
 
         # 1. Populate vertices of the diagrid
         vec_x = boundary[1] - boundary[0]
-        vec_y = boundary[-1] - boundary[0]
+        vec_y = boundary[-2] - boundary[0]
         vec_z = vec_x.cross(vec_y)
         vec_x.unitize()
         vec_y.unitize()
         vec_z.unitize()
         
         dist_x = boundary[0].distance_to_point(boundary[1])
-        dist_y = boundary[0].distance_to_point(boundary[-1])
+        dist_y = boundary[0].distance_to_point(boundary[-2])
         step_x = dist_x / division_x
         step_y = dist_y / division_y
         if not height_list:
@@ -142,7 +152,7 @@ class VertexList:
         else:
             height_list = consecutive_values(height_list) + [0]
 
-        start = boundary[0]
+        start = boundary[0].copy()
         p1 = start + (vec_x * step_x) + (vec_y * step_y)
         p2 = start + (vec_x * step_x)
         p3 = start + (vec_y * step_y)
@@ -208,7 +218,18 @@ class VertexList:
             curr_div_y -= 1
         return self.vertices, self.pairs
 
+    @property
+    def facade_points(self):
+        if not self.vertices:
+            raise ValueError("Vertices have not been computed. Call compute_diagrid first.")
+        
+        roof_indices = (self.div_x + 1) * (self.div_y + 1)
+        facade_indices = list(range(0, roof_indices, self.div_y + 1)) + list(range(self.div_y, roof_indices, self.div_y + 1))
+
+        return [self.vertices[idx] for idx in facade_indices]
     
+    
+        
     def group_by_diamond(self):
         """
         Create a dictionary grouping vertices.
@@ -235,6 +256,24 @@ class VertexList:
         return groups
 
     
+    def group_by_side(self):
+        center = average_points(self.boundary[:-1])
+        vec_y = self.boundary[-2] - self.boundary[0]
+        test_pln = Plane(center, vec_y)
+        
+        dx = self.div_x + 1
+        dy = self.div_y + 1
+        dz = self.div_x + 1
+        total = sum((dx - i) * (dy - i) for i in range(dz))
+
+        groups = {}
+        for i in range(total):
+            pt = self.vertices[i]
+            dist = pt.distance_to_plane(test_pln)
+            groups.setdefault(dist, []).append(i)
+
+        sorted_groups = dict(sorted(groups.items()))
+        return sorted_groups
 
 
 
