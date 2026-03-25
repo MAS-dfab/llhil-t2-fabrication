@@ -1,7 +1,7 @@
 ### Edited by Jerry on 24 Mar 2026
 
 from compas.geometry import Line, Vector, Box, Point, Plane
-from compas.geometry import is_point_in_polygon_xy, intersection_line_plane
+from compas.geometry import is_point_in_polygon_xy, intersection_line_triangle
 import math
 
 ########-------Helpers---------############
@@ -56,9 +56,10 @@ class VertexList:
         self.dir2 = None
         self.height_list = []
         self.default_z = []
-
+        
         self._default_vertices = []
         self._default_pairs = []
+
 
     def __getitem__(self, idx):
         return self.vertices[idx]
@@ -253,38 +254,23 @@ class VertexList:
             # vertex.z -= height_list[int(vertex.name.split('_')[1])]
 
 
-    def deform_roof(self, polygons):
-        if not self.vertices:
+    def set_default_roof(self, mesh):
+        if not self._default_vertices:
             raise ValueError("Vertices have not been computed. Call compute_diagrid first.")
         
-        groups = {}
-        max_roof_indices = (self.div_x + 1) * (self.div_y + 1)
+        vertices, faces = mesh.to_vertices_and_faces()
+        for idx, vertex in enumerate(self._default_vertices):
+            line = Line(vertex, vertex + Vector(0, 0, 1))
 
-        for idx in range(max_roof_indices):
-            if self.vertices[idx] is None:
-                continue
-
-            pt = self.vertices[idx]
-            for i, polygon in enumerate(polygons):
-                if not polygon.is_planar:
-                    raise ValueError(f"Polygon {i} is not planar. Please ensure all polygons are planar before deforming the roof.")
-                
-                if is_point_in_polygon_xy(pt, polygon):
-                    groups.setdefault(i, []).append(idx)
+            for face in faces:
+                tri = [vertices[f] for f in face]
+                result = intersection_line_triangle(line, tri)
+                if result:
+                    hit = Point(result[0], result[1], result[2])
+                    
+                    vertex.z = hit.z
+                    self.default_z[idx] = hit.z
                     break
-        
-        pts = []
-        for polygon_idx, indices in groups.items():
-            polygon = polygons[polygon_idx]
-            plane = Plane(polygon[0], polygon.normal)
-            for idx in indices:
-                pt = self.vertices[idx]
-                inter = intersection_line_plane(Line(pt, Vector(0, 0, -1)), plane)
-                pts.append(Point(inter[0], inter[1], inter[2]))
-                # if inter is not None:
-                #     self.vertices[idx] = Point(inter[0], inter[1], inter[2])
-                
-        return groups, pts
 
 
     @property
