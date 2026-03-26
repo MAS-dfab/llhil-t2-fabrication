@@ -106,6 +106,17 @@ class VertexList:
         self._cached_topology = None
 
 
+    def delete_pairs(self, pairs):
+        if not isinstance(pairs, list):
+            pairs = [pairs]
+
+        for pair in pairs:
+            if pair in self.pairs:
+                self.pairs.remove(pair)
+
+        self._cached_topology = None
+
+        
     def skip(self, indices):
         """
         Remove edges that are connected to the specified vertex indices.
@@ -345,6 +356,14 @@ class VertexList:
         return sorted_groups
 
 
+    def group_by_cross_section(self):
+        pass
+
+
+    def group_by_module(self, borders):
+        pass
+
+
     @property
     def topology(self):
         """
@@ -368,7 +387,7 @@ class VertexList:
     @property
     def valency_map(self):
         """
-        A dictionary representing the valency and the corrsponding vertex indices.
+        A dictionary representing the valency and the corresponding vertex indices.
         {valency: [vertex_idx1, vertex_idx2, ...], ...}
         """
 
@@ -411,22 +430,52 @@ class Transform:
 
 
 
+class BeamList:
+    def __init__(self, vextex_list, beam_pairs):
+        self.v_list = vextex_list
+        self.pairs = beam_pairs
+        self.beams = [Beam(start, end, vextex_list) for start, end in beam_pairs]
+
+
+    def __getitem__(self, idx):
+        return self.beams[idx]
+    
+    def __setitem__(self, idx, value):
+        self.beams[idx] = value
+
+    def __len__(self):
+        return len(self.beams)
+    
+    def __iter__(self):
+        return iter(self.beams)
+    
+    @property
+    def axises(self):
+        return [beam.axis for beam in self.beams]
+    
+
+    def double(self, indices, widths):
+        if len(indices) != len(widths):
+            raise ValueError("length of indices and widths must be the same.")
+        
+        offsets = [w / 2 if w is not None else 0 for w in widths]
+
+        for idx, offset in zip(indices, offsets):
+            beam = self.beams[idx]
+            axis = beam.axis
+
+
+
+
+
 class BeamCategory:
     @property
-    def main_out(self):
-        return "main_out"
+    def compression(self):
+        return "compression"
     
     @property
-    def main_in(self):
-        return "main_in"
-    
-    @property
-    def secondary_out(self):
-        return "secondary_out"
-    
-    @property
-    def secondary_in(self):
-        return "secondary_in"
+    def tension(self):
+        return "tension"
     
 
 class Beam:
