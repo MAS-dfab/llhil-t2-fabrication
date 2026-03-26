@@ -1,7 +1,7 @@
 ### Edited by Jerry on 24 Mar 2026
 
 from compas.geometry import Line, Vector, Box, Point, Plane
-from compas.geometry import is_point_in_polygon_xy, intersection_line_triangle
+from compas.geometry import is_point_in_polygon_xy, is_point_on_polyline_xy, intersection_line_triangle
 import math
 
 ########-------Helpers---------############
@@ -431,10 +431,10 @@ class Transform:
 
 
 class BeamList:
-    def __init__(self, vextex_list, beam_pairs):
+    def __init__(self, vextex_list):
         self.v_list = vextex_list
-        self.pairs = beam_pairs
-        self.beams = [Beam(start, end, vextex_list) for start, end in beam_pairs]
+        self.beams = [Beam(start, end, vextex_list) for start, end in self.v_list.pairs]
+        
 
 
     def __getitem__(self, idx):
@@ -451,19 +451,98 @@ class BeamList:
     
     @property
     def axises(self):
-        return [beam.axis for beam in self.beams]
+        return [beam.axis if beam is not None else None for beam in self.beams]
+    
+    
     
 
-    def double(self, indices, widths):
-        if len(indices) != len(widths):
-            raise ValueError("length of indices and widths must be the same.")
-        
-        offsets = [w / 2 if w is not None else 0 for w in widths]
+    def double(self, indices):
 
-        for idx, offset in zip(indices, offsets):
+        for idx in indices:
             beam = self.beams[idx]
-            axis = beam.axis
+        
+            # 1. Delete current beam
+            self.v_list.delete_pairs(beam.pair)
 
+
+            # 2. Offset beam on both sides
+            offset = beam.width / 2 if beam.width is not None else .067  # 60 mm
+
+            offset_vec = beam.direction.cross(Vector(0, 0, 1))
+            offset_vec.unitize()
+
+            for side in [-1, 1]:
+                new_start = beam.start.translated(offset_vec * offset * side)
+                new_end = beam.end.translated(offset_vec * offset * side)
+
+                # 3. Add two new pairs
+                curr_idx = len(self.v_list)
+                self.v_list.add_pairs((curr_idx, curr_idx + 1))
+
+                # 4. Add four new vertices
+                self.v_list.add_vertices(new_start)
+                self.v_list.add_vertices(new_end)
+                
+                self.beams.append(Beam(curr_idx, curr_idx + 1, self.v_list))
+
+        for idx in indices:
+        #     self.beams.pop(idx)
+            self.beams[idx] = None
+
+
+    def group_by_module(self, polylines):
+        tol = 1e-3
+
+        # 1. find if point on or in polylines
+        on_list = []  # list of points
+        in_list = []
+        for i, beam in enumerate(self.beams):
+            if beam is None:
+                continue
+            p = beam.mid
+            p.name = str(i)
+            for poly in polylines:
+                is_on = is_point_on_polyline_xy(p, poly, tol)
+                if is_on:
+                    on_list.append(p)
+                    break
+            
+            if p not in on_list:
+                in_list.append(p)
+
+        for poly in polylines:
+            poly.name = str(polylines.index(poly))
+        # return [p.name for p in on_list], [p.name for p in in_list]
+            
+        # 2. find which panel belongs to point
+        def belong(point, polylines):
+            two_panels = []
+
+            for idx, polyline in enumerate(polylines):
+                if is_point_on_polyline_xy(point, polyline, tol):
+                    two_panels.append(polyline)
+            
+            best = max(two_panels, key=lambda p: p.to_polygon().area)
+            return best
+    
+        groups = {}
+        for p in on_list:
+            polyline = belong(p, polylines)
+            if polyline is None:
+                continue
+            groups.setdefault(int(polyline.name), []).append(int(p.name))
+
+
+        for p in in_list:
+            for poly in polylines:
+
+                if is_point_in_polygon_xy(p, poly.to_polygon()):
+                    
+                    groups.setdefault(int(poly.name), []).append(int(p.name))
+                    break
+
+        groups = dict(sorted(groups.items()))
+        return groups
 
 
 
@@ -493,13 +572,17 @@ class Beam:
         self.end_idx = end_idx
         self.v_list = vertex_list
         
+        self.pair = (self.start_idx, self.end_idx)
+
         self.frame = None
         self.category = None
         self.hierarchy = None
 
         self.width = None
         self.height = None
-    
+        
+        self.name = None
+
     @property
     def start(self):
         return self.v_list[self.start_idx]
