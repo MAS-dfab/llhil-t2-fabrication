@@ -60,6 +60,8 @@ class VertexList:
         self._default_vertices = []
         self._default_pairs = []
 
+        self._cached_topology = None
+        
 
     def __getitem__(self, idx):
         return self.vertices[idx]
@@ -100,7 +102,9 @@ class VertexList:
                 raise ValueError("Pairs must be tuples of two vertex indices.")
             
             self.pairs.append(pair)
-            
+
+        self._cached_topology = None
+
 
     def skip(self, indices):
         """
@@ -118,6 +122,8 @@ class VertexList:
         for idx in indices:
             self.pairs = [pair for pair in self.pairs if idx not in pair]
             # self.pairs[idx] = (None, None)
+
+        self._cached_topology = None
 
 
     def move(self, indices, vectors):
@@ -337,6 +343,71 @@ class VertexList:
 
         sorted_groups = dict(sorted(groups.items()))
         return sorted_groups
+
+
+    @property
+    def topology(self):
+        """
+        A dictionary representing the vertex and its connected neighbors.
+        {vertex_idx: [neighbor_idx1, neighbor_idx2, ...], ...}
+        """
+
+        if self._cached_topology is not None:
+            return self._cached_topology
+
+        topology = {}
+        for start, end in self.pairs:
+            topology.setdefault(start, []).append(end)
+            topology.setdefault(end, []).append(start)
+        
+
+        self._cached_topology = dict(sorted(topology.items()))
+        return self._cached_topology
+    
+
+    @property
+    def valency_map(self):
+        """
+        A dictionary representing the valency and the corrsponding vertex indices.
+        {valency: [vertex_idx1, vertex_idx2, ...], ...}
+        """
+
+        v_map = {}
+        for vertex_idx, neighbors in self.topology.items():
+            v_map.setdefault(len(neighbors), []).append(vertex_idx)
+
+        v_map = dict(sorted(v_map.items()))
+        return v_map
+    
+
+    def group_by_valency(self, valency):
+        if valency not in self.valency_map.keys():
+            raise ValueError(f"valency {valency} does not exist, Available valencies: {list(self.valency_map.keys())}")
+
+        groups = {}
+
+        nodes = self.valency_map.get(valency)
+        for parent in nodes:
+            children = self.topology.get(parent)
+            groups.setdefault(parent, children)
+
+        return groups
+
+
+    def transform(self, valency):
+        groups = self.group_by_valency(valency)
+        return Transform(valency, groups)
+
+
+class Transform:
+    def __init__(self, valency, groups, vextex_list):
+        self.valency = valency
+        self.groups = groups
+        self.v_list = vextex_list
+
+    def five(self):
+        for parent, children in self.groups.items():
+            edges = [Line(self.v_list[parent], self.v_list[c]) for c in children]
 
 
 
