@@ -2,11 +2,11 @@ from compas.geometry import Line
 
 
 class Pair:
-    def __init__(self, start_idx, end_idx, hierarchy=None, categories=[None]):
+    def __init__(self, start_idx, end_idx, cross_section=None, categories=[None]):
         self.start_idx = start_idx
         self.end_idx = end_idx
         
-        self.hierarchy = hierarchy
+        self.cross_section = cross_section
         self.categories = categories
 
     def __getitem__(self):
@@ -15,7 +15,7 @@ class Pair:
     def __setitem__(self, value):
         self.start_idx, self.end_idx = value
 
-# pair = Pair(0, 1, hierarchy=BeamHierarchy.main, categories=[BeamCategory.single, BeamCategory.CLT_attached])
+# pair = Pair(0, 1, cross_section=CrossSection.main, categories=[BeamCategory.single, BeamCategory.CLT_attached])
 
 class BeamCategory:
     """
@@ -38,10 +38,10 @@ class BeamCategory:
     join = "join"
 
 ######################################################################
-class BeamHierarchy:
+class CrossSection:
     """
-    Hierarchy of beams corrsponding to the cross section dimensions.
-    
+    Categorizes cross sections for beams.
+
     Args:
         primary (str): Primary beams that carry the main loads.
         secondary (str): Secondary beams that support the primary beams.
@@ -49,10 +49,11 @@ class BeamHierarchy:
     """
 
     main = [12, 24]
+    # main = (12, 24)
 
 
-# print(BeamHierarchy.main)
-# beam.width = BeamHierarchy.main[0]
+# print(CrossSection.main)
+# beam.width = CrossSection.main[0]
 
 
 
@@ -74,10 +75,10 @@ class Beam:
 
         self.frame = None
         self.categories = pair.categories
-        self.hierarchy = pair.hierarchy
+        self.cross_section = pair.cross_section
 
-        self.width = 120
-        self.height = 240
+        self.width = self.cross_section[0] if self.cross_section else 80
+        self.height = self.cross_section[1] if self.cross_section else 200
         
         self.force = None
         

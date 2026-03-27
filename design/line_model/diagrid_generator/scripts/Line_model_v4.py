@@ -1,5 +1,5 @@
 ### Edited by Jerry on 27 Mar 2026
-from JW_Utilities import Pair, BeamCategory, Beam, Transform
+from JW_Utilities import Pair, BeamCategory, Beam, Transform, CrossSection
 
 from compas.geometry import Line, Vector, Box, Point, Plane
 from compas.geometry import is_point_in_polygon_xy, is_point_on_polyline_xy, intersection_line_triangle
@@ -99,8 +99,8 @@ class VertexList:
             pairs = [pairs]
 
         for pair in pairs:
-            if not isinstance(pair, Pair):
-                raise ValueError("Pairs must be instances of the Pair class.")
+            # if not isinstance(pair, Pair):
+            #     raise ValueError("Pairs must be instances of the Pair class.")
             
             self.pairs.append(pair)
 
@@ -132,7 +132,7 @@ class VertexList:
         self.skip_indices.extend(indices)
         
         for idx in indices:
-            self.pairs = [pair for pair in self.pairs if idx not in pair]
+            self.pairs = [pair for pair in self.pairs if idx not in [pair.start_idx, pair.end_idx]]
             # self.pairs[idx] = (None, None)
 
         self._cached_topology = None
@@ -238,10 +238,10 @@ class VertexList:
                     idx3 = curr_level_start + ((j+1) * curr_div_y + (k+1))
                     idx4 = curr_level_start + ((j+1) * curr_div_y + k)
 
-                    self.pairs.append(Pair(idx1, target_idx, category=BeamCategory.single, hierarchy=None))
-                    self.pairs.append(Pair(idx2, target_idx, category=BeamCategory.single, hierarchy=None))
-                    self.pairs.append(Pair(idx3, target_idx, category=BeamCategory.single, hierarchy=None))
-                    self.pairs.append(Pair(idx4, target_idx, category=BeamCategory.single, hierarchy=None))
+                    self.pairs.append(Pair(idx1, target_idx, cross_section=CrossSection.main, categories=[BeamCategory.single]))
+                    self.pairs.append(Pair(idx2, target_idx, cross_section=CrossSection.main, categories=[BeamCategory.single]))
+                    self.pairs.append(Pair(idx3, target_idx, cross_section=CrossSection.main, categories=[BeamCategory.single]))
+                    self.pairs.append(Pair(idx4, target_idx, cross_section=CrossSection.main, categories=[BeamCategory.single]))
             curr_div_x -= 1
             curr_div_y -= 1
         
