@@ -2,12 +2,12 @@ from compas.geometry import Line
 
 
 class Pair:
-    def __init__(self, start_idx, end_idx, category=None, hierarchy=None):
+    def __init__(self, start_idx, end_idx, hierarchy=None, categories=[None]):
         self.start_idx = start_idx
         self.end_idx = end_idx
         
-        self.category = category
         self.hierarchy = hierarchy
+        self.categories = categories
 
     def __getitem__(self):
         return (self.start_idx, self.end_idx)
@@ -15,6 +15,7 @@ class Pair:
     def __setitem__(self, value):
         self.start_idx, self.end_idx = value
 
+# pair = Pair(0, 1, hierarchy=BeamHierarchy.main, categories=[BeamCategory.single, BeamCategory.CLT_attached])
 
 class BeamCategory:
     """
@@ -36,8 +37,8 @@ class BeamCategory:
     bracing = "bracing"
     join = "join"
 
-
-class Hierarchy:
+######################################################################
+class BeamHierarchy:
     """
     Hierarchy of beams corrsponding to the cross section dimensions.
     
@@ -50,8 +51,8 @@ class Hierarchy:
     main = [12, 24]
 
 
-# print(Hierarchy.main)
-# beam.width = Hierarchy.main[0]
+# print(BeamHierarchy.main)
+# beam.width = BeamHierarchy.main[0]
 
 
 
@@ -72,7 +73,7 @@ class Beam:
         
 
         self.frame = None
-        self.category = pair.category
+        self.categories = pair.categories
         self.hierarchy = pair.hierarchy
 
         self.width = 120
