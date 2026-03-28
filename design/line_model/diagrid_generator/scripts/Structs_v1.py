@@ -1,21 +1,22 @@
 from compas.geometry import Line
+from dataclasses import dataclass, field
+from typing import List, Optional, Tuple
 
 
+@dataclass
 class Pair:
-    def __init__(self, start_idx, end_idx, cross_section=None, categories=[None]):
-        self.start_idx = start_idx
-        self.end_idx = end_idx
-        
-        self.cross_section = cross_section
-        self.categories = categories
+    start_idx: int
+    end_idx: int
+    cross_section: Optional[tuple] = None
+    categories: List[str] = field(default_factory=list)
 
-    def __getitem__(self):
-        return (self.start_idx, self.end_idx)
+    def __getitem__(self, idx):
+        return (self.start_idx, self.end_idx)[idx]
     
-    def __setitem__(self, value):
-        self.start_idx, self.end_idx = value
+    def __iter__(self):
+        yield self.start_idx
+        yield self.end_idx
 
-# pair = Pair(0, 1, cross_section=CrossSection.main, categories=[BeamCategory.single, BeamCategory.CLT_attached])
 
 class BeamCategory:
     """
@@ -30,17 +31,17 @@ class BeamCategory:
         join (str): Beams that are treated as one continuous element for fabrication, but be segmented for structural analysis.
     """
 
-    CLT_attached = "CLT_attached"
-    single = "single"
-    double = "double"
-    edge = "edge"
-    bracing = "bracing"
-    join = "join"
+    CLT_ATTACHED = "CLT_attached"
+    SINGLE = "single"
+    DOUBLE = "double"
+    EDGE = "edge"
+    BRACING = "bracing"
+    JOIN = "join"
 
 ######################################################################
 class CrossSection:
     """
-    Categorizes cross sections for beams.
+    Categorizes cross sections for beams. Unit in mm.
 
     Args:
         primary (str): Primary beams that carry the main loads.
@@ -48,8 +49,7 @@ class CrossSection:
         tertiary (str): Tertiary beams that support the secondary beams.
     """
 
-    main = [12, 24]
-    # main = (12, 24)
+    MAIN = (240, 320)
 
 
 # print(CrossSection.main)
@@ -71,18 +71,16 @@ class Beam:
         self.end_idx = pair.end_idx
         self.v_list = vertex_list
         
-        
-
         self.frame = None
+        self.id = None
         self.categories = pair.categories
         self.cross_section = pair.cross_section
 
-        self.width = self.cross_section[0] if self.cross_section else 80
-        self.height = self.cross_section[1] if self.cross_section else 200
+        self.width = self.cross_section[0] if self.cross_section is not None else 80
+        self.height = self.cross_section[1] if self.cross_section is not None else 200
         
         self.force = None
-        
-        self.name = None
+
 
     @property
     def start(self):

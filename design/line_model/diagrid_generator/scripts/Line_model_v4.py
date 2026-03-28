@@ -1,5 +1,5 @@
 ### Edited by Jerry on 27 Mar 2026
-from JW_Utilities import Pair, BeamCategory, Beam, Transform, CrossSection
+from Structs_v1 import Pair, BeamCategory, Beam, Transform, CrossSection
 
 from compas.geometry import Line, Vector, Box, Point, Plane
 from compas.geometry import is_point_in_polygon_xy, is_point_on_polyline_xy, intersection_line_triangle
@@ -34,12 +34,12 @@ class VertexList:
     def __init__(self, boundary, division_x=4, division_y=6, height=8.6):
         """
         A list of points representing the nodes.
+
         Args:
             boundary (Polyline): A closed polyline representing the boundary of the diagrid.
             division_x (int): Number of divisions along the x-axis.
             division_y (int): Number of divisions along the y-axis.
             height (float): The total height of the diagrid structure.
-            height_list (list of float)(optional): A list of heights representing the point.z values for each level. If not provided, the height will be divided equally. The length of height_list should be equal to (division_x + 1) if provided.
 
             vertices (list of Point): The list of vertices representing the nodes of the diagrid.
             pairs (list of tuple): (start_idx, end_idx) representing the edges between the vertices.
@@ -99,9 +99,13 @@ class VertexList:
             pairs = [pairs]
 
         for pair in pairs:
+            # Change this:
             # if not isinstance(pair, Pair):
             #     raise ValueError("Pairs must be instances of the Pair class.")
             
+            # To this:
+            if type(pair).__name__ != "Pair":
+                raise ValueError("Pairs must be instances of the Pair class.")
             self.pairs.append(pair)
 
         self._cached_topology = None
@@ -112,6 +116,9 @@ class VertexList:
             pairs = [pairs]
 
         for pair in pairs:
+            if type(pair).__name__ != "Pair":
+                raise ValueError("Pairs must be instances of the Pair class.")
+
             if pair in self.pairs:
                 self.pairs.remove(pair)
 
@@ -125,15 +132,17 @@ class VertexList:
         Args:
             indices (int or list of int): The vertex indices to skip. Can be a single index or a list of indices.
         """
-        self.skip_indices = []
 
         if not isinstance(indices, list):
             indices = [indices]
-        self.skip_indices.extend(indices)
         
         for idx in indices:
-            self.pairs = [pair for pair in self.pairs if idx not in [pair.start_idx, pair.end_idx]]
-            # self.pairs[idx] = (None, None)
+            if idx in self.skip_indices:
+                continue
+            self.skip_indices.append(int(idx))
+
+        for idx in self.skip_indices:
+            self.pairs = [pair for pair in self.pairs if idx not in pair]
 
         self._cached_topology = None
 
@@ -238,13 +247,24 @@ class VertexList:
                     idx3 = curr_level_start + ((j+1) * curr_div_y + (k+1))
                     idx4 = curr_level_start + ((j+1) * curr_div_y + k)
 
-                    self.pairs.append(Pair(idx1, target_idx, cross_section=CrossSection.main, categories=[BeamCategory.single]))
-                    self.pairs.append(Pair(idx2, target_idx, cross_section=CrossSection.main, categories=[BeamCategory.single]))
-                    self.pairs.append(Pair(idx3, target_idx, cross_section=CrossSection.main, categories=[BeamCategory.single]))
-                    self.pairs.append(Pair(idx4, target_idx, cross_section=CrossSection.main, categories=[BeamCategory.single]))
+                    self.pairs.append(Pair(idx1, target_idx, cross_section=None, categories=[BeamCategory.SINGLE]))
+                    self.pairs.append(Pair(idx2, target_idx, cross_section=None, categories=[BeamCategory.SINGLE]))
+                    self.pairs.append(Pair(idx3, target_idx, cross_section=None, categories=[BeamCategory.SINGLE]))
+                    self.pairs.append(Pair(idx4, target_idx, cross_section=None, categories=[BeamCategory.SINGLE]))
             curr_div_x -= 1
             curr_div_y -= 1
         
+
+        # 3. Find pairs for adding edge beams
+        max_indices = (self.div_x + 1) * (self.div_y + 1)
+        facade_indices_a = list(range(0, max_indices, self.div_y + 1))
+        facade_indices_b = list(range(self.div_y, max_indices, self.div_y + 1))
+        
+        for i in range(len(facade_indices_a) - 1):
+            self.pairs.append(Pair(facade_indices_a[i], facade_indices_a[i+1], cross_section=None, categories=[BeamCategory.EDGE]))
+            self.pairs.append(Pair(facade_indices_b[i], facade_indices_b[i+1], cross_section=None, categories=[BeamCategory.EDGE]))
+
+        # 4. Manually remove four pairs 
 
         self._default_vertices = self.vertices
         self._default_pairs = self.pairs
@@ -252,6 +272,13 @@ class VertexList:
 
 
     def set_default_height(self, height_list):
+        """
+        Create the structure profile by assigning a list of Z values to different levels of vertices.
+        
+        Args:
+            height_list (list of float)(optional): A list of heights representing the point.z values for each level. If not provided, the height will be divided equally. The length of height_list should be equal to (division_x + 1) if provided.
+
+        """
         if not self.vertices:
             raise ValueError("Vertices have not been computed. Call compute_diagrid first.")
         
@@ -270,10 +297,15 @@ class VertexList:
             if vertex is None:
                 continue
             vertex.z = self.default_z[idx] - height_list[int(vertex.name.split('_')[1])]
-            # vertex.z -= height_list[int(vertex.name.split('_')[1])]
 
 
     def set_default_roof(self, mesh):
+        """
+        Project the highest level of vertices to a given mesh.
+
+        Args:
+            mesh (Mesh): representing the CLT panels on the roof.
+        """
         if not self._default_vertices:
             raise ValueError("Vertices have not been computed. Call compute_diagrid first.")
         
@@ -427,9 +459,9 @@ class VertexList:
 
 
 class BeamList:
-    def __init__(self, vextex_list):
-        self.v_list = vextex_list
-        self.pairs = vextex_list.pairs
+    def __init__(self, vertex_list):
+        self.v_list = vertex_list
+        self.pairs = vertex_list.pairs
         self.beams = []
 
 
@@ -437,14 +469,6 @@ class BeamList:
 
     def set_default_beams(self):
         self.beams = []
-        # # Find pairs for adding edge beams
-        # max_indices = (self.v_list.div_x + 1) * (self.v_list.div_y + 1)
-        # facade_indices_a = list(range(0, max_indices, self.v_list.div_y + 1))
-        # facade_indices_b = list(range(self.v_list.div_y, max_indices, self.v_list.div_y + 1))
-        
-        # for i in range(len(facade_indices_a) - 1):
-        #     self.pairs.append(Pair(facade_indices_a[i], facade_indices_a[i+1], category=BeamCategory.edge, hierarchy=None))
-        #     self.pairs.append(Pair(facade_indices_b[i], facade_indices_b[i+1], category=BeamCategory.edge, hierarchy=None))
 
         for pair in self.pairs:
             beam = Beam(pair, self.v_list)
@@ -470,28 +494,31 @@ class BeamList:
     
 
     def double(self, indices):
-
-        for idx in indices:
-            beam = self.beams[idx]
         
-            # 1. Delete current beam
-            self.v_list.delete_pairs(beam.pair)
+        for idx in indices:
+            curr_beam = self.beams[idx]
 
+            if curr_beam is None:
+                continue
+
+            # 1. Delete current beam
+            self.v_list.delete_pairs(curr_beam.pair)
 
             # 2. Offset beam on both sides
-            offset = beam.width * 0.001 / 2 if beam.width is not None else .067  # 60 mm
+            offset = curr_beam.width * 0.001 / 2 if curr_beam.width is not None else .067  # 60 mm
 
-            offset_vec = beam.direction.cross(Vector(0, 0, 1))
+            offset_vec = curr_beam.direction.cross(Vector(0, 0, 1))
             offset_vec.unitize()
 
             for side in [-1, 1]:
-                new_start = beam.start.translated(offset_vec * offset * side)
-                new_end = beam.end.translated(offset_vec * offset * side)
+                new_start = curr_beam.start.translated(offset_vec * offset * side)
+                new_end = curr_beam.end.translated(offset_vec * offset * side)
 
                 # 3. Add new pair
                 curr_idx = len(self.v_list)
-                new_pair = Pair(curr_idx, curr_idx + 1, category=BeamCategory.double, hierarchy=None)
-
+                new_pair = Pair(curr_idx, curr_idx + 1, cross_section=None, categories=[BeamCategory.DOUBLE])
+                new_pair.categories.extend(curr_beam.categories)
+                
                 self.v_list.add_pairs(new_pair)
 
                 # 4. Add four new vertices
@@ -500,12 +527,16 @@ class BeamList:
                 
                 self.beams.append(Beam(new_pair, self.v_list))
 
+
+            
         for idx in indices:
         #     self.beams.pop(idx)
             self.beams[idx] = None
 
 
     def group_by_module(self, polylines):
+        ######## Remember to optimize this by filtering the polylines first based on the aabb ########### 
+
         tol = 1e-3
 
         # 1. find if point on or in polylines
