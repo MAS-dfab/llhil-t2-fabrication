@@ -42,16 +42,17 @@ class BeamCategory:
 ######################################################################
 class CrossSection:
     """
-    Categorizes cross sections for beams. Unit in mm.
-
-    Args:
-        primary (str): Primary beams that carry the main loads.
-        secondary (str): Secondary beams that support the primary beams.
-        tertiary (str): Tertiary beams that support the secondary beams.
+    Beam cross sections in mm.
+    These are the base single-beam sections.
+    Double beams are formed by placing two identical sections in parallel.
     """
 
-    MAIN = (240, 320)
+    XS = (80, 200)   # smallest single section
+    S  = (80, 280)   # deeper but still narrow
+    M  = (100, 240)  # medium section
+    L  = (120, 320)  # largest single section
 
+    ALL = [XS, S, M, L]
 
 # print(CrossSection.main)
 # beam.width = CrossSection.main[0]
