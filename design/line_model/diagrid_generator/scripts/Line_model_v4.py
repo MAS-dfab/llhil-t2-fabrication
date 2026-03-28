@@ -1,7 +1,7 @@
 ### Edited by Jerry on 27 Mar 2026
 from Structs_v1 import Pair, BeamCategory, Beam, Transform, CrossSection
 
-from compas.geometry import Line, Vector, Box, Point, Plane
+from compas.geometry import Line, Vector, Box, Point, Plane, Polyline
 from compas.geometry import is_point_in_polygon_xy, is_point_on_polyline_xy, intersection_line_triangle
 import math
 
@@ -19,14 +19,46 @@ def divide_by_count(line, count):
 
     return pts
 
+
 def average_points(points):
     if not points:
         return None
     x = sum(point.x for point in points) / len(points)
     y = sum(point.y for point in points) / len(points)
     z = sum(point.z for point in points) / len(points)
+
     return Point(x, y, z)
 
+
+def compute_aabb_xy(polyline):
+    if not isinstance(polyline, Polyline):
+        raise ValueError("polyline must be compas Polyline.")
+    
+    minx, miny = float('inf'), float('inf')
+    maxx, maxy = float('-inf'), float('-inf')
+
+    for p in polyline:
+        if p.x < minx: minx = p.x
+        if p.x > maxx: maxx = p.x
+        if p.y < miny: miny = p.y
+        if p.y > maxy: maxy = p.y
+    
+    return ((minx, miny), (maxx, maxy))
+
+
+def is_point_in_aabb_xy(point, aabb, tol=1e-3):
+    """
+    Test if a point is inside an axis-aligned bounding box (AABB) in the XY plane.
+    Also consider points that are on the boundary of the AABB as inside.
+
+    Args:
+        point (Point):
+        aabb (two tuples):
+    """
+    minx, miny = aabb[0]
+    maxx, maxy = aabb[1]
+    
+    return minx - tol <= point.x <= maxx + tol and miny - tol <= point.y <= maxy + tol
 
 
 ##########-----------Class--------###########
@@ -56,8 +88,9 @@ class VertexList:
         self.dir1 = None
         self.dir2 = None
         self.height_list = []
+        self.roof = None
+
         self.default_z = []
-        
         self._default_vertices = []
         self._default_pairs = []
 
@@ -111,15 +144,17 @@ class VertexList:
         self._cached_topology = None
 
 
-    def delete_pairs(self, pairs):
-        if not isinstance(pairs, list):
-            pairs = [pairs]
+    def delete_pairs(self, tuples):
+        """
+        Delete pairs by a list of tuples (start_idx, end_idx). You do not need to consider CrossSection and BeamCategory.
+        """
 
-        for pair in pairs:
-            if type(pair).__name__ != "Pair":
-                raise ValueError("Pairs must be instances of the Pair class.")
+        if not isinstance(tuples, list):
+            tuples = [tuples]
 
-            if pair in self.pairs:
+        for pair in self.pairs:
+            tuple_pair = (pair.start_idx, pair.end_idx)
+            if tuple_pair in tuples:
                 self.pairs.remove(pair)
 
         self._cached_topology = None
@@ -264,7 +299,6 @@ class VertexList:
             self.pairs.append(Pair(facade_indices_a[i], facade_indices_a[i+1], cross_section=None, categories=[BeamCategory.EDGE]))
             self.pairs.append(Pair(facade_indices_b[i], facade_indices_b[i+1], cross_section=None, categories=[BeamCategory.EDGE]))
 
-        # 4. Manually remove four pairs 
 
         self._default_vertices = self.vertices
         self._default_pairs = self.pairs
@@ -322,6 +356,7 @@ class VertexList:
                     vertex.z = hit.z
                     self.default_z[idx] = hit.z
                     break
+        self.roof = mesh
 
 
     @property
@@ -464,7 +499,9 @@ class BeamList:
         self.pairs = vertex_list.pairs
         self.beams = []
 
-
+        self.roof = vertex_list.roof
+        self.clt_panels = []
+        
         self.group = None
 
     def set_default_beams(self):
@@ -503,6 +540,8 @@ class BeamList:
 
             # 1. Delete current beam
             self.v_list.delete_pairs(curr_beam.pair)
+            self.v_list.skip_indices.append(curr_beam.start_idx)
+            self.v_list.skip_indices.append(curr_beam.end_idx)
 
             # 2. Offset beam on both sides
             offset = curr_beam.width * 0.001 / 2 if curr_beam.width is not None else .067  # 60 mm
@@ -526,8 +565,6 @@ class BeamList:
                 self.v_list.add_vertices(new_end)
                 
                 self.beams.append(Beam(new_pair, self.v_list))
-
-
             
         for idx in indices:
         #     self.beams.pop(idx)
@@ -535,11 +572,19 @@ class BeamList:
 
 
     def group_by_module(self, polylines):
-        ######## Remember to optimize this by filtering the polylines first based on the aabb ########### 
-
+        """
+        Group beams based on the CLT panels and different levels of the diagrid
+        
+        Args:
+            polylines (list of Polyline): representing the boundaries of CLT panels.
+            
+        Returns:
+            group (dict): {panel_idx: [beam_idx1, beam_idx2, ...], ...}
+        """
         tol = 1e-3
+        self.clt_panels = polylines
 
-        # 1. find if point on or in polylines
+        # 1. Find if point on or in polylines
         on_list = []  # list of points
         in_list = []
         for i, beam in enumerate(self.beams):
@@ -548,6 +593,11 @@ class BeamList:
             p = beam.mid
             p.name = str(i)
             for poly in polylines:
+                # Filter polylines by AABB
+                aabb = compute_aabb_xy(poly)
+                if not is_point_in_aabb_xy(p, aabb, tol):
+                    continue
+
                 is_on = is_point_on_polyline_xy(p, poly, tol)
                 if is_on:
                     on_list.append(p)
@@ -560,11 +610,15 @@ class BeamList:
             poly.name = str(polylines.index(poly))
         # return [p.name for p in on_list], [p.name for p in in_list]
             
-        # 2. find which panel belongs to point
+        # 2. Find which panel belongs to point
         def belong(point, polylines):
             two_panels = []
 
             for idx, polyline in enumerate(polylines):
+                aabb = compute_aabb_xy(polyline)
+                if not is_point_in_aabb_xy(point, aabb, tol):
+                    continue
+
                 if is_point_on_polyline_xy(point, polyline, tol):
                     two_panels.append(polyline)
             
