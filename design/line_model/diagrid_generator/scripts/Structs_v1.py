@@ -2,7 +2,7 @@
 from compas.geometry import Line
 from dataclasses import dataclass, field
 from typing import List, Optional
-
+from enum import Enum
 
 @dataclass
 class Pair:
@@ -54,9 +54,6 @@ class CrossSection:
 
     ALL = [XS, S, M, L]
 
-# print(CrossSection.main)
-# beam.width = CrossSection.main[0]
-
 
 
 class Beam:
@@ -78,8 +75,8 @@ class Beam:
         self.categories = pair.categories
         self.cross_section = pair.cross_section
 
-        self.width = self.cross_section[0] if self.cross_section is not None else 80
-        self.height = self.cross_section[1] if self.cross_section is not None else 200
+        self.width = self.cross_section[0] if self.cross_section is not None else CrossSection.XS[0]
+        self.height = self.cross_section[1] if self.cross_section is not None else CrossSection.XS[1]
         
         self.force = None
 

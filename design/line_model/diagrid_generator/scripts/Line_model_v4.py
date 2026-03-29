@@ -34,16 +34,12 @@ def compute_aabb_xy(polyline):
     if not isinstance(polyline, Polyline):
         raise ValueError("polyline must be compas Polyline.")
     
-    minx, miny = float('inf'), float('inf')
-    maxx, maxy = float('-inf'), float('-inf')
+    x_coords = [p.x for p in polyline]
+    y_coords = [p.y for p in polyline]
+    min_x, max_x = min(x_coords), max(x_coords)
+    min_y, max_y = min(y_coords), max(y_coords)
 
-    for p in polyline:
-        if p.x < minx: minx = p.x
-        if p.x > maxx: maxx = p.x
-        if p.y < miny: miny = p.y
-        if p.y > maxy: maxy = p.y
-    
-    return ((minx, miny), (maxx, maxy))
+    return ((min_x, min_y), (max_x, max_y))
 
 
 def is_point_in_aabb_xy(point, aabb, tol=1e-3):
@@ -55,10 +51,9 @@ def is_point_in_aabb_xy(point, aabb, tol=1e-3):
         point (Point):
         aabb (two tuples):
     """
-    minx, miny = aabb[0]
-    maxx, maxy = aabb[1]
+    (min_x, min_y), (max_x, max_y) = aabb
     
-    return minx - tol <= point.x <= maxx + tol and miny - tol <= point.y <= maxy + tol
+    return min_x - tol <= point.x <= max_x + tol and min_y - tol <= point.y <= max_y + tol
 
 
 ##########-----------Class--------###########
@@ -251,6 +246,8 @@ class VertexList:
 
         # 2. Find indices of start and end points of the diagrid edges
         self.pairs = []
+        # Set default cross section sizes by levels
+        crosec_list = CrossSection.ALL  # Assign smallest cross section to the top level and largest to the bottom level
 
         start_indices = []
         curr_idx = 0
@@ -282,10 +279,10 @@ class VertexList:
                     idx3 = curr_level_start + ((j+1) * curr_div_y + (k+1))
                     idx4 = curr_level_start + ((j+1) * curr_div_y + k)
 
-                    self.pairs.append(Pair(idx1, target_idx, cross_section=None, categories=[BeamCategory.SINGLE]))
-                    self.pairs.append(Pair(idx2, target_idx, cross_section=None, categories=[BeamCategory.SINGLE]))
-                    self.pairs.append(Pair(idx3, target_idx, cross_section=None, categories=[BeamCategory.SINGLE]))
-                    self.pairs.append(Pair(idx4, target_idx, cross_section=None, categories=[BeamCategory.SINGLE]))
+                    self.pairs.append(Pair(idx1, target_idx, cross_section=crosec_list[i], categories=[BeamCategory.SINGLE]))
+                    self.pairs.append(Pair(idx2, target_idx, cross_section=crosec_list[i], categories=[BeamCategory.SINGLE]))
+                    self.pairs.append(Pair(idx3, target_idx, cross_section=crosec_list[i], categories=[BeamCategory.SINGLE]))
+                    self.pairs.append(Pair(idx4, target_idx, cross_section=crosec_list[i], categories=[BeamCategory.SINGLE]))
             curr_div_x -= 1
             curr_div_y -= 1
         
@@ -296,8 +293,8 @@ class VertexList:
         facade_indices_b = list(range(self.div_y, max_indices, self.div_y + 1))
         
         for i in range(len(facade_indices_a) - 1):
-            self.pairs.append(Pair(facade_indices_a[i], facade_indices_a[i+1], cross_section=None, categories=[BeamCategory.EDGE]))
-            self.pairs.append(Pair(facade_indices_b[i], facade_indices_b[i+1], cross_section=None, categories=[BeamCategory.EDGE]))
+            self.pairs.append(Pair(facade_indices_a[i], facade_indices_a[i+1], cross_section=CrossSection.M, categories=[BeamCategory.EDGE]))
+            self.pairs.append(Pair(facade_indices_b[i], facade_indices_b[i+1], cross_section=CrossSection.M, categories=[BeamCategory.EDGE]))
 
 
         self._default_vertices = self.vertices
@@ -555,7 +552,7 @@ class BeamList:
 
                 # 3. Add new pair
                 curr_idx = len(self.v_list)
-                new_pair = Pair(curr_idx, curr_idx + 1, cross_section=None, categories=[BeamCategory.DOUBLE])
+                new_pair = Pair(curr_idx, curr_idx + 1, cross_section=curr_beam.cross_section, categories=[BeamCategory.DOUBLE])
                 new_pair.categories.extend(curr_beam.categories)
                 
                 self.v_list.add_pairs(new_pair)
