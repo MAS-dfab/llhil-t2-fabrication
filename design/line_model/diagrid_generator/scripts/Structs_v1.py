@@ -2,7 +2,7 @@
 from compas.geometry import Line
 from dataclasses import dataclass, field
 from typing import List, Optional
-from enum import Enum
+
 
 @dataclass
 class Pair:
@@ -10,6 +10,7 @@ class Pair:
     end_idx: int
     cross_section: Optional[tuple] = None
     categories: List[str] = field(default_factory=list)
+    
 
     def __getitem__(self, idx):
         return (self.start_idx, self.end_idx)[idx]
@@ -21,7 +22,7 @@ class Pair:
 
 class BeamCategory:
     """
-    Categorizes beams.
+    Categories of beams.
     
     Args:
         CLT_attached (str): Beams attached to CLT panels.
@@ -29,7 +30,7 @@ class BeamCategory:
         double (str): Where you need to double and offset the beams.
         edge (str): Beams at the facade position.
         bracing (str): Bracing beams, e.g. around the beams near to the supports.
-        join (str): Beams that are treated as one continuous element for fabrication, but be segmented for structural analysis.
+        split (str): Beams that are treated as one continuous element for fabrication, but be segmented for structural analysis.
     """
 
     CLT_ATTACHED = "CLT_attached"
@@ -37,9 +38,9 @@ class BeamCategory:
     DOUBLE = "double"
     EDGE = "edge"
     BRACING = "bracing"
-    JOIN = "join"
+    SPLIT = "split"
+    
 
-######################################################################
 class CrossSection:
     """
     Beam cross sections in mm.
@@ -108,10 +109,10 @@ class Beam:
 
 
 class Transform:
-    def __init__(self, valency, groups, vextex_list):
+    def __init__(self, valency, groups, vertex_list):
         self.valency = valency
         self.groups = groups
-        self.v_list = vextex_list
+        self.v_list = vertex_list
 
     def five(self):
         for parent, children in self.groups.items():

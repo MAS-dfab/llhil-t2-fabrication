@@ -1,7 +1,7 @@
 ### Edited by Jerry on 27 Mar 2026
 from Structs_v1 import Pair, BeamCategory, Beam, Transform, CrossSection
 
-from compas.geometry import Line, Vector, Box, Point, Plane, Polyline
+from compas.geometry import Line, Vector, Box, Point, Plane, Polyline, Polygon
 from compas.geometry import is_point_in_polygon_xy, is_point_on_polyline_xy, intersection_line_triangle
 import math
 
@@ -535,13 +535,16 @@ class BeamList:
             if curr_beam is None:
                 continue
 
+            if BeamCategory.SINGLE in curr_beam.categories:
+                curr_beam.categories.remove(BeamCategory.SINGLE)
+
             # 1. Delete current beam
-            self.v_list.delete_pairs(curr_beam.pair)
+            self.v_list.delete_pairs((curr_beam.start_idx, curr_beam.end_idx))
             self.v_list.skip_indices.append(curr_beam.start_idx)
             self.v_list.skip_indices.append(curr_beam.end_idx)
 
             # 2. Offset beam on both sides
-            offset = curr_beam.width * 0.001 / 2 if curr_beam.width is not None else .067  # 60 mm
+            offset = curr_beam.width * 0.001 / 2 if curr_beam.width is not None else CrossSection.XS[0] * 0.002 / 2
 
             offset_vec = curr_beam.direction.cross(Vector(0, 0, 1))
             offset_vec.unitize()
@@ -564,11 +567,10 @@ class BeamList:
                 self.beams.append(Beam(new_pair, self.v_list))
             
         for idx in indices:
-        #     self.beams.pop(idx)
             self.beams[idx] = None
 
 
-    def group_by_module(self, polylines):
+    def group_by_module(self, polylines, tol=1e-3):
         """
         Group beams based on the CLT panels and different levels of the diagrid
         
@@ -578,7 +580,6 @@ class BeamList:
         Returns:
             group (dict): {panel_idx: [beam_idx1, beam_idx2, ...], ...}
         """
-        tol = 1e-3
         self.clt_panels = polylines
 
         # 1. Find if point on or in polylines
@@ -603,8 +604,8 @@ class BeamList:
             if p not in on_list:
                 in_list.append(p)
 
-        for poly in polylines:
-            poly.name = str(polylines.index(poly))
+        for i, poly in enumerate(polylines):
+            poly.name = str(i)
         # return [p.name for p in on_list], [p.name for p in in_list]
             
         # 2. Find which panel belongs to point
@@ -619,7 +620,7 @@ class BeamList:
                 if is_point_on_polyline_xy(point, polyline, tol):
                     two_panels.append(polyline)
             
-            best = max(two_panels, key=lambda p: p.to_polygon().area)
+            best = max(two_panels, key=lambda p: Polygon(list(p)).area)
             return best
     
         self.group = {}
@@ -633,7 +634,7 @@ class BeamList:
         for p in in_list:
             for poly in polylines:
 
-                if is_point_in_polygon_xy(p, poly.to_polygon()):
+                if is_point_in_polygon_xy(p, Polygon(list(poly))):
                     
                     self.group.setdefault(int(poly.name), []).append(int(p.name))
                     break
