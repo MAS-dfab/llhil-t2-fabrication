@@ -118,7 +118,6 @@ class VertexList:
             if not isinstance(vertex, Point):
                 raise ValueError("Only compas Point instances can be added to VertexList.")
             
-            # self.vertices.append(vertex)
             self.vertices = self.vertices + [vertex]
 
 
@@ -232,7 +231,7 @@ class VertexList:
             for j in range(div_x):
                 for k in range(div_y):
                     p = start + (vec_x * j * step_x) + (vec_y * k * step_y)
-                    p.name = f"pt_{i}_{j}_{k}"
+                    p.name = f"lvl_{i}"
                     
                     self.vertices.append(p)
                     self.default_z.append(p.z)
@@ -279,10 +278,10 @@ class VertexList:
                     idx3 = curr_level_start + ((j+1) * curr_div_y + (k+1))
                     idx4 = curr_level_start + ((j+1) * curr_div_y + k)
 
-                    self.pairs.append(Pair(idx1, target_idx, cross_section=crosec_list[i], categories=[BeamCategory.SINGLE]))
-                    self.pairs.append(Pair(idx2, target_idx, cross_section=crosec_list[i], categories=[BeamCategory.SINGLE]))
-                    self.pairs.append(Pair(idx3, target_idx, cross_section=crosec_list[i], categories=[BeamCategory.SINGLE]))
-                    self.pairs.append(Pair(idx4, target_idx, cross_section=crosec_list[i], categories=[BeamCategory.SINGLE]))
+                    self.pairs.append(Pair(idx1, target_idx, level=i, cross_section=crosec_list[i], categories=[BeamCategory.SINGLE]))
+                    self.pairs.append(Pair(idx2, target_idx, level=i, cross_section=crosec_list[i], categories=[BeamCategory.SINGLE]))
+                    self.pairs.append(Pair(idx3, target_idx, level=i, cross_section=crosec_list[i], categories=[BeamCategory.SINGLE]))
+                    self.pairs.append(Pair(idx4, target_idx, level=i, cross_section=crosec_list[i], categories=[BeamCategory.SINGLE]))
             curr_div_x -= 1
             curr_div_y -= 1
         
@@ -293,8 +292,8 @@ class VertexList:
         facade_indices_b = list(range(self.div_y, max_indices, self.div_y + 1))
         
         for i in range(len(facade_indices_a) - 1):
-            self.pairs.append(Pair(facade_indices_a[i], facade_indices_a[i+1], cross_section=CrossSection.M, categories=[BeamCategory.EDGE]))
-            self.pairs.append(Pair(facade_indices_b[i], facade_indices_b[i+1], cross_section=CrossSection.M, categories=[BeamCategory.EDGE]))
+            self.pairs.append(Pair(facade_indices_a[i], facade_indices_a[i+1], level=0, cross_section=CrossSection.M, categories=[BeamCategory.EDGE]))
+            self.pairs.append(Pair(facade_indices_b[i], facade_indices_b[i+1], level=0, cross_section=CrossSection.M, categories=[BeamCategory.EDGE]))
 
 
         self._default_vertices = self.vertices
@@ -428,10 +427,6 @@ class VertexList:
         return sorted_groups
 
 
-    def group_by_cross_section(self):
-        pass
-
-
     @property
     def topology(self):
         """
@@ -499,7 +494,7 @@ class BeamList:
         self.roof = vertex_list.roof
         self.clt_panels = []
         
-        self.group = None
+        self.group = {}
 
     def set_default_beams(self):
         self.beams = []
@@ -552,10 +547,12 @@ class BeamList:
             for side in [-1, 1]:
                 new_start = curr_beam.start.translated(offset_vec * offset * side)
                 new_end = curr_beam.end.translated(offset_vec * offset * side)
+                new_start.name = curr_beam.start.name
+                new_end.name = curr_beam.end.name
 
                 # 3. Add new pair
                 curr_idx = len(self.v_list)
-                new_pair = Pair(curr_idx, curr_idx + 1, cross_section=curr_beam.cross_section, categories=[BeamCategory.DOUBLE])
+                new_pair = Pair(curr_idx, curr_idx + 1, level=curr_beam.pair.level, cross_section=curr_beam.cross_section, categories=[BeamCategory.DOUBLE])
                 new_pair.categories.extend(curr_beam.categories)
                 
                 self.v_list.add_pairs(new_pair)
@@ -568,6 +565,41 @@ class BeamList:
             
         for idx in indices:
             self.beams[idx] = None
+
+
+    def group_by_levels(self, level_list=[2, 1, 1], tol=1e-3):
+        """
+        Args:
+            level_list (list of int): A list of integers partitioning the beams into different levels (start from top).
+        """
+        height_list = self.v_list.height_list
+        height_list = [self.v_list.boundary[0].z - h for h in height_list]
+
+        if sum(level_list) != len(height_list) - 1:
+            raise ValueError("length of level_list must be equal to len(height_list) - 1.")
+        
+        intervals = []
+        curr = 0
+        for lnl in level_list:
+            high = height_list[curr]
+            low = height_list[curr + lnl]
+            intervals.append((high, low))
+            curr += lnl
+
+        print (f"Height list: {height_list}")
+        print (f"Intervals: {intervals}")
+
+        group = {}
+        for idx, beam in enumerate(self.beams):
+            if beam is None:
+                continue
+            mid_z = beam.mid.z
+            for i, (high, low) in enumerate(intervals):
+                if low - tol < mid_z < high + tol:
+                    group.setdefault(i, []).append(idx)
+                    break
+        return intervals, group
+    
 
 
     def group_by_module(self, polylines, tol=1e-3):
@@ -641,3 +673,7 @@ class BeamList:
 
         self.group = dict(sorted(self.group.items()))
         return self.group
+    
+
+    def group_by_cross_section(self):
+        pass

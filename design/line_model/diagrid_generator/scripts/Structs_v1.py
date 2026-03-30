@@ -8,6 +8,7 @@ from typing import List, Optional
 class Pair:
     start_idx: int
     end_idx: int
+    level: int
     cross_section: Optional[tuple] = None
     categories: List[str] = field(default_factory=list)
     
