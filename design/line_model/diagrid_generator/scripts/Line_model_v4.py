@@ -108,6 +108,7 @@ class VertexList:
     def reset_default(self):
         self.vertices = self._default_vertices[:]
         self.pairs = self._default_pairs[:]
+        
 
 
     def add_vertices(self, vertices):
@@ -140,7 +141,7 @@ class VertexList:
 
     def delete_pairs(self, tuples):
         """
-        Delete pairs by a list of tuples (start_idx, end_idx). You do not need to consider CrossSection and BeamCategory.
+        Delete pairs by a list of tuples (start_idx, end_idx). Do not need to consider level, CrossSection and BeamCategory.
         """
 
         if not isinstance(tuples, list):
@@ -522,6 +523,36 @@ class BeamList:
         return [beam.axis if beam is not None else None for beam in self.beams]
     
 
+    def join(self, precision=3):
+        # group = {}
+        # for beam in self.beams:
+        #     if beam is None:
+        #         continue
+        #     if BeamCategory.SPLIT in beam.categories:
+        #         print (beam.pair)
+        #         vec = beam.direction
+        #         vec.unitize()
+        #         rounded_vec = tuple(round(coord, precision) for coord in vec)
+        #         group.setdefault(rounded_vec, []).extend([beam.pair.start_idx, beam.pair.end_idx])
+
+        # for vec, beams in group.items():
+        #     # 1. delete current beams
+        #     for beam in beams:
+        #         pass
+        
+        # return group
+    
+        group = {}
+        for beam in self.beams:
+            if beam is None or BeamCategory.SPLIT not in beam.categories:
+                continue
+
+            # 1. Get unitized vector which always points in the positive direction.
+            d = beam.direction.unitized()
+            if d.x < 0 or (d.x == 0 and d.y < 0) or (d.x == 0 and d.y == 0 and d.z < 0):
+                d *= -1
+
+
     def double(self, indices):
         
         for idx in indices:
@@ -544,6 +575,7 @@ class BeamList:
             offset_vec = curr_beam.direction.cross(Vector(0, 0, 1))
             offset_vec.unitize()
 
+            two_pairs_list = []  # [(start_idx1, end_idx1), (start_idx2, end_idx2)]
             for side in [-1, 1]:
                 new_start = curr_beam.start.translated(offset_vec * offset * side)
                 new_end = curr_beam.end.translated(offset_vec * offset * side)
@@ -555,14 +587,24 @@ class BeamList:
                 new_pair = Pair(curr_idx, curr_idx + 1, level=curr_beam.pair.level, cross_section=curr_beam.cross_section, categories=[BeamCategory.DOUBLE])
                 new_pair.categories.extend(curr_beam.categories)
                 
+                two_pairs_list.append((curr_idx, curr_idx + 1))
                 self.v_list.add_pairs(new_pair)
 
                 # 4. Add four new vertices
                 self.v_list.add_vertices(new_start)
                 self.v_list.add_vertices(new_end)
-                
+
                 self.beams.append(Beam(new_pair, self.v_list))
             
+            # start1, end1 = two_pairs_list[0]
+            # start2, end2 = two_pairs_list[1]
+            # between_pair1 = Pair(start1, start2, level=curr_beam.pair.level, cross_section=curr_beam.cross_section, categories=[BeamCategory.BETWEEN])
+            # between_pair2 = Pair(end1, end2, level=curr_beam.pair.level, cross_section=curr_beam.cross_section, categories=[BeamCategory.BETWEEN])
+            # self.v_list.add_pairs(between_pair1)
+            # self.v_list.add_pairs(between_pair2)
+            # self.beams.append(Beam(between_pair1, self.v_list))
+            # self.beams.append(Beam(between_pair2, self.v_list))
+
         for idx in indices:
             self.beams[idx] = None
 
@@ -598,7 +640,7 @@ class BeamList:
                 if low - tol < mid_z < high + tol:
                     group.setdefault(i, []).append(idx)
                     break
-        return intervals, group
+        return group
     
 
 
@@ -638,7 +680,6 @@ class BeamList:
 
         for i, poly in enumerate(polylines):
             poly.name = str(i)
-        # return [p.name for p in on_list], [p.name for p in in_list]
             
         # 2. Find which panel belongs to point
         def belong(point, polylines):

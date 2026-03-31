@@ -8,7 +8,7 @@ from typing import List, Optional
 class Pair:
     start_idx: int
     end_idx: int
-    level: int
+    level: Optional[int] = None
     cross_section: Optional[tuple] = None
     categories: List[str] = field(default_factory=list)
     
@@ -37,6 +37,7 @@ class BeamCategory:
     CLT_ATTACHED = "CLT_attached"
     SINGLE = "single"
     DOUBLE = "double"
+    BETWEEN = "between"
     EDGE = "edge"
     BRACING = "bracing"
     SPLIT = "split"
