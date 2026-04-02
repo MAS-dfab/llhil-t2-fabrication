@@ -346,7 +346,9 @@ class VertexList:
             raise ValueError("Vertices have not been computed. Call compute_diagrid first.")
         
         vertices, faces = mesh.to_vertices_and_faces()
-        for idx, vertex in enumerate(self._default_vertices):
+        top_level_indices = (self.div_x + 1) * (self.div_y + 1)
+
+        for idx, vertex in enumerate(self._default_vertices[:top_level_indices]):
             line = Line(vertex, vertex + Vector(0, 0, 1))
 
             for face in faces:
@@ -488,6 +490,7 @@ class BeamList:
     def __init__(self, vertex_list):
         """
         A list of beams inherited the attributes from the pairs in the vertex list.
+        
         Args:
             vertex_list (VertexList): The vertex list containing vertices and pairs.
         """
