@@ -1,7 +1,9 @@
 ### Edited by Jerry on 27 Mar 2026
+from tokenize import group
+
 from Structs_v1 import Pair, BeamCategory, Beam, Transform, CrossSection
 
-from compas.geometry import Line, Vector, Box, Point, Plane, Polyline, Polygon
+from compas.geometry import Line, Vector, Box, Point, Plane, Polyline, Polygon, angle_vectors
 from compas.geometry import is_point_in_polygon_xy, is_point_on_polyline_xy, intersection_line_triangle
 import math
 
@@ -524,33 +526,106 @@ class BeamList:
     
 
     def join(self, precision=3):
-        # group = {}
-        # for beam in self.beams:
-        #     if beam is None:
-        #         continue
-        #     if BeamCategory.SPLIT in beam.categories:
-        #         print (beam.pair)
-        #         vec = beam.direction
-        #         vec.unitize()
-        #         rounded_vec = tuple(round(coord, precision) for coord in vec)
-        #         group.setdefault(rounded_vec, []).extend([beam.pair.start_idx, beam.pair.end_idx])
-
-        # for vec, beams in group.items():
-        #     # 1. delete current beams
-        #     for beam in beams:
-        #         pass
-        
-        # return group
-    
         group = {}
-        for beam in self.beams:
-            if beam is None or BeamCategory.SPLIT not in beam.categories:
-                continue
+        tol = 1e-6
+        all_vectors = []
+        split_beams_axes = []
 
-            # 1. Get unitized vector which always points in the positive direction.
-            d = beam.direction.unitized()
-            if d.x < 0 or (d.x == 0 and d.y < 0) or (d.x == 0 and d.y == 0 and d.z < 0):
-                d *= -1
+        # Filter once at the start for efficiency
+        valid_beams = [b for b in self.beams if b and BeamCategory.SPLIT in b.categories]
+
+        for i, beam in enumerate(valid_beams):
+            # Store the data for the 'current' beam
+            d = beam.direction
+            if d.z < 0: d *= -1
+            
+            all_vectors.append(d)
+            split_beams_axes.append(beam.axis)
+            keys = list(group.keys())
+            if d not in keys:
+                for j in range(len(valid_beams)):
+                    b = valid_beams[j]
+                    
+                    # 1. Standardize direction of the second beam
+                    d2 = b.direction
+                    if d2.z < 0: d2 *= -1
+                    
+                    # 2. Check parallelism
+                    angle = angle_vectors(d, d2, deg=True, tol=tol)
+                    
+                    if angle == 0:
+                        group.setdefault(d, []).append(b.axis)
+                    
+        # Return grouped parallel axes, all split axes, and all direction vectors
+        # return list(group.values()), split_beams_axes, all_vectors 
+        return valid_beams 
+    
+        # group = {}
+        # tol = 1e-6
+        # all_vectors = []
+        # split_beams_axes = []
+
+        # # Filter once at the start for efficiency
+        # valid_beams = [b for b in self.beams if b and BeamCategory.SPLIT in b.categories]
+
+        # for i, beam in enumerate(valid_beams):
+        #     # Store the data for the 'current' beam
+        #     d = beam.direction
+        #     if d.z < 0: d *= -1
+            
+        #     all_vectors.append(d)
+        #     split_beams_axes.append(beam.axis)
+
+        #     # INNER LOOP: Starts at the NEXT item in the list
+        #     for j in range(i + 1, len(valid_beams)):
+        #         b = valid_beams[j]
+                
+        #         # 1. Standardize direction of the second beam
+        #         d2 = b.direction
+        #         if d2.z < 0: d2 *= -1
+                
+        #         # 2. Check parallelism
+        #         angle = angle_vectors(d, d2, deg=True, tol=tol)
+                
+        #         if angle == 0:
+        #             # Use a rounded tuple as the key to ensure grouping works
+        #             key = tuple(round(v, precision) for v in d)
+                    
+        #             # Add BOTH axes to the group if this is a new parallel set
+        #             # or just the new one if the key already exists
+        #             if key not in group:
+        #                 group[key] = [beam.axis]
+                    
+        #             group[key].append(b.axis)
+                    
+                        
+                
+        # group = {}
+        # tol = 1e-6
+        # all_vectors = []
+        # split_beams = []
+        # for beam in self.beams:
+        #     if beam is None or BeamCategory.SPLIT not in beam.categories:
+        #         continue
+        #     for b in self.beams:
+        #         if b is None or BeamCategory.SPLIT not in b.categories or b == beam:
+        #             continue
+        #         # 1. Get unitized vector which always points in the positive direction.
+        #         d = beam.direction
+        #         d2 = b.direction
+        #         if d.z < 0:
+        #             d *= -1
+        #         if d2.z < 0:
+        #             d2 *= -1
+        #         # 2. Check parallelism #### remove duplicate vectors and corresponding beams
+        #         angle = angle_vectors(d, d2, deg=True, tol=tol)
+        #         if angle == 0 < tol:
+        #             group.setdefault(tuple(d), []).append(b.axis)
+                    
+        #     all_vectors.append(d)
+        #     split_beams.append(beam.axis)
+
+        #         # 3. Check Collinear
 
 
     def double(self, indices):

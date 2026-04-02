@@ -2,7 +2,7 @@
 from Structs_v2 import Pair, BeamCategory, Beam, CrossSection
 
 from compas.geometry import Line, Vector, Box, Point, Plane, Polyline, Polygon
-from compas.geometry import is_point_in_polygon_xy, is_point_on_polyline_xy, intersection_line_triangle
+from compas.geometry import is_point_in_polygon_xy, is_point_on_polyline_xy, intersection_line_triangle, angle_vectors
 import math
 
 ########-------Helpers---------############
@@ -296,7 +296,7 @@ class VertexList:
         facade_indices_b = list(range(self.div_y, max_indices, self.div_y + 1))
         
         for i in range(len(facade_indices_a) - 1):
-            categories = [BeamCategory.EDGE]
+            categories = [BeamCategory.SINGLE, BeamCategory.EDGE]
             self.pairs.append(Pair(facade_indices_a[i], facade_indices_a[i+1], level=0, cross_section=None, categories=categories))
             self.pairs.append(Pair(facade_indices_b[i], facade_indices_b[i+1], level=0, cross_section=None, categories=categories))
 
@@ -529,20 +529,47 @@ class BeamList:
 
     def join(self, precision=3):
         group = {}
-        for beam in self.beams:
-            if beam is None or BeamCategory.SPLIT not in beam.categories:
-                continue
+        tol = 1e-6
 
-            # 1. Get unitized vector which always points in the positive direction.
-            d = beam.direction.unitized()
-            if d.x < 0 or (d.x == 0 and d.y < 0) or (d.x == 0 and d.y == 0 and d.z < 0):
-                d *= -1
+        # Filter once at the start for efficiency
+        valid_beams = [b for b in self.beams if b and BeamCategory.SPLIT in b.categories]
 
-            # 2. Check parallelism
+        for i, beam in enumerate(valid_beams):
+            # Store the data for the 'current' beam
+            d = beam.direction
+            if d.z < 0: d *= -1
+            keys = list(group.keys())
+            if d not in keys:
+                for j in range(len(valid_beams)):
+                    b = valid_beams[j]
+                    
+                    # 1. Standardize direction of the second beam
+                    d2 = b.direction
+                    if d2.z < 0: d2 *= -1
+                    
+                    # 2. Check parallelism
+                    angle = angle_vectors(d, d2, deg=True, tol=tol)
+                    
+                    if angle == 0:
+                        group.setdefault(tuple(d), []).append(b.axis)
+                    
+        return valid_beams, group, keys
+    
+        # group = {}
+        # for beam in self.beams:
+        #     if beam is None or BeamCategory.SPLIT not in beam.categories:
+        #         continue
+
+        #     # 1. Get unitized vector which always points in the positive direction.
+        #     d = beam.direction.unitized()
+        #     if d.x < 0 or (d.x == 0 and d.y < 0) or (d.x == 0 and d.y == 0 and d.z < 0):
+        #         d *= -1
+
+        #     # 2. Check parallelism
 
 
-            # 3. Check Collinear
-        raise NotImplementedError()
+        #     # 3. Check Collinear
+        # raise NotImplementedError()
 
 
     def double(self, indices):
