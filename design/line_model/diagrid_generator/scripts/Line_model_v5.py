@@ -532,48 +532,74 @@ class BeamList:
 
     def join(self, precision=3):
         group = {}
-        tol = 1e-6
+        tol = 1e-2
 
-        # Filter once at the start for efficiency
+        # 1. Filter once at the start for efficiency
         valid_beams = [b for b in self.beams if b and BeamCategory.SPLIT in b.categories]
 
+        # 2. Check parallelism
         for i, beam in enumerate(valid_beams):
-            # Store the data for the 'current' beam
+            # Get unitized vector which always points in the positive direction.
             d = beam.direction
             if d.z < 0: d *= -1
             keys = list(group.keys())
             if d not in keys:
                 for j in range(len(valid_beams)):
                     b = valid_beams[j]
-                    
-                    # 1. Standardize direction of the second beam
+                    # Standardize direction of the second beam
                     d2 = b.direction
                     if d2.z < 0: d2 *= -1
-                    
-                    # 2. Check parallelism
                     angle = angle_vectors(d, d2, deg=True, tol=tol)
-                    
                     if angle == 0:
-                        group.setdefault(tuple(d), []).append(b.axis)
+                        group.setdefault(tuple(d), []).append(b)
+                     
+        # 3. Check Collinearity
+        for key, value in group.items():
+            new_values = []
+            for i, v in enumerate(value):
+                collinear_values = []
+                for j in range(len(value)):
+                    # 1. check for each value in values list if they are collinear with each other
+                    if value[j].axis.end.on_line(v.axis, tol=tol):
+                        # if they are colliinear, than append them to the collinear_values list
+                        collinear_values.append(value[j])
+                        # # remove this beam from value list to avoid duplicate checking
+                value.remove(v)
+                # 2. Append that list to the new_values list
+                new_values.append(collinear_values)
+            # 3. Replace the values list with the new_values list
+            group[key] = new_values
+        
+        # 4. join beams 
+        for key, value in group.items():
+            joined_beams = []
+            for collinear_beams in value:
+                if not collinear_beams:
+                    continue
+                # 1. Find the start point index and end point index of the new beam by ittereting through the collinear beams list and see if some indexes are not duppicated, if not duplicated, then they are the start and end point of the new beam.                
+                beam_indexes = []
+                for beam in collinear_beams:
+                    if beam is None:
+                        continue
+                    start_idx = beam.start_idx
+                    end_idx = beam.end_idx
+                    beam_indexes.append(start_idx)
+                    beam_indexes.append(end_idx)
                     
-        return valid_beams, group, keys
-    
-        # group = {}
-        # for beam in self.beams:
-        #     if beam is None or BeamCategory.SPLIT not in beam.categories:
-        #         continue
+                single_pts = list(set([x for x in beam_indexes if beam_indexes.count(x) < 2]))
+                
+                # 2. Delete collinear beams from v_list
+                for beam in collinear_beams:
+                    self.v_list.delete_pairs((beam.start_idx, beam.end_idx))
+                    self.beams.remove(beam)
 
-        #     # 1. Get unitized vector which always points in the positive direction.
-        #     d = beam.direction.unitized()
-        #     if d.x < 0 or (d.x == 0 and d.y < 0) or (d.x == 0 and d.y == 0 and d.z < 0):
-        #         d *= -1
+                # 3. Create new Pair
+                new_pair = Pair(single_pts[0], single_pts[1], level=collinear_beams[0].pair.level, cross_section=collinear_beams[0].cross_section, categories=[collinear_beams[0].categories])
 
-        #     # 2. Check parallelism
-
-
-        #     # 3. Check Collinear
-        # raise NotImplementedError()
-
+                # 4. Add new beam to beam list
+                self.beams.append(Beam(new_pair, self.v_list))
+               
+        return group
 
     def double(self, indices):
         
