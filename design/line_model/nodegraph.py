@@ -362,22 +362,6 @@ class NodeGraph(Graph):
         """
         return self.degree(node)
 
-    def high_valency_nodes(self, min_degree=4):
-        """
-        Get nodes with valency >= min_degree (branching points).
-        
-        Parameters
-        ----------
-        min_degree : int
-            Minimum number of connections.
-        
-        Returns
-        -------
-        list of int
-            Node keys with high valency.
-        """
-        return [n for n in self.nodes() if self.degree(n) >= min_degree]
-
     def leaf_nodes(self):
         """
         Get nodes with valency == 1 (endpoints).
