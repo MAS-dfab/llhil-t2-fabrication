@@ -15,8 +15,8 @@ Usage in Grasshopper:
     secondary = result["secondary_lines"]
 """
 
-from compas.geometry import Vector, Line, Point
-from compas.geometry import midpoint_point_point_xy, distance_point_point_xy
+from compas.geometry import Vector, Line, Point, centroid_points
+from compas.geometry import distance_point_point_xy
 from compas.datastructures import Graph
 from config import (
     DEFAULT_PARALLEL_TOL, DEFAULT_NEAR_THRESHOLD, 
@@ -87,7 +87,7 @@ def classify_edges_by_support_direction(graph, parallel_tol=None, debug=False, s
         edge_vec.unitize()
 
         # Midpoint
-        mid = Point(*midpoint_point_point_xy(pu, pv))
+        mid = Line(pu, pv).midpoint
 
         # Find nearest support point
         best_support_idx = None
@@ -331,9 +331,10 @@ def find_dominant_direction(vecs, angle_tol=None):
 
     largest_bin = max(bins.values(), key=len)
 
-    avg_x = sum(v.x for v in largest_bin) / len(largest_bin)
-    avg_y = sum(v.y for v in largest_bin) / len(largest_bin)
-    dom = Vector(avg_x, avg_y, 0.0)
+    # Use COMPAS centroid for averaging
+    pts = [Point(v.x, v.y, 0.0) for v in largest_bin]
+    c = centroid_points(pts)
+    dom = Vector(c[0], c[1], 0.0)
 
     if dom.length > 1e-9:
         dom.unitize()

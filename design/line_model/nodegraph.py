@@ -97,6 +97,8 @@ class NodeGraph(Graph):
         """
         Add an edge between two nodes if not already present.
         
+        Auto-inherits 'group' from connected nodes if not specified.
+        
         Parameters
         ----------
         u, v : int
@@ -107,15 +109,17 @@ class NodeGraph(Graph):
         if u == v:
             return
         if not self.has_edge((u, v)):
-            self.add_edge(u, v)
-            for name, value in attr.items():
-                self.edge_attribute((u, v), name, value)
+            # Auto-inherit group from nodes if not specified
+            if "group" not in attr:
+                gu = self.node_attribute(u, "group")
+                gv = self.node_attribute(v, "group")
+                attr["group"] = gu if gu is not None else gv
+            
+            self.add_edge(u, v, **attr)
 
     def edge_lines_by_group(self, group_id):
         """
         Extract Line objects for all edges in a group.
-        
-        Group is determined by the 'group' attribute of connected nodes.
         
         Parameters
         ----------
@@ -128,15 +132,28 @@ class NodeGraph(Graph):
             Edge geometry for visualization.
         """
         lines = []
+        for u, v in self.edges_where({"group": group_id}):
+            pu = self.node_attribute(u, "point")
+            pv = self.node_attribute(v, "point")
+            if pu and pv:
+                lines.append(Line(pu, pv))
+        return lines
+
+    def edge_lines(self):
+        """
+        Get all edges as Line objects.
+        
+        Returns
+        -------
+        list of Line
+            All edge geometry.
+        """
+        lines = []
         for u, v in self.edges():
-            gu = self.node_attribute(u, "group")
-            gv = self.node_attribute(v, "group")
-            group = gu if gu is not None else gv
-            if group == group_id:
-                pu = self.node_attribute(u, "point")
-                pv = self.node_attribute(v, "point")
-                if pu and pv:
-                    lines.append(Line(pu, pv))
+            pu = self.node_attribute(u, "point")
+            pv = self.node_attribute(v, "point")
+            if pu and pv:
+                lines.append(Line(pu, pv))
         return lines
 
     def node_points(self):
@@ -148,7 +165,7 @@ class NodeGraph(Graph):
         list of Point
             All node positions (may include None for nodes without points).
         """
-        return [self.node_attribute(n, "point") for n in self.nodes()]
+        return list(self.nodes_attribute("point"))
 
     def add_point_node_between(self, u, v, t=0.5, split_edge=True, **attr):
         """
@@ -176,10 +193,8 @@ class NodeGraph(Graph):
         pu = self.node_attribute(u, "point")
         pv = self.node_attribute(v, "point")
 
-        x = pu.x + t * (pv.x - pu.x)
-        y = pu.y + t * (pv.y - pu.y)
-        z = pu.z + t * (pv.z - pu.z)
-        p = Point(x, y, z)
+        # Use COMPAS Line interpolation
+        p = Line(pu, pv).point_at(t)
 
         if "group" not in attr:
             attr["group"] = self.node_attribute(u, "group")
@@ -281,7 +296,7 @@ class NodeGraph(Graph):
         list of int
             Node keys where reached=True.
         """
-        return [n for n in self.nodes() if self.node_attribute(n, "reached") == True]
+        return list(self.nodes_where({"reached": True}))
 
     def get_support_points(self):
         """
@@ -309,7 +324,7 @@ class NodeGraph(Graph):
         list of int
             Node keys matching the mobility type.
         """
-        return [n for n in self.nodes() if self.node_attribute(n, "mobility") == mobility]
+        return list(self.nodes_where({"mobility": mobility}))
 
     def points_by_mobility(self, mobility):
         """
@@ -327,3 +342,164 @@ class NodeGraph(Graph):
         """
         return [self.node_attribute(n, "point") for n in self.nodes_by_mobility(mobility)
                 if self.node_attribute(n, "point") is not None]
+
+    # --------------------------------------------------
+    # Topology helpers (using COMPAS Graph methods)
+    # --------------------------------------------------
+    def node_valency(self, node):
+        """
+        Get number of edges connected to a node.
+        
+        Parameters
+        ----------
+        node : int
+            Node key.
+        
+        Returns
+        -------
+        int
+            Number of connected edges.
+        """
+        return self.degree(node)
+
+    def high_valency_nodes(self, min_degree=4):
+        """
+        Get nodes with valency >= min_degree (branching points).
+        
+        Parameters
+        ----------
+        min_degree : int
+            Minimum number of connections.
+        
+        Returns
+        -------
+        list of int
+            Node keys with high valency.
+        """
+        return [n for n in self.nodes() if self.degree(n) >= min_degree]
+
+    def leaf_nodes(self):
+        """
+        Get nodes with valency == 1 (endpoints).
+        
+        Returns
+        -------
+        list of int
+            Node keys that are endpoints.
+        """
+        return [n for n in self.nodes() if self.degree(n) == 1]
+
+    def neighbors(self, node):
+        """
+        Get neighbor nodes (wrapper for COMPAS node_neighbors).
+        
+        Parameters
+        ----------
+        node : int
+            Node key.
+        
+        Returns
+        -------
+        list of int
+            Connected node keys.
+        """
+        return list(self.node_neighbors(node))
+
+    def neighbor_points(self, node):
+        """
+        Get Point objects of all neighbors.
+        
+        Parameters
+        ----------
+        node : int
+            Node key.
+        
+        Returns
+        -------
+        list of Point
+            Neighbor positions.
+        """
+        return [self.node_attribute(n, "point") for n in self.neighbors(node)
+                if self.node_attribute(n, "point") is not None]
+
+    # --------------------------------------------------
+    # Serialization (using COMPAS Graph methods)
+    # --------------------------------------------------
+    def save(self, filepath):
+        """
+        Save graph to JSON file.
+        
+        Parameters
+        ----------
+        filepath : str
+            Path to output file.
+        """
+        import json
+        with open(filepath, 'w') as f:
+            json.dump(self.to_data(), f, indent=2, default=str)
+
+    @classmethod
+    def load(cls, filepath):
+        """
+        Load graph from JSON file.
+        
+        Parameters
+        ----------
+        filepath : str
+            Path to input file.
+        
+        Returns
+        -------
+        NodeGraph
+            Loaded graph instance.
+        """
+        import json
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+        return cls.from_data(data)
+
+    def extract_subgraph(self, nodes):
+        """
+        Extract a subgraph containing only specified nodes and their edges.
+        
+        Parameters
+        ----------
+        nodes : list of int
+            Node keys to include.
+        
+        Returns
+        -------
+        NodeGraph
+            New graph with subset of nodes/edges.
+        """
+        sub = NodeGraph()
+        node_set = set(nodes)
+        
+        # Copy nodes
+        for n in nodes:
+            pt = self.node_attribute(n, "point")
+            if pt:
+                attrs = {}
+                for key in ["group", "level", "mobility", "reached", "ntype"]:
+                    val = self.node_attribute(n, key)
+                    if val is not None:
+                        attrs[key] = val
+                sub.get_or_add_point_node(pt, **attrs)
+        
+        # Copy edges between included nodes
+        for u, v in self.edges():
+            if u in node_set and v in node_set:
+                attrs = {}
+                for key in ["group", "etype", "main_secondary"]:
+                    val = self.edge_attribute((u, v), key)
+                    if val is not None:
+                        attrs[key] = val
+                # Re-lookup node keys in subgraph
+                pu = self.node_attribute(u, "point")
+                pv = self.node_attribute(v, "point")
+                if pu and pv:
+                    su = sub.get_or_add_point_node(pu)
+                    sv = sub.get_or_add_point_node(pv)
+                    sub.add_graph_edge(su, sv, **attrs)
+        
+        return sub

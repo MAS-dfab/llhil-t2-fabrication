@@ -48,12 +48,9 @@ def get_plane_and_size(boundary):
     return Frame(p0, xaxis, yaxis), lx, ly
 
 
-def point_at(plane, u, v, w=0.0):
+def point_at(frame, u, v, w=0.0):
     """Compute a point on a frame given local UVW coordinates."""
-    x = plane.point.x + u * plane.xaxis.x + v * plane.yaxis.x + w * plane.normal.x
-    y = plane.point.y + u * plane.xaxis.y + v * plane.yaxis.y + w * plane.normal.y
-    z = plane.point.z + u * plane.xaxis.z + v * plane.yaxis.z + w * plane.normal.z
-    return Point(x, y, z)
+    return Point(*frame.to_world_coordinates([u, v, w]))
 
 
 def project_to_brep(pt, brep):
@@ -319,7 +316,7 @@ def build_graph_from_records(records, relations):
     for p1, p2, group_id, etype in relations:
         u = ng.get_or_add_point_node(p1)
         v = ng.get_or_add_point_node(p2)
-        ng.add_graph_edge(u, v, etype=etype)
+        ng.add_graph_edge(u, v, group=group_id, etype=etype)
     
     return ng
 
