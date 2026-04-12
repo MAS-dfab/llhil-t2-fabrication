@@ -235,7 +235,7 @@ class NodeGraph(Graph):
         children_u = self.node_attribute(u, "children") or []
         children_v = self.node_attribute(v, "children") or []
 
-        new_node = self.add_point_node_between(u, v, split_edge=False, mobility="xyz_free")
+        new_node = self.add_point_node_between(u, v, split_edge=False, mobility="yz_free")
 
         if children_u or children_v:
             candidates = set(children_u + children_v) - {x, u, v, new_node}

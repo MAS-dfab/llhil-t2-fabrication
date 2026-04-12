@@ -21,13 +21,13 @@ Nodes are categorized by their design freedom for shaping workflows:
 |----------|-------------|---------------|
 | `fixed` | Position locked | Supports (`reached=True`) + inset corners |
 | `z_free` | Can move in Z only | Apex nodes not at supports |
-| `xyz_free` | Full 3D freedom | Nodes added via `add_segment()` |
+| `yz_free` | Move in Y and Z axis | Nodes added via `add_segment()` |
 
 ```python
 # Get nodes by mobility
 fixed_pts = ng.points_by_mobility("fixed")
 z_free_pts = ng.points_by_mobility("z_free")
-xyz_free_pts = ng.points_by_mobility("xyz_free")
+yz_free_pts = ng.points_by_mobility("yz_free")
 ```
 
 ## Modules
