@@ -13,23 +13,6 @@ line_model/
 └── data/              # Output data (JSON exports)
 ```
 
-## Node Mobility System
-
-Nodes are categorized by their design freedom for shaping workflows:
-
-| Mobility | Description | Assigned When |
-|----------|-------------|---------------|
-| `fixed` | Position locked | Supports (`reached=True`) + inset corners |
-| `z_free` | Can move in Z only | Apex nodes not at supports |
-| `yz_free` | Move in Y and Z axis | Nodes added via `add_segment()` |
-
-```python
-# Get nodes by mobility
-fixed_pts = ng.points_by_mobility("fixed")
-z_free_pts = ng.points_by_mobility("z_free")
-yz_free_pts = ng.points_by_mobility("yz_free")
-```
-
 ## Modules
 
 ### `config.py`
@@ -178,4 +161,22 @@ importlib.reload(edge_classifier)
 
 from tree_builder import build_tree_graph
 # ... use updated code
+```
+
+
+## Node Mobility System
+
+Nodes are categorized by their design freedom for shaping workflows:
+
+| Mobility | Description | Assigned When |
+|----------|-------------|---------------|
+| `fixed` | Position locked | Supports (`reached=True`) + inset corners |
+| `z_free` | Can move in Z only | Apex nodes not at supports |
+| `yz_free` | Move in Y and Z axis | Nodes added via `add_segment()` |
+
+```python
+# Get nodes by mobility
+fixed_pts = ng.points_by_mobility("fixed")
+z_free_pts = ng.points_by_mobility("z_free")
+yz_free_pts = ng.points_by_mobility("yz_free")
 ```
