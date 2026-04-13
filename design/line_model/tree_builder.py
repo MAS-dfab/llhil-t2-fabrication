@@ -208,7 +208,8 @@ def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config):
 
                 A = children[0]
                 sup = A["support"]
-                t = z_steps[level + 1]
+                group_id = A["group"]
+                t = z_steps[level + 1] if group_id == 0 else z_steps[level + 1] * 1.5
                 parent_z = avg_z + t * (sup.z - avg_z)
                 parent = Point(px, py, parent_z)
 
