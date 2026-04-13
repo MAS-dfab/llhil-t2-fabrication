@@ -633,7 +633,7 @@
                         <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshInputs" type_name="gh_bool" type_code="1">false</item>
                         <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zDQppbXBvcnQgc3lzDQpmcm9tIGNvbXBhc19yaGlubyBpbXBvcnQgdW5sb2FkX21vZHVsZXMNCmltcG9ydCBjb21wYXMNCmNvbXBhcy5QUkVDSVNJT04gPSAiLjNmIg0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQpzeXMucGF0aC5hcHBlbmQoZ2hfZGlyKQ0KDQppbXBvcnQgdHJlZV9idWlsZGVyDQppbXBvcnQgbm9kZWdyYXBoDQppbXBvcnQgaW1wb3J0bGliDQoNCmltcG9ydGxpYi5yZWxvYWQobm9kZWdyYXBoKQ0KaW1wb3J0bGliLnJlbG9hZCh0cmVlX2J1aWxkZXIpDQoNCg0KZnJvbSB0cmVlX2J1aWxkZXIgaW1wb3J0IGJ1aWxkX3RyZWVfZ3JhcGgNCg0KDQojIENPTlNUQU5UUyAjDQpkaXZfeCA9IDgNCmRpdl95ID0gNg0KbnVtX2xldmVscyA9IDQNCg0KaW5zZXRfZWRnZSA9IDAuNg0KaW5zZXRfaW50ZXJpb3IgPSAwLjcNCg0KIyBCdWlsZCB0aGUgZ3JhcGggKGFsbCBsb2dpYyBpcyBpbiB0cmVlX2J1aWxkZXIucHkpDQpuZyA9IGJ1aWxkX3RyZWVfZ3JhcGgoDQogICAgYm91bmRhcnk9Ym91bmRhcnksDQogICAgc3VwcG9ydHM9c3VwcG9ydHMsDQogICAgcm9vZl9icmVwPXJvb2ZfYnJlcCwNCiAgICBkaXZfeD1kaXZfeCBpZiBkaXZfeCBlbHNlIDgsDQogICAgZGl2X3k9ZGl2X3kgaWYgZGl2X3kgZWxzZSA2LA0KICAgIG51bV9sZXZlbHM9bnVtX2xldmVscyBpZiBudW1fbGV2ZWxzIGVsc2UgNCwNCiAgICB6X3N0ZXBzPXpfc3RlcHMsDQogICAgaW5zZXRfZWRnZT1pbnNldF9lZGdlIGlmIGluc2V0X2VkZ2UgZWxzZSAwLjUsDQogICAgaW5zZXRfaW50ZXJpb3I9aW5zZXRfaW50ZXJpb3IgaWYgaW5zZXRfaW50ZXJpb3IgZWxzZSAwLjQsDQogICAgcmVhY2hfdG9sPTAuMDUsDQogICAgZGVidWc9VHJ1ZQ0KKQ0KDQojIE91dHB1dHMNCmFsbF9lZGdlcyA9IG5nLmVkZ2VfbGluZXMoKQ0KZ3JhcGggPSBuZw0KYWxsX25vZGVzID0gbmcubm9kZV9wb2ludHMoKQ0Kbm9kZV9rZXlzID0gbGlzdChuZy5ub2RlcygpKQ0KDQo=</item>
+                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zDQppbXBvcnQgc3lzDQpmcm9tIGNvbXBhc19yaGlubyBpbXBvcnQgdW5sb2FkX21vZHVsZXMNCmltcG9ydCBjb21wYXMNCmNvbXBhcy5QUkVDSVNJT04gPSAiLjNmIg0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQpzeXMucGF0aC5hcHBlbmQoZ2hfZGlyKQ0KDQppbXBvcnQgdHJlZV9idWlsZGVyDQppbXBvcnQgbm9kZWdyYXBoDQppbXBvcnQgaW1wb3J0bGliDQoNCmltcG9ydGxpYi5yZWxvYWQobm9kZWdyYXBoKQ0KaW1wb3J0bGliLnJlbG9hZCh0cmVlX2J1aWxkZXIpDQoNCg0KZnJvbSB0cmVlX2J1aWxkZXIgaW1wb3J0IGJ1aWxkX3RyZWVfZ3JhcGgNCg0KDQojIENPTlNUQU5UUyAjDQpkaXZfeCA9IDgNCmRpdl95ID0gNg0KbnVtX2xldmVscyA9IDQNCg0KaW5zZXRfZWRnZSA9IDAuOA0KaW5zZXRfaW50ZXJpb3IgPSAwLjcNCg0KIyBCdWlsZCB0aGUgZ3JhcGggKGFsbCBsb2dpYyBpcyBpbiB0cmVlX2J1aWxkZXIucHkpDQpuZyA9IGJ1aWxkX3RyZWVfZ3JhcGgoDQogICAgYm91bmRhcnk9Ym91bmRhcnksDQogICAgc3VwcG9ydHM9c3VwcG9ydHMsDQogICAgcm9vZl9icmVwPXJvb2ZfYnJlcCwNCiAgICBkaXZfeD1kaXZfeCBpZiBkaXZfeCBlbHNlIDgsDQogICAgZGl2X3k9ZGl2X3kgaWYgZGl2X3kgZWxzZSA2LA0KICAgIG51bV9sZXZlbHM9bnVtX2xldmVscyBpZiBudW1fbGV2ZWxzIGVsc2UgNCwNCiAgICB6X3N0ZXBzPXpfc3RlcHMsDQogICAgaW5zZXRfZWRnZT1pbnNldF9lZGdlIGlmIGluc2V0X2VkZ2UgZWxzZSAwLjUsDQogICAgaW5zZXRfaW50ZXJpb3I9aW5zZXRfaW50ZXJpb3IgaWYgaW5zZXRfaW50ZXJpb3IgZWxzZSAwLjQsDQogICAgcmVhY2hfdG9sPTAuMDUsDQogICAgZGVidWc9VHJ1ZQ0KKQ0KDQojIE91dHB1dHMNCmFsbF9lZGdlcyA9IG5nLmVkZ2VfbGluZXMoKQ0KZ3JhcGggPSBuZw0KYWxsX25vZGVzID0gbmcubm9kZV9wb2ludHMoKQ0Kbm9kZV9rZXlzID0gbGlzdChuZy5ub2RlcygpKQ0KDQo=</item>
                         <item name="Title" type_name="gh_string" type_code="10">Python 3 Script</item>
                       </items>
                       <chunks count="1">
@@ -648,8 +648,8 @@
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>815</X>
-                          <Y>511</Y>
+                          <X>532</X>
+                          <Y>242</Y>
                           <W>1100</W>
                           <H>1101</H>
                         </item>
@@ -795,7 +795,7 @@
                               <items count="4">
                                 <item name="EdgeIndex" type_name="gh_int32" type_code="3">-1</item>
                                 <item name="ON_Data" type_name="gh_bytearray" type_code="20">
-                                  <stream length="345">YmBkYGD4DwQgGgR4mIBEWFBGZl6+c35ubn6ejkJYalFxZn6erYWesYGekZmBmaWekYGBoY6Cc2lOSWlRqm1eamlJUWKOjkJAaVJOZrJ3amVIfnZqnq2pqZGRhWGqpXmyuampqbEBK8gSGbDZeu6p+bmpJUWVegH5OZU5mXmpzqVFZaksQAXsZRD7uBKLkjMyy1KNU3I58wtS8/JKi5KKWVISSxJBijg4OJhAThVQZ2AwAtIpVcI8nMxABj+I+ArETL/qmRheQr31+z8TgwiU/ezKdT/3l5cF9z9lEGhmVPrgN2f37T9A+Y1QeQFWILFfz/rFhevJDnnTtZZU2jo7RL9PvbF8mYUDu8C2P3X2aTjF+9638h+/GgAXh5mDSxzdHJDdMFBQErW4wFbZoe2D36wCW2OHfVp/XmvcsYHynR1APtW/2LPxfz1TA0wPN5J+IgAAAAD//wMA</stream>
+                                  <stream length="346">YmBkYGD4DwQgGgR4mIBEWFBGZl6+c35ubn6ejkJYalFxZn6erYWesYGekZmBmaWekYGBoY6Cc2lOSWlRqm1eamlJUWKOjkJAaVJOZrJ3amVIfnZqnq2pqZGRhWGqpXmyuampqbEBK8gSGbDZeu6p+bmpJUWVegH5OZU5mXmpzqVFZaksQAXsZRD7uBKLkjMyy1KNU3I58wtS8/JKi5KKWVISSxJBijg4OJhAThVQZ2AwAtIpVcI8nMxABj+I+ArETL/qmRheQr31+z8TgwiU/ezKdT/3l5cF9z9lEGhmVPrgN2f37T9A+Y1QeQFWIHFAz/rFhevJDtrTtJZU2jo7RL9PvbF8mYUDh8C2P3X2aTjF37xr5T9+NQAuDjMHlzi6OSC7YaCgJGpxga2yQ9sHv1kFtsYO+7T+vNa4YwPlOzuAfPrydNfW//VMDTA93Ej6iQAAAAAA//8DAA==</stream>
                                 </item>
                                 <item name="ON_Version" type_name="gh_int32" type_code="3">5</item>
                                 <item name="RefID" type_name="gh_guid" type_code="9">00000000-0000-0000-0000-000000000000</item>

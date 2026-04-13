@@ -54,13 +54,19 @@ def point_at(frame, u, v, w=0.0):
 
 
 def project_to_brep(pt, brep):
-    """Project a point to the closest location on a Rhino brep."""
+    """Project a point vertically (Z) onto a Rhino brep."""
     if brep is None:
         return pt
-    p = rg.Point3d(pt.x, pt.y, pt.z)
-    rc = brep.ClosestPoint(p)
-    if rc:
-        return Point(rc.X, rc.Y, rc.Z)
+    origin = rg.Point3d(pt.x, pt.y, pt.z)
+    ray = rg.Ray3d(origin, rg.Vector3d.ZAxis)
+    hits = rg.Intersect.Intersection.RayShoot(ray, [brep], 1)
+    if hits:
+        return Point(hits[0].X, hits[0].Y, hits[0].Z)
+    # Try downward if upward missed
+    ray = rg.Ray3d(origin, -rg.Vector3d.ZAxis)
+    hits = rg.Intersect.Intersection.RayShoot(ray, [brep], 1)
+    if hits:
+        return Point(hits[0].X, hits[0].Y, hits[0].Z)
     return pt
 
 
