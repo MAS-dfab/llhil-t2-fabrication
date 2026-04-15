@@ -1,5 +1,5 @@
 from compas.datastructures import Graph
-from compas.geometry import Point, Line
+from compas.geometry import Point, Line, Vector
 
 
 class NodeGraph(Graph):
@@ -139,6 +139,41 @@ class NodeGraph(Graph):
                 lines.append(Line(pu, pv))
         return lines
 
+    def mark_y_parallel_as_double(self, threshold=0.99):
+        """
+        Mark edges that are parallel to the Y axis (in XY projection) as 'double'.
+        
+        Parameters
+        ----------
+        threshold : float
+            Dot product threshold with Y axis (0.99 = ~8 degrees).
+        
+        Returns
+        -------
+        list of tuple
+            Edges that were marked as double.
+        """
+        y_axis = Vector(0.0, 1.0, 0.0)
+        marked = []
+        
+        for u, v in self.edges():
+            pu = self.node_attribute(u, "point")
+            pv = self.node_attribute(v, "point")
+            if not pu or not pv:
+                continue
+            
+            # Edge direction in XY only
+            edge_dir = Vector(pv.x - pu.x, pv.y - pu.y, 0.0)
+            if edge_dir.length < 1e-9:
+                continue
+            
+            edge_dir.unitize()
+            if abs(edge_dir.dot(y_axis)) > threshold:
+                self.edge_attribute((u, v), "main_secondary", "double")
+                marked.append((u, v))
+        
+        return marked
+
     def edge_lines(self):
         """
         Get all edges as Line objects.
@@ -240,6 +275,7 @@ class NodeGraph(Graph):
             u, v = pair
             if self.has_node(u) and self.has_node(v):
                 self.add_graph_edge(u, v)
+                self.edge_attribute((u, v), "main_secondary", "primary")
             return None
 
         x, u, v = pair
@@ -252,24 +288,53 @@ class NodeGraph(Graph):
 
         new_node = self.add_point_node_between(u, v, split_edge=False, mobility="yz_free")
 
-        if children_u or children_v:
+        if (children_u or children_v):
             candidates = set(children_u + children_v) - {x, u, v, new_node}
-
             # Don't delete support nodes
             if not self.node_attribute(u, "reached"):
                 self.delete_node(u)
             if not self.node_attribute(v, "reached"):
                 self.delete_node(v)
-
-            self.add_graph_edge(x, new_node)
+            new_edge = self.add_graph_edge(x, new_node)
+            self.edge_attribute((x, new_node), "main_secondary", "double")
 
             for n in candidates:
                 if self.has_node(n):
                     self.add_graph_edge(n, new_node)
+
+
         else:
             self.add_graph_edge(x, new_node)
+            self.edge_attribute((x, new_node), "main_secondary", "double")
+
 
         return new_node
+    
+    def add_node_along_edge(self, nodes = None, dependencies = None, t=0.3, **attr):
+        """
+        Add a node at a parameter along the edge between two nodes.
+        
+        Parameters
+        ----------
+        u, v : int
+            Node keys defining the edge.
+        t : float
+            Parameter (0-1) along edge. 0.5 = midpoint.
+        **attr
+            Attributes for the new node.
+        
+        Returns
+        -------
+        int or None
+            New node key, or None if u/v don't exist.
+        """
+        u, v = nodes
+        new_node = self.add_point_node_between(u, v, t=t, split_edge=True, **attr)
+        if dependencies:
+            for n in dependencies:
+                if self.has_node(n):
+                    self.add_graph_edge(n, new_node)
+    
 
     def add_segments(self, pairs):
         """
