@@ -220,14 +220,20 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
             x_coords.append(pt.x)
             y_coords.append(pt.y)
 
+        if "original_point" in graph.node_attributes(n):
+            extra = graph.node_attribute(n, "original_point")
+            if extra:
+                x_coords.append(extra.x)
+                y_coords.append(extra.y)
+
     if not node_pts:
         return []
 
     x_min, x_max = min(x_coords), max(x_coords)
     y_min, y_max = min(y_coords), max(y_coords)
 
-    x_range = x_max - x_min + 0.01
-    y_range = y_max - y_min + 0.01
+    x_range = x_max - x_min
+    y_range = y_max - y_min
     cell_w = x_range / seg_x
     cell_h = y_range / seg_y
 
@@ -254,7 +260,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
 
             # Build subgraph
             sg = Graph()
-            node_attrs = ["point", "group", "level", "is_support", "reached", "ntype"]
+            node_attrs = ["x", "y", "z", "point", "group", "level", "is_support", "reached", "ntype"]
             edge_attrs = ["main_secondary", "etype", "group", "parallel_score", "nearest_support"]
 
             for n in nodes_in_win:
@@ -416,7 +422,6 @@ def classify_subgraph_edges(subgraph, sup_pts, near_threshold=None, parallel_tol
 
     primary_lines = []
     secondary_lines = []
-
     if near_sup:
         # Near support: keep original classification
         for ed in all_edges:

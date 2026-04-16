@@ -224,7 +224,7 @@ class NodeGraph(Graph):
         - 3-tuple (x, u, v): Creates midpoint between u and v, connects x to it,
           reconnects children, and removes u/v (unless they are supports).
         
-        New nodes created via this method get mobility='xyz_free'.
+        New nodes created via this method get mobility='yz_free'.
         
         Parameters
         ----------
@@ -372,22 +372,6 @@ class NodeGraph(Graph):
             Node keys that are endpoints.
         """
         return [n for n in self.nodes() if self.degree(n) == 1]
-
-    def neighbors(self, node):
-        """
-        Get neighbor nodes (wrapper for COMPAS node_neighbors).
-        
-        Parameters
-        ----------
-        node : int
-            Node key.
-        
-        Returns
-        -------
-        list of int
-            Connected node keys.
-        """
-        return list(self.node_neighbors(node))
 
     def neighbor_points(self, node):
         """
