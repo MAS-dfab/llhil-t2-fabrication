@@ -224,15 +224,15 @@ class NodeGraph(Graph):
         
         Used for tree restructuring. Handles two cases:
         - 2-tuple (u, v): Creates direct edge between existing nodes.
-        - 3-tuple (x, u, v): Creates midpoint between u and v, connects x to it,
-          reconnects children, and removes u/v (unless they are supports).
+        - 4-tuple (x, u, v, bool): Creates midpoint between u and v, connects x to it,
+          if bool is True, reconnects children, and removes u/v (unless they are supports).
         
         New nodes created via this method get mobility='yz_free'.
         
         Parameters
         ----------
         pair : tuple
-            Either (u, v) for direct edge, or (x, u, v) for midpoint creation.
+            Either (u, v) for direct edge, or (x, u, v, bool) for midpoint creation.
         
         Returns
         -------
@@ -245,16 +245,18 @@ class NodeGraph(Graph):
                 self.add_graph_edge(u, v)
             return None
 
-        x, u, v = pair
+        x, u, v, flag = pair
+        if not (self.has_node(x) and self.has_node(u) and self.has_node(v)):
+            return None
+        
+        new_node = self.add_point_node_between(u, v, split_edge=False, mobility="yz_free")
 
-        if not (self.has_node(u) and self.has_node(v)):
+        if flag is False:
+            self.add_graph_edge(x, new_node)
             return None
 
         children_u = self.node_attribute(u, "children") or []
         children_v = self.node_attribute(v, "children") or []
-
-        new_node = self.add_point_node_between(u, v, split_edge=False, mobility="yz_free")
-
         if children_u or children_v:
             candidates = set(children_u + children_v) - {x, u, v, new_node}
 
