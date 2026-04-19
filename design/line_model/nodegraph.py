@@ -1,5 +1,7 @@
+from platform import node
+
 from compas.datastructures import Graph
-from compas.geometry import Point, Line
+from compas.geometry import Point, Line, Vector
 
 
 class NodeGraph(Graph):
@@ -37,7 +39,8 @@ class NodeGraph(Graph):
     """
     
     def __init__(self, *args, **kwargs):
-        super(NodeGraph, self).__init__(*args, **kwargs)
+        # super(NodeGraph, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._point_index = {}
         self._next_key = 0
 
@@ -325,6 +328,36 @@ class NodeGraph(Graph):
             Node keys matching the mobility type.
         """
         return list(self.nodes_where({"mobility": mobility}))
+    
+    def get_mobility_vector(self, mobility, amplitude=None):
+        """
+        Get the mobility vector for a specific mobility type.
+        
+        Parameters
+        ----------
+        mobility : str
+            One of 'fixed', 'z_free', or 'xyz_free'.
+        
+        Returns
+        -------
+        str
+            Mobility vector as a vector. 'fixed' = (0,0,0), 'z_free' = (0,0,1), 'yz_free' = (0,1,1)
+        """
+        if amplitude == None:
+            amplitude = 1
+        else:
+            amplitude = float(amplitude)
+        
+        if mobility == "fixed":
+            v = Vector(0, 0, 0) 
+        elif mobility == "z_free":
+            v = Vector(0, 0, 1)
+        elif mobility == "yz_free":
+            v = Vector(0, 1, 1)
+        else:
+            raise ValueError("Invalid mobility type")
+        
+        return v * amplitude
 
     def points_by_mobility(self, mobility):
         """
