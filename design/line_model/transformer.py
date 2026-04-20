@@ -19,6 +19,8 @@ import Rhino.Geometry as rg # type: ignore
 
 tol = 0.0001
 amplitude = 0.05
+tol = 0.0001
+threshold = 1.5 # 1-meter limit for mobility influence 
 
 def run_simulation(pt_mobility, intersecting_edges, graph, brep, iterations, tol, debug=False):
     """
@@ -57,11 +59,10 @@ def run_simulation(pt_mobility, intersecting_edges, graph, brep, iterations, tol
 
     return False # Exhausted iterations, still hitting
 
-def edge_in_brep(graph, brep, max_loops=5, sub_iterations=5, debug=False):
+def edge_in_brep(graph, brep, max_loops=5, sub_iterations=10, debug=False):
     """Analyzes graph-brep collisions and moves nodes away from the surface."""
+    
     ng = NodeGraph()
-    tol = 0.0001
-    amplitude = 0.05
     
     # --- 1. IDENTIFY INTERSECTIONS ---
     intersecting_edges = []
@@ -74,7 +75,7 @@ def edge_in_brep(graph, brep, max_loops=5, sub_iterations=5, debug=False):
         if debug: print("Clean: No intersections detected.")
         return [], [], []
 
-    # --- 2. VECTOR CALCULATION (Run once) ---
+    # --- 2. VECTOR CALCULATION (Run once) & DISTANCE TRACKING ---
     target_nodes = list(set([n for edge in intersecting_edges for n in edge]))
     pt_mobility = []
     
@@ -85,23 +86,32 @@ def edge_in_brep(graph, brep, max_loops=5, sub_iterations=5, debug=False):
         # Orient vector away from Brep normal
         rg_pt = point_to_rhino(graph.node_attribute(key, "point"))
         # ClosestPoint returns (bool, point, u, v, normal)
-        _, _, _, _, _, normal = brep.ClosestPoint(rg_pt, 0.0)
+        success, cp, u, v, face_idx, normal = brep.ClosestPoint(rg_pt, 0.0)
+        dist = rg_pt.DistanceTo(cp)
         normal.Unitize()
         
         # If vector points 'into' brep (dot < 0), flip it
         if rg.Vector3d(m_vec[0], m_vec[1], m_vec[2]) * normal < 0:
             m_vec = Vector(m_vec[0], -m_vec[1], m_vec[2]) if mobility == "yz_free" else -m_vec
             
-        pt_mobility.append((key, mobility, m_vec))
+        pt_mobility.append((dist, key, mobility, m_vec))
 
     # --- 3. EXECUTE SIMULATION ---
     is_clear = False
     for loop in range(max_loops):
-        is_clear = run_simulation(pt_mobility, intersecting_edges, graph, brep, sub_iterations, tol, debug)
+        # We only pass points that are within the 1.0m threshold
+        active_points = [p for p in pt_mobility if p[0] < threshold]
+        if not active_points and debug:
+            print("DEBUG: No points remain within the threshold, but intersections still exist.")
+            break
+        # Pass the formatted list to run_simulation (stripping the distance for compatibility)
+        sim_list = [(p[1], p[2], p[3]) for p in active_points]
+        
+        is_clear = run_simulation(sim_list, intersecting_edges, graph, brep, sub_iterations, tol, debug)
         if is_clear:
             if debug: print(f"DEBUG: Graph cleared Brep at Loop {loop + 1}")
             break
             
     # Final data collection
-    moved_points = [graph.node_attribute(k, "point") for k, _, _ in pt_mobility]
+    moved_points = [graph.node_attribute(k, "point") for _, k, _, _ in pt_mobility]
     return intersecting_edges, is_clear, moved_points
