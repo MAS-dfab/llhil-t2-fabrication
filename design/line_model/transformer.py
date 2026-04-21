@@ -22,6 +22,10 @@ amplitude = 0.05
 tol = 0.0001
 threshold = 1.2 # 1-meter limit for mobility influence 
 
+# --------------------------------------------------
+# Helpers
+# --------------------------------------------------
+
 def run_simulation(pt_mobility, intersecting_edges, graph, brep, iterations, tol, threshold, debug=False):
     """
     Moves only the nodes belonging to edges that are CURRENTLY intersecting.
@@ -61,38 +65,53 @@ def run_simulation(pt_mobility, intersecting_edges, graph, brep, iterations, tol
 
     return False
 
-def get_y_direction_modifier(point, brep, current_y_vec, tol=0.001):
+
+def get_y_direction_modifier(key, point, brep, current_y_vec, tol=0.001, debug=True):
     """
     Returns 1.0 if the direction is correct, -1.0 if it needs to be flipped.
     Uses a horizontal line probe to ignore Z-surface interference.
     """
-    # Create a long horizontal line through the point
-    line_start = point + rg.Vector3d(0, -5000, 0)
-    line_end = point + rg.Vector3d(0, 5000, 0)
-    probe = rg.LineCurve(line_start, line_end)
-    
-    # Find Y-axis hits
-    success, _, intersect_pts = rg.Intersect.Intersection.CurveBrep(probe, brep, tol)
     
     # Check if point is inside brep
     is_inside = brep.IsPointInside(point, tol, True)
     
-    if intersect_pts:
-        # Sort hits by distance to find the nearest vertical wall
+    # 2. Initial Intersection Check
+    def get_hits(pt):
+        line = rg.LineCurve(pt + rg.Vector3d(0, -5000, 0), pt + rg.Vector3d(0, 5000, 0))
+        intersect_pts = rg.Intersect.Intersection.CurveBrep(line, brep, tol)[2]
         nearest_wall = sorted(intersect_pts, key=lambda p: p.DistanceTo(point))[0]
+        y_escape_val = -(pt.Y - nearest_wall.Y)
+        return y_escape_val
         
-        # Vector from wall to point (the 'escape' direction)
-        y_escape_val = point.Y - nearest_wall.Y
-        
-        # If the point is inside, we want to move it towards the nearest wall (negative escape direction)
-        if is_inside:
-            y_escape_val = -y_escape_val
+    if is_inside:
+        # Sort hits by distance to find the nearest vertical wall
+        y_escape_val = get_hits(point)
         # If the movement (current_y_vec) is opposite to the escape direction, flip it
         # (Using sign comparison: if signs are different, product is negative)
         if (current_y_vec * y_escape_val) < 0:
-            return -1.0
-            
-    return 1.0
+            return -1.0, point
+    else:
+        # If intersection fails, we are likely in a 'missing probe' scenario where the point is above/below the Brep and the horizontal probe misses it entirely.
+        # In this case, we can fall back to the original normal-based method:
+        success, cp, u, v, face_idx, normal = brep.ClosestPoint(point, 0.0)
+        # Vector from point to closest point on Brep
+        point_to_brep_vec = cp - point
+        # Move point inside the Brep along the normal
+        point = point + point_to_brep_vec * 1.2 # Move halfway to ensure we are inside
+        # Sort hits by distance to find the nearest vertical wall
+        y_escape_val = get_hits(point)
+        
+        if debug:
+            print(f"DEBUG: No intersection found for probe. Point likely above/below Brep. Adjusting point to {key} and re-checking.")
+
+        if (current_y_vec * y_escape_val) < 0:
+            return -1.0, point
+        
+    return 1.0, point
+
+# --------------------------------------------------
+# Main Function
+# --------------------------------------------------
 
 def edge_in_brep(graph, brep, max_loops=5, sub_iterations=5, debug=False):
     """Analyzes graph-brep collisions and moves nodes away from the surface."""
@@ -114,6 +133,7 @@ def edge_in_brep(graph, brep, max_loops=5, sub_iterations=5, debug=False):
     target_nodes = list(set([n for edge in intersecting_edges for n in edge]))
     target_points = [graph.node_attribute(n, "point") for n in target_nodes]
     pt_mobility = []
+    moved_pts = []
     
     for key in target_nodes:
         mobility = graph.node_attribute(key, "mobility")
@@ -132,10 +152,12 @@ def edge_in_brep(graph, brep, max_loops=5, sub_iterations=5, debug=False):
             m_vec = Vector(m_vec[0], -m_vec[1], m_vec[2]) if mobility == "yz_free" else -m_vec
         
         if mobility == "yz_free":
-            y_modifier = get_y_direction_modifier(rg_pt, brep, m_vec[1], tol)
+            y_modifier, pt = get_y_direction_modifier(key, rg_pt, brep, m_vec[1], tol)
             m_vec = Vector(m_vec[0], m_vec[1] * y_modifier, m_vec[2])  
+            moved_pts.append(pt)
             
         pt_mobility.append((dist, key, mobility, m_vec))
+
 
     # --- 3. EXECUTE SIMULATION ---
     is_clear = False
@@ -155,4 +177,4 @@ def edge_in_brep(graph, brep, max_loops=5, sub_iterations=5, debug=False):
             
     # Final data collection
     moved_points = [graph.node_attribute(k, "point") for _, k, _, _ in pt_mobility]
-    return intersecting_edges, is_clear, target_points
+    return intersecting_edges, is_clear, target_points, moved_pts
