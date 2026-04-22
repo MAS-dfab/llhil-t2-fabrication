@@ -1,6 +1,12 @@
 from compas.datastructures import Graph
 from compas.geometry import Point, Line, Vector
 
+# Import config - handle both package and standalone execution
+try:
+    from . import config
+except ImportError:
+    import config
+
 
 class NodeGraph(Graph):
     """
@@ -330,10 +336,13 @@ class NodeGraph(Graph):
         """
         u, v = nodes
         new_node = self.add_point_node_between(u, v, t=t, split_edge=True, **attr)
+        # assign mobility='z_free' to new node by default
+        self.node_attribute(new_node, "mobility", "z_free")
         if dependencies:
             for n in dependencies:
                 if self.has_node(n):
                     self.add_graph_edge(n, new_node)
+
     
 
     def add_segments(self, pairs):
@@ -552,3 +561,718 @@ class NodeGraph(Graph):
                     sub.add_graph_edge(su, sv, **attrs)
         
         return sub
+
+    # --------------------------------------------------
+    # Field-driven node movement
+    # --------------------------------------------------
+    
+    @staticmethod
+    def constrain_vector_by_mobility(vector, mobility):
+        """
+        Constrain a displacement vector based on mobility type.
+        
+        Parameters
+        ----------
+        vector : Vector
+            Input displacement vector.
+        mobility : str
+            One of 'fixed', 'z_free', 'yz_free', or 'xyz_free'.
+        
+        Returns
+        -------
+        Vector
+            Constrained displacement vector.
+        """
+        if mobility == "fixed":
+            return Vector(0, 0, 0)
+        elif mobility == "z_free":
+            return Vector(0, 0, vector.z)
+        elif mobility == "yz_free":
+            return Vector(0, vector.y, vector.z)
+        elif mobility == "xyz_free":
+            return Vector(vector.x, vector.y, vector.z)
+        else:
+            # Unknown mobility type - treat as fixed for safety
+            return Vector(0, 0, 0)
+
+    def compute_brep_distance(self, node, breps):
+        """
+        Compute distance and direction from a node to the nearest Brep.
+        
+        Parameters
+        ----------
+        node : int
+            Node key.
+        breps : list of Rhino.Geometry.Brep
+            Breps to compute distance from.
+        
+        Returns
+        -------
+        tuple (float, Vector) or (None, None)
+            Distance to nearest Brep and direction vector pointing FROM Brep TO node.
+            Returns (None, None) if node has no point or breps is empty.
+        """
+        import Rhino.Geometry as rg
+        
+        pt = self.node_attribute(node, "point")
+        if pt is None or not breps:
+            return None, None
+        
+        rg_pt = rg.Point3d(pt.x, pt.y, pt.z)
+        
+        min_dist = float('inf')
+        closest_pt = None
+        
+        for brep in breps:
+            if brep is None:
+                continue
+            # Brep.ClosestPoint returns multiple values; find the Point3d
+            result = brep.ClosestPoint(rg_pt)
+            
+            # Handle different return formats
+            cp = None
+            if isinstance(result, rg.Point3d):
+                cp = result
+            elif isinstance(result, tuple):
+                # Find the Point3d in the tuple (position varies by Rhino version)
+                for item in result:
+                    if isinstance(item, rg.Point3d):
+                        cp = item
+                        break
+            
+            if cp is not None:
+                dist = rg_pt.DistanceTo(cp)
+                if dist < min_dist:
+                    min_dist = dist
+                    closest_pt = cp
+        
+        if closest_pt is None:
+            return None, None
+        
+        # Direction from brep to node (for repulsion, node moves in this direction)
+        direction = Vector(
+            rg_pt.X - closest_pt.X,
+            rg_pt.Y - closest_pt.Y,
+            rg_pt.Z - closest_pt.Z
+        )
+        
+        # Normalize if length > 0
+        if direction.length > 1e-9:
+            direction.unitize()
+        
+        return min_dist, direction
+
+    def compute_point_distance(self, node, points):
+        """
+        Compute distance and direction from a node to the nearest point.
+        
+        Parameters
+        ----------
+        node : int
+            Node key.
+        points : list of Point3d or Point
+            Points to compute distance from.
+        
+        Returns
+        -------
+        tuple (float, Vector) or (None, None)
+            Distance to nearest point and direction vector pointing FROM point TO node.
+        """
+        pt = self.node_attribute(node, "point")
+        if pt is None or not points:
+            return None, None
+        
+        min_dist = float('inf')
+        closest_pt = None
+        
+        for p in points:
+            if p is None:
+                continue
+            # Handle both COMPAS Point and Rhino Point3d
+            px = getattr(p, 'X', None) or getattr(p, 'x', 0)
+            py = getattr(p, 'Y', None) or getattr(p, 'y', 0)
+            pz = getattr(p, 'Z', None) or getattr(p, 'z', 0)
+            
+            dist = ((pt.x - px)**2 + (pt.y - py)**2 + (pt.z - pz)**2)**0.5
+            if dist < min_dist:
+                min_dist = dist
+                closest_pt = (px, py, pz)
+        
+        if closest_pt is None:
+            return None, None
+        
+        # Direction from point to node (for repulsion)
+        direction = Vector(
+            pt.x - closest_pt[0],
+            pt.y - closest_pt[1],
+            pt.z - closest_pt[2]
+        )
+        
+        if direction.length > 1e-9:
+            direction.unitize()
+        
+        return min_dist, direction
+
+    def compute_curve_distance(self, node, curves):
+        """
+        Compute distance and direction from a node to the nearest curve.
+        
+        Parameters
+        ----------
+        node : int
+            Node key.
+        curves : list of Rhino.Geometry.Curve
+            Curves to compute distance from.
+        
+        Returns
+        -------
+        tuple (float, Vector) or (None, None)
+            Distance to nearest curve and direction vector pointing FROM curve TO node.
+        """
+        import Rhino.Geometry as rg
+        
+        pt = self.node_attribute(node, "point")
+        if pt is None or not curves:
+            return None, None
+        
+        rg_pt = rg.Point3d(pt.x, pt.y, pt.z)
+        
+        min_dist = float('inf')
+        closest_pt = None
+        
+        for crv in curves:
+            if crv is None:
+                continue
+            success, t = crv.ClosestPoint(rg_pt)
+            if success:
+                cp = crv.PointAt(t)
+                dist = rg_pt.DistanceTo(cp)
+                if dist < min_dist:
+                    min_dist = dist
+                    closest_pt = cp
+        
+        if closest_pt is None:
+            return None, None
+        
+        direction = Vector(
+            rg_pt.X - closest_pt.X,
+            rg_pt.Y - closest_pt.Y,
+            rg_pt.Z - closest_pt.Z
+        )
+        
+        if direction.length > 1e-9:
+            direction.unitize()
+        
+        return min_dist, direction
+
+    @staticmethod
+    def compute_falloff(dist, max_distance, strength, falloff="inverse_square"):
+        """
+        Compute repulsion magnitude based on distance with different falloff curves.
+        
+        Parameters
+        ----------
+        dist : float
+            Distance from geometry.
+        max_distance : float
+            Maximum influence distance.
+        strength : float
+            Base strength multiplier.
+        falloff : str
+            Falloff type: 'linear', 'inverse_square', 'constant', 'smooth'
+        
+        Returns
+        -------
+        float
+            Repulsion magnitude.
+        """
+        if dist >= max_distance:
+            return 0.0
+        
+        # Normalized distance (0 at geometry, 1 at max_distance)
+        t = dist / max_distance
+        
+        if falloff == "linear":
+            # Linear: strength at dist=0, zero at max_distance
+            return strength * (1.0 - t)
+        
+        elif falloff == "inverse_square":
+            # Inverse square: very strong close, drops off quickly
+            # Add small epsilon to avoid division by zero
+            normalized = (dist + 0.1) / max_distance
+            return strength * (1.0 / (normalized * normalized)) * (1.0 - t)
+        
+        elif falloff == "constant":
+            # Constant: same strength everywhere within range
+            return strength
+        
+        elif falloff == "smooth":
+            # Smooth (cosine): gentle S-curve falloff
+            import math
+            return strength * (0.5 + 0.5 * math.cos(t * math.pi))
+        
+        else:
+            # Default to linear
+            return strength * (1.0 - t)
+
+    def compute_repulsion_vector(self, node, breps, max_distance=10.0, strength=1.0, falloff="inverse_square"):
+        """
+        Compute repulsion vector for a node based on Brep proximity.
+        
+        Parameters
+        ----------
+        node : int
+            Node key.
+        breps : list of Rhino.Geometry.Brep
+            Breps to repel from.
+        max_distance : float
+            Nodes beyond this distance are unaffected.
+        strength : float
+            Maximum displacement magnitude at distance=0.
+        falloff : str
+            Falloff type: 'linear', 'inverse_square', 'constant', 'smooth'
+        
+        Returns
+        -------
+        Vector
+            Repulsion vector (unconstrained by mobility).
+        """
+        dist, direction = self.compute_brep_distance(node, breps)
+        
+        if dist is None or direction is None:
+            return Vector(0, 0, 0)
+        
+        # Compute magnitude with selected falloff
+        magnitude = self.compute_falloff(dist, max_distance, strength, falloff)
+        
+        # Scale direction by magnitude
+        return Vector(
+            direction.x * magnitude,
+            direction.y * magnitude,
+            direction.z * magnitude
+        )
+
+    def move_node(self, node, vector, axis_factors=None):
+        """
+        Move a node by a displacement vector, respecting its mobility constraint.
+        
+        Updates both the node's 'point' attribute and the internal point index
+        for spatial deduplication consistency.
+        
+        Parameters
+        ----------
+        node : int
+            Node key.
+        vector : Vector
+            Displacement vector (will be constrained by node's mobility).
+        axis_factors : dict, optional
+            Per-axis strength multipliers {"x": float, "y": float, "z": float}.
+            If None, uses config.AXIS_FACTORS.
+        
+        Returns
+        -------
+        tuple (Point, Point, float) or None
+            (old_point, new_point, displacement_magnitude), or None if node
+            doesn't exist or has no point.
+        """
+        
+        pt = self.node_attribute(node, "point")
+        if pt is None:
+            return None
+        
+        mobility = self.node_attribute(node, "mobility") or "fixed"
+        
+        # Use provided axis_factors or fall back to config
+        if axis_factors is None:
+            axis_factors = config.AXIS_FACTORS
+        
+        # Apply per-axis strength factors
+        scaled_vector = Vector(
+            vector.x * axis_factors.get("x", 1.0),
+            vector.y * axis_factors.get("y", 1.0),
+            vector.z * axis_factors.get("z", 1.0)
+        )
+        
+        # Apply direction constraint based on mobility
+        constrained = self.constrain_vector_by_mobility(scaled_vector, mobility)
+        
+        # If no movement, return early
+        if constrained.length < 1e-9:
+            return (pt, pt, 0.0)
+        
+        # Calculate new position
+        new_pt = Point(
+            pt.x + constrained.x,
+            pt.y + constrained.y,
+            pt.z + constrained.z
+        )
+        
+        # Update point index: remove old key, add new key
+        old_pkey = self.point_key(pt)
+        new_pkey = self.point_key(new_pt)
+        
+        if old_pkey in self._point_index:
+            del self._point_index[old_pkey]
+        self._point_index[new_pkey] = node
+        
+        # Update node attributes
+        self.node_attribute(node, "point", new_pt)
+        self.node_attribute(node, "x", new_pt.x)
+        self.node_attribute(node, "y", new_pt.y)
+        self.node_attribute(node, "z", new_pt.z)
+        
+        return (pt, new_pt, constrained.length)
+
+    def move_nodes_from_breps(self, breps, max_distance=10.0, strength=1.0, 
+                               iterations=1, mobility_filter=None,
+                               axis_factors=None, falloff="inverse_square"):
+        """
+        Move mobile nodes away from Breps based on proximity.
+        
+        Main API for field-driven node movement. Nodes closer to Breps
+        experience stronger repulsion, constrained by their mobility attribute.
+        
+        Parameters
+        ----------
+        breps : list of Rhino.Geometry.Brep
+            Repulsion geometry. Nodes move away from these surfaces.
+        max_distance : float
+            Nodes beyond this distance are unaffected.
+        strength : float
+            Maximum displacement at distance=0.
+        iterations : int
+            Number of movement iterations (for relaxation).
+        mobility_filter : list of str, optional
+            Only move nodes with these mobility types. If None, moves all
+            non-fixed nodes (z_free, yz_free, xyz_free).
+        axis_factors : dict, optional
+            Per-axis strength multipliers {"x": float, "y": float, "z": float}.
+            If None, uses config.AXIS_FACTORS.
+        falloff : str
+            Falloff type: 'linear', 'inverse_square', 'constant', 'smooth'
+        
+        Returns
+        -------
+        tuple (NodeGraph, dict)
+            - The modified graph (self) for chaining or GH output.
+            - Results dict: {node_key: {'old': Point, 'new': Point, 'displacement': float}}
+              Only includes nodes that actually moved.
+        
+        Example
+        -------
+        >>> # In Grasshopper Python component:
+        >>> import Rhino.Geometry as rg
+        >>> # breps = list of Brep inputs
+        >>> graph, results = ng.move_nodes_from_breps(
+        ...     breps, max_distance=5.0, strength=0.5,
+        ...     axis_factors={"x": 0.0, "y": 0.5, "z": 1.0}  # Only move in Y/Z
+        ... )
+        >>> lines = graph.edge_lines()
+        >>> moved_points = [r['new'] for r in results.values()]
+        """
+        if not breps:
+            return self, {}
+        
+        # Filter out None breps
+        breps = [b for b in breps if b is not None]
+        if not breps:
+            return self, {}
+        
+        # Use provided axis_factors or fall back to config
+        if axis_factors is None:
+            axis_factors = config.AXIS_FACTORS
+        
+        # Determine which mobility types to process
+        if mobility_filter is None:
+            mobility_filter = ["z_free", "yz_free", "xyz_free"]
+        
+        # Collect nodes to process
+        nodes_to_move = []
+        for mob in mobility_filter:
+            nodes_to_move.extend(self.nodes_by_mobility(mob))
+        nodes_to_move = list(set(nodes_to_move))  # Remove duplicates
+        
+        results = {}
+        
+        for _ in range(iterations):
+            for node in nodes_to_move:
+                # Compute repulsion vector
+                repulsion = self.compute_repulsion_vector(
+                    node, breps, max_distance, strength, falloff
+                )
+                
+                # Apply movement (mobility constraint handled inside move_node)
+                result = self.move_node(node, repulsion, axis_factors=axis_factors)
+                
+                if result and result[2] > 1e-9:  # Actually moved
+                    old_pt, new_pt, disp = result
+                    results[node] = {
+                        'old': old_pt,
+                        'new': new_pt,
+                        'displacement': disp
+                    }
+        
+        return self, results
+
+    def move_nodes_from_points(self, points, max_distance=10.0, strength=1.0,
+                                iterations=1, mobility_filter=None, axis_factors=None,
+                                falloff="inverse_square"):
+        """
+        Move mobile nodes away from points based on proximity.
+        
+        EASIEST method - just place points in Rhino where you want to repel nodes.
+        
+        Parameters
+        ----------
+        points : list of Point3d or Point
+            Repulsion points. Nodes move away from these.
+        max_distance : float
+            Nodes beyond this distance are unaffected.
+        strength : float
+            Maximum displacement at distance=0.
+        iterations : int
+            Number of movement iterations.
+        mobility_filter : list of str, optional
+            Only move nodes with these mobility types.
+        axis_factors : dict, optional
+            Per-axis strength multipliers {"x": float, "y": float, "z": float}.
+        falloff : str
+            Falloff type: 'linear', 'inverse_square', 'constant', 'smooth'
+        
+        Returns
+        -------
+        tuple (NodeGraph, dict)
+            Modified graph and movement results.
+        
+        Example
+        -------
+        >>> # Place points in Rhino, reference them in GH
+        >>> graph, results = ng.move_nodes_from_points(pts, max_distance=5.0, strength=0.5)
+        """
+        if not points:
+            return self, {}
+        
+        points = [p for p in points if p is not None]
+        if not points:
+            return self, {}
+        
+        if axis_factors is None:
+            axis_factors = config.AXIS_FACTORS
+        
+        if mobility_filter is None:
+            mobility_filter = ["z_free", "yz_free", "xyz_free"]
+        
+        nodes_to_move = []
+        for mob in mobility_filter:
+            nodes_to_move.extend(self.nodes_by_mobility(mob))
+        nodes_to_move = list(set(nodes_to_move))
+        
+        results = {}
+        
+        for _ in range(iterations):
+            for node in nodes_to_move:
+                dist, direction = self.compute_point_distance(node, points)
+                
+                if dist is None or direction is None:
+                    continue
+                
+                magnitude = self.compute_falloff(dist, max_distance, strength, falloff)
+                if magnitude < 1e-9:
+                    continue
+                    
+                repulsion = Vector(
+                    direction.x * magnitude,
+                    direction.y * magnitude,
+                    direction.z * magnitude
+                )
+                
+                result = self.move_node(node, repulsion, axis_factors=axis_factors)
+                
+                if result and result[2] > 1e-9:
+                    old_pt, new_pt, disp = result
+                    results[node] = {'old': old_pt, 'new': new_pt, 'displacement': disp}
+        
+        return self, results
+
+    def move_nodes_from_curves(self, curves, max_distance=10.0, strength=1.0,
+                                iterations=1, mobility_filter=None, axis_factors=None,
+                                falloff="inverse_square"):
+        """
+        Move mobile nodes away from curves based on proximity.
+        
+        Draw curves in Rhino to define exclusion zones - nodes move away from curves.
+        
+        Parameters
+        ----------
+        curves : list of Rhino.Geometry.Curve
+            Repulsion curves. Nodes move away from these.
+        max_distance : float
+            Nodes beyond this distance are unaffected.
+        strength : float
+            Maximum displacement at distance=0.
+        iterations : int
+            Number of movement iterations.
+        mobility_filter : list of str, optional
+            Only move nodes with these mobility types.
+        axis_factors : dict, optional
+            Per-axis strength multipliers {"x": float, "y": float, "z": float}.
+        falloff : str
+            Falloff type: 'linear', 'inverse_square', 'constant', 'smooth'
+        
+        Returns
+        -------
+        tuple (NodeGraph, dict)
+            Modified graph and movement results.
+        
+        Example
+        -------
+        >>> # Draw a curve in Rhino where elevator/stair should go
+        >>> graph, results = ng.move_nodes_from_curves(crvs, max_distance=3.0, strength=1.0)
+        """
+        if not curves:
+            return self, {}
+        
+        curves = [c for c in curves if c is not None]
+        if not curves:
+            return self, {}
+        
+        if axis_factors is None:
+            axis_factors = config.AXIS_FACTORS
+        
+        if mobility_filter is None:
+            mobility_filter = ["z_free", "yz_free", "xyz_free"]
+        
+        nodes_to_move = []
+        for mob in mobility_filter:
+            nodes_to_move.extend(self.nodes_by_mobility(mob))
+        nodes_to_move = list(set(nodes_to_move))
+        
+        results = {}
+        
+        for _ in range(iterations):
+            for node in nodes_to_move:
+                dist, direction = self.compute_curve_distance(node, curves)
+                
+                if dist is None or direction is None:
+                    continue
+                
+                magnitude = self.compute_falloff(dist, max_distance, strength, falloff)
+                if magnitude < 1e-9:
+                    continue
+                    
+                repulsion = Vector(
+                    direction.x * magnitude,
+                    direction.y * magnitude,
+                    direction.z * magnitude
+                )
+                
+                result = self.move_node(node, repulsion, axis_factors=axis_factors)
+                
+                if result and result[2] > 1e-9:
+                    old_pt, new_pt, disp = result
+                    results[node] = {'old': old_pt, 'new': new_pt, 'displacement': disp}
+        
+        return self, results
+
+    def move_nodes_from_geometry(self, geometry, max_distance=10.0, strength=1.0,
+                                  iterations=1, mobility_filter=None, axis_factors=None,
+                                  falloff="inverse_square"):
+        """
+        Move nodes away from any geometry type (auto-detects points, curves, breps).
+        
+        Universal method - just pass whatever geometry you have.
+        
+        Parameters
+        ----------
+        geometry : list
+            Mix of Points, Curves, and/or Breps.
+        max_distance : float
+            Nodes beyond this distance are unaffected.
+        strength : float
+            Maximum displacement at distance=0.
+        iterations : int
+            Number of movement iterations.
+        mobility_filter : list of str, optional
+            Only move nodes with these mobility types.
+        axis_factors : dict, optional
+            Per-axis strength multipliers.
+        falloff : str
+            Falloff type: 'linear', 'inverse_square', 'constant', 'smooth'
+        
+        Returns
+        -------
+        tuple (NodeGraph, dict)
+            Modified graph and combined movement results.
+        """
+        import Rhino.Geometry as rg
+        
+        if not geometry:
+            return self, {}
+        
+        # Sort geometry by type
+        points = []
+        curves = []
+        breps = []
+        
+        for geo in geometry:
+            if geo is None:
+                continue
+            if isinstance(geo, rg.Point3d):
+                points.append(geo)
+            elif isinstance(geo, Point):
+                points.append(geo)
+            elif isinstance(geo, rg.Curve):
+                curves.append(geo)
+            elif isinstance(geo, rg.Brep):
+                breps.append(geo)
+        
+        all_results = {}
+        
+        # Apply each geometry type
+        if points:
+            _, results = self.move_nodes_from_points(
+                points, max_distance, strength, iterations, mobility_filter, axis_factors, falloff
+            )
+            all_results.update(results)
+        
+        if curves:
+            _, results = self.move_nodes_from_curves(
+                curves, max_distance, strength, iterations, mobility_filter, axis_factors, falloff
+            )
+            all_results.update(results)
+        
+        if breps:
+            _, results = self.move_nodes_from_breps(
+                breps, max_distance, strength, iterations, mobility_filter, axis_factors, falloff
+            )
+            all_results.update(results)
+        
+        return self, all_results
+
+    def get_displacement_vectors(self, results):
+        """
+        Extract displacement vectors from move_nodes_from_breps results.
+        
+        Useful for visualization in Grasshopper.
+        
+        Parameters
+        ----------
+        results : dict
+            Output from move_nodes_from_breps().
+        
+        Returns
+        -------
+        list of tuple (Point, Vector)
+            (start_point, displacement_vector) for each moved node.
+        """
+        vectors = []
+        for node, data in results.items():
+            old_pt = data['old']
+            new_pt = data['new']
+            vec = Vector(
+                new_pt.x - old_pt.x,
+                new_pt.y - old_pt.y,
+                new_pt.z - old_pt.z
+            )
+            vectors.append((old_pt, vec))
+        return vectors
