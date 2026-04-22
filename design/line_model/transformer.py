@@ -59,9 +59,13 @@ def run_simulation(pt_mobility, intersecting_edges, graph, brep, iterations, tol
                 
                 # Apply movement
                 if mobility == "z_free":
-                    graph.node_attribute(key, "point", current_pos + Vector(0, 0, m_vec[2]))
+                    moved_pt = current_pos + Vector(0, 0, m_vec[2])
+                    graph.node_attribute(key, "point", moved_pt)
+                    graph.node_attributes(key, names=["x", "y", "z"], values=[moved_pt.x, moved_pt.y, moved_pt.z])
                 elif mobility == "yz_free":
-                    graph.node_attribute(key, "point", current_pos + m_vec)
+                    moved_pt = current_pos + m_vec
+                    graph.node_attribute(key, "point", moved_pt)
+                    graph.node_attributes(key, names=["x", "y", "z"], values=[moved_pt.x, moved_pt.y, moved_pt.z])
 
     return False
 
