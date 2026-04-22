@@ -23,7 +23,7 @@ from config import (
 )
 from compas_rhino.conversions import curve_to_compas_polyline, point_to_compas
 from compas.geometry import Point, Line, Vector, Frame
-import Rhino.Geometry as rg  # type: ignore
+import Rhino.Geometry as rg
 
 
 # --------------------------------------------------
@@ -167,7 +167,6 @@ def build_level_zero(vertex_grid, sup_pts, z_steps, roof_brep, config):
                 "support": sup,
                 "support_id": sup_id,
                 "reached": reached,
-                "original_corners": corners,
                 "inset_corners": inset_corners,
                 "children": [],
                 "level": 0
@@ -230,7 +229,6 @@ def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config):
                     "support": sup,
                     "support_id": A["support_id"],
                     "reached": reached,
-                    "original_corners": [],
                     "inset_corners": [],
                     "children": child_pts,
                     "level": level
@@ -310,8 +308,8 @@ def build_graph_from_records(records, relations):
 
         # Add inset corner nodes (top level insets are fixed)
         inset_nodes = []
-        for ic, oc in zip(rec["inset_corners"], rec["original_corners"]):
-            ic_node = ng.get_or_add_point_node(ic, ntype="inset", level=0, mobility="fixed", original_point=oc)
+        for ic in rec["inset_corners"]:
+            ic_node = ng.get_or_add_point_node(ic, ntype="inset", level=0, mobility="fixed")
             inset_nodes.append(ic_node)
 
         # Track child nodes
