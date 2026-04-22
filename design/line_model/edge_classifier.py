@@ -177,11 +177,70 @@ def classify_edges_by_support_direction(graph, parallel_tol=None, debug=False, s
 
     return primary_lines, secondary_lines, data
 
+def build_category_index(graph, category_mode=2):
+    """
+    Build reusable node/edge category metadata for a graph.
+
+    Parameters
+    ----------
+    graph : Graph or NodeGraph
+        Input graph. Works with both plain COMPAS Graph and NodeGraph.
+    category_mode : int
+        0 = valency only, 1 = level only, 2 = valency + level.
+    Returns
+    -------
+    dict
+        {
+            "nodes": {node: {...}},
+            "edges": {(u, v): {...}}
+        }
+    """
+    idx = {"nodes": {}, "edges": {}}
+
+    for n in graph.nodes():
+        deg = graph.degree(n)
+        group = graph.node_attribute(n, "group")
+        level = graph.node_attribute(n, "level")
+        reached = bool(graph.node_attribute(n, "reached"))
+        pt = graph.node_attribute(n, "point")
+
+        degree_cat = "leaf" if deg == 1 else ("junction" if deg >= 3 else "chain")
+        if level is None:
+            level_cat = "L?"
+        else:
+            level_cat = "L{}".format(level)
+
+        if category_mode == 0:
+            category = (degree_cat,)
+        elif category_mode == 1:
+            category = (level_cat,)
+        else:
+            category = (degree_cat, level_cat)
+
+        idx["nodes"][n] = {
+            "degree": deg,
+            "degree_cat": degree_cat,
+            "group": group,
+            "level": level,
+            "level_cat": level_cat,
+            "is_support": reached,
+            "category": category,
+        }
+
+    for u, v in graph.edges():
+        gu = idx["nodes"][u]["group"]
+        gv = idx["nodes"][v]["group"]
+        idx["edges"][(u, v)] = {
+            "main_secondary": graph.edge_attribute((u, v), "main_secondary"),
+            "inter_module": (gu is not None and gv is not None and gu != gv),
+        }
+
+    return idx
 
 # --------------------------------------------------
 # Subgraph creation
 # --------------------------------------------------
-def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
+def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None, debug=False):
     """
     Divide graph into spatial subgraphs using a grid of windows.
 
@@ -212,6 +271,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
     node_pts = {}
     x_coords = []
     y_coords = []
+    extras = []
 
     for n in graph.nodes():
         pt = graph.node_attribute(n, "point")
@@ -225,6 +285,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
             if extra:
                 x_coords.append(extra.x)
                 y_coords.append(extra.y)
+                extras.append(extra)
 
     if not node_pts:
         return []
@@ -237,6 +298,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
     cell_w = x_range / seg_x
     cell_h = y_range / seg_y
 
+    # NOTE: Place where we should categorize edges based on their position in height layers 
     subgraphs = []
     for sj in range(seg_y):
         for si in range(seg_x):
@@ -288,7 +350,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
                 "bounds": (win_x_min, win_x_max, win_y_min, win_y_max)
             })
 
-    return subgraphs
+    return subgraphs, extras
 
 
 # --------------------------------------------------
@@ -502,7 +564,7 @@ def classify_single_segment(graph, segment_index, seg_x=None, seg_y=None,
     classify_edges_by_support_direction(graph, parallel_tol)
     
     # Create subgraphs
-    subgraphs = create_subgraphs(graph, seg_x, seg_y)
+    subgraphs, window = create_subgraphs(graph, seg_x, seg_y, debug=True)
     
     # Get support points from graph
     sup_pts = graph.get_support_points()
@@ -520,5 +582,6 @@ def classify_single_segment(graph, segment_index, seg_x=None, seg_y=None,
         "secondary_lines": secondary,
         "near_support": near_sup,
         "segment_index": idx,
-        "subgraph": sg_data["graph"]
+        "subgraph": sg_data["graph"],
+        "window": window
     }
