@@ -1,6 +1,5 @@
 from compas.datastructures import Graph
-from compas.geometry import Point, Line
-
+from compas.geometry import Point, Line, Vector
 
 class NodeGraph(Graph):
     """
@@ -37,7 +36,8 @@ class NodeGraph(Graph):
     """
     
     def __init__(self, *args, **kwargs):
-        super(NodeGraph, self).__init__(*args, **kwargs)
+        # super(NodeGraph, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._point_index = {}
         self._next_key = 0
 
@@ -114,6 +114,8 @@ class NodeGraph(Graph):
                 gu = self.node_attribute(u, "group")
                 gv = self.node_attribute(v, "group")
                 attr["group"] = gu if gu is not None else gv
+            if "etype" not in attr:
+                attr["etype"] = "parent_child"
             
             self.add_edge(u, v, **attr)
 
@@ -221,15 +223,15 @@ class NodeGraph(Graph):
         
         Used for tree restructuring. Handles two cases:
         - 2-tuple (u, v): Creates direct edge between existing nodes.
-        - 3-tuple (x, u, v): Creates midpoint between u and v, connects x to it,
-          reconnects children, and removes u/v (unless they are supports).
+        - 4-tuple (x, u, v, bool): Creates midpoint between u and v, connects x to it,
+          if bool is True, reconnects children, and removes u/v (unless they are supports).
         
-        New nodes created via this method get mobility='xyz_free'.
+        New nodes created via this method get mobility='yz_free'.
         
         Parameters
         ----------
         pair : tuple
-            Either (u, v) for direct edge, or (x, u, v) for midpoint creation.
+            Either (u, v) for direct edge, or (x, u, v, bool) for midpoint creation.
         
         Returns
         -------
@@ -242,16 +244,18 @@ class NodeGraph(Graph):
                 self.add_graph_edge(u, v)
             return None
 
-        x, u, v = pair
+        x, u, v, flag = pair
+        if not (self.has_node(x) and self.has_node(u) and self.has_node(v)):
+            return None
+        
+        new_node = self.add_point_node_between(u, v, split_edge=False, mobility="yz_free")
 
-        if not (self.has_node(u) and self.has_node(v)):
+        if flag is False:
+            self.add_graph_edge(x, new_node)
             return None
 
         children_u = self.node_attribute(u, "children") or []
         children_v = self.node_attribute(v, "children") or []
-
-        new_node = self.add_point_node_between(u, v, split_edge=False, mobility="yz_free")
-
         if children_u or children_v:
             candidates = set(children_u + children_v) - {x, u, v, new_node}
 
@@ -296,7 +300,18 @@ class NodeGraph(Graph):
         list of int
             Node keys where reached=True.
         """
-        return list(self.nodes_where({"reached": True}))
+        # Keep the support order as the rhino input
+        sup_list = []
+        for node in self.nodes():
+            attrs = self.node_attributes(node)
+            if "reached" not in attrs or "support_id" not in attrs:
+                continue
+            if attrs['reached'] == True:
+                sup_id = attrs["support_id"]
+                sup_list.append((sup_id, node))
+        sorted_sup_list = sorted(sup_list, key=lambda x: x[0])
+
+        return [pair[1] for pair in sorted_sup_list]
 
     def get_support_points(self):
         """
@@ -325,6 +340,36 @@ class NodeGraph(Graph):
             Node keys matching the mobility type.
         """
         return list(self.nodes_where({"mobility": mobility}))
+    
+    def get_mobility_vector(self, mobility, amplitude=None):
+        """
+        Get the mobility vector for a specific mobility type.
+        
+        Parameters
+        ----------
+        mobility : str
+            One of 'fixed', 'z_free', or 'xyz_free'.
+        
+        Returns
+        -------
+        str
+            Mobility vector as a vector. 'fixed' = (0,0,0), 'z_free' = (0,0,1), 'yz_free' = (0,1,1)
+        """
+        if amplitude == None:
+            amplitude = 1
+        else:
+            amplitude = float(amplitude)
+        
+        if mobility == "fixed":
+            v = Vector(0, 0, 0) 
+        elif mobility == "z_free":
+            v = Vector(0, 0, 1)
+        elif mobility == "yz_free":
+            v = Vector(0, 1, 1)
+        else:
+            raise ValueError("Invalid mobility type")
+        
+        return v * amplitude
 
     def points_by_mobility(self, mobility):
         """
@@ -372,22 +417,6 @@ class NodeGraph(Graph):
             Node keys that are endpoints.
         """
         return [n for n in self.nodes() if self.degree(n) == 1]
-
-    def neighbors(self, node):
-        """
-        Get neighbor nodes (wrapper for COMPAS node_neighbors).
-        
-        Parameters
-        ----------
-        node : int
-            Node key.
-        
-        Returns
-        -------
-        list of int
-            Connected node keys.
-        """
-        return list(self.node_neighbors(node))
 
     def neighbor_points(self, node):
         """
