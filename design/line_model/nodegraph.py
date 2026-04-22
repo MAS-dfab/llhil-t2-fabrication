@@ -114,6 +114,8 @@ class NodeGraph(Graph):
                 gu = self.node_attribute(u, "group")
                 gv = self.node_attribute(v, "group")
                 attr["group"] = gu if gu is not None else gv
+            if "etype" not in attr:
+                attr["etype"] = "parent_child"
             
             self.add_edge(u, v, **attr)
 
