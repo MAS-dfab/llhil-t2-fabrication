@@ -418,6 +418,22 @@ class NodeGraph(Graph):
         """
         return [n for n in self.nodes() if self.degree(n) == 1]
 
+    def is_leaf_edge(self, edge):
+        """Verify if an edge is a leaf edge."""
+        leaf_nodes = self.leaf_nodes()
+        return edge[0] in leaf_nodes or edge[1] in leaf_nodes
+    
+    def leaf_edges(self):
+        """
+        Get edges which included node with valency == 1.
+        
+        Returns
+        -------
+        list of tuple
+            Edge keys that are endlines.
+        """
+        return [e for e in self.edges() if self.is_leaf_edge(e)]
+
     def neighbor_points(self, node):
         """
         Get Point objects of all neighbors.
