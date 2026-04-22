@@ -1,8 +1,5 @@
-from platform import node
-
 from compas.datastructures import Graph
 from compas.geometry import Point, Line, Vector
-
 
 class NodeGraph(Graph):
     """
@@ -301,7 +298,18 @@ class NodeGraph(Graph):
         list of int
             Node keys where reached=True.
         """
-        return list(self.nodes_where({"reached": True}))
+        # Keep the support order as the rhino input
+        sup_list = []
+        for node in self.nodes():
+            attrs = self.node_attributes(node)
+            if "reached" not in attrs or "support_id" not in attrs:
+                continue
+            if attrs['reached'] == True:
+                sup_id = attrs["support_id"]
+                sup_list.append((sup_id, node))
+        sorted_sup_list = sorted(sup_list, key=lambda x: x[0])
+
+        return [pair[1] for pair in sorted_sup_list]
 
     def get_support_points(self):
         """
