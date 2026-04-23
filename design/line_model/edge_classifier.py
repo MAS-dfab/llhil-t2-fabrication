@@ -74,6 +74,16 @@ def classify_edges_by_support_direction(graph, parallel_tol=None, debug=False, s
     dot_values = []  # Track for debug
 
     for u, v in graph.edges():
+        # Preserve "double" edges - don't reclassify
+        existing = graph.edge_attribute((u, v), "main_secondary")
+        if existing == "double":
+            pu = graph.node_attribute(u, "point")
+            pv = graph.node_attribute(v, "point")
+            if pu and pv:
+                primary_lines.append(Line(pu, pv))  # doubles count as primary for output
+                data.append({"edge": (u, v), "support_idx": None, "dot": None, "type": "double"})
+            continue
+
         pu = graph.node_attribute(u, "point")
         pv = graph.node_attribute(v, "point")
 
@@ -447,7 +457,7 @@ def classify_subgraph_edges(subgraph, sup_pts, near_threshold=None, parallel_tol
     Returns
     -------
     tuple
-        (primary_lines, secondary_lines, is_near_support)
+        (primary_lines, secondary_lines, double_lines, near_support, subgraph)
     """
     if near_threshold is None:
         near_threshold = DEFAULT_NEAR_THRESHOLD
@@ -484,10 +494,14 @@ def classify_subgraph_edges(subgraph, sup_pts, near_threshold=None, parallel_tol
 
     primary_lines = []
     secondary_lines = []
+    double_lines = []
+
     if near_sup:
         # Near support: keep original classification
         for ed in all_edges:
-            if ed["etype"] == "primary":
+            if ed["etype"] == "double":
+                double_lines.append(ed["line"])
+            elif ed["etype"] == "primary":
                 primary_lines.append(ed["line"])
             else:
                 secondary_lines.append(ed["line"])
@@ -496,6 +510,11 @@ def classify_subgraph_edges(subgraph, sup_pts, near_threshold=None, parallel_tol
         dom_dir = find_dominant_direction(primary_vecs)
 
         for ed in all_edges:
+            # Preserve "double" edges - don't reclassify
+            if ed["etype"] == "double":
+                double_lines.append(ed["line"])
+                continue
+            
             new_etype = ed["etype"]  # default to original
             
             if dom_dir:
@@ -513,7 +532,7 @@ def classify_subgraph_edges(subgraph, sup_pts, near_threshold=None, parallel_tol
             # Update the subgraph edge attribute (for reference)
             sg.edge_attribute(ed["edge"], "main_secondary", new_etype)
 
-    return primary_lines, secondary_lines, near_sup
+    return primary_lines, secondary_lines, double_lines, near_sup, sg
 
 
 # --------------------------------------------------
@@ -545,6 +564,7 @@ def classify_single_segment(graph, segment_index, seg_x=None, seg_y=None,
         {
             "primary_lines": list,
             "secondary_lines": list,
+            "double_lines": list,
             "near_support": bool,
             "segment_index": int,
             "subgraph": Graph
@@ -573,13 +593,14 @@ def classify_single_segment(graph, segment_index, seg_x=None, seg_y=None,
     idx = int(segment_index) % len(subgraphs)
     sg_data = subgraphs[idx]
     
-    primary, secondary, near_sup = classify_subgraph_edges(
+    primary, secondary, double, near_sup = classify_subgraph_edges(
         sg_data, sup_pts, near_threshold, parallel_tol
     )
     
     return {
         "primary_lines": primary,
         "secondary_lines": secondary,
+        "double_lines": double,
         "near_support": near_sup,
         "segment_index": idx,
         "subgraph": sg_data["graph"],
