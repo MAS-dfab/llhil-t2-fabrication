@@ -56,10 +56,39 @@ class ReciprocalSolver:
             p1 = [line.end.x, line.end.y, line.end.z]
             if distance_point_point(p0, p1) < 1e-9:
                 continue
-            self.beams.append({'key': i, 'pts': [p0, p1], 'original': [p0, p1]})
+            self.beams.append({'key': i, 'pts': [p0, p1], 'original': [p0, p1], 'shift': 0.0})
         
         self.fixed_ends = [{0: True, 1: True} for _ in self.beams]
         self._find_vertices()
+
+    def calculate_ideal_targets(self, rotation_sign):
+        """
+        Calculates perfect zero-gap intersections based on CURRENT angles.
+        Returns a dictionary mapping (beam_index, end_index) to new coordinates.
+        """
+        intended_moves = {}
+        
+        for vi, V in enumerate(self.vertices):
+            m = len(V['fan'])
+            shifts_v = []
+            
+            for k in range(m):
+                bi, ei = V['fan'][k]
+                shift_dist = self.beams[bi]['shift']
+                shifts_v.append(shift_dist * rotation_sign)
+            
+            pts = self._vertex_nexus(vi, shifts_v)
+            
+            for k in range(m):
+                bi, ei = V['fan'][k]
+                
+                # FIX: Assign the correct intersection based on the pinwheel direction
+                target_pt = pts[k] if rotation_sign > 0 else pts[(k - 1) % m]
+                
+                if target_pt:
+                    intended_moves[(bi, ei)] = target_pt
+                    
+        return intended_moves
     
     def _find_vertices(self):
         """Find multi-way vertices by clustering beam endpoints."""
@@ -138,7 +167,7 @@ class ReciprocalSolver:
         order = sorted(range(len(fan)), key=angle)
         return [fan[i] for i in order], normal
     
-    def solve(self, rotation_sign=+1):
+    def solve(self, rotation_sign=-1):
         var_index = {}
         for vi, V in enumerate(self.vertices):
             for k in range(len(V['fan'])):
@@ -156,11 +185,21 @@ class ReciprocalSolver:
                 x0[var_index[(vi, k)]] = s_init
         
         bound = 2.0 * self.engage_len
-        x0 = np.clip(x0, -bound + 1e-9, bound - 1e-9)
+        
+        # Determine strict bounds based on rotation sign
+        if rotation_sign > 0:
+            lower_bound = np.zeros(n_vars) + 1e-9
+            upper_bound = np.full(n_vars, bound)
+        else:
+            lower_bound = np.full(n_vars, -bound)
+            upper_bound = np.zeros(n_vars) - 1e-9
+
+        # Ensure initial guess is within the strict bounds
+        x0 = np.clip(x0, lower_bound, upper_bound)
         
         result = least_squares(
             lambda x: self._residuals(x, var_index, rotation_sign),
-            x0, bounds=(-bound, bound), method='trf', ftol=1e-10, xtol=1e-10, max_nfev=2000
+            x0, bounds=(lower_bound, upper_bound), method='trf', ftol=1e-10, xtol=1e-10, max_nfev=200
         )
         
         self._apply_solution(result.x, var_index)
@@ -576,7 +615,8 @@ def reciprocal_from_subgraph(subgraph, engage_len=1.0, tol=0.1, rotation_sign=+1
     for gi, g in enumerate(groups):
         if debug:
             print(f"\n--- Group {gi}: {g['degree']} lines at node {g['node']} ---")
-        
+        # if len(g['edges']) > 3:
+        #     engage_len = 0.4
         solver = ReciprocalSolver(g['lines'], engage_len=engage_len, tol=tol)
         
         if not solver.vertices:
@@ -603,6 +643,151 @@ def reciprocal_from_subgraph(subgraph, engage_len=1.0, tol=0.1, rotation_sign=+1
             'converged': all(i.get('converged', True) for i in infos),
             'cost': sum(i.get('cost', 0) for i in infos),
             'n_vertices': total_verts,
+            'n_groups': len(groups),
+        }
+    }
+
+def reciprocal_width_from_subgraph(subgraph, engage_len=0.11, tol=0.1, rotation_sign=+1, 
+                              min_degree=3, iterations=5, debug=True):
+    """
+    Reciprocalize lines using Global Relaxation to solve the see-saw effect,
+    followed by a final cyclic intersection trimming pass.
+    """
+    global_beams = {}
+    secondary_lines = []
+    reciprocal_edges = []
+    
+    # 1. Collect edges and establish global beam tracking
+    for u, v in subgraph.edges():
+        etype = subgraph.edge_attribute((u, v), 'main_secondary')
+        if etype in ('primary', 'double'):
+            reciprocal_edges.append((u, v))
+            
+            # Try to get 'width' from graph. Fallback to engage_len if None.
+            w = subgraph.edge_attribute((u, v), 'width')
+            shift_dist = (w / 2.0) if w else engage_len
+            
+            p0, p1 = _get_pt(subgraph, u), _get_pt(subgraph, v)
+            
+            global_beams[(u, v)] = {
+                'p0': [p0.x, p0.y, p0.z], 
+                'p1': [p1.x, p1.y, p1.z], 
+                'shift': shift_dist
+            }
+        else:
+            secondary_lines.append(_get_line(subgraph, (u, v)))
+    
+    if debug:
+        print(f"Edges: {len(reciprocal_edges)} reciprocal, {len(secondary_lines)} secondary")
+    
+    # 2. Find coplanar groups based on original unshifted topology
+    groups = find_coplanar_groups(subgraph, min_degree=min_degree, debug=debug)
+    
+    if not groups:
+        return {
+            'shifted_lines': [_get_line(subgraph, e) for e in reciprocal_edges],
+            'secondary_lines': secondary_lines,
+            'nexus_lines': [], 'coplanar_groups': [],
+            'info': {'converged': True, 'cost': 0, 'n_vertices': 0}
+        }
+
+    # 3. GLOBAL RELAXATION LOOP
+    for iteration in range(iterations):
+        global_intended_moves = {}
+        
+        for g in groups:
+            current_lines = []
+            beam_mapping = [] 
+            
+            for e in g['edges']: 
+                actual_edge = e if e in global_beams else (e[1], e[0])
+                b = global_beams[actual_edge]
+                
+                is_same_dir = (e == actual_edge)
+                p0, p1 = (b['p0'], b['p1']) if is_same_dir else (b['p1'], b['p0'])
+                    
+                current_lines.append(Line(Point(*p0), Point(*p1)))
+                beam_mapping.append((actual_edge, is_same_dir))
+                
+            solver = ReciprocalSolver(current_lines, tol=tol)
+            
+            for local_idx, (actual_edge, _) in enumerate(beam_mapping):
+                solver.beams[local_idx]['shift'] = global_beams[actual_edge]['shift']
+                
+            group_moves = solver.calculate_ideal_targets(rotation_sign)
+            
+            for (local_bi, local_ei), new_pt in group_moves.items():
+                actual_edge, is_same_dir = beam_mapping[local_bi]
+                global_ei = local_ei if is_same_dir else 1 - local_ei
+                global_intended_moves[(actual_edge, global_ei)] = new_pt
+                
+        for (actual_edge, global_ei), new_pt in global_intended_moves.items():
+            if global_ei == 0:
+                global_beams[actual_edge]['p0'] = new_pt
+            else:
+                global_beams[actual_edge]['p1'] = new_pt
+
+    # 3.5 POST-RELAXATION TRIMMING (Cyclic Intersection)
+    # Now that all lines are settled, perfectly trim the tails at the intersections
+    for g in groups:
+        m = len(g['edges'])
+        if m < 2:
+            continue
+            
+        node = g['node'] # The central intersection node for this group
+        
+        # Pre-build Line objects for the current group state
+        group_lines = []
+        for e in g['edges']:
+            actual_edge = e if e in global_beams else (e[1], e[0])
+            b = global_beams[actual_edge]
+            group_lines.append(Line(Point(*b['p0']), Point(*b['p1'])))
+            
+        # Intersect line k with the next line in the sequence
+        for k in range(m):
+            e_k = g['edges'][k]
+            actual_edge_k = e_k if e_k in global_beams else (e_k[1], e_k[0])
+            b_k = global_beams[actual_edge_k]
+            
+            # Determine the neighbor to trim against based on rotation direction
+            target_k = (k + 1) % m if rotation_sign > 0 else (k - 1) % m
+            
+            line_a = group_lines[k]
+            line_b = group_lines[target_k]
+            
+            # Find the 3D intersection. `intersection_line_line` returns a tuple of 
+            # the two closest points on both lines. res[0] is the point on line_a.
+            res = intersection_line_line(line_a, line_b)
+            
+            # Fallback for perfectly parallel lines (e.g., 180 deg splits)
+            if not res:
+                fallback_k = (k - 1) % m if rotation_sign > 0 else (k + 1) % m
+                res = intersection_line_line(line_a, group_lines[fallback_k])
+                
+            if res:
+                intersect_pt = res[0]
+                
+                # We update the endpoint that is touching the central node, cleanly cutting the tail
+                if actual_edge_k[0] == node:
+                    b_k['p0'] = [*intersect_pt]
+                else:
+                    b_k['p1'] = [*intersect_pt]
+
+    # 4. Finalize output
+    shifted_lines = []
+    for e in reciprocal_edges:
+        b = global_beams[e]
+        shifted_lines.append(Line(Point(*b['p0']), Point(*b['p1'])))
+    
+    return {
+        'shifted_lines': shifted_lines,
+        'secondary_lines': secondary_lines,
+        'nexus_lines': [], # Left empty, zero-gap means no central holes!
+        'coplanar_groups': groups,
+        'info': {
+            'converged': True, 
+            'cost': 0, 
+            'iterations': iterations,
             'n_groups': len(groups),
         }
     }
