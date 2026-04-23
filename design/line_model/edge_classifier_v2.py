@@ -276,6 +276,16 @@ def classify_edges_in_subgraph(subgraph, parallel_tol=None):
                     new_etype = "tertiary"
             subgraph.edge_attribute(edge, "hierarchy", new_etype)
 
+def combine_graphs(graphs):
+    """Combine a list of subgraphs into one graph."""
+    new_ng = NodeGraph()
+
+    for sg in graphs:
+        for node in sg.nodes():
+            new_ng.add_node(node, **sg.node_attributes(node))
+        for u, v in sg.edges():
+            new_ng.add_edge(u, v, **sg.edge_attributes((u, v)))
+    return new_ng
 
 # --------------------------------------------------
 # Main API

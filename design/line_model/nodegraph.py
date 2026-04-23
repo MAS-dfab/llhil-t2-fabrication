@@ -661,7 +661,7 @@ class NodeGraph(Graph):
             Distance to nearest Brep and direction vector pointing FROM Brep TO node.
             Returns (None, None) if node has no point or breps is empty.
         """
-        import Rhino.Geometry as rg
+        import Rhino.Geometry as rg  # type: ignore
         
         pt = self.node_attribute(node, "point")
         if pt is None or not breps:
@@ -778,7 +778,7 @@ class NodeGraph(Graph):
         tuple (float, Vector) or (None, None)
             Distance to nearest curve and direction vector pointing FROM curve TO node.
         """
-        import Rhino.Geometry as rg
+        import Rhino.Geometry as rg  # type: ignore
         
         pt = self.node_attribute(node, "point")
         if pt is None or not curves:
@@ -1253,7 +1253,7 @@ class NodeGraph(Graph):
         tuple (NodeGraph, dict)
             Modified graph and combined movement results.
         """
-        import Rhino.Geometry as rg
+        import Rhino.Geometry as rg # type: ignore
         
         if not geometry:
             return self, {}
