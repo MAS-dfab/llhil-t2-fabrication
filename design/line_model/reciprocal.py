@@ -378,7 +378,7 @@ def find_coplanar_groups(subgraph, min_degree=3, plane_tol=0.1, debug=True):
     
     # Get all primary AND double edges
     edges = [(u, v) for u, v in subgraph.edges() 
-             if subgraph.edge_attribute((u, v), 'main_secondary') in ('primary', 'double')]
+             if subgraph.edge_attribute((u, v), 'hierarchy') in ('primary', 'double')]
     
     if debug:
         print(f"Total primary+double edges: {len(edges)}")
@@ -486,10 +486,10 @@ def find_coplanar_groups(subgraph, min_degree=3, plane_tol=0.1, debug=True):
                 print(f"    Angles: {[f'{a:.0f}' for a in angles]} = {sum(angles):.0f}°")
             
             # Skip if any angle > 175° (nearly collinear edges)
-            if max(angles) > 175:
-                if debug:
-                    print(f"    SKIPPED: angle {max(angles):.0f}° > 175°")
-                continue
+            # if max(angles) > 175:
+            #     if debug:
+            #         print(f"    SKIPPED: angle {max(angles):.0f}° > 175°")
+            #     continue
             
             lines = [_get_line(subgraph, e) for e in sorted_edges]
             groups.append({
@@ -576,7 +576,7 @@ def reciprocal_from_subgraph(subgraph, engage_len=1.0, tol=0.1, rotation_sign=+1
     secondary_lines = []
     
     for u, v in subgraph.edges():
-        etype = subgraph.edge_attribute((u, v), 'main_secondary')
+        etype = subgraph.edge_attribute((u, v), 'hierarchy')
         if etype in ('primary', 'double'):
             reciprocal_edges.append((u, v))
         else:
@@ -659,8 +659,10 @@ def reciprocal_width_from_subgraph(subgraph, engage_len=0.11, tol=0.1, rotation_
     
     # 1. Collect edges and establish global beam tracking
     for u, v in subgraph.edges():
-        etype = subgraph.edge_attribute((u, v), 'main_secondary')
+        # print(subgraph.edge_attribute((u, v), "hierarchy"))
+        etype = subgraph.edge_attribute((u, v), 'hierarchy')
         if etype in ('primary', 'double'):
+            # print("IN")
             reciprocal_edges.append((u, v))
             
             # Try to get 'width' from graph. Fallback to engage_len if None.
