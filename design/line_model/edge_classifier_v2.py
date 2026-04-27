@@ -185,6 +185,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
     cell_w = x_range / seg_x
     cell_h = y_range / seg_y
 
+    subgraphs_list = []
     subgraphs = []
     for sj in range(seg_y):
         for si in range(seg_x):
@@ -208,7 +209,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
 
             # Build subgraph
             sg = NodeGraph()
-            node_attrs = ["x", "y", "z", "point", "group", "level", "is_support", "reached", "ntype"]
+            node_attrs = ["x", "y", "z", "point", "group", "level", "is_support", "reached", "ntype", "support_id"]
             edge_attrs = ["e_category", "etype", "group", "parallel_score", "nearest_support"]
 
             for n in nodes_in_win:
@@ -226,8 +227,10 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
                     if val is not None:
                         attrs[key] = val
                 sg.add_edge(u, v, **attrs)
-
-            subgraphs.append({
+                sg.edge_attribute((u, v), "window_id", sj * seg_x + si)
+            
+            subgraphs.append(sg)
+            subgraphs_list.append({
                 "si": si,
                 "sj": sj,
                 "index": sj * seg_x + si,
@@ -236,7 +239,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
                 "bounds": (win_x_min, win_x_max, win_y_min, win_y_max)
             })
 
-    return subgraphs
+    return subgraphs_list, subgraphs
 
 # --------------------------------------------------
 # Classify edges in subgraphs
@@ -296,16 +299,16 @@ def classify_edges_by_Michael(graph, seg_x=None, seg_y=None, parallel_tol=None):
     Hierarchy: 'primary', 'secondary', 'tertiary', 'special'
     """
     # 1. Categorize beams into "orthogonal", "default_diagonal", "moved_diagonal"
-    default_dir1, default_dir2 = categorize_edge_types(graph)
+    _, _ = categorize_edge_types(graph)
     # 2. Subdivide structure by "windows".
-    subgraphs = create_subgraphs(graph, seg_x, seg_y)
+    _, subgraphs = create_subgraphs(graph, seg_x, seg_y)
+
     # 3. Set orthogonal beams to "primary" and moved_diagonal beams to "special".
     # 4. Find domainant and subdomainant (both must be "default_diagonal") direction of each "windows".
     # 5. Filter beams without orthogonals by domainant direction, and set them to "primary"
     # 6. Set beams which are not "primary", "orthogonal" and are "leaf_edges" to "secondary"
     # 7. Set rest of the beams which are not "primary", "secondary", "special" to "tertiary"
-    for sub in subgraphs:
-        sg = sub["graph"]
+    for sg in subgraphs:
         classify_edges_in_subgraph(sg, parallel_tol)
 
     return subgraphs
