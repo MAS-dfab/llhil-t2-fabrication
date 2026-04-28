@@ -4,7 +4,7 @@ Leaf beams snapping and shoes creation.
 Usage in grasshopper:
     from leaf_solver import compute_leaf_and_shoe
     from copy import deepcopy
-    
+
     ng = deepcopy(graph)
     result = create_shoes_and_shift_leaves(ng, brep, min_length=0.30, min_angle=20)
 
@@ -87,6 +87,7 @@ def create_shoes_and_shift_leaves(graph, brep, min_length=0.18, min_angle=20):
     print (f"pc: {parent_children}")
         
     partitioned = {}
+    temp_pts = []
     for parent_node, children_edges in parent_children.items():
         pairs_dict = {}
         for edge in children_edges:
@@ -95,18 +96,16 @@ def create_shoes_and_shift_leaves(graph, brep, min_length=0.18, min_angle=20):
 
         for hie, lst in pairs_dict.items():
             node_pair = [node for edge in lst for node in edge if graph.is_leaf(node)]
+            
+            # Save non x-shoe pairs for later shoe creation
+            if len(children_edges) <= 2:
+                temp_pts.append(node_pair)
+                continue
 
             p1 = graph.node_point(node_pair[0])
             p2 = graph.node_point(node_pair[1])
-            if len(children_edges) <= 2:
-                vec = Vector.from_start_end(p1, p2).unitized() * (min_length * 2)
-                shoe_line1 = Line(p1, p1.translated(vec))
-                shoe_line2 = Line(p2, p2.translated(-vec))
-                shoe_lines.append(shoe_line1)
-                shoe_lines.append(shoe_line2)
-            else:
-                shoe_line = Line(p1, p2)
-                shoe_lines.append(shoe_line)
+            shoe_line = Line(p1, p2)
+            shoe_lines.append(shoe_line)
 
         partitioned[parent_node] = pairs_dict
 
@@ -142,6 +141,16 @@ def create_shoes_and_shift_leaves(graph, brep, min_length=0.18, min_angle=20):
             if graph.is_leaf(node):
                 graph.node_attribute(node, "point", leaf_pt)
                 graph.node_attributes(node, ["x", "y", "z"], [leaf_pt.x, leaf_pt.y, leaf_pt.z])
+
+    # Create non x-shoe
+    for pair in temp_pts:
+        c1 = graph.node_point(pair[0])
+        c2 = graph.node_point(pair[1])
+        vec = Vector.from_start_end(c1, c2).unitized() * min_length
+        shoe_line1 = Line(c1.translated(-vec), c1.translated(vec))
+        shoe_line2 = Line(c2.translated(vec), c2.translated(-vec))
+        shoe_lines.append(shoe_line1)
+        shoe_lines.append(shoe_line2)
 
     return {
         "shoe_lines": shoe_lines,
