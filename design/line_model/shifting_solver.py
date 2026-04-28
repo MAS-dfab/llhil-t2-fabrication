@@ -7,7 +7,7 @@ Usage in Grasshopper:
 """
 
 
-from compas.geometry import Vector, Line, Point, centroid_points, Frame, Box
+from compas.geometry import Vector, Line, Point, centroid_points, Frame, Box, Plane
 from compas.geometry import distance_point_point_xy
 from compas.datastructures import Graph
 from compas_rhino.conversions import line_to_rhino, point_to_rhino
@@ -45,34 +45,79 @@ def _get_line(subgraph, edge):
     return Line(_get_pt(subgraph, u), _get_pt(subgraph, v))
 
 
+def node_lines(subgraph, nodes):
+    """Grt a nested list of all the lines in nodes."""
+    node_lines, node_edges = [], []
+    
+    # Step 2: Find all the edges that belong to the node
+    for key in nodes:
+        point = subgraph.node_attribute(key, "point")
+        edges = subgraph.node_edges(key)
+        lines = []
+        for u, v in edges:
+            if subgraph.edge_attribute((u, v), "shifted_lines"):
+                lines.append(subgraph.edge_attribute((u, v), "shifted_lines"))
+            else:
+                line = _get_line(subgraph, (u, v))
+                lines.append(line)
+        node_lines.append(lines)
+        node_edges.append(edges)
+    
+    return node_lines, node_edges
+
+        
 # ==============================================================================
-# Testing
+# Shifting solvers
 # ==============================================================================
 
-def shift_solver(graph):
+def secondary_edges_solver(subgraph, node_edges, secondary_edge):
     """
-    Applies shifting logic to the specified category of edges in the graph.
-
+    Applies shifting logic to the secondary category of edges in the cluster of lines in one node.
+    
     Parameters:
-        graph (Graph): The graph containing the nodes and edges to be processed.
-        category (str): The category of edges to apply shifting logic to. 
-                        It can be "secondary", "terciary" or "spetial".
+        subgraph (Graph): The subgraph containing the nodes and edges to be shifted.
+        node_lines: Cluster of all the lines in one node
     Returns:
-        None: The function modifies the graph in place by applying shifting logic to the specified category of edges.
+        Returns: shifted secondary lines
+    
     """
-    ng = NodeGraph()
     
-    # Find all the edges in the node 
+    secondary_line = _get_line(subgraph, secondary_edge)
+    candidates = []
     
-    for key in graph.nodes():
-        edges = graph.node_edges(key)
+    # Step 1: Iterate trough each dge in the cluster
+    for u, v in node_edges:
+    # Step 1: Find best candidates
+        # condition 1: the edge is not the same edge, they have to be primary
+        etype = subgraph.edge_attribute((u, v), 'hierarchy')
+        if etype in ("primary"):
+            if subgraph.edge_attribute((u, v), "shifted_lines"):
+                candidates.append(subgraph.edge_attribute((u, v), "shifted_lines"))
+            else:
+                candidates.append(_get_line(subgraph, (u, v)))
+        else:
+            continue
+    # Step 2: Get intersection plane of the edge
+    point = secondary_line.start
+    v1 = Vector.from_start_end(point, secondary_line.end)
+    intersection_plane = Plane.from_point_and_two_vectors(point, v1, [0,0,1])
+    # Step 2: Intersect with the best candidates
+    intersection_pts = [intersection_plane.intersection_with_line(cand, tol=.001) for cand in candidates]   
+    # Step 3: Find heighest intersection point
+    highest_pt = max(intersection_pts, key=lambda pt: pt.z)
+    # Step 4: Return a new line 
+    shifted_line = Line(secondary_line.end, highest_pt)
+    
+    return shifted_line
+
+        
 
 
 # ==============================================================================
 # Main API
 # ==============================================================================
 
-def shift_from_subgraph(subgraph, debug=True):
+def shift_from_subgraph(subgraph, node, debug=True):
     """
     Applies shifting logic to the specified category of edges in the subgraph.
 
@@ -88,9 +133,10 @@ def shift_from_subgraph(subgraph, debug=True):
     tertiary = []
     special = []
     
-    nodes = []
-    all_lines = []
-
+    nodes = []    
+    all_shifted_lines = []
+    shifted_lines = []
+    
     # Step 1: Find all the nodes for joint resolving task
     for key in subgraph.nodes():
         # remove leaf pts
@@ -99,17 +145,26 @@ def shift_from_subgraph(subgraph, debug=True):
         point = subgraph.node_attribute(key, "point")
         nodes.append(key)
     
-    # Step 2: Find all the edges that belong to the node
-    for key in nodes:
-        point = subgraph.node_attribute(key, "point")
-        edges = subgraph.node_edges(key)
-        lines = []
-        for u, v in edges:
-            line = _get_line(subgraph, (u, v))
-            lines.append(line)
-        all_lines.append(lines)
     
-    return nodes, all_lines
+    node_line, node_edges = node_lines(subgraph, nodes)
+    
+    # Iterate trough each edge and solve first secondary lines 
+    for n in node_edges:
+        for u, v in n:
+            etype = subgraph.edge_attribute((u, v), 'hierarchy')
+            if etype in ("primary"):
+                all_shifted_lines.append(_get_line(subgraph, (u, v)))
+            if etype in ("secondary"):
+                shifted_secondary = secondary_edges_solver(subgraph, n, (u, v))
+                node_line[0].append(shifted_secondary)
+                if debug:
+                    print("secondary")
+                    print(n[0])
+                    print(shifted_secondary)
+                
+    return node_line
+
+
     # _______ solver for secondary edges _______
     # Find all the primary edges in the same window and level and group them together.
     # Get planes of secondary_edges
