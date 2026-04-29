@@ -74,6 +74,16 @@ def classify_edges_by_support_direction(graph, parallel_tol=None, debug=False, s
     dot_values = []  # Track for debug
 
     for u, v in graph.edges():
+        # Preserve "double" edges - don't reclassify
+        existing = graph.edge_attribute((u, v), "main_secondary")
+        if existing == "double":
+            pu = graph.node_attribute(u, "point")
+            pv = graph.node_attribute(v, "point")
+            if pu and pv:
+                primary_lines.append(Line(pu, pv))  # doubles count as primary for output
+                data.append({"edge": (u, v), "support_idx": None, "dot": None, "type": "double"})
+            continue
+
         pu = graph.node_attribute(u, "point")
         pv = graph.node_attribute(v, "point")
 
@@ -177,11 +187,70 @@ def classify_edges_by_support_direction(graph, parallel_tol=None, debug=False, s
 
     return primary_lines, secondary_lines, data
 
+def build_category_index(graph, category_mode=2):
+    """
+    Build reusable node/edge category metadata for a graph.
+
+    Parameters
+    ----------
+    graph : Graph or NodeGraph
+        Input graph. Works with both plain COMPAS Graph and NodeGraph.
+    category_mode : int
+        0 = valency only, 1 = level only, 2 = valency + level.
+    Returns
+    -------
+    dict
+        {
+            "nodes": {node: {...}},
+            "edges": {(u, v): {...}}
+        }
+    """
+    idx = {"nodes": {}, "edges": {}}
+
+    for n in graph.nodes():
+        deg = graph.degree(n)
+        group = graph.node_attribute(n, "group")
+        level = graph.node_attribute(n, "level")
+        reached = bool(graph.node_attribute(n, "reached"))
+        pt = graph.node_attribute(n, "point")
+
+        degree_cat = "leaf" if deg == 1 else ("junction" if deg >= 3 else "chain")
+        if level is None:
+            level_cat = "L?"
+        else:
+            level_cat = "L{}".format(level)
+
+        if category_mode == 0:
+            category = (degree_cat,)
+        elif category_mode == 1:
+            category = (level_cat,)
+        else:
+            category = (degree_cat, level_cat)
+
+        idx["nodes"][n] = {
+            "degree": deg,
+            "degree_cat": degree_cat,
+            "group": group,
+            "level": level,
+            "level_cat": level_cat,
+            "is_support": reached,
+            "category": category,
+        }
+
+    for u, v in graph.edges():
+        gu = idx["nodes"][u]["group"]
+        gv = idx["nodes"][v]["group"]
+        idx["edges"][(u, v)] = {
+            "main_secondary": graph.edge_attribute((u, v), "main_secondary"),
+            "inter_module": (gu is not None and gv is not None and gu != gv),
+        }
+
+    return idx
 
 # --------------------------------------------------
 # Subgraph creation
 # --------------------------------------------------
-def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
+def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None, debug=False):
     """
     Divide graph into spatial subgraphs using a grid of windows.
 
@@ -212,6 +281,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
     node_pts = {}
     x_coords = []
     y_coords = []
+    extras = []
 
     for n in graph.nodes():
         pt = graph.node_attribute(n, "point")
@@ -220,17 +290,25 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
             x_coords.append(pt.x)
             y_coords.append(pt.y)
 
+        if "original_point" in graph.node_attributes(n):
+            extra = graph.node_attribute(n, "original_point")
+            if extra:
+                x_coords.append(extra.x)
+                y_coords.append(extra.y)
+                extras.append(extra)
+
     if not node_pts:
         return []
 
     x_min, x_max = min(x_coords), max(x_coords)
     y_min, y_max = min(y_coords), max(y_coords)
 
-    x_range = x_max - x_min + 0.01
-    y_range = y_max - y_min + 0.01
+    x_range = x_max - x_min
+    y_range = y_max - y_min
     cell_w = x_range / seg_x
     cell_h = y_range / seg_y
 
+    # NOTE: Place where we should categorize edges based on their position in height layers 
     subgraphs = []
     for sj in range(seg_y):
         for si in range(seg_x):
@@ -254,7 +332,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
 
             # Build subgraph
             sg = Graph()
-            node_attrs = ["point", "group", "level", "is_support", "reached", "ntype"]
+            node_attrs = ["x", "y", "z", "point", "group", "level", "is_support", "reached", "ntype"]
             edge_attrs = ["main_secondary", "etype", "group", "parallel_score", "nearest_support"]
 
             for n in nodes_in_win:
@@ -282,7 +360,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
                 "bounds": (win_x_min, win_x_max, win_y_min, win_y_max)
             })
 
-    return subgraphs
+    return subgraphs, extras
 
 
 # --------------------------------------------------
@@ -379,7 +457,7 @@ def classify_subgraph_edges(subgraph, sup_pts, near_threshold=None, parallel_tol
     Returns
     -------
     tuple
-        (primary_lines, secondary_lines, is_near_support)
+        (primary_lines, secondary_lines, double_lines, near_support, subgraph)
     """
     if near_threshold is None:
         near_threshold = DEFAULT_NEAR_THRESHOLD
@@ -416,11 +494,14 @@ def classify_subgraph_edges(subgraph, sup_pts, near_threshold=None, parallel_tol
 
     primary_lines = []
     secondary_lines = []
+    double_lines = []
 
     if near_sup:
         # Near support: keep original classification
         for ed in all_edges:
-            if ed["etype"] == "primary":
+            if ed["etype"] == "double":
+                double_lines.append(ed["line"])
+            elif ed["etype"] == "primary":
                 primary_lines.append(ed["line"])
             else:
                 secondary_lines.append(ed["line"])
@@ -429,6 +510,11 @@ def classify_subgraph_edges(subgraph, sup_pts, near_threshold=None, parallel_tol
         dom_dir = find_dominant_direction(primary_vecs)
 
         for ed in all_edges:
+            # Preserve "double" edges - don't reclassify
+            if ed["etype"] == "double":
+                double_lines.append(ed["line"])
+                continue
+            
             new_etype = ed["etype"]  # default to original
             
             if dom_dir:
@@ -446,7 +532,7 @@ def classify_subgraph_edges(subgraph, sup_pts, near_threshold=None, parallel_tol
             # Update the subgraph edge attribute (for reference)
             sg.edge_attribute(ed["edge"], "main_secondary", new_etype)
 
-    return primary_lines, secondary_lines, near_sup
+    return primary_lines, secondary_lines, double_lines, near_sup, sg
 
 
 # --------------------------------------------------
@@ -478,6 +564,7 @@ def classify_single_segment(graph, segment_index, seg_x=None, seg_y=None,
         {
             "primary_lines": list,
             "secondary_lines": list,
+            "double_lines": list,
             "near_support": bool,
             "segment_index": int,
             "subgraph": Graph
@@ -497,7 +584,7 @@ def classify_single_segment(graph, segment_index, seg_x=None, seg_y=None,
     classify_edges_by_support_direction(graph, parallel_tol)
     
     # Create subgraphs
-    subgraphs = create_subgraphs(graph, seg_x, seg_y)
+    subgraphs, window = create_subgraphs(graph, seg_x, seg_y, debug=True)
     
     # Get support points from graph
     sup_pts = graph.get_support_points()
@@ -506,14 +593,16 @@ def classify_single_segment(graph, segment_index, seg_x=None, seg_y=None,
     idx = int(segment_index) % len(subgraphs)
     sg_data = subgraphs[idx]
     
-    primary, secondary, near_sup = classify_subgraph_edges(
+    primary, secondary, double, near_sup = classify_subgraph_edges(
         sg_data, sup_pts, near_threshold, parallel_tol
     )
     
     return {
         "primary_lines": primary,
         "secondary_lines": secondary,
+        "double_lines": double,
         "near_support": near_sup,
         "segment_index": idx,
-        "subgraph": sg_data["graph"]
+        "subgraph": sg_data["graph"],
+        "window": window
     }

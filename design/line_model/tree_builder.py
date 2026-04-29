@@ -23,7 +23,7 @@ from config import (
 )
 from compas_rhino.conversions import curve_to_compas_polyline, point_to_compas
 from compas.geometry import Point, Line, Vector, Frame
-import Rhino.Geometry as rg
+import Rhino.Geometry as rg  # type: ignore
 
 
 # --------------------------------------------------
@@ -54,13 +54,19 @@ def point_at(frame, u, v, w=0.0):
 
 
 def project_to_brep(pt, brep):
-    """Project a point to the closest location on a Rhino brep."""
+    """Project a point vertically (Z) onto a Rhino brep."""
     if brep is None:
         return pt
-    p = rg.Point3d(pt.x, pt.y, pt.z)
-    rc = brep.ClosestPoint(p)
-    if rc:
-        return Point(rc.X, rc.Y, rc.Z)
+    origin = rg.Point3d(pt.x, pt.y, pt.z)
+    ray = rg.Ray3d(origin, rg.Vector3d.ZAxis)
+    hits = rg.Intersect.Intersection.RayShoot(ray, [brep], 1)
+    if hits:
+        return Point(hits[0].X, hits[0].Y, hits[0].Z)
+    # Try downward if upward missed
+    ray = rg.Ray3d(origin, -rg.Vector3d.ZAxis)
+    hits = rg.Intersect.Intersection.RayShoot(ray, [brep], 1)
+    if hits:
+        return Point(hits[0].X, hits[0].Y, hits[0].Z)
     return pt
 
 
@@ -161,6 +167,7 @@ def build_level_zero(vertex_grid, sup_pts, z_steps, roof_brep, config):
                 "support": sup,
                 "support_id": sup_id,
                 "reached": reached,
+                "original_corners": corners,
                 "inset_corners": inset_corners,
                 "children": [],
                 "level": 0
@@ -223,6 +230,7 @@ def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config):
                     "support": sup,
                     "support_id": A["support_id"],
                     "reached": reached,
+                    "original_corners": [],
                     "inset_corners": [],
                     "children": child_pts,
                     "level": level
@@ -302,8 +310,8 @@ def build_graph_from_records(records, relations):
 
         # Add inset corner nodes (top level insets are fixed)
         inset_nodes = []
-        for ic in rec["inset_corners"]:
-            ic_node = ng.get_or_add_point_node(ic, ntype="inset", level=0, mobility="fixed")
+        for ic, oc in zip(rec["inset_corners"], rec["original_corners"]):
+            ic_node = ng.get_or_add_point_node(ic, ntype="inset", level=0, mobility="fixed", original_point=oc)
             inset_nodes.append(ic_node)
 
         # Track child nodes
