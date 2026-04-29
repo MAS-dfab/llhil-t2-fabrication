@@ -1,0 +1,7 @@
+README.md
+pyproject.toml
+src/t2_2526.egg-info/PKG-INFO
+src/t2_2526.egg-info/SOURCES.txt
+src/t2_2526.egg-info/dependency_links.txt
+src/t2_2526.egg-info/requires.txt
+src/t2_2526.egg-info/top_level.txt

@@ -31,8 +31,8 @@ from nodegraph import NodeGraph
 # --------------------------------------------------
 # Edge categorization
 # --------------------------------------------------
-def get_default_directions(graph):
-    """Find two original grid diagonal directions from un-inset points."""
+def get_default_directions_xy(graph):
+    """Find two diagonal directions and one orthogonal direction of original grid, from un-inset points."""
     ori_pts = []
     for node in graph.nodes():
         ori_pt = graph.node_attribute(node, "original_point")
@@ -40,14 +40,18 @@ def get_default_directions(graph):
             ori_pts.append(ori_pt)
 
     p0, p1, p2, p3 = ori_pts[:4]
-    default_dir1 = Vector.from_start_end(p0, p2).unitized()
-    default_dir2 = Vector.from_start_end(p1, p3).unitized()
-    return default_dir1, default_dir2
+    vec1 = Vector.from_start_end(p0, p2)
+    vec2 = Vector.from_start_end(p1, p3)
+    vec3 = Vector.from_start_end(p0, p1)
+    vec_xy_1 = Vector(vec1.x, vec1.y, 0.0)
+    vec_xy_2 = Vector(vec2.x, vec2.y, 0.0)
+    vec_xy_3 = Vector(vec3.x, vec3.y, 0.0)
+    return vec_xy_1.unitized(), vec_xy_2.unitized(), vec_xy_3.unitized()
 
 def categorize_edge_types(graph, tol=1e-3):
     """Categorize beams into "orthogonal", "default_diagonal", 'moved_diagonal'"""
     # 1. Find two original grid diagonal directions from un-inset points
-    default_dir1, default_dir2 = get_default_directions(graph)
+    default_dir1, default_dir2, ortho_dir = get_default_directions_xy(graph)
 
     for edge in graph.edges():
         evec = graph.edge_vector(edge)
@@ -62,14 +66,14 @@ def categorize_edge_types(graph, tol=1e-3):
             continue
 
         # 3. Find orthogonal edges
-        dot = abs(edir_xy.dot(Vector(0, 1, 0)))
+        dot = abs(edir_xy.dot(ortho_dir))
         if (1 - tol) <= dot <= (1 + tol) or (0 - tol) <= dot <= (0 + tol):
             graph.edge_attribute(edge, "e_category", "orthogonal")
             continue
 
         # 4. The rest are moved diagonal edges
         graph.edge_attribute(edge, "e_category", "moved_diagonal")
-    return default_dir1, default_dir2
+    return
 
 # --------------------------------------------------
 # Dominant direction analysis
@@ -278,6 +282,7 @@ def classify_edges_in_subgraph(subgraph, parallel_tol=None):
                 else:
                     new_etype = "tertiary"
             subgraph.edge_attribute(edge, "hierarchy", new_etype)
+    return
 
 def combine_graphs(graphs):
     """Combine a list of subgraphs into one graph."""
@@ -299,7 +304,7 @@ def classify_edges_by_Michael(graph, seg_x=None, seg_y=None, parallel_tol=None):
     Hierarchy: 'primary', 'secondary', 'tertiary', 'special'
     """
     # 1. Categorize beams into "orthogonal", "default_diagonal", "moved_diagonal"
-    _, _ = categorize_edge_types(graph)
+    categorize_edge_types(graph)
     # 2. Subdivide structure by "windows".
     _, subgraphs = create_subgraphs(graph, seg_x, seg_y)
 

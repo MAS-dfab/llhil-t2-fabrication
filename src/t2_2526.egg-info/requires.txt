@@ -1,0 +1,9 @@
+compas<3,>=2
+compas_eve<3,>=2
+compas_pb
+immudb-py
+roslibpy<2
+compas_timber @ git+https://github.com/MAS-dfab/compas_timber.git@t2-2526
+compas-fab @ git+https://github.com/MAS-dfab/compas_fab.git@t2_2526
+compas_robots @ git+https://github.com/compas-dev/compas_robots.git@main
+compas_rrc
