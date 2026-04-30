@@ -8,7 +8,7 @@ Usage in Grasshopper:
 
 
 from compas.geometry import Vector, Line, Point, centroid_points, Frame, Box, Plane
-from compas.geometry import distance_point_point_xy
+from compas.geometry import distance_point_point_xy, intersection_segment_plane
 from compas.datastructures import Graph
 from compas_rhino.conversions import line_to_rhino, point_to_rhino
 from nodegraph import NodeGraph
@@ -45,32 +45,38 @@ def _get_line(subgraph, edge):
     return Line(_get_pt(subgraph, u), _get_pt(subgraph, v))
 
 
-def node_lines(subgraph, nodes):
+def _node_lines(subgraph, edges, node):
     """Grt a nested list of all the lines in nodes."""
-    node_lines, node_edges = [], []
+    node_lines = [] 
+    for u, v in edges:
+        if subgraph.edge_attribute((u, v), "shifted_lines"):
+            line = subgraph.edge_attribute((u, v), "shifted_lines")
+            node_lines.append(line)
+        else:
+            # make sure the line is always in direction - from the node
+            u, v = (node, u if node == v else u)
+            line = _get_line(subgraph, (u, v))
+            node_lines.append(line)
     
-    # Step 2: Find all the edges that belong to the node
-    for key in nodes:
-        point = subgraph.node_attribute(key, "point")
-        edges = subgraph.node_edges(key)
-        lines = []
-        for u, v in edges:
-            if subgraph.edge_attribute((u, v), "shifted_lines"):
-                lines.append(subgraph.edge_attribute((u, v), "shifted_lines"))
-            else:
-                line = _get_line(subgraph, (u, v))
-                lines.append(line)
-        node_lines.append(lines)
-        node_edges.append(edges)
-    
-    return node_lines, node_edges
+    return node_lines
+
+def _node_line(subgraph, edge, node):
+    """Edge line that has direction from the given node."""
+    if subgraph.edge_attribute(edge, "shifted_lines"):
+        return subgraph.edge_attribute(edge, "shifted_lines")
+    else:
+        # make sure the line is always in direction - from the node
+        u, v = edge
+        u, v = (node, u if node == v else v)
+        line = Line(_get_pt(subgraph, u), _get_pt(subgraph, v))
+        return line
 
         
 # ==============================================================================
 # Shifting solvers
 # ==============================================================================
 
-def secondary_edges_solver(subgraph, node_edges, secondary_edge):
+def secondary_edges_solver(subgraph, node_edges, secondary_line):
     """
     Applies shifting logic to the secondary category of edges in the cluster of lines in one node.
     
@@ -82,7 +88,6 @@ def secondary_edges_solver(subgraph, node_edges, secondary_edge):
     
     """
     
-    secondary_line = _get_line(subgraph, secondary_edge)
     candidates = []
     
     # Step 1: Iterate trough each dge in the cluster
@@ -102,13 +107,17 @@ def secondary_edges_solver(subgraph, node_edges, secondary_edge):
     v1 = Vector.from_start_end(point, secondary_line.end)
     intersection_plane = Plane.from_point_and_two_vectors(point, v1, [0,0,1])
     # Step 2: Intersect with the best candidates
-    intersection_pts = [intersection_plane.intersection_with_line(cand, tol=.001) for cand in candidates]   
+    intersection_pts = []
+    for cand in candidates:
+        b = intersection_segment_plane(cand, intersection_plane)
+        if b:
+            intersection_pts.append(Point(*b))
     # Step 3: Find heighest intersection point
     highest_pt = max(intersection_pts, key=lambda pt: pt.z)
     # Step 4: Return a new line 
     shifted_line = Line(secondary_line.end, highest_pt)
     
-    return shifted_line
+    return shifted_line, intersection_pts
 
         
 
@@ -129,40 +138,80 @@ def shift_from_subgraph(subgraph, node, debug=True):
     ng = NodeGraph()
     
     # Collect edges by type
+    nodes_edges = {}    
+    global_beams = {}
+    
+    secondary_lines = []
     secondary_edges = []
-    tertiary = []
-    special = []
+    reciprocal_edges = []
+    tertiary_edges = []
+    special_edges = []
     
-    nodes = []    
     all_shifted_lines = []
-    shifted_lines = []
+    all_pts = []
     
-    # Step 1: Find all the nodes for joint resolving task
+    # NOTE: Steps for reciprocal solver: 
+    # Step 1: collect data
+    # Step 2: Find coplanar groups
+    # Step 3: Relaxanitaion 
+    # Step 4: Post relaxatin
+    # Step 5: Final output
+    
+    
+    # Step 1: Find all the nodes for joint resolving task and within the node find all node edges
     for key in subgraph.nodes():
         # remove leaf pts
         if key in subgraph.leaf_nodes() or subgraph.node_attribute(key, "reached") is True:
             continue
-        point = subgraph.node_attribute(key, "point")
-        nodes.append(key)
+        nodes_edges[key] = subgraph.node_edges(key)
     
     
-    node_line, node_edges = node_lines(subgraph, nodes)
+    ### Secondary beams solver
+    # Step 1: Collect edges and establish global beam tracking
+    for u, v in subgraph.edges():
+        etype = subgraph.edge_attribute((u, v), 'hierarchy')
+        if etype in ("secondary"):
+            secondary_edges.append((u, v))
+            
+            # Try to get 'width' from graph. Fallback to engage_len if None.
+            w = subgraph.edge_attribute((u, v), 'width')
+            # shift_dist = (w / 2.0) if w else engage_len
+            
+            p0, p1 = _get_pt(subgraph, u), _get_pt(subgraph, v)
+            
+            global_beams[(u, v)] = {
+                'p0': [p0.x, p0.y, p0.z], 
+                'p1': [p1.x, p1.y, p1.z], 
+                #'shift': shift_dist
+            }
+        else:
+            continue
+    
+    if debug:
+        print(f"Edges: {len(secondary_edges)} secondary")
+
     
     # Iterate trough each edge and solve first secondary lines 
-    for n in node_edges:
-        for u, v in n:
+    for key, edges in nodes_edges.items():
+        # node_lines = _node_lines(subgraph, edges, key)
+        global_intended_moves = {}
+        
+        for u, v in edges:
+            if debug:
+                print(u, v)
             etype = subgraph.edge_attribute((u, v), 'hierarchy')
-            if etype in ("primary"):
-                all_shifted_lines.append(_get_line(subgraph, (u, v)))
             if etype in ("secondary"):
-                shifted_secondary = secondary_edges_solver(subgraph, n, (u, v))
-                node_line[0].append(shifted_secondary)
+                line = _node_line(subgraph, (u, v), key)
+                shifted_secondary, pts = secondary_edges_solver(subgraph, edges, line)
+                global_beams[(u, v)]['p0'] = shifted_secondary.start
+                global_beams[(u, v)]['p0'] = shifted_secondary.end
+                secondary_lines.append(shifted_secondary)
+                all_pts.append(pts)
                 if debug:
                     print("secondary")
-                    print(n[0])
                     print(shifted_secondary)
                 
-    return node_line
+    return secondary_lines, all_pts
 
 
     # _______ solver for secondary edges _______
