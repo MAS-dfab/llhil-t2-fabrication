@@ -306,7 +306,7 @@ def evaluate_constraints_iterative(graph, max_iter=20, tol=1e-4):
 
 
 # -----------------------------------------------------------------------------
-# Convenience builder for your specific case
+#  builder 
 # -----------------------------------------------------------------------------
 
 def bind_level0_secondary_to_primary(graph, default_t=0.8, offset_b=0.0):
