@@ -369,10 +369,10 @@ def _get_line(subgraph, edge):
 # Coplanar Group Detection
 # ==============================================================================
 
-def find_coplanar_groups(subgraph, min_degree=3, plane_tol=0.1, debug=True):
+def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True):
     """
     Find groups of primary+double edges that lie on the same plane.
-    Returns groups where 3+ edges meet at a joint.
+    Returns groups where 2+ edges meet at a joint.
     """
     from compas.geometry import Frame
     
@@ -499,10 +499,11 @@ def find_coplanar_groups(subgraph, min_degree=3, plane_tol=0.1, debug=True):
                 'lines': lines,
                 'normal': [normal.x, normal.y, normal.z],
                 'degree': len(node_edge_list),
+                'angles': angles,
             })
     
     if debug:
-        print(f"\nTotal: {len(groups)} coplanar groups (joints with 3+ edges)")
+        print(f"\nTotal: {len(groups)} coplanar groups (joints with 2+ edges)")
     
     return groups
 
@@ -557,12 +558,36 @@ def _compute_angles(dirs, normal):
     return angles
 
 
+def _line_end_at_node(edge, node):
+    """Return endpoint index (0/1) of edge that coincides with the nexus node."""
+    return 0 if edge[0] == node else 1
+
+
+def _offset_line_at_end(line, end_index, offset):
+    """Move one endpoint of a line by `offset` along its own direction."""
+    p0 = [line.start.x, line.start.y, line.start.z]
+    p1 = [line.end.x, line.end.y, line.end.z]
+
+    if end_index == 0:
+        d = subtract_vectors(p1, p0)
+        if length_vector(d) < 1e-9:
+            return line
+        p0 = add_vectors(p0, scale_vector(normalize_vector(d), offset))
+        return Line(Point(*p0), Point(*p1))
+
+    d = subtract_vectors(p0, p1)
+    if length_vector(d) < 1e-9:
+        return line
+    p1 = add_vectors(p1, scale_vector(normalize_vector(d), offset))
+    return Line(Point(*p0), Point(*p1))
+
+
 # ==============================================================================
 # Main API
 # ==============================================================================
 
-def reciprocal_from_subgraph(subgraph, engage_len=1.0, tol=0.1, rotation_sign=+1, 
-                              min_degree=3, debug=True):
+def reciprocal_from_subgraph(subgraph, engage_len=1.0, tol=0.1, rotation_sign=+1,
+                              min_degree=2, debug=True, straight_angle_threshold_deg=170.0):
     """
     Reciprocalize primary+double lines from a classified subgraph.
     
@@ -615,8 +640,23 @@ def reciprocal_from_subgraph(subgraph, engage_len=1.0, tol=0.1, rotation_sign=+1
     for gi, g in enumerate(groups):
         if debug:
             print(f"\n--- Group {gi}: {g['degree']} lines at node {g['node']} ---")
-        # if len(g['edges']) > 3:
-        #     engage_len = 0.4
+
+        # Rule 2: if nexus angle is too straight, do not reciprocalize at this group.
+        if g.get('angles') and max(g['angles']) > straight_angle_threshold_deg:
+            if debug:
+                print(f"  skipped: max angle {max(g['angles']):.1f}° > {straight_angle_threshold_deg:.1f}°")
+            shifted.extend(g['lines'])
+            continue
+
+        # Rule 1: valency-2 special case before reciprocalization.
+        # Keep one edge fixed and move the other away from the nexus by engage_len.
+        if g['degree'] == 2 and len(g['lines']) == 2:
+            fixed_line = g['lines'][0]
+            moving_line = g['lines'][1]
+            moving_end_index = _line_end_at_node(g['edges'][1], g['node'])
+            shifted.extend([fixed_line, _offset_line_at_end(moving_line, moving_end_index, engage_len)])
+            continue
+
         solver = ReciprocalSolver(g['lines'], engage_len=engage_len, tol=tol)
         
         if not solver.vertices:
@@ -647,8 +687,8 @@ def reciprocal_from_subgraph(subgraph, engage_len=1.0, tol=0.1, rotation_sign=+1
         }
     }
 
-def reciprocal_width_from_subgraph(subgraph, engage_len=0.11, tol=0.1, rotation_sign=+1, 
-                              min_degree=3, iterations=5, debug=True):
+def reciprocal_width_from_subgraph(subgraph, engage_len=0.11, tol=0.1, rotation_sign=+1,
+                              min_degree=2, iterations=5, debug=True, straight_angle_threshold_deg=170.0):
     """
     Reciprocalize lines using Global Relaxation to solve the see-saw effect,
     followed by a final cyclic intersection trimming pass.
@@ -698,6 +738,25 @@ def reciprocal_width_from_subgraph(subgraph, engage_len=0.11, tol=0.1, rotation_
         global_intended_moves = {}
         
         for g in groups:
+            # Rule 2: skip near-straight nexus groups.
+            if g.get('angles') and max(g['angles']) > straight_angle_threshold_deg:
+                continue
+
+            # Rule 1: valency-2 special case before reciprocalization.
+            if g['degree'] == 2 and len(g['edges']) == 2:
+                moving_edge = g['edges'][1] if g['edges'][1] in global_beams else (g['edges'][1][1], g['edges'][1][0])
+                node = g['node']
+                b = global_beams[moving_edge]
+                if moving_edge[0] == node:
+                    d = subtract_vectors(b['p1'], b['p0'])
+                    if length_vector(d) > 1e-9:
+                        b['p0'] = add_vectors(b['p0'], scale_vector(normalize_vector(d), engage_len))
+                else:
+                    d = subtract_vectors(b['p0'], b['p1'])
+                    if length_vector(d) > 1e-9:
+                        b['p1'] = add_vectors(b['p1'], scale_vector(normalize_vector(d), engage_len))
+                continue
+
             current_lines = []
             beam_mapping = [] 
             

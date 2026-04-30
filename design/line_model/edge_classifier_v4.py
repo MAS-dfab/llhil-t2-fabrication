@@ -2,14 +2,14 @@
 Edge classifier v4.
 
 Differences from v3:
-- Keep PRIMARY logic from v3.
-- Reclassify every NON-PRIMARY edge by node-level logic:
-  - `secondary`: non-primary leaf edges touching level 0
-  - `tertiary`: edges connecting levels (0, 1)
-  - `quaternary`: edges connecting levels (1, 2)
-  - `ignored`: everything else non-primary
-
-This intentionally ignores the old `special` bucket for now.
+- Keep v3 primary detection, then split primaries into:
+  - `primary_orthogonal`
+  - `primary_diagonal_<L0>_<L1>` (level-pair buckets)
+- Reclassify every non-primary edge by node-level logic:
+  - `secondary`: only (0,0) leaf edges
+  - `tertiary`: (0,1)
+  - `quaternary`: (1,2)
+  - `ignored`: everything else
 """
 
 import edge_classifier_v3 as v3
@@ -59,18 +59,44 @@ def _reclassify_non_primary_by_level(subgraph):
         subgraph.edge_attribute(edge, "hierarchy", new_h)
 
 
+def _reclassify_primary_by_category_and_level(subgraph):
+    """Split primary into orthogonal vs diagonal(level-pair) buckets."""
+    for edge in subgraph.edges():
+        hie = subgraph.edge_attribute(edge, "hierarchy")
+        if hie != "primary":
+            continue
+
+        cat = subgraph.edge_attribute(edge, "e_category")
+        pair = _level_pair(subgraph, edge)
+
+        if cat == "orthogonal":
+            new_h = "primary_orthogonal"
+        else:
+            # default_diagonal + moved_diagonal are grouped as diagonal by level
+            new_h = "primary_diagonal_{}_{}".format(pair[0], pair[1])
+
+        subgraph.edge_attribute(edge, "hierarchy", new_h)
+
+
 def classify_edges_in_subgraph(subgraph, sup_pts, parallel_tol=None, near_threshold=None):
     """
     v4 subgraph classification.
 
-    Step 1: run v3 classifier (for primary detection and base attrs).
-    Step 2: override all non-primary hierarchies by level logic.
+    Step 1: run v3 classifier (for base detection).
+    Step 2: override non-primary hierarchies by level logic.
+    Step 3: split primary into orthogonal/diagonal(level).
     """
     if near_threshold is None:
         near_threshold = DEFAULT_NEAR_THRESHOLD
 
     v3.classify_edges_in_subgraph(subgraph, sup_pts, parallel_tol=parallel_tol, near_threshold=near_threshold)
+
+    # Preserve raw v3 hierarchy for optional debugging.
+    for edge in subgraph.edges():
+        subgraph.edge_attribute(edge, "hierarchy_base", subgraph.edge_attribute(edge, "hierarchy"))
+
     _reclassify_non_primary_by_level(subgraph)
+    _reclassify_primary_by_category_and_level(subgraph)
 
 
 def classify_edges(graph, seg_x=None, seg_y=None, parallel_tol=None):
@@ -81,7 +107,8 @@ def classify_edges(graph, seg_x=None, seg_y=None, parallel_tol=None):
     -------
     list[NodeGraph]
         Subgraphs with edge hierarchy in:
-        primary / secondary / tertiary / quaternary / ignored
+        primary_orthogonal / primary_diagonal_<L0>_<L1> /
+        secondary / tertiary / quaternary / ignored
     """
     # Keep edge-category setup from v3.
     _, _ = categorize_edge_types(graph)
@@ -92,4 +119,3 @@ def classify_edges(graph, seg_x=None, seg_y=None, parallel_tol=None):
         classify_edges_in_subgraph(sg, sup_pts, parallel_tol=parallel_tol)
 
     return subgraphs
-

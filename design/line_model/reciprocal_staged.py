@@ -49,13 +49,38 @@ def _set_node_point(graph, node, pt):
     graph.node_attribute(node, "z", pt.z)
 
 
+def _is_primary_orthogonal(edge_hierarchy, edge_category):
+    # v4 naming
+    if edge_hierarchy == "primary_orthogonal":
+        return True
+    # v3 naming fallback
+    return edge_hierarchy == "primary" and edge_category == "orthogonal"
+
+
+def _is_primary_diagonal(edge_hierarchy, edge_category):
+    # v4 naming
+    if isinstance(edge_hierarchy, str) and edge_hierarchy.startswith("primary_diagonal_"):
+        return True
+    # v3 naming fallback
+    return edge_hierarchy == "primary" and edge_category in ("default_diagonal", "moved_diagonal")
+
+
+def _is_primary_any(edge_hierarchy, edge_category):
+    return _is_primary_orthogonal(edge_hierarchy, edge_category) or _is_primary_diagonal(edge_hierarchy, edge_category)
+
+
 def _select_active_edges(graph, category_set):
     active = set()
     for e in graph.edges():
-        if graph.edge_attribute(e, "hierarchy") != "primary":
-            continue
-        if graph.edge_attribute(e, "e_category") in category_set:
-            active.add(_edge_key(e))
+        h = graph.edge_attribute(e, "hierarchy")
+        c = graph.edge_attribute(e, "e_category")
+
+        if "orthogonal" in category_set:
+            if _is_primary_orthogonal(h, c):
+                active.add(_edge_key(e))
+        else:
+            if _is_primary_diagonal(h, c):
+                active.add(_edge_key(e))
     return active
 
 
@@ -173,8 +198,16 @@ def reciprocal_staged_primary_from_subgraph(
 
     stage_1_shifted = [_line_from_edge(s1_graph, e) for e in s1_graph.edges() if _edge_key(e) in s1_active]
     stage_2_shifted = [_line_from_edge(s2_graph, e) for e in s2_graph.edges() if _edge_key(e) in s2_active]
-    primary_shifted = [_line_from_edge(working, e) for e in working.edges() if working.edge_attribute(e, "hierarchy") == "primary"]
-    non_primary = [_line_from_edge(working, e) for e in working.edges() if working.edge_attribute(e, "hierarchy") != "primary"]
+    primary_shifted = []
+    non_primary = []
+    for e in working.edges():
+        h = working.edge_attribute(e, "hierarchy")
+        c = working.edge_attribute(e, "e_category")
+        ln = _line_from_edge(working, e)
+        if _is_primary_any(h, c):
+            primary_shifted.append(ln)
+        else:
+            non_primary.append(ln)
 
     return {
         "graph": working,
@@ -206,8 +239,10 @@ def reciprocal_diagonal_primary_from_subgraph(
     debug=False,
 ):
     """
-    Reciprocal only on primary diagonals:
-    e_category in ('default_diagonal', 'moved_diagonal').
+    Reciprocal only on primary diagonals.
+    Supports both:
+    - v3 naming: hierarchy='primary' + diagonal categories
+    - v4 naming: hierarchy='primary_diagonal_*'
     """
     working = _clone(subgraph)
     active = _select_active_edges(working, {"default_diagonal", "moved_diagonal"})

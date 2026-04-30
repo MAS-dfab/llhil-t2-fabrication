@@ -66,11 +66,21 @@ def commit_generated_lines(graph, hierarchy_filter=None, category_filter=None, c
     elif category_filter is not None:
         category_filter = set(category_filter)
 
+    def _hierarchy_match(edge_h):
+        if hierarchy_filter is None:
+            return True
+        if edge_h == hierarchy_filter:
+            return True
+        # v4 compatibility alias: "primary" matches all primary_* buckets
+        if hierarchy_filter == "primary":
+            return edge_h == "primary_orthogonal" or (isinstance(edge_h, str) and edge_h.startswith("primary_diagonal_"))
+        return False
+
     for e in graph.edges():
         gl = graph.edge_attribute(e, "generated_line")
         if gl is None:
             continue
-        if hierarchy_filter is not None and graph.edge_attribute(e, "hierarchy") != hierarchy_filter:
+        if not _hierarchy_match(graph.edge_attribute(e, "hierarchy")):
             continue
         if category_filter is not None and graph.edge_attribute(e, "e_category") not in category_filter:
             continue
@@ -134,8 +144,16 @@ def regenerate_edges_move_one_node_vertical(
         u, v = edge
         return tuple(sorted((graph.node_attribute(u, "level"), graph.node_attribute(v, "level"))))
 
+    def _hierarchy_match(edge_h, wanted_h):
+        if edge_h == wanted_h:
+            return True
+        # v4 compatibility alias
+        if wanted_h == "primary":
+            return edge_h == "primary_orthogonal" or (isinstance(edge_h, str) and edge_h.startswith("primary_diagonal_"))
+        return False
+
     def is_target(edge):
-        if graph.edge_attribute(edge, "hierarchy") != target_hierarchy:
+        if not _hierarchy_match(graph.edge_attribute(edge, "hierarchy"), target_hierarchy):
             return False
         if target_categories is not None and graph.edge_attribute(edge, "e_category") not in target_categories:
             return False
@@ -148,7 +166,7 @@ def regenerate_edges_move_one_node_vertical(
         return True
 
     def is_host(edge):
-        if graph.edge_attribute(edge, "hierarchy") != host_hierarchy:
+        if not _hierarchy_match(graph.edge_attribute(edge, "hierarchy"), host_hierarchy):
             return False
         if host_categories is not None and graph.edge_attribute(edge, "e_category") not in host_categories:
             return False
