@@ -111,16 +111,18 @@ def _run_reciprocal_masked(
     debug=False,
 ):
     backup = _mask_hierarchy(graph, active_keys, demote_to="tertiary")
-    reciprocal_width_from_subgraph(
-        graph,
-        engage_len=engage_len,
-        tol=tol,
-        rotation_sign=rotation_sign,
-        min_degree=min_degree,
-        iterations=iterations,
-        debug=debug,
-    )
-    _restore_hierarchy(graph, backup)
+    try:
+        reciprocal_width_from_subgraph(
+            graph,
+            engage_len=engage_len,
+            tol=tol,
+            rotation_sign=rotation_sign,
+            min_degree=min_degree,
+            iterations=iterations,
+            debug=debug,
+        )
+    finally:
+        _restore_hierarchy(graph, backup)
 
 
 def _copy_shifted_lines(dst_graph, src_graph):
@@ -129,6 +131,34 @@ def _copy_shifted_lines(dst_graph, src_graph):
         if line is not None:
             dst_graph.edge_attribute(e, "shifted_lines", line)
             dst_graph.edge_attribute(e, "line", line)
+
+
+def _collect_edge_lines(graph, active_keys=None, invert=False):
+    lines = []
+    for edge in graph.edges():
+        key = _edge_key(edge)
+        if active_keys is not None:
+            is_active = key in active_keys
+            if is_active == invert:
+                continue
+        lines.append(_line_from_edge(graph, edge))
+    return [line for line in lines if line is not None]
+
+
+def _split_primary_lines(graph):
+    primary = []
+    non_primary = []
+    for edge in graph.edges():
+        h = graph.edge_attribute(edge, "hierarchy")
+        c = graph.edge_attribute(edge, "e_category")
+        ln = _line_from_edge(graph, edge)
+        if ln is None:
+            continue
+        if _is_primary_any(h, c):
+            primary.append(ln)
+        else:
+            non_primary.append(ln)
+    return primary, non_primary
 
 
 def _sync_generated_diagonals_to_nodes(graph, active_keys):
@@ -196,28 +226,19 @@ def reciprocal_staged_primary_from_subgraph(
     )
     _copy_shifted_lines(working, s2_graph)
 
-    stage_1_shifted = [_line_from_edge(s1_graph, e) for e in s1_graph.edges() if _edge_key(e) in s1_active]
-    stage_2_shifted = [_line_from_edge(s2_graph, e) for e in s2_graph.edges() if _edge_key(e) in s2_active]
-    primary_shifted = []
-    non_primary = []
-    for e in working.edges():
-        h = working.edge_attribute(e, "hierarchy")
-        c = working.edge_attribute(e, "e_category")
-        ln = _line_from_edge(working, e)
-        if _is_primary_any(h, c):
-            primary_shifted.append(ln)
-        else:
-            non_primary.append(ln)
+    stage_1_shifted = _collect_edge_lines(s1_graph, s1_active)
+    stage_2_shifted = _collect_edge_lines(s2_graph, s2_active)
+    primary_shifted, non_primary = _split_primary_lines(working)
 
     return {
         "graph": working,
         "stage_1": {"graph": s1_graph, "active_edges": sorted(list(s1_active))},
         "stage_2": {"graph": s2_graph, "active_edges": sorted(list(s2_active))},
         "viz": {
-            "stage_1_shifted_lines": [ln for ln in stage_1_shifted if ln is not None],
-            "stage_2_shifted_lines": [ln for ln in stage_2_shifted if ln is not None],
-            "primary_shifted_lines": [ln for ln in primary_shifted if ln is not None],
-            "non_primary_lines": [ln for ln in non_primary if ln is not None],
+            "stage_1_shifted_lines": stage_1_shifted,
+            "stage_2_shifted_lines": stage_2_shifted,
+            "primary_shifted_lines": primary_shifted,
+            "non_primary_lines": non_primary,
         },
         "info": {
             "structure_preserved": True,
@@ -252,13 +273,13 @@ def reciprocal_diagonal_primary_from_subgraph(
         working, active, engage_len, tol, rotation_sign, min_degree, iterations, debug
     )
 
-    shifted_diagonal = [_line_from_edge(working, e) for e in working.edges() if _edge_key(e) in active]
-    untouched = [_line_from_edge(working, e) for e in working.edges() if _edge_key(e) not in active]
+    shifted_diagonal = _collect_edge_lines(working, active)
+    untouched = _collect_edge_lines(working, active, invert=True)
 
     return {
         "graph": working,
-        "shifted_diagonal_lines": [ln for ln in shifted_diagonal if ln is not None],
-        "untouched_lines": [ln for ln in untouched if ln is not None],
+        "shifted_diagonal_lines": shifted_diagonal,
+        "untouched_lines": untouched,
         "info": {
             "active_diagonal_count": len(active),
             "structure_preserved": True,
