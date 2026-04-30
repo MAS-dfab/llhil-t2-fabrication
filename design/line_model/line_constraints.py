@@ -59,6 +59,16 @@ def _line_param_and_on_segment(line, point, tol=1e-6):
     return t, (-tol <= t <= 1.0 + tol)
 
 
+def _point_shifted_along_line(point, line, distance):
+    if abs(float(distance)) < 1e-12:
+        return point
+    direction = Vector.from_start_end(line.start, line.end)
+    if direction.length < 1e-12:
+        return point
+    direction.unitize()
+    return point + direction * float(distance)
+
+
 def commit_generated_lines(graph, hierarchy_filter=None, category_filter=None, clear_generated=False):
     committed = []
     if isinstance(category_filter, str):
@@ -106,7 +116,7 @@ def commit_generated_lines(graph, hierarchy_filter=None, category_filter=None, c
     }
 
 
-def regenerate_edges_move_one_node_vertical(
+def regenerate_edges(
     graph,
     target_hierarchy,
     target_categories=None,
@@ -117,6 +127,7 @@ def regenerate_edges_move_one_node_vertical(
     host_categories=None,
     host_level_pair=None,
     choose="up",
+    shift_along_host=0.0,
     prefer_on_segment=True,
     write_attribute=True,
     debug=False,
@@ -287,6 +298,10 @@ def regenerate_edges_move_one_node_vertical(
         else:
             ipt, selected_host, _sel_t, _sel_on_seg = max(candidates, key=lambda p: p[0].z)
 
+        selected_host_line = _get_line(graph, selected_host)
+        if selected_host_line is not None:
+            ipt = _point_shifted_along_line(ipt, selected_host_line, shift_along_host)
+
         new_line = Line(ipt, fixed_pt) if moved == u else Line(fixed_pt, ipt)
 
         if write_attribute:
@@ -300,7 +315,7 @@ def regenerate_edges_move_one_node_vertical(
         processed_edges.append(e)
         probe_lines.append(probe_line)
         selected_points.append(ipt)
-        sh = _get_line(graph, selected_host)
+        sh = selected_host_line
         if sh is not None:
             selected_host_lines.append(sh)
             host_t, host_on_seg = _line_param_and_on_segment(sh, ipt)
@@ -328,15 +343,7 @@ def regenerate_edges_move_one_node_vertical(
         "graph": graph,
         "target_edges": target_edges,
         "generated_lines": generated_lines,
-        "untouched_lines": untouched_lines,
-        "processed_edges": processed_edges,
-        "viz": {
-            "probe_lines": probe_lines,
-            "selected_points": selected_points,
-            "all_intersection_points": all_intersection_points,
-            "selected_host_lines": selected_host_lines,
-            "intersection_markers": intersection_markers,
-        },
+        
         "info": {
             "target_hierarchy": target_hierarchy,
             "target_categories": list(target_categories) if target_categories is not None else None,
@@ -347,6 +354,7 @@ def regenerate_edges_move_one_node_vertical(
             "host_categories": list(host_categories) if host_categories is not None else None,
             "host_level_pair": req_host_pair,
             "choose": str(choose).lower(),
+            "shift_along_host": float(shift_along_host),
             "prefer_on_segment": bool(prefer_on_segment),
             "target_count": len(target_edges),
             "generated_count": len(processed_edges),
@@ -355,3 +363,40 @@ def regenerate_edges_move_one_node_vertical(
         },
         "host_debug": host_debug if debug else None,
     }
+
+
+def regenerate_edges_move_one_node_vertical(
+    graph,
+    target_hierarchy,
+    target_categories=None,
+    target_level_pair=None,
+    target_nodes=None,
+    move_node_level=0,
+    host_hierarchy="primary",
+    host_categories=None,
+    host_level_pair=None,
+    choose="up",
+    shift_along_host=0.0,
+    prefer_on_segment=True,
+    write_attribute=True,
+    debug=False,
+):
+    """
+    Backward-compatible alias for regenerate_edges_move_node_vertical.
+    """
+    return regenerate_edges_move_node_vertical(
+        graph=graph,
+        target_hierarchy=target_hierarchy,
+        target_categories=target_categories,
+        target_level_pair=target_level_pair,
+        target_nodes=target_nodes,
+        move_node_level=move_node_level,
+        host_hierarchy=host_hierarchy,
+        host_categories=host_categories,
+        host_level_pair=host_level_pair,
+        choose=choose,
+        shift_along_host=shift_along_host,
+        prefer_on_segment=prefer_on_segment,
+        write_attribute=write_attribute,
+        debug=debug,
+    )
