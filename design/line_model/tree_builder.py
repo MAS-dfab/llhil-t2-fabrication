@@ -153,7 +153,7 @@ def build_level_zero(vertex_grid, sup_pts, z_steps, roof_brep, config):
             sup = sup_pts[sup_id]
 
             # Compute apex with group-based height factor
-            t = z_steps[1] if group_id == 0 else z_steps[1] * 1.5
+            t = z_steps[0][1] if group_id == 0 else z_steps[1][1]# * 1.5
             apex_z = center.z + t * (sup.z - center.z)
             apex = Point(center.x, center.y, apex_z)
 
@@ -216,7 +216,8 @@ def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config):
                 A = children[0]
                 sup = A["support"]
                 group_id = A["group"]
-                t = z_steps[level + 1]
+                t_base = z_steps[0] if group_id == 0 else z_steps[1]
+                t = t_base[level + 1]
                 parent_z = avg_z + t * (sup.z - avg_z)
                 parent = Point(px, py, parent_z)
 
@@ -402,19 +403,22 @@ def build_tree_graph(
     }
     
     # Default z_steps
-    if not z_steps or len(z_steps) < num_levels + 1:
-        z_steps = [i / float(num_levels) for i in range(num_levels + 1)]
+    if debug:
+        print(z_steps)
+    # if not z_steps or len(z_steps) < num_levels + 1:
+    #     z_steps = [i / float(num_levels) for i in range(num_levels + 1)]
     
     # Setup
     plane, lx, ly = get_plane_and_size(boundary)
     sup_pts = [point_to_compas(s) for s in supports]
     vertex_grid = create_vertex_grid(plane, div_x, div_y, lx, ly)
-    
+    if debug:
+        print(z_steps)
     # Build levels
     cell_grid, records_l0, relations_l0 = build_level_zero(
         vertex_grid, sup_pts, z_steps, roof_brep, config
     )
-    
+
     records_upper, relations_upper = build_higher_levels(
         cell_grid, sup_pts, z_steps, num_levels, config
     )
