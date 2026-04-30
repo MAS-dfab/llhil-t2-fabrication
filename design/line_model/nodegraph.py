@@ -529,6 +529,18 @@ class NodeGraph(Graph):
         return [self.node_attribute(n, "point") for n in self.neighbors(node)
                 if self.node_attribute(n, "point") is not None]
 
+    def is_edge_on_brim(self, edge):
+        """Check if an edge is at the top edge of the structure."""
+        if not self.is_leaf_edge(edge):
+            return False
+        
+        for node in edge:
+            if self.degree(node) != 1:
+                parent = node
+        
+        return self.degree(parent) == 5 or self.degree(parent) == 6  # or self.degree(parent) != 8
+
+
     # --------------------------------------------------
     # Serialization (using COMPAS Graph methods)
     # --------------------------------------------------

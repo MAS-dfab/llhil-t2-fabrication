@@ -153,7 +153,7 @@ def build_level_zero(vertex_grid, sup_pts, z_steps, roof_brep, config):
             sup = sup_pts[sup_id]
 
             # Compute apex with group-based height factor
-            t = z_steps[1] if group_id == 0 else z_steps[1] * 1.5
+            t = z_steps[0][1] if group_id == 0 else z_steps[1][1]# * 1.5
             apex_z = center.z + t * (sup.z - center.z)
             apex = Point(center.x, center.y, apex_z)
 
@@ -176,8 +176,9 @@ def build_level_zero(vertex_grid, sup_pts, z_steps, roof_brep, config):
             cell_grid[j][i] = rec
             records.append(rec)
 
+            edge_level = 0
             for ic in inset_corners:
-                relations.append((apex, ic, group_id, "apex_inset"))
+                relations.append((apex, ic, group_id, "apex_inset", edge_level))
     
     return cell_grid, records, relations
 
@@ -216,7 +217,8 @@ def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config):
                 A = children[0]
                 sup = A["support"]
                 group_id = A["group"]
-                t = z_steps[level + 1]
+                t_base = z_steps[0] if group_id == 0 else z_steps[1]
+                t = t_base[level + 1]
                 parent_z = avg_z + t * (sup.z - avg_z)
                 parent = Point(px, py, parent_z)
 
@@ -240,7 +242,8 @@ def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config):
                 records.append(rec)
 
                 for ch in child_pts:
-                    relations.append((parent, ch, A["group"], "parent_child"))
+                    edge_level = level + 1
+                    relations.append((parent, ch, A["group"], "parent_child", edge_level))
 
         cell_grid = new_grid
     
@@ -322,10 +325,10 @@ def build_graph_from_records(records, relations):
         ng.node_attribute(apex_node, "children", child_nodes)
 
     # Add edges from relations
-    for p1, p2, group_id, etype in relations:
+    for p1, p2, group_id, etype, edge_level in relations:
         u = ng.get_or_add_point_node(p1)
         v = ng.get_or_add_point_node(p2)
-        ng.add_graph_edge(u, v, group=group_id, etype=etype)
+        ng.add_graph_edge(u, v, group=group_id, etype=etype, level=edge_level)
     
     return ng
 
@@ -402,19 +405,22 @@ def build_tree_graph(
     }
     
     # Default z_steps
-    if not z_steps or len(z_steps) < num_levels + 1:
-        z_steps = [i / float(num_levels) for i in range(num_levels + 1)]
+    if debug:
+        print(z_steps)
+    # if not z_steps or len(z_steps) < num_levels + 1:
+    #     z_steps = [i / float(num_levels) for i in range(num_levels + 1)]
     
     # Setup
     plane, lx, ly = get_plane_and_size(boundary)
     sup_pts = [point_to_compas(s) for s in supports]
     vertex_grid = create_vertex_grid(plane, div_x, div_y, lx, ly)
-    
+    if debug:
+        print(z_steps)
     # Build levels
     cell_grid, records_l0, relations_l0 = build_level_zero(
         vertex_grid, sup_pts, z_steps, roof_brep, config
     )
-    
+
     records_upper, relations_upper = build_higher_levels(
         cell_grid, sup_pts, z_steps, num_levels, config
     )
