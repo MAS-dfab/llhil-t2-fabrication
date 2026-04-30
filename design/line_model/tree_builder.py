@@ -176,8 +176,9 @@ def build_level_zero(vertex_grid, sup_pts, z_steps, roof_brep, config):
             cell_grid[j][i] = rec
             records.append(rec)
 
+            edge_level = 0
             for ic in inset_corners:
-                relations.append((apex, ic, group_id, "apex_inset"))
+                relations.append((apex, ic, group_id, "apex_inset", edge_level))
     
     return cell_grid, records, relations
 
@@ -241,7 +242,8 @@ def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config):
                 records.append(rec)
 
                 for ch in child_pts:
-                    relations.append((parent, ch, A["group"], "parent_child"))
+                    edge_level = level + 1
+                    relations.append((parent, ch, A["group"], "parent_child", edge_level))
 
         cell_grid = new_grid
     
@@ -323,10 +325,10 @@ def build_graph_from_records(records, relations):
         ng.node_attribute(apex_node, "children", child_nodes)
 
     # Add edges from relations
-    for p1, p2, group_id, etype in relations:
+    for p1, p2, group_id, etype, edge_level in relations:
         u = ng.get_or_add_point_node(p1)
         v = ng.get_or_add_point_node(p2)
-        ng.add_graph_edge(u, v, group=group_id, etype=etype)
+        ng.add_graph_edge(u, v, group=group_id, etype=etype, level=edge_level)
     
     return ng
 
