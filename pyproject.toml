@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=66.0"]
+build-backend = "setuptools.build_meta"
+
+# ============================================================================
+# project info
+# ============================================================================
+
+[project]
+name = "t2_2526"
+description = "LLHIL T2 Fabrication"
+keywords = []
+authors = [
+    { name = "Ananya Kango", email = "akango@ethz.ch" },
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.11"
+dynamic = ['version']
+dependencies = [
+    "compas >= 2,<3",
+    "compas_eve >= 2,<3",
+    "compas_pb",
+    "immudb-py",
+    "roslibpy<2",       # pin to avoid breaking changes in roslibpy 2.0
+    
+    # agents requirements
+    "compas_timber @ git+https://github.com/MAS-dfab/compas_timber.git@t2-2526",
+    "compas-fab @ git+https://github.com/MAS-dfab/compas_fab.git@t2_2526",
+    "compas_robots @ git+https://github.com/compas-dev/compas_robots.git@main",
+    "compas_rrc"
+]
