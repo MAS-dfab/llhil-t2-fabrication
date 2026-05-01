@@ -44,18 +44,13 @@ def _get_line(graph, edge):
 
 
 def _line_param_and_on_segment(line, point, tol=1e-6):
-    a = line.start
-    b = line.end
-    abx = b.x - a.x
-    aby = b.y - a.y
-    abz = b.z - a.z
-    apx = point.x - a.x
-    apy = point.y - a.y
-    apz = point.z - a.z
-    denom = abx * abx + aby * aby + abz * abz
-    if denom < 1e-12:
+    closest = line.closest_point(point)
+    direction = line.direction
+    length_sq = direction.length ** 2
+    if length_sq < 1e-12:
         return 0.0, False
-    t = (apx * abx + apy * aby + apz * abz) / denom
+    vec = closest - line.start
+    t = vec.dot(direction) / length_sq
     return t, (-tol <= t <= 1.0 + tol)
 
 
@@ -164,26 +159,26 @@ def regenerate_edges(
         return False
 
     def is_target(edge):
-        if not _hierarchy_match(graph.edge_attribute(edge, "hierarchy"), target_hierarchy):
-            return False
-        if target_categories is not None and graph.edge_attribute(edge, "e_category") not in target_categories:
-            return False
-        if req_target_pair is not None and edge_level_pair(edge) != req_target_pair:
-            return False
-        if target_nodes is not None:
-            u, v = edge
-            if u not in target_nodes and v not in target_nodes:
-                return False
-        return True
+        h = graph.edge_attribute(edge, "hierarchy")
+        if _hierarchy_match(h, target_hierarchy):
+            cat = graph.edge_attribute(edge, "e_category")
+            if target_categories is None or cat in target_categories:
+                if req_target_pair is None or edge_level_pair(edge) == req_target_pair:
+                    if target_nodes is None:
+                        return True
+                    u, v = edge
+                    if u in target_nodes or v in target_nodes:
+                        return True
+        return False
 
     def is_host(edge):
-        if not _hierarchy_match(graph.edge_attribute(edge, "hierarchy"), host_hierarchy):
-            return False
-        if host_categories is not None and graph.edge_attribute(edge, "e_category") not in host_categories:
-            return False
-        if req_host_pair is not None and edge_level_pair(edge) != req_host_pair:
-            return False
-        return True
+        h = graph.edge_attribute(edge, "hierarchy")
+        if _hierarchy_match(h, host_hierarchy):
+            cat = graph.edge_attribute(edge, "e_category")
+            if host_categories is None or cat in host_categories:
+                if req_host_pair is None or edge_level_pair(edge) == req_host_pair:
+                    return True
+        return False
 
     target_edges = []
     generated_lines = []
@@ -210,28 +205,25 @@ def regenerate_edges(
         lv = graph.node_attribute(v, "level")
 
         if target_nodes is not None:
-            u_ok = (u in target_nodes and lu == move_node_level)
-            v_ok = (v in target_nodes and lv == move_node_level)
-            if u_ok and not v_ok:
+            if u in target_nodes and lu == move_node_level:
                 moved, fixed = u, v
-            elif v_ok and not u_ok:
+            elif v in target_nodes and lv == move_node_level:
                 moved, fixed = v, u
-            elif u_ok and v_ok:
-                moved, fixed = u, v
             else:
                 untouched_lines.append(current_line)
                 if debug:
                     host_debug.append({"edge": e, "reason": "target_nodes_level_mismatch"})
                 continue
-        elif lu == move_node_level:
-            moved, fixed = u, v
-        elif lv == move_node_level:
-            moved, fixed = v, u
         else:
-            untouched_lines.append(current_line)
-            if debug:
-                host_debug.append({"edge": e, "reason": "move_node_level_not_found", "levels": (lu, lv)})
-            continue
+            if lu == move_node_level:
+                moved, fixed = u, v
+            elif lv == move_node_level:
+                moved, fixed = v, u
+            else:
+                untouched_lines.append(current_line)
+                if debug:
+                    host_debug.append({"edge": e, "reason": "move_node_level_not_found", "levels": (lu, lv)})
+                continue
 
         if moved == u:
             moved_pt = current_line.start
@@ -364,39 +356,3 @@ def regenerate_edges(
         "host_debug": host_debug if debug else None,
     }
 
-
-def regenerate_edges_move_one_node_vertical(
-    graph,
-    target_hierarchy,
-    target_categories=None,
-    target_level_pair=None,
-    target_nodes=None,
-    move_node_level=0,
-    host_hierarchy="primary",
-    host_categories=None,
-    host_level_pair=None,
-    choose="up",
-    shift_along_host=0.0,
-    prefer_on_segment=True,
-    write_attribute=True,
-    debug=False,
-):
-    """
-    Backward-compatible alias for regenerate_edges_move_node_vertical.
-    """
-    return regenerate_edges_move_node_vertical(
-        graph=graph,
-        target_hierarchy=target_hierarchy,
-        target_categories=target_categories,
-        target_level_pair=target_level_pair,
-        target_nodes=target_nodes,
-        move_node_level=move_node_level,
-        host_hierarchy=host_hierarchy,
-        host_categories=host_categories,
-        host_level_pair=host_level_pair,
-        choose=choose,
-        shift_along_host=shift_along_host,
-        prefer_on_segment=prefer_on_segment,
-        write_attribute=write_attribute,
-        debug=debug,
-    )
