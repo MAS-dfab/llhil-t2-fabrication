@@ -17,7 +17,7 @@ from compas.geometry import Vector, Line, Point, centroid_points
 from compas.geometry import distance_point_point_xy
 from compas.datastructures import Graph
 import math
-
+import edge_classifier_v3 as v3  # for reuse of base classification logic
 
 def categorize_edge_types(graph):
     """

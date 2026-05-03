@@ -27,7 +27,6 @@ from config import (
 import math
 from nodegraph import NodeGraph
 
-
 # --------------------------------------------------
 # Edge categorization
 # --------------------------------------------------

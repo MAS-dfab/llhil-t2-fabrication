@@ -587,7 +587,7 @@ def _offset_line_at_end(line, end_index, offset):
 # ==============================================================================
 
 def reciprocal_from_subgraph(subgraph, engage_len=1.0, tol=0.1, rotation_sign=+1,
-                              min_degree=2, debug=True, straight_angle_threshold_deg=170.0):
+                              min_degree=2, debug=True, straight_angle_threshold_deg=178.0):
     """
     Reciprocalize primary+double lines from a classified subgraph.
     
@@ -688,7 +688,7 @@ def reciprocal_from_subgraph(subgraph, engage_len=1.0, tol=0.1, rotation_sign=+1
     }
 
 def reciprocal_width_from_subgraph(subgraph, engage_len=0.11, tol=0.1, rotation_sign=+1,
-                              min_degree=2, iterations=5, debug=True, straight_angle_threshold_deg=170.0):
+                              min_degree=2, iterations=10, debug=True, straight_angle_threshold_deg=178.0):
     """
     Reciprocalize lines using Global Relaxation to solve the see-saw effect,
     followed by a final cyclic intersection trimming pass.
