@@ -76,7 +76,7 @@ def create_shoes_and_shift_leaves(graph, brep, min_length=0.18, min_angle=20):
 
     leaf_edges = graph.leaf_edges()
 
-    # 2. Create X-shoe lines (and their Z-vector for compas_timber beam creation: not yet:( )
+    # 1. Create X-shoe lines (and their Z-vector for compas_timber beam creation: not yet:( )
     shoe_lines = []
     adjacency = {}
     for u, v in leaf_edges:
@@ -84,7 +84,7 @@ def create_shoes_and_shift_leaves(graph, brep, min_length=0.18, min_angle=20):
         adjacency.setdefault(v, []).append((u, v))
 
     parent_children = {node : edges for node, edges in adjacency.items() if len(edges) > 1}
-    print (f"pc: {parent_children}")
+    # print (f"pc: {parent_children}")
         
     partitioned = {}
     temp_pts = []
