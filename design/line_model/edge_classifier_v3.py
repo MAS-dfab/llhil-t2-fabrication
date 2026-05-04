@@ -477,7 +477,7 @@ def classify_edges_in_subgraph(subgraph, sup_pts, parallel_tol=None, near_thresh
         if subgraph.edge_attribute(edge, "hierarchy") == "tertiary":
             if subgraph.is_leaf_edge(edge):
                 subgraph.edge_attribute(edge, "hierarchy", "secondary")
-            
+                
             
 def combine_graphs(graphs):
     """Combine a list of subgraphs into one graph."""
