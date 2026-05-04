@@ -34,9 +34,28 @@ def get_default_directions(graph):
         if ori_pt:
             ori_pts.append(ori_pt)
 
+    if len(ori_pts) < 4:
+        for node in graph.nodes():
+            pt = graph.node_attribute(node, "point")
+            if pt:
+                ori_pts.append(pt)
+            if len(ori_pts) >= 4:
+                break
+
+    if len(ori_pts) < 4:
+        return Vector(1, 1, 0).unitized(), Vector(-1, 1, 0).unitized()
+
     p0, p1, p2, p3 = ori_pts[:4]
-    default_dir1 = Vector.from_start_end(p0, p2).unitized()
-    default_dir2 = Vector.from_start_end(p1, p3).unitized()
+    default_dir1 = Vector.from_start_end(p0, p2)
+    default_dir2 = Vector.from_start_end(p1, p3)
+
+    if default_dir1.length < 1e-9:
+        default_dir1 = Vector(1, 1, 0)
+    if default_dir2.length < 1e-9:
+        default_dir2 = Vector(-1, 1, 0)
+
+    default_dir1.unitize()
+    default_dir2.unitize()
     return default_dir1, default_dir2
 
 def categorize_edge_types(graph, tol=1e-3):
@@ -496,6 +515,41 @@ def combine_graphs(graphs):
             new_ng.add_edge(u, v, **sg.edge_attributes((u, v)))
     return new_ng
 
+
+def combine_subgraphs_by_count(subgraphs, group_size=2, selected_ids=None):
+    """
+    Combine classified subgraphs into consecutive groups.
+
+    With the default group_size=2, subgraphs [0, 1] become group 0,
+    [2, 3] become group 1, and so on. If selected_ids is provided, it
+    filters the original groups without changing their boundaries.
+    """
+    if isinstance(subgraphs, NodeGraph):
+        subgraphs = [subgraphs]
+
+    if group_size < 1:
+        group_size = 1
+
+    selected = None
+    if selected_ids is not None:
+        selected = set(int(i) for i in selected_ids if 0 <= int(i) < len(subgraphs))
+
+    grouped = []
+    grouped_ids = []
+
+    for start in range(0, len(subgraphs), group_size):
+        ids = list(range(start, min(start + group_size, len(subgraphs))))
+        if selected is not None:
+            ids = [i for i in ids if i in selected]
+        if not ids:
+            continue
+
+        graphs = [subgraphs[i] for i in ids]
+        grouped.append(combine_graphs(graphs))
+        grouped_ids.append(ids)
+
+    return grouped, grouped_ids
+
 # --------------------------------------------------
 # Subgraph creation
 # --------------------------------------------------
@@ -583,8 +637,17 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None, debug=False):
 
             # Build subgraph
             sg = NodeGraph()
-            node_attrs = ["x", "y", "z", "point", "group", "level", "is_support", "reached", "ntype", "support_id"]
-            edge_attrs = ["e_category", "main_secondary", "etype", "group", "parallel_score", "nearest_support"]
+            node_attrs = [
+                "x", "y", "z", "point", "original_point",
+                "group", "level", "is_support", "reached", "ntype",
+                "support_id", "children", "mobility",
+            ]
+            edge_attrs = [
+                "e_category", "main_secondary", "etype", "group",
+                "parallel_score", "nearest_support",
+                "line", "shifted_lines", "generated_line",
+                "generated_shared_node", "generated_other_node", "width",
+            ]
 
             for n in nodes_in_win:
                 attrs = {}
