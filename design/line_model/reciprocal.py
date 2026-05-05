@@ -780,7 +780,7 @@ def reciprocal_width_from_subgraph(subgraph, engage_len=0.11, tol=0.1, rotation_
     for e in reciprocal_edges:
         b = global_beams[e]
         shifted_line = Line(Point(*b['p0']), Point(*b['p1']))
-        subgraph.edge_attribute(e, "shifted_lines", shifted_line)
+        subgraph.edge_attribute(e, "shifted_line", shifted_line)
         shifted_lines.append(shifted_line)
     
     return {
@@ -794,5 +794,5 @@ def reciprocal_width_from_subgraph(subgraph, engage_len=0.11, tol=0.1, rotation_
             'iterations': iterations,
             'n_groups': len(groups),
         },
-        "global lines": global_beams
+        "global_lines": global_beams
     }
