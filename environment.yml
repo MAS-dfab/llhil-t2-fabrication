@@ -1,0 +1,24 @@
+name: t2_2526
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - numpy
+  - pandas
+  - compas
+  - compas_occ
+  - compas_rrc
+  - pyopenssl>=24.0.0
+  - pip
+
+  - pip:
+      - requests==2.31.0
+      
+      - git+https://github.com/MAS-dfab/compas_fab.git@t2_2526
+      
+      - git+https://github.com/MAS-dfab/compas_robots.git@t2_2526
+      
+      - git+https://github.com/MAS-dfab/compas_threejs.git@t2_2526
+      
+      - git+https://github.com/MAS-dfab/compas_timber.git@t2-2526
