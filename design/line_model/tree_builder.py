@@ -278,7 +278,7 @@ def build_level_zero(vertex_grid, sup_pts, z_steps, roof_brep, config, support_b
                 flat_steps = z_steps[group_id % len(z_steps)]
             else:
                 flat_steps = z_steps
-            t = flat_steps[1] if flat_steps and len(flat_steps) > 1 else 0.5
+            t = flat_steps[0]
             apex_z = center.z + t * (sup.z - center.z)
             apex = Point(center.x, center.y, apex_z)
 

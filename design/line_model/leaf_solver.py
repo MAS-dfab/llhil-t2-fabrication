@@ -12,7 +12,7 @@ Usage in grasshopper:
     shoe_lines = result["shoe_lines"]
 """
 
-from compas.geometry import Point, Line, Vector, Frame
+from compas.geometry import Point, Line, Vector, Frame, angle_vectors_signed
 from compas.geometry import intersection_line_line
 import Rhino.Geometry as rg  # type: ignore
 import math
@@ -72,19 +72,81 @@ def shift_leaf_point_by_distance(leaf_point, projected, distance):
 # ------------------------------
 # Main API
 # ------------------------------
-def create_shoes_from_graph(graph, length_factor=0.5):
+def create_shoes_from_graph(graph, extension_length=0.35):
     """
-    Create oriented shoe geometry at each inset node using stored brep frames.
+    Create paired X-shoe lines at inset nodes grouped by shared apex.
 
-    Arm length comes from the apex-to-inset edge length (half of it).
-    Primary arm is oriented along the beam direction projected onto the surface;
-    secondary arm is perpendicular in that same plane.
-    Requires build_tree_graph to have been called with a roof_brep.
+    Inset nodes are sorted cyclically around each apex and connected
+    across (0↔2, 1↔3 for four nodes; 0↔-1 for two) to form X shapes.
 
     Returns
     -------
     dict
-        shoe_lines  : list of Line  -- two crossed lines per inset point
+        shoe_lines  : list of Line
+        shoe_frames : list of Frame -- surface plane at each inset point
+    """
+    shoe_lines = []
+    shoe_frames = []
+
+    apex_to_insets = {}
+    for node in graph.nodes_where({"ntype": "inset"}):
+        neighbors = list(graph.neighbors(node))
+        if neighbors:
+            apex_to_insets.setdefault(neighbors[0], []).append(node)
+
+    for apex, nodes in apex_to_insets.items():
+        if len(nodes) < 2:
+            continue
+
+        apex_pt = graph.node_attribute(apex, "point")
+        pts = [graph.node_attribute(n, "point") for n in nodes]
+
+        def _angle(idx):
+            p = pts[idx]
+            vec = Vector(p.x - apex_pt.x, p.y - apex_pt.y, 0.0)
+            return angle_vectors_signed(Vector(1, 0, 0), vec, Vector(0, 0, 1))
+
+        order = sorted(range(len(nodes)), key=_angle)
+        sorted_pts = [pts[i] for i in order]
+        sorted_nodes = [nodes[i] for i in order]
+
+        if len(nodes) >= 4:
+            p0, p1, p2, p3 = sorted_pts[0], sorted_pts[1], sorted_pts[2], sorted_pts[3]
+            if p0 and p2:
+                p0_dir = Vector.from_start_end(p2, p0).unitized()
+                p2_dir = Vector.from_start_end(p0g, p2).unitized()
+                p0_ext = p0 + p0_dir * extension_length
+                p2_ext = p2 + p2_dir * extension_length
+                shoe_lines.append(Line(p0_ext, p2_ext))
+            if p1 and p3:
+                p1_dir = Vector.from_start_end(p3, p1).unitized()
+                p3_dir = Vector.from_start_end(p1, p3).unitized()
+                p1_ext = p1 + p1_dir * extension_length
+                p3_ext = p3 + p3_dir * extension_length
+                shoe_lines.append(Line(p1_ext, p3_ext))
+        else:
+            if sorted_pts[0] and sorted_pts[-1]:
+                shoe_lines.append(Line(sorted_pts[0], sorted_pts[-1]))
+
+        for n in sorted_nodes:
+            f = graph.node_attribute(n, "brep_frame")
+            if f is not None:
+                shoe_frames.append(f)
+
+    return {"shoe_lines": shoe_lines, "shoe_frames": shoe_frames}
+
+
+def create_individual_shoes(graph, length_factor=0.5):
+    """
+    Create individual cross-shoe lines at every inset node.
+
+    Two perpendicular lines are drawn at each inset point in the surface
+    plane: one along the beam direction toward the apex, one transverse.
+
+    Returns
+    -------
+    dict
+        shoe_lines  : list of Line
         shoe_frames : list of Frame -- surface plane at each inset point
     """
     shoe_lines = []
@@ -92,12 +154,15 @@ def create_shoes_from_graph(graph, length_factor=0.5):
 
     for node in graph.nodes_where({"ntype": "inset"}):
         pt = graph.node_attribute(node, "point")
+        if pt is None:
+            continue
         frame = graph.node_attribute(node, "brep_frame")
-        surface_normal = frame.xaxis.cross(frame.yaxis)
+        if frame is None:
+            frame = Frame(pt, Vector(1, 0, 0), Vector(0, 1, 0))
 
-        # Arm length = half the apex→inset edge; primary axis = beam direction in surface plane
+        surface_normal = frame.xaxis.cross(frame.yaxis)
         neighbors = list(graph.neighbors(node))
-        arm = None
+        arm = 0.05
         primary = frame.xaxis
         if neighbors:
             apex_pt = graph.node_attribute(neighbors[0], "point")
@@ -105,11 +170,21 @@ def create_shoes_from_graph(graph, length_factor=0.5):
                 arm = pt.distance_to_point(apex_pt) * length_factor
                 raw = Vector.from_start_end(apex_pt, pt)
                 projected = raw - surface_normal * raw.dot(surface_normal)
-                projected.unitize()
-                primary = projected
-        shoe_lines.append(Line(pt.translated(-primary * arm), pt.translated(primary * arm)))
+                if projected.length > 1e-9:
+                    projected.unitize()
+                    primary = projected
 
-    return {"shoe_lines": shoe_lines}
+        secondary = surface_normal.cross(primary)
+        if secondary.length > 1e-9:
+            secondary.unitize()
+        else:
+            secondary = frame.yaxis
+
+        shoe_lines.append(Line(pt.translated(-primary * arm), pt.translated(primary * arm)))
+        shoe_lines.append(Line(pt.translated(-secondary * arm), pt.translated(secondary * arm)))
+        shoe_frames.append(frame)
+
+    return {"shoe_lines": shoe_lines, "shoe_frames": shoe_frames}
 
 
 def create_shoes_and_shift_leaves(graph, brep, min_length=0.18, min_angle=20):
