@@ -240,7 +240,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 1. Approach pickpoint
         print("getting element approach trajectory to pickpoint")
-        approach_frame = self.get_approach_frame(element_pickup_frame, approach_distance=0.3)
+        approach_frame = self.get_approach_frame(element_pickup_frame, approach_distance=0.5)
         trajectories.append(self.get_motion_to_frame(approach_frame))
 
         # 2. Pick Element at pickpoint
@@ -265,21 +265,19 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 5. Approach AT
         print("getting element approach trajectory to AT")
-        element_at_approach_frame = self.get_approach_frame(element_at_frame, approach_distance=0.3)
+        element_at_approach_frame = self.get_approach_frame(element_at_frame, approach_distance=0.5)
         trajectories.append(self.get_motion_to_frame(element_at_approach_frame))
 
         # 6. Place at AT
         print("getting element place trajectory at AT")
         # Overriding default options to disable collision avoidance for the final placement
-        place_options = self.default_options.copy()
-        place_options["avoid_collisions"] = False
-        trajectories.append(self.get_cartesian_trajectory([element_at_frame], options=place_options))
+        trajectories.append(self.get_cartesian_trajectory([element_at_frame], avoid_collisions=False))
         
         self.detach_workpiece(str(element.guid))
 
         # 7. Retract from AT
         print("getting element retract trajectory at AT")
-        trajectories.append(self.get_retract_trajectory(retract_distance=0.5))
+        trajectories.append(self.get_retract_trajectory(retract_distance=0.5, avoid_collisions=False))
 
         # 8. Return to safe configuration
         print("getting trajectory back to safe configuration")

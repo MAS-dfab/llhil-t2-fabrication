@@ -13,6 +13,7 @@ from compas_fab.robots import ToolState
 from compas_fab.viewer import WorkpieceManager
 from compas_robots import ToolModel
 from compas_rrc import RosClient
+from requests import options
 
 
 class BaseRobotPlanner():
@@ -37,9 +38,7 @@ class BaseRobotPlanner():
         
         # Default Options (Can be overridden by child classes)
         self.default_options = {
-            "max_step": 0.1,
-            # "allowed_planning_time": 10,
-            # "num_planning_attempts": 6,
+            "max_step": 0.3,
             "path_constraints": []
         }
 
@@ -47,7 +46,6 @@ class BaseRobotPlanner():
     def current_configuration(self):
         """Returns the current full configuration of the robot state."""
         if len(self.trajectory_list) == 0:
-            print("trajectory list empty, returning safe configuration")
             return self.safe_configuration
         else:
             full_config = self.state.robot_configuration
@@ -94,14 +92,15 @@ class BaseRobotPlanner():
         """Generates an approach frame backed off along the Z-axis of the target frame."""
         return target_frame.translated(target_frame.zaxis * -approach_distance)
 
-    def get_cartesian_trajectory(self, frames_list, options=None):
+    def get_cartesian_trajectory(self, frames_list, avoid_collisions=True):
         """Plans a Cartesian trajectory through a list of frames."""
         current_frame = self.get_current_end_frame()
         frames_list.insert(0, current_frame)
         
         waypoints = FrameWaypoints(frames_list, TargetMode.TOOL)
         self.state.robot_configuration = self.current_configuration
-        plan_options = options or self.default_options
+        plan_options = self.default_options
+        plan_options["avoid_collisions"] = avoid_collisions
 
         try:
             trajectory = self.planner.plan_cartesian_motion(waypoints, self.state, group=self.group, options=plan_options)
@@ -113,7 +112,7 @@ class BaseRobotPlanner():
             print(f"Cartesian planning failed: {e}")
             return None
 
-    def get_motion_to_frame(self, target_frame, options=None):
+    def get_motion_to_frame(self, target_frame):
         """Plans a free-space (non-Cartesian) motion to a target frame."""
         frame_target = FrameTarget(target_frame, target_mode=TargetMode.TOOL)
         self.state.robot_configuration = self.current_configuration
@@ -133,7 +132,7 @@ class BaseRobotPlanner():
             print(f"Free-space planning failed: {e}")
             return None
 
-    def get_motion_to_configuration(self, target_configuration, options=None):
+    def get_motion_to_configuration(self, target_configuration):
         """Plans a free-space motion to a specific joint configuration."""
         def_tol = ConfigurationTarget.generate_default_tolerances(target_configuration, 0.01, math.radians(0.1))
         config_target = ConfigurationTarget(target_configuration, def_tol[0], def_tol[1])
@@ -142,7 +141,7 @@ class BaseRobotPlanner():
         plan_options = {
             "allowed_planning_time": 30, 
             "num_planning_attempts": 6, 
-            "max_steps": 0.1, 
+            "max_steps": 0.3, 
             "path_constraints": []
             }
 
@@ -156,7 +155,7 @@ class BaseRobotPlanner():
             print(f"Configuration planning failed: {e}")
             return None
 
-    def get_retract_trajectory(self, retract_distance=0.5, z_axis_only=False, options=None):
+    def get_retract_trajectory(self, retract_distance=0.5, z_axis_only=False, avoid_collisions=True):
         """
         Plans a Cartesian retract motion. 
         If z_axis_only is True, it moves straight up in world Z. 
@@ -167,8 +166,20 @@ class BaseRobotPlanner():
             retract_frame = current_frame.translated([0, 0, retract_distance])
         else:
             retract_frame = current_frame.translated(current_frame.zaxis * -retract_distance)
-            
-        return self.get_cartesian_trajectory([retract_frame], options=options)
+        waypoints = FrameWaypoints([current_frame, retract_frame], TargetMode.TOOL)
+        self.state.robot_configuration = self.current_configuration
+        
+        r_options = self.default_options.copy()
+        r_options["avoid_collisions"] = avoid_collisions
+        try:
+            trajectory = self.planner.plan_cartesian_motion(waypoints, self.state, group=self.group, options=r_options)
+            print(f"Retract trajectory planned. Fraction: {trajectory.fraction}")
+            self.trajectory_list.append(trajectory)
+            self.update_state_from_trajectory(trajectory)
+            return trajectory
+        except Exception as e:
+            print(f"Retract planning failed: {e}")
+            return None
 
     # --- TOOL & WORKPIECE MANAGEMENT ---
 
