@@ -213,7 +213,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None):
 
             # Build subgraph
             sg = NodeGraph()
-            node_attrs = ["x", "y", "z", "point", "group", "level", "is_support", "reached", "ntype", "support_id"]
+            node_attrs = ["x", "y", "z", "point", "group", "level", "is_support", "reached", "ntype", "support_id", "original_point"]
             edge_attrs = ["e_category", "etype", "group", "parallel_score", "nearest_support"]
 
             for n in nodes_in_win:
