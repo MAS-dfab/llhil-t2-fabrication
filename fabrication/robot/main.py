@@ -33,12 +33,14 @@ def main():
     # ---------------------------------------------------------
     # 3. EXECUTE PLANNING LOOP
     # ---------------------------------------------------------
-    seq_i = 12
+    seq_i = 2
 
     trajectories = []
     assembled_elements = []
 
     for p in timber_model.plates:
+        print(p.transformation_to_local())
+        # aaaaaa
         p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
         assembled_elements.append(p_mesh)
 

@@ -13,7 +13,6 @@ from compas_fab.robots import ToolState
 from compas_fab.viewer import WorkpieceManager
 from compas_robots import ToolModel
 from compas_rrc import RosClient
-from requests import options
 
 
 class BaseRobotPlanner():
@@ -29,6 +28,7 @@ class BaseRobotPlanner():
 
         self.planner = MoveItPlanner(self.client)
         self.robot_cell = self.client.load_robot_cell(load_geometry=True)
+        print(self.robot_cell.robot_model)
         self.state = self.robot_cell.default_cell_state()
         
         # Configuration
@@ -38,7 +38,7 @@ class BaseRobotPlanner():
         
         # Default Options (Can be overridden by child classes)
         self.default_options = {
-            "max_step": 0.3,
+            "max_step": 0.1,
             "path_constraints": []
         }
 
@@ -60,6 +60,21 @@ class BaseRobotPlanner():
         temp_state = self.state.copy()
         temp_state.robot_configuration = configuration
         return self.planner.forward_kinematics(temp_state, TargetMode.TOOL, self.group)
+    
+    def get_ik_from_frame(self, target_frame):
+        """Calculates the inverse kinematics configuration for a given target frame."""
+        frame_target = FrameTarget(target_frame, target_mode=TargetMode.TOOL)
+        temp_state = self.state.copy()
+        options = {
+            "return_full_configuration": True,
+            "allow_collisions": False
+        }
+        ik_config = self.planner.inverse_kinematics(frame_target, temp_state, self.group, options=options)
+        try:
+            # ik_config = next(ik_iterator)
+            return ik_config
+        except StopIteration:
+            print("No IK solution found for the given frame.")
 
     def update_state_from_trajectory(self, trajectory):
         """Updates the internal robot state to match the end of a trajectory."""
@@ -107,10 +122,9 @@ class BaseRobotPlanner():
             print(f"Cartesian trajectory planned. Fraction: {trajectory.fraction}")
             self.trajectory_list.append(trajectory)
             self.update_state_from_trajectory(trajectory)
-            return trajectory
         except Exception as e:
             print(f"Cartesian planning failed: {e}")
-            return None
+        return trajectory
 
     def get_motion_to_frame(self, target_frame):
         """Plans a free-space (non-Cartesian) motion to a target frame."""
@@ -118,7 +132,8 @@ class BaseRobotPlanner():
         self.state.robot_configuration = self.current_configuration
         plan_options = {
             "allowed_planning_time": 10, 
-            "num_planning_attempts": 6, 
+            "num_planning_attempts": 20,
+            "max_steps": 0.1,
             "path_constraints": []
             }
 
@@ -127,10 +142,9 @@ class BaseRobotPlanner():
             print(f"Free-space motion to frame planned. Fraction: {trajectory.fraction}")
             self.trajectory_list.append(trajectory)
             self.update_state_from_trajectory(trajectory)
-            return trajectory
         except Exception as e:
             print(f"Free-space planning failed: {e}")
-            return None
+        return trajectory
 
     def get_motion_to_configuration(self, target_configuration):
         """Plans a free-space motion to a specific joint configuration."""
@@ -140,8 +154,8 @@ class BaseRobotPlanner():
         self.state.robot_configuration = self.current_configuration
         plan_options = {
             "allowed_planning_time": 30, 
-            "num_planning_attempts": 6, 
-            "max_steps": 0.3, 
+            "num_planning_attempts": 100,
+            "max_steps": 0.1,
             "path_constraints": []
             }
 
@@ -150,10 +164,9 @@ class BaseRobotPlanner():
             print(f"Motion to configuration planned. Fraction: {trajectory.fraction}")
             self.trajectory_list.append(trajectory)
             self.update_state_from_trajectory(trajectory)
-            return trajectory
         except Exception as e:
             print(f"Configuration planning failed: {e}")
-            return None
+        return trajectory
 
     def get_retract_trajectory(self, retract_distance=0.5, z_axis_only=False, avoid_collisions=True):
         """
@@ -176,10 +189,9 @@ class BaseRobotPlanner():
             print(f"Retract trajectory planned. Fraction: {trajectory.fraction}")
             self.trajectory_list.append(trajectory)
             self.update_state_from_trajectory(trajectory)
-            return trajectory
         except Exception as e:
             print(f"Retract planning failed: {e}")
-            return None
+        return trajectory
 
     # --- TOOL & WORKPIECE MANAGEMENT ---
 
@@ -233,7 +245,7 @@ class BaseRobotPlanner():
             attach_time=self._get_current_trajectory_time(), 
             attachment_frame=moveit_attachment_frame
         )
-        print(f"Workpiece '{name}' attached to tool '{attached_to_tool}' with attachment frame: {moveit_attachment_frame}")
+        print(f"Workpiece '{name}' attached to tool '{attached_to_tool}'")
 
     def detach_workpiece(self, name):
         """Detaches a workpiece from the robot."""

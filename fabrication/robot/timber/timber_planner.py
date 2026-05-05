@@ -70,7 +70,6 @@ class TimberProcessPlanner(BaseRobotPlanner):
         if len(meshes) > 0:
             meshes_RB = RigidBody.from_meshes(meshes)
             self.robot_cell.rigid_body_models[name] = []
-            # del self.robot_cell.rigid_body_models[name]
             self.robot_cell.rigid_body_models[name] = meshes_RB
             self.state.rigid_body_states[name] = RigidBodyState(Frame.worldXY())
             self.planner.set_robot_cell(self.robot_cell)
@@ -236,7 +235,6 @@ class TimberProcessPlanner(BaseRobotPlanner):
         grasp_frame, element_at_frame, element_geometry_at = self.calculate_element_at_frame(element)
         
         element_pickup_frame = self.calculate_element_pickup_frame(grasp_frame, element_at_frame)
-        print("Calculated element pickup frame:", element_pickup_frame)
 
         # 1. Approach pickpoint
         print("getting element approach trajectory to pickpoint")
@@ -283,7 +281,6 @@ class TimberProcessPlanner(BaseRobotPlanner):
         print("getting trajectory back to safe configuration")
         trajectories.append(self.get_motion_to_configuration(self.safe_configuration))
 
-        print(self.robot_cell.rigid_body_models)
         json_dump(trajectories, "C:\\Users\\paulj\\Downloads\\element_trajs.json")
         return trajectories
 
