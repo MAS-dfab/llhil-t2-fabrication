@@ -401,6 +401,20 @@ class NodeGraph(Graph):
         return [self.node_attribute(n, "point") for n in self.get_support_nodes()
                 if self.node_attribute(n, "point") is not None]
 
+    def get_support_edges(self):
+        """Get edges that are connected to support nodes."""
+        sup_nodes = self.get_support_nodes()
+        sup_edges = []
+
+        for edge in self.edges():
+            if edge[0] in sup_nodes or edge[1] in sup_nodes:
+                sup_edges.append(edge)
+        return sup_edges
+
+    def get_support_lines(self):
+        """Get Line objects for edges connected to support nodes."""
+        return [self.edge_line(edge) for edge in self.get_support_edges()]
+    
     def nodes_by_mobility(self, mobility):
         """
         Get all nodes with a specific mobility type.
@@ -526,7 +540,18 @@ class NodeGraph(Graph):
         """
         return [self.node_attribute(n, "point") for n in self.neighbors(node)
                 if self.node_attribute(n, "point") is not None]
-
+    
+    def is_edge_on_brim(self, edge):
+        """Check if an edge is at the top edge of the structure."""
+        if not self.is_leaf_edge(edge):
+            return False
+        
+        for node in edge:
+            if self.degree(node) != 1:
+                parent = node
+                return self.degree(parent) == 5 or self.degree(parent) == 6  # or self.degree(parent) != 8
+        return False
+    
     # --------------------------------------------------
     # Serialization (using COMPAS Graph methods)
     # --------------------------------------------------
