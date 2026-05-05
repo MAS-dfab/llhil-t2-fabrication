@@ -1,5 +1,6 @@
 from compas.datastructures import Graph
-from compas.geometry import Point, Line, Vector
+from compas.geometry import Point, Line, Vector, Plane
+from compas.geometry import intersection_line_plane, intersection_segment_plane
 
 # Import config - handle both package and standalone execution
 try:
@@ -162,6 +163,7 @@ class NodeGraph(Graph):
         list of tuple
             Edges that were marked as double.
         """
+        # NOTE: Fix the vector input
         y_axis = Vector(0.0, 1.0, 0.0)
         marked = []
         
@@ -182,7 +184,94 @@ class NodeGraph(Graph):
                 marked.append((u, v))
         
         return marked
+    
+    def offset_double_edges(self, offset_distance=.07):
+        """
+        Offset edges that are parallel to the Y axis (in XY projection) for offset_distance.
+        
+        Parameters
+        ----------
+        offset_distance : float
+        
+        Returns
+        -------
+        list of tuple
+            Edges that were offseted.
+        """
+        # NOTE: Fix the vector input
+        x_axis = Vector(1.0, 0.0, 0.0)
+        offset_lines = {}
+        offset_nodes = {}
+        intersection_pts = {}
+        offset_line = []
+        new_nodes = []
+        new_edges = []
+        
+        # Step 1: Offset lines of the edges that are in category double and add them to dict
+        for u, v in self.edges():
+            pu = self.node_attribute(u, "point")
+            pv = self.node_attribute(v, "point")
+            if not pu or not pv:
+                continue
+            if self.edge_attribute((u, v), "main_secondary") == "double":
+                edge_line = Line(pu, pv)
 
+                offset_line_a = edge_line.translated(x_axis * offset_distance)
+                offset_line_b = edge_line.translated(-x_axis * offset_distance)
+                offset_lines[(u, v)] = [offset_line_a, offset_line_b]
+                
+                offset_line.append(offset_line_a)
+                offset_line.append(offset_line_b)
+                
+        
+        # Step 2: Add new edges and nodes to the graph
+        for edge, offseted_lines in offset_lines.items():     
+            # Add new nodes and segments
+            u, v = edge
+            attrs_u = {key: value for key, value in self.node_attributes(u).items() if key not in ['x', 'y', 'z', 'point']}
+            attrs_v = {key: value for key, value in self.node_attributes(v).items() if key not in ['x', 'y', 'z', 'point']}
+
+            node_a_start = self.get_or_add_point_node(offseted_lines[0].start, **attrs_u)
+            node_a_end = self.get_or_add_point_node(offseted_lines[0].end, **attrs_v)
+            
+            node_b_start = self.get_or_add_point_node(offseted_lines[1].start, **attrs_u)
+            node_b_end = self.get_or_add_point_node(offseted_lines[1].end, **attrs_v)
+            
+            offset_nodes[u] = [node_a_start, node_b_start]
+            offset_nodes[v] = [node_a_end, node_b_end]
+            
+            # Add edge
+            edge_attrs = self.edge_attributes((u, v))
+            self.add_graph_edge(node_a_start, node_a_end, **edge_attrs)
+            self.add_graph_edge(node_b_start, node_b_end, **edge_attrs)
+            
+            # Delete old edge
+            self.delete_edge((u, v))
+        
+        # TODO: Finish offset_double_edges
+        # Step 3: Find all the edges in double node and pass offset plains in offset nodes and intersect edges - lines 
+        for node, offseted_node in offset_nodes.items():
+            node_edges = self.node_edges(node)
+            node_lines = [self.edge_line(edge) for edge in node_edges]
+            p0 = self.node_attribute(offseted_node[0], "point")
+            p1 = self.node_attribute(offseted_node[1], "point")
+            pl0 = Plane(p0, x_axis)
+            pl1 = Plane(p1, x_axis)
+            
+            int_points_pl0 = [intersection_segment_plane(line, pl0) for line in node_lines]
+            int_points_pl1 = [intersection_segment_plane(line, pl1) for line in node_lines]
+            
+            # Unpacking the point tuple/list directly into the Point constructor
+            intersection_pts[offseted_node[0]] = [Point(*point) for point in int_points_pl0 if point is not None]
+            intersection_pts[offseted_node[1]] = [Point(*point) for point in int_points_pl1 if point is not None]
+            
+        # Step 4: Pair those edges with with correct node 
+        # Step 5: Delete existing node and replace it with new offset node ?? this changing direction
+        
+        # Option 2: Trimming 
+                
+        return offset_line, attrs_u, intersection_pts
+            
     def edge_lines(self):
         """
         Get all edges as Line objects.
