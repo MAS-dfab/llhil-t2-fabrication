@@ -351,8 +351,6 @@ class NodeGraph(Graph):
                 if self.has_node(n):
                     self.add_graph_edge(n, new_node)
 
-    
-
     def add_segments(self, pairs):
         """
         Apply add_segment to multiple pairs.

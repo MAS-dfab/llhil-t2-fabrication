@@ -12,7 +12,7 @@ Usage in grasshopper:
     shoe_lines = result["shoe_lines"]
 """
 
-from compas.geometry import Point, Line, Vector
+from compas.geometry import Point, Line, Vector, Frame
 from compas.geometry import intersection_line_line
 import Rhino.Geometry as rg  # type: ignore
 import math
@@ -72,6 +72,46 @@ def shift_leaf_point_by_distance(leaf_point, projected, distance):
 # ------------------------------
 # Main API
 # ------------------------------
+def create_shoes_from_graph(graph, length_factor=0.5):
+    """
+    Create oriented shoe geometry at each inset node using stored brep frames.
+
+    Arm length comes from the apex-to-inset edge length (half of it).
+    Primary arm is oriented along the beam direction projected onto the surface;
+    secondary arm is perpendicular in that same plane.
+    Requires build_tree_graph to have been called with a roof_brep.
+
+    Returns
+    -------
+    dict
+        shoe_lines  : list of Line  -- two crossed lines per inset point
+        shoe_frames : list of Frame -- surface plane at each inset point
+    """
+    shoe_lines = []
+    shoe_frames = []
+
+    for node in graph.nodes_where({"ntype": "inset"}):
+        pt = graph.node_attribute(node, "point")
+        frame = graph.node_attribute(node, "brep_frame")
+        surface_normal = frame.xaxis.cross(frame.yaxis)
+
+        # Arm length = half the apex→inset edge; primary axis = beam direction in surface plane
+        neighbors = list(graph.neighbors(node))
+        arm = None
+        primary = frame.xaxis
+        if neighbors:
+            apex_pt = graph.node_attribute(neighbors[0], "point")
+            if apex_pt is not None:
+                arm = pt.distance_to_point(apex_pt) * length_factor
+                raw = Vector.from_start_end(apex_pt, pt)
+                projected = raw - surface_normal * raw.dot(surface_normal)
+                projected.unitize()
+                primary = projected
+        shoe_lines.append(Line(pt.translated(-primary * arm), pt.translated(primary * arm)))
+
+    return {"shoe_lines": shoe_lines}
+
+
 def create_shoes_and_shift_leaves(graph, brep, min_length=0.18, min_angle=20):
 
     leaf_edges = graph.leaf_edges()
