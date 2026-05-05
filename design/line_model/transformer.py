@@ -117,7 +117,7 @@ def get_y_direction_modifier(key, point, brep, current_y_vec, tol=0.001, debug=T
 # Main Function
 # --------------------------------------------------
 
-def edge_in_brep(graph, brep, max_loops=5, sub_iterations=5, debug=False):
+def edge_in_brep(graph, brep, max_loops=15, sub_iterations=15, debug=False):
     """Analyzes graph-brep collisions and moves nodes away from the surface."""
     
     ng = NodeGraph()

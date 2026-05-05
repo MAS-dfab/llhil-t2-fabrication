@@ -369,19 +369,33 @@ def _get_line(subgraph, edge):
 # Coplanar Group Detection
 # ==============================================================================
 
-def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True):
+def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True, allowed_edges=None):
     """
-    Find groups of primary+double edges that lie on the same plane.
+    Find groups of eligible edges that lie on the same plane.
     Returns groups where 2+ edges meet at a joint.
     """
     from compas.geometry import Frame
     
-    # Get all primary AND double edges
-    edges = [(u, v) for u, v in subgraph.edges() 
-             if subgraph.edge_attribute((u, v), 'hierarchy') in ('primary', 'double')]
+    allowed_keys = None
+    if allowed_edges is not None:
+        allowed_keys = {tuple(sorted((u, v))) for (u, v) in allowed_edges}
+
+    # Get eligible edges
+    if allowed_keys is None:
+        edges = [
+            (u, v)
+            for u, v in subgraph.edges()
+            if subgraph.edge_attribute((u, v), 'hierarchy') in ('primary', 'double')
+        ]
+    else:
+        edges = [
+            (u, v)
+            for u, v in subgraph.edges()
+            if tuple(sorted((u, v))) in allowed_keys
+        ]
     
     if debug:
-        print(f"Total primary+double edges: {len(edges)}")
+        print(f"Total eligible edges: {len(edges)}")
     
     if not edges:
         return []
@@ -687,22 +701,70 @@ def reciprocal_from_subgraph(subgraph, engage_len=1.0, tol=0.1, rotation_sign=+1
         }
     }
 
-def reciprocal_width_from_subgraph(subgraph, engage_len=0.11, tol=0.1, rotation_sign=+1,
-                              min_degree=2, iterations=10, debug=True, straight_angle_threshold_deg=178.0):
+def reciprocal_width_from_subgraph(
+    subgraph,
+    engage_len=0.11,
+    tol=0.1,
+    rotation_sign=+1,
+    min_degree=2,
+    iterations=10,
+    debug=True,
+    straight_angle_threshold_deg=178.0,
+    target_edges=None,
+    target_categories=None,
+    target_hierarchies=None,
+):
     """
-    Reciprocalize lines using Global Relaxation to solve the see-saw effect,
-    followed by a final cyclic intersection trimming pass.
+    Reciprocalize selected lines using Global Relaxation to solve the see-saw
+    effect, followed by a final cyclic intersection trimming pass.
+
+    Selection priority:
+    1) target_edges (explicit list of edges)
+    2) target_categories / target_hierarchies filters
+    3) fallback legacy: hierarchy in ('primary', 'double')
     """
     global_beams = {}
     secondary_lines = []
     reciprocal_edges = []
+
+    target_edge_keys = None
+    if target_edges is not None:
+        target_edge_keys = {tuple(sorted((u, v))) for (u, v) in target_edges}
+    if isinstance(target_categories, str):
+        target_categories = {target_categories}
+    elif target_categories is not None:
+        target_categories = set(target_categories)
+    if isinstance(target_hierarchies, str):
+        target_hierarchies = {target_hierarchies}
+    elif target_hierarchies is not None:
+        target_hierarchies = set(target_hierarchies)
+
+    def _is_primary_scope_hierarchy(h):
+        if h in ("primary", "double", "primary_orthogonal"):
+            return True
+        return isinstance(h, str) and h.startswith("primary_diagonal_")
+
+    def _is_target_edge(u, v):
+        h = subgraph.edge_attribute((u, v), 'hierarchy')
+        if target_edge_keys is not None:
+            return tuple(sorted((u, v))) in target_edge_keys
+        if target_categories is not None:
+            cat = subgraph.edge_attribute((u, v), 'e_category')
+            if cat not in target_categories:
+                return False
+        if target_hierarchies is not None:
+            if h not in target_hierarchies:
+                return False
+        if target_categories is not None and target_hierarchies is None:
+            # Default safety: category-only selection stays in primary scope.
+            return _is_primary_scope_hierarchy(h)
+        if target_categories is not None or target_hierarchies is not None:
+            return True
+        return h in ('primary', 'double')
     
     # 1. Collect edges and establish global beam tracking
     for u, v in subgraph.edges():
-        # print(subgraph.edge_attribute((u, v), "hierarchy"))
-        etype = subgraph.edge_attribute((u, v), 'hierarchy')
-        if etype in ('primary', 'double'):
-            # print("IN")
+        if _is_target_edge(u, v):
             reciprocal_edges.append((u, v))
             
             # Try to get 'width' from graph. Fallback to engage_len if None.
@@ -723,10 +785,16 @@ def reciprocal_width_from_subgraph(subgraph, engage_len=0.11, tol=0.1, rotation_
         print(f"Edges: {len(reciprocal_edges)} reciprocal, {len(secondary_lines)} secondary")
     
     # 2. Find coplanar groups based on original unshifted topology
-    groups = find_coplanar_groups(subgraph, min_degree=min_degree, debug=debug)
+    groups = find_coplanar_groups(
+        subgraph,
+        min_degree=min_degree,
+        debug=debug,
+        allowed_edges=reciprocal_edges,
+    )
     
     if not groups:
         return {
+            'graph': subgraph,
             'shifted_lines': [_get_line(subgraph, e) for e in reciprocal_edges],
             'secondary_lines': secondary_lines,
             'nexus_lines': [], 'coplanar_groups': [],
@@ -816,23 +884,46 @@ def reciprocal_width_from_subgraph(subgraph, engage_len=0.11, tol=0.1, rotation_
             line_a = group_lines[k]
             line_b = group_lines[target_k]
             
-            # Find the 3D intersection. `intersection_line_line` returns a tuple of 
-            # the two closest points on both lines. res[0] is the point on line_a.
+            def _pick_intersection_point(result):
+                if result is None:
+                    return None
+                if isinstance(result, (list, tuple)):
+                    for candidate in result:
+                        if candidate is not None:
+                            return candidate
+                    return None
+                return result
+
+            def _point_to_xyz_list(pt):
+                if pt is None:
+                    return None
+                if hasattr(pt, "x") and hasattr(pt, "y") and hasattr(pt, "z"):
+                    return [float(pt.x), float(pt.y), float(pt.z)]
+                try:
+                    return [float(pt[0]), float(pt[1]), float(pt[2])]
+                except Exception:
+                    return None
+
+            # Find the 3D intersection. `intersection_line_line` can return
+            # None or tuples containing None for degenerate/parallel setups.
             res = intersection_line_line(line_a, line_b)
+            intersect_pt = _pick_intersection_point(res)
             
-            # Fallback for perfectly parallel lines (e.g., 180 deg splits)
-            if not res:
+            # Fallback for parallel/invalid intersections (e.g., 180 deg splits)
+            if intersect_pt is None:
                 fallback_k = (k - 1) % m if rotation_sign > 0 else (k + 1) % m
-                res = intersection_line_line(line_a, group_lines[fallback_k])
-                
-            if res:
-                intersect_pt = res[0]
-                
-                # We update the endpoint that is touching the central node, cleanly cutting the tail
+                fallback_res = intersection_line_line(line_a, group_lines[fallback_k])
+                intersect_pt = _pick_intersection_point(fallback_res)
+            
+            if intersect_pt is not None:
+                xyz = _point_to_xyz_list(intersect_pt)
+                if xyz is None:
+                    continue
+                # Update the endpoint touching the central node, cleanly trimming the tail.
                 if actual_edge_k[0] == node:
-                    b_k['p0'] = [*intersect_pt]
+                    b_k['p0'] = xyz
                 else:
-                    b_k['p1'] = [*intersect_pt]
+                    b_k['p1'] = xyz
 
     # 4. Finalize output
     shifted_lines = []
@@ -843,6 +934,7 @@ def reciprocal_width_from_subgraph(subgraph, engage_len=0.11, tol=0.1, rotation_
         shifted_lines.append(shifted_line)
     
     return {
+        'graph': subgraph,
         'shifted_lines': shifted_lines,
         'secondary_lines': secondary_lines,
         'nexus_lines': [], # Left empty, zero-gap means no central holes!
