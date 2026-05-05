@@ -71,6 +71,16 @@ def _level_pair(subgraph, edge):
     u, v = edge
     lu = subgraph.node_attribute(u, "level")
     lv = subgraph.node_attribute(v, "level")
+
+    # Normalize level tags so hierarchy keys stay stable (e.g. 1.0 -> 1).
+    try:
+        lu = int(float(lu))
+    except (TypeError, ValueError):
+        pass
+    try:
+        lv = int(float(lv))
+    except (TypeError, ValueError):
+        pass
     return tuple(sorted((lu, lv)))
 
 
