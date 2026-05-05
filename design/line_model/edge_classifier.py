@@ -25,6 +25,48 @@ from config import (
 import math
 
 
+def _infer_support_points_from_highest_level(graph, debug=False):
+    """
+    Infer support points from nodes at the highest available level.
+
+    Preference is given to leaf/end nodes (degree <= 1) on that level.
+    If none are leaves, all nodes on the highest level are used.
+    """
+    level_nodes = []
+    for n in graph.nodes():
+        pt = graph.node_attribute(n, "point")
+        lvl = graph.node_attribute(n, "level")
+        if pt is None or lvl is None:
+            continue
+        try:
+            lvl_value = float(lvl)
+        except (TypeError, ValueError):
+            continue
+        level_nodes.append((n, lvl_value, pt))
+
+    if not level_nodes:
+        return []
+
+    max_level = max(item[1] for item in level_nodes)
+    highest = [(n, pt) for n, lvl, pt in level_nodes if abs(lvl - max_level) <= 1e-9]
+
+    leaf_pts = []
+    for n, pt in highest:
+        try:
+            deg = graph.degree(n)
+        except Exception:
+            deg = None
+        if deg is None or deg <= 1:
+            leaf_pts.append(pt)
+
+    if debug:
+        print("DEBUG: Highest level = {}".format(max_level))
+        print("DEBUG: Highest-level nodes = {}".format(len(highest)))
+        print("DEBUG: Leaf supports on highest level = {}".format(len(leaf_pts)))
+
+    return leaf_pts if leaf_pts else [pt for _, pt in highest]
+
+
 # --------------------------------------------------
 # Initial classification
 # --------------------------------------------------
@@ -52,16 +94,21 @@ def classify_edges_by_support_direction(graph, parallel_tol=None, debug=False, s
     if parallel_tol is None:
         parallel_tol = DEFAULT_PARALLEL_TOL
     
-    # Get support points - either from parameter or use graph's method
+    # Get support points - explicit > graph supports > inferred highest-level endpoints
     if support_points:
         sup_pts = support_points
         if debug:
             print("DEBUG: Using {} provided support points".format(len(sup_pts)))
     else:
-        # Use NodeGraph's get_support_points method
-        sup_pts = graph.get_support_points()
+        sup_pts = []
+        if hasattr(graph, "get_support_points"):
+            sup_pts = graph.get_support_points() or []
         if debug:
             print("DEBUG: Found {} support points from graph".format(len(sup_pts)))
+        if not sup_pts:
+            sup_pts = _infer_support_points_from_highest_level(graph, debug=debug)
+            if debug:
+                print("DEBUG: Inferred {} support points from highest level".format(len(sup_pts)))
     
     if not sup_pts:
         print("WARNING: No support points available!")
