@@ -8,6 +8,7 @@ from config import (
     DEFAULT_OVERLAP, DEFAULT_SEG_X, DEFAULT_SEG_Y, DEFAULT_ANGLE_TOL
 )
 import math
+from nodegraph import NodeGraph
 
 
 def _get_support_points(graph, support_points=None):
@@ -456,8 +457,7 @@ def classify_edges_by_support_direction(
 
     def _store(edge, line, etype, support_idx, dot):
         data.append({"edge": edge, "support_idx": support_idx, "dot": dot, "type": etype})
-        graph.edge_attribute(edge, "main_secondary", etype)
-        _set_hierarchy(edge, etype)
+        graph.edge_attribute(edge, "hierarchy", etype)
         graph.edge_attribute(edge, "parallel_score", dot)
         graph.edge_attribute(edge, "nearest_support", support_idx)
         if etype == "primary":
@@ -468,8 +468,7 @@ def classify_edges_by_support_direction(
             secondary_items.append({"edge": edge, "line": line})
 
     for edge in graph.edges():
-        if graph.edge_attribute(edge, "main_secondary") == "double":
-            _set_hierarchy(edge, "double")
+        if graph.edge_attribute(edge, "hierarchy") == "double":
             line = graph.edge_line(edge)
             if line is not None:
                 primary_lines.append(line)
@@ -536,12 +535,10 @@ def classify_edges_by_support_direction(
             k = _edge_key(d["edge"])
             if k in secondary_keys:
                 d["type"] = "secondary"
-                graph.edge_attribute(d["edge"], "main_secondary", "secondary")
-                _set_hierarchy(d["edge"], "secondary")
+                graph.edge_attribute(d["edge"], "hierarchy", "secondary")
             elif k in tertiary_keys:
                 d["type"] = "tertiary"
-                graph.edge_attribute(d["edge"], "main_secondary", "tertiary")
-                _set_hierarchy(d["edge"], "tertiary")
+                graph.edge_attribute(d["edge"], "hierarchy", "tertiary")
 
         if return_node_edge_report:
             return primary_lines, secondary_lines, tertiary_lines, data, node_edge_report
@@ -586,7 +583,7 @@ def build_category_index(graph, category_mode=2):
         gu = idx["nodes"][u]["group"]
         gv = idx["nodes"][v]["group"]
         idx["edges"][(u, v)] = {
-            "main_secondary": graph.edge_attribute((u, v), "main_secondary"),
+            "hierarchy": graph.edge_attribute((u, v), "hierarchy"),
             "inter_module": (gu is not None and gv is not None and gu != gv),
         }
 
@@ -631,7 +628,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None, debug=False):
     cell_h = y_range / seg_y
 
     node_attrs = ["x", "y", "z", "point", "group", "level", "is_support", "reached", "ntype"]
-    edge_attrs = ["main_secondary", "etype", "group", "parallel_score", "nearest_support"]
+    edge_attrs = ["hierarchy", "etype", "group", "parallel_score", "nearest_support"]
 
     def _attrs(getter, key, names):
         return {name: val for name in names for val in [getter(key, name)] if val is not None}
@@ -650,7 +647,7 @@ def create_subgraphs(graph, seg_x=None, seg_y=None, overlap=None, debug=False):
             }
             edges_in_win = [(u, v) for u, v in graph.edges() if u in nodes_in_win and v in nodes_in_win]
 
-            sg = Graph()
+            sg = NodeGraph()
             for n in nodes_in_win:
                 sg.add_node(n, **_attrs(graph.node_attribute, n, node_attrs))
 
@@ -743,7 +740,7 @@ def classify_subgraph_edges(subgraph, sup_pts, near_threshold=None, parallel_tol
             continue
         evec.unitize()
 
-        etype = sg.edge_attribute((u, v), "main_secondary") or "secondary"
+        etype = sg.edge_attribute((u, v), "hierarchy") or "secondary"
         line = Line(pu, pv)
 
         all_edges.append({"vec": evec, "etype": etype, "line": line, "edge": (u, v)})
@@ -785,7 +782,7 @@ def classify_subgraph_edges(subgraph, sup_pts, near_threshold=None, parallel_tol
             else:
                 secondary_lines.append(ed["line"])
             
-            sg.edge_attribute(ed["edge"], "main_secondary", new_etype)
+            sg.edge_attribute(ed["edge"], "hierarchy", new_etype)
 
     return primary_lines, secondary_lines, double_lines, near_sup, sg
 
