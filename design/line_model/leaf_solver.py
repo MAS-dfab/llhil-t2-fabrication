@@ -114,7 +114,7 @@ def create_shoes_from_graph(graph, extension_length=0.35):
             p0, p1, p2, p3 = sorted_pts[0], sorted_pts[1], sorted_pts[2], sorted_pts[3]
             if p0 and p2:
                 p0_dir = Vector.from_start_end(p2, p0).unitized()
-                p2_dir = Vector.from_start_end(p0g, p2).unitized()
+                p2_dir = Vector.from_start_end(p0, p2).unitized()
                 p0_ext = p0 + p0_dir * extension_length
                 p2_ext = p2 + p2_dir * extension_length
                 shoe_lines.append(Line(p0_ext, p2_ext))
