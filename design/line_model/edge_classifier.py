@@ -448,9 +448,16 @@ def classify_edges_by_support_direction(
     primary_lines, secondary_lines, data = [], [], []
     primary_edges, secondary_items = [], []
 
+    def _set_hierarchy(edge, etype):
+        # Keep explicit edge hierarchy in sync with classifier labels so
+        # downstream filters can target hierarchies directly.
+        if etype in ("primary", "secondary", "tertiary", "double"):
+            graph.edge_attribute(edge, "hierarchy", etype)
+
     def _store(edge, line, etype, support_idx, dot):
         data.append({"edge": edge, "support_idx": support_idx, "dot": dot, "type": etype})
         graph.edge_attribute(edge, "main_secondary", etype)
+        _set_hierarchy(edge, etype)
         graph.edge_attribute(edge, "parallel_score", dot)
         graph.edge_attribute(edge, "nearest_support", support_idx)
         if etype == "primary":
@@ -462,6 +469,7 @@ def classify_edges_by_support_direction(
 
     for edge in graph.edges():
         if graph.edge_attribute(edge, "main_secondary") == "double":
+            _set_hierarchy(edge, "double")
             line = graph.edge_line(edge)
             if line is not None:
                 primary_lines.append(line)
@@ -529,9 +537,11 @@ def classify_edges_by_support_direction(
             if k in secondary_keys:
                 d["type"] = "secondary"
                 graph.edge_attribute(d["edge"], "main_secondary", "secondary")
+                _set_hierarchy(d["edge"], "secondary")
             elif k in tertiary_keys:
                 d["type"] = "tertiary"
                 graph.edge_attribute(d["edge"], "main_secondary", "tertiary")
+                _set_hierarchy(d["edge"], "tertiary")
 
         if return_node_edge_report:
             return primary_lines, secondary_lines, tertiary_lines, data, node_edge_report
