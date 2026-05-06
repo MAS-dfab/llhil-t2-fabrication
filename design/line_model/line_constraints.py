@@ -54,14 +54,83 @@ def _line_param_and_on_segment(line, point, tol=1e-6):
     return t, (-tol <= t <= 1.0 + tol)
 
 
-def _point_shifted_along_line(point, line, distance):
-    if abs(float(distance)) < 1e-12:
+def _point_shifted_in_z(point, choose, z_offset):
+    amt = abs(float(z_offset))
+    if amt < 1e-12:
         return point
-    direction = Vector.from_start_end(line.start, line.end)
-    if direction.length < 1e-12:
-        return point
-    direction.unitize()
-    return point + direction * float(distance)
+    dz = -amt if str(choose).lower() == "down" else amt
+    return Point(point.x, point.y, point.z + dz)
+
+
+def _dist(p, q):
+    return ((p.x - q.x) ** 2 + (p.y - q.y) ** 2 + (p.z - q.z) ** 2) ** 0.5
+
+
+def _set_node_point(graph, node, point):
+    """
+    Set node point and keep NodeGraph internal point index in sync when available.
+    """
+    old_pt = graph.node_attribute(node, "point")
+
+    # Keep NodeGraph spatial index consistent if present.
+    if hasattr(graph, "point_key") and hasattr(graph, "_point_index"):
+        try:
+            if old_pt is not None:
+                old_key = graph.point_key(old_pt)
+                if graph._point_index.get(old_key) == node:
+                    del graph._point_index[old_key]
+            graph._point_index[graph.point_key(point)] = node
+        except Exception:
+            pass
+
+    graph.node_attribute(node, "point", point)
+    graph.node_attribute(node, "x", point.x)
+    graph.node_attribute(node, "y", point.y)
+    graph.node_attribute(node, "z", point.z)
+
+
+def _sync_node_points_from_edges(graph, edges):
+    """
+    Sync node 'point' from current edge geometry (shifted/line) for given edges.
+    Uses endpoint-node best matching, then averages per node.
+    """
+    acc = {}  # node -> [Point, ...]
+
+    for e in edges:
+        oriented = _resolve_edge(graph, e)
+        if oriented is None:
+            continue
+        u, v = oriented
+
+        ln = _get_line(graph, oriented)
+        if ln is None:
+            continue
+
+        pu = graph.node_attribute(u, "point")
+        pv = graph.node_attribute(v, "point")
+        if pu is None or pv is None:
+            continue
+
+        s, t = ln.start, ln.end
+        score_uv = _dist(s, pu) + _dist(t, pv)
+        score_vu = _dist(t, pu) + _dist(s, pv)
+        if score_uv <= score_vu:
+            mu, mv = s, t
+        else:
+            mu, mv = t, s
+
+        acc.setdefault(u, []).append(mu)
+        acc.setdefault(v, []).append(mv)
+
+    for node, pts in acc.items():
+        if not pts:
+            continue
+        x = sum(p.x for p in pts) / len(pts)
+        y = sum(p.y for p in pts) / len(pts)
+        z = sum(p.z for p in pts) / len(pts)
+        _set_node_point(graph, node, Point(x, y, z))
+
+    return list(acc.keys())
 
 
 def commit_shifted_lines(graph, hierarchy_filter=None, category_filter=None, clear_shifted=False):
@@ -141,13 +210,15 @@ def regenerate_edges(
     host_categories=None,
     host_level_pair=None,
     choose="up",
-    shift_along_host=0.0,
+    z_offset=0.0,
+    shift_along_host=None,
     prefer_on_segment=True,
     write_attribute=True,
     debug=False,
 ):
     """
-    Move one endpoint of each target edge by vertical-plane/host intersections.
+    Move one endpoint of each target edge by vertical-plane/host intersections,
+    then offset the selected point along Z according to `choose`.
     """
     if target_categories is not None:
         if isinstance(target_categories, str):
@@ -209,6 +280,14 @@ def regenerate_edges(
     all_intersection_points = []
     selected_host_lines = []
     intersection_markers = []
+
+    # Legacy fallback: keep older callers working if they still pass shift_along_host.
+    # New behavior is vertical offset, not shift along the host line.
+    if shift_along_host is not None:
+        try:
+            z_offset = float(shift_along_host)
+        except (TypeError, ValueError):
+            pass
 
     for e in graph.edges():
         if not is_target(e):
@@ -304,28 +383,29 @@ def regenerate_edges(
             if in_segment:
                 candidates = in_segment
 
-        if str(choose).lower() == "down":
+        choose_mode = str(choose).lower()
+        if choose_mode == "down":
             ipt, selected_host, _sel_t, _sel_on_seg = min(candidates, key=lambda p: p[0].z)
         else:
             ipt, selected_host, _sel_t, _sel_on_seg = max(candidates, key=lambda p: p[0].z)
 
         selected_host_line = _get_line(graph, selected_host)
-        if selected_host_line is not None:
-            ipt = _point_shifted_along_line(ipt, selected_host_line, shift_along_host)
+        ipt = _point_shifted_in_z(ipt, choose_mode, z_offset)
 
         new_line = Line(ipt, fixed_pt) if moved == u else Line(fixed_pt, ipt)
 
-        if write_attribute:
-            oriented = _resolve_edge(graph, e)
-            if oriented is not None:
-                graph.edge_attribute(oriented, "shifted_lines", new_line)
-                # Keep legacy key for compatibility with older scripts.
-                graph.edge_attribute(oriented, "generated_line", new_line)
-                graph.edge_attribute(oriented, "generated_shared_node", int(moved))
-                graph.edge_attribute(oriented, "generated_other_node", int(fixed))
+        oriented = _resolve_edge(graph, e)
+        if write_attribute and oriented is not None:
+            # Commit immediately so downstream steps can read `line` directly.
+            graph.edge_attribute(oriented, "line", new_line)
+            graph.edge_attribute(oriented, "shifted_lines", new_line)
+            # Keep legacy keys for compatibility with older scripts.
+            graph.edge_attribute(oriented, "generated_line", new_line)
+            graph.edge_attribute(oriented, "generated_shared_node", int(moved))
+            graph.edge_attribute(oriented, "generated_other_node", int(fixed))
 
         shifted_lines.append(new_line)
-        processed_edges.append(e)
+        processed_edges.append(oriented if oriented is not None else e)
         probe_lines.append(probe_line)
         selected_points.append(ipt)
         sh = selected_host_line
@@ -352,6 +432,10 @@ def regenerate_edges(
                 "selected_host_on_segment": host_on_seg,
             })
 
+    synced_nodes = []
+    if write_attribute and processed_edges:
+        synced_nodes = _sync_node_points_from_edges(graph, processed_edges)
+
     return {
         "graph": graph,
         "target_edges": target_edges,
@@ -368,14 +452,17 @@ def regenerate_edges(
             "host_categories": list(host_categories) if host_categories is not None else None,
             "host_level_pair": req_host_pair,
             "choose": str(choose).lower(),
-            "shift_along_host": float(shift_along_host),
+            "z_offset": float(z_offset),
             "prefer_on_segment": bool(prefer_on_segment),
             "target_count": len(target_edges),
             "shifted_count": len(processed_edges),
             "generated_count": len(processed_edges),
             "untouched_count": len(untouched_lines),
+            "committed_immediately": bool(write_attribute),
+            "synced_node_count": len(synced_nodes),
             "structure_preserved": True,
         },
         "host_debug": host_debug if debug else None,
+        "synced_nodes": synced_nodes,
     }
 
