@@ -64,7 +64,7 @@ def _point_shifted_along_line(point, line, distance):
     return point + direction * float(distance)
 
 
-def commit_generated_lines(graph, hierarchy_filter=None, category_filter=None, clear_generated=False):
+def commit_shifted_lines(graph, hierarchy_filter=None, category_filter=None, clear_shifted=False):
     committed = []
     if isinstance(category_filter, str):
         category_filter = {category_filter}
@@ -82,7 +82,11 @@ def commit_generated_lines(graph, hierarchy_filter=None, category_filter=None, c
         return False
 
     for e in graph.edges():
-        gl = graph.edge_attribute(e, "generated_line")
+        # Primary storage follows reciprocal workflow naming.
+        gl = graph.edge_attribute(e, "shifted_lines")
+        # Backward-compatible fallback for older outputs.
+        if gl is None:
+            gl = graph.edge_attribute(e, "generated_line")
         if gl is None:
             continue
         if not _hierarchy_match(graph.edge_attribute(e, "hierarchy")):
@@ -94,7 +98,8 @@ def commit_generated_lines(graph, hierarchy_filter=None, category_filter=None, c
         graph.edge_attribute(e, "shifted_lines", gl)
         committed.append(e)
 
-        if clear_generated:
+        if clear_shifted:
+            graph.edge_attribute(e, "shifted_lines", None)
             graph.edge_attribute(e, "generated_line", None)
             graph.edge_attribute(e, "generated_shared_node", None)
             graph.edge_attribute(e, "generated_other_node", None)
@@ -106,9 +111,23 @@ def commit_generated_lines(graph, hierarchy_filter=None, category_filter=None, c
             "committed_count": len(committed),
             "hierarchy_filter": hierarchy_filter,
             "category_filter": list(category_filter) if category_filter is not None else None,
+            "clear_shifted": bool(clear_shifted),
             "structure_preserved": True,
         },
     }
+
+
+def commit_generated_lines(graph, hierarchy_filter=None, category_filter=None, clear_generated=False):
+    """
+    Backward-compatible wrapper.
+    Prefer `commit_shifted_lines`.
+    """
+    return commit_shifted_lines(
+        graph,
+        hierarchy_filter=hierarchy_filter,
+        category_filter=category_filter,
+        clear_shifted=clear_generated,
+    )
 
 
 def regenerate_edges(
@@ -181,7 +200,7 @@ def regenerate_edges(
         return False
 
     target_edges = []
-    generated_lines = []
+    shifted_lines = []
     untouched_lines = []
     processed_edges = []
     host_debug = []
@@ -299,11 +318,13 @@ def regenerate_edges(
         if write_attribute:
             oriented = _resolve_edge(graph, e)
             if oriented is not None:
+                graph.edge_attribute(oriented, "shifted_lines", new_line)
+                # Keep legacy key for compatibility with older scripts.
                 graph.edge_attribute(oriented, "generated_line", new_line)
                 graph.edge_attribute(oriented, "generated_shared_node", int(moved))
                 graph.edge_attribute(oriented, "generated_other_node", int(fixed))
 
-        generated_lines.append(new_line)
+        shifted_lines.append(new_line)
         processed_edges.append(e)
         probe_lines.append(probe_line)
         selected_points.append(ipt)
@@ -334,7 +355,8 @@ def regenerate_edges(
     return {
         "graph": graph,
         "target_edges": target_edges,
-        "generated_lines": generated_lines,
+        "shifted_lines": shifted_lines,
+        "generated_lines": shifted_lines,
         
         "info": {
             "target_hierarchy": target_hierarchy,
@@ -349,6 +371,7 @@ def regenerate_edges(
             "shift_along_host": float(shift_along_host),
             "prefer_on_segment": bool(prefer_on_segment),
             "target_count": len(target_edges),
+            "shifted_count": len(processed_edges),
             "generated_count": len(processed_edges),
             "untouched_count": len(untouched_lines),
             "structure_preserved": True,
