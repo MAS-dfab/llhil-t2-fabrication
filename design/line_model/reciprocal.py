@@ -3,8 +3,8 @@
 Reciprocal Frame Solver
 
 Usage:
-    from design.line_model.reciprocal import reciprocal_from_subgraph
-    result = reciprocal_from_subgraph(subgraph, engage_len=0.3)
+    from design.line_model.reciprocal import reciprocal_width_from_subgraph
+    result = reciprocal_width_from_subgraph(graph, target_edges=primary_edges, engage_len=0.11)
 """
 
 import math
@@ -146,7 +146,6 @@ class ReciprocalSolver:
                         normal = add_vectors(normal, c)
         
         normal = normalize_vector(normal) if length_vector(normal) > 1e-3 else [0, 0, 1]
-        
         ref = dirs[0]
         proj = dot_vectors(ref, normal)
         ref = subtract_vectors(ref, scale_vector(normal, proj))
@@ -402,8 +401,7 @@ def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True, allo
         return Point((p1.x + p2.x)/2, (p1.y + p2.y)/2, (p1.z + p2.z)/2)
     
     def edge_direction(edge):
-        p1, p2 = _get_pt(subgraph, edge[0]), _get_pt(subgraph, edge[1])
-        d = Vector(p2.x - p1.x, p2.y - p1.y, p2.z - p1.z)
+        d = Vector.from_start_end(_get_pt(subgraph, edge[0]), _get_pt(subgraph, edge[1]))
         d.unitize()
         return d
     
@@ -461,7 +459,7 @@ def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True, allo
     
     # For each plane group, find joints where 3+ edges meet
     groups = []
-    
+
     for plane_idx, (frame, normal, plane_edges) in enumerate(plane_groups):
         # Build node -> edges map for this plane
         node_edges = {}
@@ -489,6 +487,18 @@ def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True, allo
                 dirs.append(d)
             
             # Cyclic sort
+            normals = []
+            for edge in node_edge_list:
+                #  Orient normal from lowermost to topmost node in group
+                group_nodes = set()
+                group_nodes.add(edge[0])
+                group_nodes.add(edge[1])
+                group_pts = sorted([_get_pt(subgraph, n) for n in group_nodes], key=lambda p: p.z)
+                low, high = group_pts[0], group_pts[-1]
+                up = [high.x - low.x, high.y - low.y, high.z - low.z]
+                n = Vector(*up).cross(Vector(0, 0, 1))
+                normal = n.unitized()
+
             sorted_edges, sorted_dirs = _cyclic_sort(node_edge_list, dirs, normal)
             angles = _compute_angles(sorted_dirs, normal)
             
@@ -563,21 +573,6 @@ def _compute_angles(dirs, normal):
     return angles
 
 
-def _line_end_at_node(edge, node):
-    """Return endpoint index (0/1) of edge that coincides with the nexus node."""
-    return 0 if edge[0] == node else 1
-
-
-def _offset_line_at_end(line, end_index, offset):
-    """Move one endpoint of a line by `offset` along its own direction."""
-    pts = [[line.start.x, line.start.y, line.start.z],
-           [line.end.x, line.end.y, line.end.z]]
-    d = subtract_vectors(pts[1 - end_index], pts[end_index])
-    if length_vector(d) < 1e-9:
-        return line
-    pts[end_index] = add_vectors(pts[end_index], scale_vector(normalize_vector(d), offset))
-    return Line(Point(*pts[0]), Point(*pts[1]))
-
 
 # ==============================================================================
 # Main API
@@ -595,338 +590,156 @@ def _pick_intersection_point(result):
     return result
 
 
-def _point_to_xyz_list(pt):
-    """Convert a point (COMPAS or indexable) to [x, y, z] float list."""
-    if pt is None:
-        return None
-    if hasattr(pt, "x") and hasattr(pt, "y") and hasattr(pt, "z"):
-        return [float(pt.x), float(pt.y), float(pt.z)]
-    try:
-        return [float(pt[0]), float(pt[1]), float(pt[2])]
-    except Exception:
-        return None
-
-
-def reciprocal_from_subgraph(subgraph, engage_len=1.0, tol=0.1, rotation_sign=+1,
-                              min_degree=2, debug=True, straight_angle_threshold_deg=178.0):
-    """
-    Reciprocalize primary+double lines from a classified subgraph.
-    
-    Each coplanar group is processed SEPARATELY so vertices shared between
-    groups stay FIXED unless they have 3+ edges within the SAME group.
-    
-    Returns dict with: shifted_lines, secondary_lines, nexus_lines, coplanar_groups, info
-    """
-    # Collect edges by type
-    reciprocal_edges = []
-    secondary_lines = []
-    
-    for u, v in subgraph.edges():
-        etype = subgraph.edge_attribute((u, v), 'hierarchy')
-        if etype in ('primary', 'double'):
-            reciprocal_edges.append((u, v))
-        else:
-            secondary_lines.append(_get_line(subgraph, (u, v)))
-    
-    if debug:
-        print(f"Edges: {len(reciprocal_edges)} reciprocal, {len(secondary_lines)} secondary")
-    
-    # Find coplanar groups
-    groups = find_coplanar_groups(subgraph, min_degree=min_degree, debug=debug)
-    
-    if not groups:
-        if debug:
-            print("No coplanar groups - returning unshifted")
-        return {
-            'shifted_lines': [_get_line(subgraph, e) for e in reciprocal_edges],
-            'secondary_lines': secondary_lines,
-            'nexus_lines': [],
-            'coplanar_groups': [],
-            'info': {'converged': True, 'cost': 0, 'n_vertices': 0}
-        }
-    
-    # Track edges in groups
-    edges_in_groups = set()
-    for g in groups:
-        for e in g['edges']:
-            edges_in_groups.add(e)
-            edges_in_groups.add((e[1], e[0]))
-    
-    unshifted = [_get_line(subgraph, e) for e in reciprocal_edges if e not in edges_in_groups]
-    
-    # Process each group
-    shifted, nexus, infos = [], [], []
-    total_verts = 0
-    
-    for gi, g in enumerate(groups):
-        if debug:
-            print(f"\n--- Group {gi}: {g['degree']} lines at node {g['node']} ---")
-
-        # Rule 2: if nexus angle is too straight, do not reciprocalize at this group.
-        if g.get('angles') and max(g['angles']) > straight_angle_threshold_deg:
-            if debug:
-                print(f"  skipped: max angle {max(g['angles']):.1f}° > {straight_angle_threshold_deg:.1f}°")
-            shifted.extend(g['lines'])
-            continue
-
-        # Rule 1: valency-2 special case before reciprocalization.
-        # Keep one edge fixed and move the other away from the nexus by engage_len.
-        if g['degree'] == 2 and len(g['lines']) == 2:
-            fixed_line = g['lines'][0]
-            moving_line = g['lines'][1]
-            moving_end_index = _line_end_at_node(g['edges'][1], g['node'])
-            shifted.extend([fixed_line, _offset_line_at_end(moving_line, moving_end_index, engage_len)])
-            continue
-
-        solver = ReciprocalSolver(g['lines'], engage_len=engage_len, tol=tol)
-        
-        if not solver.vertices:
-            shifted.extend(g['lines'])
-            continue
-        
-        info = solver.solve(rotation_sign=rotation_sign)
-        solver.trim_to_neighbors()
-        total_verts += len(solver.vertices)
-        
-        if debug:
-            print(f"  converged={info['converged']}, cost={info['cost']:.2e}")
-        
-        shifted.extend(solver.to_lines())
-        nexus.extend(solver.get_nexus_lines())
-        infos.append(info)
-    
-    return {
-        'shifted_lines': shifted + unshifted,
-        'secondary_lines': secondary_lines,
-        'nexus_lines': nexus,
-        'coplanar_groups': groups,
-        'info': {
-            'converged': all(i.get('converged', True) for i in infos),
-            'cost': sum(i.get('cost', 0) for i in infos),
-            'n_vertices': total_verts,
-            'n_groups': len(groups),
-        }
-    }
-
 def reciprocal_width_from_subgraph(
     subgraph,
+    target_edges,
     engage_len=0.11,
     tol=0.1,
     rotation_sign=+1,
     min_degree=2,
     iterations=10,
-    debug=True,
-    straight_angle_threshold_deg=178.0,
-    target_edges=None,
-    target_categories=None,
-    target_hierarchies=None,
+    max_angle=175
 ):
     """
-    Reciprocalize selected lines using Global Relaxation to solve the see-saw
-    effect, followed by a final cyclic intersection trimming pass.
+    Global-relaxation reciprocal solver.
 
-    Selection priority:
-    1) target_edges (explicit list of edges)
-    2) target_categories / target_hierarchies filters
-    3) fallback legacy: hierarchy in ('primary', 'double')
+    Iteratively computes zero-gap pinwheel intersections across all nexus groups
+    simultaneously, then does one final cyclic-intersection trim pass.
     """
-    global_beams = {}
+    # --- edge selection ---
+    target_edge_keys = {tuple(sorted(e)) for e in target_edges}
+
+    def _is_target(u, v):
+        return tuple(sorted((u, v))) in target_edge_keys
+
+    sign_map = {}
+
+    # --- collect edges ---
+    beam_lines = {}   # (u,v) -> Line, updated during solve
+    beam_shifts = {}  # (u,v) -> float, fixed
     secondary_lines = []
     reciprocal_edges = []
 
-    target_edge_keys = None
-    if target_edges is not None:
-        target_edge_keys = {tuple(sorted((u, v))) for (u, v) in target_edges}
-    if isinstance(target_categories, str):
-        target_categories = {target_categories}
-    elif target_categories is not None:
-        target_categories = set(target_categories)
-    if isinstance(target_hierarchies, str):
-        target_hierarchies = {target_hierarchies}
-    elif target_hierarchies is not None:
-        target_hierarchies = set(target_hierarchies)
-
-    def _is_target_edge(u, v):
-        if target_edge_keys is not None:
-            return tuple(sorted((u, v))) in target_edge_keys
-        h = subgraph.edge_attribute((u, v), 'hierarchy')
-        if target_categories is not None:
-            cat = subgraph.edge_attribute((u, v), 'e_category')
-            if cat not in target_categories:
-                return False
-        if target_hierarchies is not None:
-            if h not in target_hierarchies:
-                return False
-        if target_categories is not None and target_hierarchies is None:
-            return h in ("primary", "double", "primary_orthogonal") or (
-                isinstance(h, str) and h.startswith("primary_diagonal_")
-            )
-        if target_categories is not None or target_hierarchies is not None:
-            return True
-        return h in ('primary', 'double')
-    
-    # 1. Collect edges and establish global beam tracking
     for u, v in subgraph.edges():
-        if _is_target_edge(u, v):
+        if _is_target(u, v):
             reciprocal_edges.append((u, v))
-            
-            # Try to get 'width' from graph. Fallback to engage_len if None.
             w = subgraph.edge_attribute((u, v), 'width')
-            shift_dist = (w / 2.0) if w else engage_len
-            
-            p0, p1 = _get_pt(subgraph, u), _get_pt(subgraph, v)
-            
-            global_beams[(u, v)] = {
-                'p0': [p0.x, p0.y, p0.z], 
-                'p1': [p1.x, p1.y, p1.z], 
-                'shift': shift_dist
-            }
+            beam_shifts[(u, v)] = (w / 2.0) if w else engage_len
+            beam_lines[(u, v)] = Line(_get_pt(subgraph, u), _get_pt(subgraph, v))
         else:
             secondary_lines.append(_get_line(subgraph, (u, v)))
-    
-    if debug:
-        print(f"Edges: {len(reciprocal_edges)} reciprocal, {len(secondary_lines)} secondary")
-    
-    # 2. Find coplanar groups based on original unshifted topology
+
+    # --- find coplanar groups ---
     groups = find_coplanar_groups(
-        subgraph,
-        min_degree=min_degree,
-        debug=debug,
+        subgraph, min_degree=min_degree, plane_tol=0.1, debug=False,
         allowed_edges=reciprocal_edges,
     )
-    
+
     if not groups:
         return {
             'graph': subgraph,
-            'shifted_lines': [_get_line(subgraph, e) for e in reciprocal_edges],
+            'shifted_lines': list(beam_lines.values()),
             'secondary_lines': secondary_lines,
             'nexus_lines': [], 'coplanar_groups': [],
-            'info': {'converged': True, 'cost': 0, 'n_vertices': 0}
+            'info': {'converged': True, 'cost': 0, 'n_vertices': 0},
         }
 
-    # 3. GLOBAL RELAXATION LOOP
-    for iteration in range(iterations):
-        global_intended_moves = {}
-        
+    # --- global relaxation loop ---
+    def _actual(e):
+        return e if e in beam_lines else (e[1], e[0])
+
+    for _ in range(iterations):
+        intended_moves = {}  # (edge, end_idx) -> [x, y, z]
+
         for g in groups:
-            # Rule 2: skip near-straight nexus groups.
-            if g.get('angles') and max(g['angles']) > straight_angle_threshold_deg:
+            gsign = rotation_sign
+            print(f"Group at node {g['node']} with degree {g['degree']} and sign {gsign}")
+
+            if g.get('angles') and max(g['angles']) > max_angle:
                 continue
 
-            # Rule 1: valency-2 special case before reciprocalization.
             if g['degree'] == 2 and len(g['edges']) == 2:
-                moving_edge = g['edges'][1] if g['edges'][1] in global_beams else (g['edges'][1][1], g['edges'][1][0])
+                edge = _actual(g['edges'][1])
+                ln = beam_lines[edge]
                 node = g['node']
-                b = global_beams[moving_edge]
-                if moving_edge[0] == node:
-                    d = subtract_vectors(b['p1'], b['p0'])
+                if edge[0] == node:
+                    d = subtract_vectors(ln.end, ln.start)
                     if length_vector(d) > 1e-9:
-                        b['p0'] = add_vectors(b['p0'], scale_vector(normalize_vector(d), engage_len))
+                        beam_lines[edge] = Line(
+                            Point(*add_vectors(ln.start, scale_vector(normalize_vector(d), engage_len))),
+                            ln.end,
+                        )
                 else:
-                    d = subtract_vectors(b['p0'], b['p1'])
+                    d = subtract_vectors(ln.start, ln.end)
                     if length_vector(d) > 1e-9:
-                        b['p1'] = add_vectors(b['p1'], scale_vector(normalize_vector(d), engage_len))
+                        beam_lines[edge] = Line(
+                            ln.start,
+                            Point(*add_vectors(ln.end, scale_vector(normalize_vector(d), engage_len))),
+                        )
                 continue
 
             current_lines = []
-            beam_mapping = [] 
-            
-            for e in g['edges']: 
-                actual_edge = e if e in global_beams else (e[1], e[0])
-                b = global_beams[actual_edge]
-                
-                is_same_dir = (e == actual_edge)
-                p0, p1 = (b['p0'], b['p1']) if is_same_dir else (b['p1'], b['p0'])
-                    
-                current_lines.append(Line(Point(*p0), Point(*p1)))
-                beam_mapping.append((actual_edge, is_same_dir))
-                
-            solver = ReciprocalSolver(current_lines, tol=tol)
-            
-            for local_idx, (actual_edge, _) in enumerate(beam_mapping):
-                solver.beams[local_idx]['shift'] = global_beams[actual_edge]['shift']
-                
-            group_moves = solver.calculate_ideal_targets(rotation_sign)
-            
-            for (local_bi, local_ei), new_pt in group_moves.items():
-                actual_edge, is_same_dir = beam_mapping[local_bi]
-                global_ei = local_ei if is_same_dir else 1 - local_ei
-                global_intended_moves[(actual_edge, global_ei)] = new_pt
-                
-        for (actual_edge, global_ei), new_pt in global_intended_moves.items():
-            if global_ei == 0:
-                global_beams[actual_edge]['p0'] = new_pt
-            else:
-                global_beams[actual_edge]['p1'] = new_pt
+            beam_mapping = []
+            for e in g['edges']:
+                edge = _actual(e)
+                ln = beam_lines[edge]
+                same_dir = (e == edge)
+                current_lines.append(ln if same_dir else Line(ln.end, ln.start))
+                beam_mapping.append((edge, same_dir))
 
-    # 3.5 POST-RELAXATION TRIMMING (Cyclic Intersection)
-    # Now that all lines are settled, perfectly trim the tails at the intersections
+            solver = ReciprocalSolver(current_lines, tol=tol)
+            for local_idx, (edge, _) in enumerate(beam_mapping):
+                solver.beams[local_idx]['shift'] = beam_shifts[edge]
+
+            for (local_bi, local_ei), new_pt in solver.calculate_ideal_targets(gsign).items():
+                edge, same_dir = beam_mapping[local_bi]
+                end_idx = local_ei if same_dir else 1 - local_ei
+                intended_moves[(edge, end_idx)] = new_pt
+
+        for (edge, end_idx), new_pt in intended_moves.items():
+            ln = beam_lines[edge]
+            pt = Point(*new_pt)
+            beam_lines[edge] = Line(pt, ln.end) if end_idx == 0 else Line(ln.start, pt)
+
+    # --- final cyclic intersection trim ---
     for g in groups:
         m = len(g['edges'])
         if m < 2:
             continue
-            
-        node = g['node'] # The central intersection node for this group
-        
-        # Pre-build Line objects for the current group state
-        group_lines = []
-        for e in g['edges']:
-            actual_edge = e if e in global_beams else (e[1], e[0])
-            b = global_beams[actual_edge]
-            group_lines.append(Line(Point(*b['p0']), Point(*b['p1'])))
-            
-        # Intersect line k with the next line in the sequence
-        for k in range(m):
-            e_k = g['edges'][k]
-            actual_edge_k = e_k if e_k in global_beams else (e_k[1], e_k[0])
-            b_k = global_beams[actual_edge_k]
-            
-            # Determine the neighbor to trim against based on rotation direction
-            target_k = (k + 1) % m if rotation_sign > 0 else (k - 1) % m
-            
-            line_a = group_lines[k]
-            line_b = group_lines[target_k]
-            
-            # Find the 3D intersection. `intersection_line_line` can return
-            # None or tuples containing None for degenerate/parallel setups.
-            res = intersection_line_line(line_a, line_b)
-            intersect_pt = _pick_intersection_point(res)
-            
-            # Fallback for parallel/invalid intersections (e.g., 180 deg splits)
-            if intersect_pt is None:
-                fallback_k = (k - 1) % m if rotation_sign > 0 else (k + 1) % m
-                fallback_res = intersection_line_line(line_a, group_lines[fallback_k])
-                intersect_pt = _pick_intersection_point(fallback_res)
-            
-            if intersect_pt is not None:
-                xyz = _point_to_xyz_list(intersect_pt)
-                if xyz is None:
-                    continue
-                # Update the endpoint touching the central node, cleanly trimming the tail.
-                if actual_edge_k[0] == node:
-                    b_k['p0'] = xyz
-                else:
-                    b_k['p1'] = xyz
+        gsign = rotation_sign
+        node = g['node']
 
-    # 4. Finalize output
+        group_lines = [beam_lines[_actual(e)] for e in g['edges']]
+
+        for k in range(m):
+            edge_k = _actual(g['edges'][k])
+            target_k = (k + 1) % m if gsign > 0 else (k - 1) % m
+            intersect_pt = _pick_intersection_point(
+                intersection_line_line(group_lines[k], group_lines[target_k])
+            )
+            if intersect_pt is None:
+                fallback_k = (k - 1) % m if gsign > 0 else (k + 1) % m
+                intersect_pt = _pick_intersection_point(
+                    intersection_line_line(group_lines[k], group_lines[fallback_k])
+                )
+            if intersect_pt is not None:
+                pt = Point(*intersect_pt)
+                ln = beam_lines[edge_k]
+                beam_lines[edge_k] = Line(pt, ln.end) if edge_k[0] == node else Line(ln.start, pt)
+
+    # --- write results back to graph ---
     shifted_lines = []
     for e in reciprocal_edges:
-        b = global_beams[e]
-        shifted_line = Line(Point(*b['p0']), Point(*b['p1']))
-        subgraph.edge_attribute(e, "shifted_lines", shifted_line)
-        shifted_lines.append(shifted_line)
-    
+        ln = beam_lines[e]
+        subgraph.edge_attribute(e, 'shifted_line', ln)
+        shifted_lines.append(ln)
+
     return {
         'graph': subgraph,
         'shifted_lines': shifted_lines,
         'secondary_lines': secondary_lines,
-        'nexus_lines': [], # Left empty, zero-gap means no central holes!
+        'nexus_lines': [],
         'coplanar_groups': groups,
-        'info': {
-            'converged': True, 
-            'cost': 0, 
-            'iterations': iterations,
-            'n_groups': len(groups),
-        },
-        "global lines": global_beams
+        'nexus_pts': [g['point'] for g in groups],
+        'normal_vectors': [g['normal'] for g in groups],
     }
