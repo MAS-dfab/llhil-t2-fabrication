@@ -367,7 +367,7 @@ def _get_line(subgraph, edge):
 # Coplanar Group Detection
 # ==============================================================================
 
-def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True, allowed_edges=None):
+def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True, allowed_edges=None, max_degree=10):
     """
     Find groups of eligible edges that lie on the same plane.
     Returns groups where 2+ edges meet at a joint.
@@ -473,6 +473,10 @@ def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True, allo
             if len(node_edge_list) < min_degree:
                 continue
             
+            if len(node_edge_list) > max_degree:
+                if debug:
+                    print(f"  Skipping node {node} with {len(node_edge_list)} edges (exceeds max_degree)")
+                continue
             joint_pt = _get_pt(subgraph, node)
             
             # Get directions from joint
@@ -598,7 +602,8 @@ def reciprocal_width_from_subgraph(
     rotation_sign=+1,
     min_degree=2,
     iterations=10,
-    max_angle=175
+    max_angle=175,
+    max_degree=3
 ):
     """
     Global-relaxation reciprocal solver.
@@ -629,14 +634,14 @@ def reciprocal_width_from_subgraph(
             reciprocal_edges.append((u, v))
             w = subgraph.edge_attribute((u, v), 'width')
             beam_shifts[(u, v)] = (w / 2.0) if w else engage_len
-            beam_lines[(u, v)] = Line(_get_pt(subgraph, u), _get_pt(subgraph, v))
+            beam_lines[(u, v)] = _get_line(subgraph, (u, v))
         else:
             secondary_lines.append(_get_line(subgraph, (u, v)))
 
     # --- find coplanar groups ---
     groups = find_coplanar_groups(
         subgraph, min_degree=min_degree, plane_tol=0.1, debug=False,
-        allowed_edges=reciprocal_edges,
+        allowed_edges=reciprocal_edges, max_degree=max_degree
     )
 
     if not groups:
