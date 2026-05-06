@@ -592,7 +592,7 @@ def _pick_intersection_point(result):
 
 def reciprocal_width_from_subgraph(
     subgraph,
-    target_edges,
+    target_hierarchy='primary',
     engage_len=0.11,
     tol=0.1,
     rotation_sign=+1,
@@ -607,7 +607,11 @@ def reciprocal_width_from_subgraph(
     simultaneously, then does one final cyclic-intersection trim pass.
     """
     # --- edge selection ---
+    target_edges =[
+        edge for edge in subgraph.edges() if subgraph.edge_attribute(edge, 'hierarchy') is target_hierarchy
+    ]
     target_edge_keys = {tuple(sorted(e)) for e in target_edges}
+
 
     def _is_target(u, v):
         return tuple(sorted((u, v))) in target_edge_keys
