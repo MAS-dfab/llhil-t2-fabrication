@@ -239,9 +239,12 @@ def trim_anchored_beams_and_find_cut_planes(graph, min_radius=0.60, min_height=0
         cro_secs[sup_node] = crosecs
         steps[sup_node] = step
 
+        # 3. Assign cut planes to nodes' attrubutes in graph
         sup_pt = graph.node_point(sup_node)
         cut_pln = Plane(sup_pt + Vector(0, 0, step), Vector(0, 0, 1))
         cuts[sup_node] = cut_pln
+        
+        graph.node_attribute(sup_node, "cut_plane", cut_pln)
         
     return {
         "cross_sections": cro_secs,
