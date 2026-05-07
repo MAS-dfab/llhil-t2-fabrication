@@ -67,9 +67,12 @@ class TimberProcessPlanner(BaseRobotPlanner):
         print("Physical cell setup complete.")
 
     def add_rb_to_cell(self, meshes, name):
+        if name in self.robot_cell.rigid_body_models:
+            del self.robot_cell.rigid_body_models[name]
+        if name in self.state.rigid_body_states:
+            del self.state.rigid_body_states[name]
         if len(meshes) > 0:
             meshes_RB = RigidBody.from_meshes(meshes)
-            self.robot_cell.rigid_body_models[name] = []
             self.robot_cell.rigid_body_models[name] = meshes_RB
             self.state.rigid_body_states[name] = RigidBodyState(Frame.worldXY())
             self.planner.set_robot_cell(self.robot_cell)

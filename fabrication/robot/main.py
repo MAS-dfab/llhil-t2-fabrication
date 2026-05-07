@@ -36,13 +36,11 @@ def main():
     seq_i = 15
 
     trajectories = []
-    assembled_elements = []
+    # assembled_elements = []
 
-    for p in timber_model.plates:
-        print(p.transformation_to_local())
-        # aaaaaa
-        p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
-        assembled_elements.append(p_mesh)
+    # for p in timber_model.plates:
+        # p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
+    #     assembled_elements.append(p_mesh)
 
     # Sort beams by sequence attribute to ensure correct assembly order
     in_seq_beams = sorted(
@@ -50,11 +48,35 @@ def main():
     key=lambda x: x.attributes["sequence"]
     )
 
+    print("\n🚀 Launching Trajectory Viewer...")
+    player = TrajectoryPlayer(
+        trajectory_planner=trajectory_planner,
+        timber_model=timber_model,
+        beams=in_seq_beams,
+        # use_cache=True
+    )
+    
+    player.add_dynamic_workpieces(
+        pnp_data=trajectory_planner.workpiece_manager.rules, 
+        geometry_dict=trajectory_planner.workpiece_manager.meshes
+    )
+    
+    player.add_visual_helpers(
+        trace=True, 
+        triad=True, 
+        ghost=False,
+        group=trajectory_planner.group
+    )
+        
+    player.show()
+
+    aaaaa
+
     # Add already assembled beams to the cell for collision checking
-    for b in in_seq_beams[:seq_i]:
-        b_mesh = b.geometry.transformed(trajectory_planner.at_T*b.attributes.get("parent_T")).to_viewmesh()[0]
-        assembled_elements.append(b_mesh)
-    trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
+    # for b in in_seq_beams[:seq_i]:
+    #     b_mesh = b.geometry.transformed(trajectory_planner.at_T*b.attributes.get("parent_T")).to_viewmesh()[0]
+    #     assembled_elements.append(b_mesh)
+    # trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
 
     # Compute trajectory for current beam
     beam = in_seq_beams[seq_i]
@@ -83,27 +105,27 @@ def main():
     # 5. LAUNCH VIEWER
     # ---------------------------------------------------------
 
-    print("\n🚀 Launching Trajectory Viewer...")
-    player = TrajectoryPlayer(
-        robot_cell=trajectory_planner.robot_cell, 
-        trajectory=merged_trajectory,
-        cell_state=trajectory_planner.state,
-        # use_cache=True
-    )
+    # print("\n🚀 Launching Trajectory Viewer...")
+    # player = TrajectoryPlayer(
+    #     robot_cell=trajectory_planner.robot_cell, 
+    #     trajectory=merged_trajectory,
+    #     cell_state=trajectory_planner.state,
+    #     # use_cache=True
+    # )
     
-    player.add_dynamic_workpieces(
-        pnp_data=trajectory_planner.workpiece_manager.rules, 
-        geometry_dict=trajectory_planner.workpiece_manager.meshes
-    )
+    # player.add_dynamic_workpieces(
+    #     pnp_data=trajectory_planner.workpiece_manager.rules, 
+    #     geometry_dict=trajectory_planner.workpiece_manager.meshes
+    # )
     
-    player.add_visual_helpers(
-        trace=True, 
-        triad=True, 
-        ghost=False,
-        group=trajectory_planner.group
-    )
+    # player.add_visual_helpers(
+    #     trace=True, 
+    #     triad=True, 
+    #     ghost=False,
+    #     group=trajectory_planner.group
+    # )
         
-    player.show()
+    # player.show()
 
 if __name__ == "__main__":
     main()
