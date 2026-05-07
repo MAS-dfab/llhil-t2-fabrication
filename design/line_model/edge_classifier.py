@@ -662,6 +662,31 @@ def find_dominant_direction(vecs, angle_tol=None):
     return None
 
 
+def assign_edges_dimensions(graph):
+    """
+    Assign width and height attributes to edges based on their hierarchy and level.
+    Widths are defined by hierarchies, and height are defined by levels.
+    """
+    widths = [0.08, 0.10, 0.12]  # hierarchy
+    heights = [0.10, 0.12, 0.14]  # level
+
+    for edge in graph.edges():
+        hie = graph.edge_attribute(edge, 'hierarchy')
+        if hie in ('main_primary', 'primary'):
+            hie_key = 2
+        elif hie is 'secondary':
+            hie_key = 1
+        elif hie is 'tertiary':
+            hie_key = 0
+        else:
+            hie_key = 0  # temp.
+            
+        lvl = graph.edge_attribute(edge, 'level')
+
+        graph.edge_attribute(edge, 'width', widths[hie_key])
+        graph.edge_attribute(edge, 'height', heights[lvl])
+    
+    return
 
 
 
