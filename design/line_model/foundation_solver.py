@@ -215,7 +215,7 @@ def trim_anchored_beams_and_find_cut_planes(graph, min_radius=0.60, min_height=0
             ln = graph.edge_line(sup_edge)
 
         w = graph.edge_attribute(sup_edge, "width") if "width" in graph.edge_attributes(sup_edge) else 0.12
-        h = graph.edge_attribute(sup_edge, "height") if "height" in graph.edge_attributes(sup_edge) else 0.24
+        h = graph.edge_attribute(sup_edge, "height") if "height" in graph.edge_attributes(sup_edge) else 0.14
 
         beam = Beam(ln, w, h)
 
