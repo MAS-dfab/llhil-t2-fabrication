@@ -154,19 +154,22 @@ def snap_to_host(
     req_target_pair = tuple(sorted((int(target_level_pair[0]), int(target_level_pair[1])))) if target_level_pair else None
     req_host_pair   = tuple(sorted((int(host_level_pair[0]),   int(host_level_pair[1]))))   if host_level_pair   else None
 
+    host_hierarchies = {host_hierarchy} if isinstance(host_hierarchy, str) else set(host_hierarchy)
+
     def _level_pair(edge):
         u, v = edge
         return tuple(sorted((graph.node_attribute(u, "level"), graph.node_attribute(v, "level"))))
 
-    def _h_match(edge_h, wanted):
-        if edge_h == wanted:
-            return True
-        if wanted == "primary":
-            return edge_h == "primary_orthogonal" or (isinstance(edge_h, str) and edge_h.startswith("primary_diagonal_"))
+    def _h_match(edge_h, wanted_set):
+        for wanted in wanted_set:
+            if edge_h == wanted:
+                return True
+            if wanted == "primary" and (edge_h == "primary_orthogonal" or (isinstance(edge_h, str) and edge_h.startswith("primary_diagonal_"))):
+                return True
         return False
 
     def _is_target(e):
-        if not _h_match(graph.edge_attribute(e, "hierarchy"), target_hierarchy):
+        if not _h_match(graph.edge_attribute(e, "hierarchy"), {target_hierarchy}):
             return False
         if target_categories is not None and graph.edge_attribute(e, "e_category") not in target_categories:
             return False
@@ -175,7 +178,7 @@ def snap_to_host(
         return True
 
     def _is_host(e):
-        if not _h_match(graph.edge_attribute(e, "hierarchy"), host_hierarchy):
+        if not _h_match(graph.edge_attribute(e, "hierarchy"), host_hierarchies):
             return False
         if host_categories is not None and graph.edge_attribute(e, "e_category") not in host_categories:
             return False
@@ -257,7 +260,7 @@ def snap_to_host(
 
         best_pt = min(preferred or host_candidates, key=lambda x: x[1])[0]
 
-        new_pt = Point(best_pt.x, best_pt.y, best_pt.z + float(z_offset))
+        new_pt = Point(best_pt.x, best_pt.y, best_pt.z + (float(z_offset) if prefer_up else -float(z_offset)))
         new_line = Line(new_pt, fixed_pt) if moved == u else Line(fixed_pt, new_pt)
 
         oriented = _resolve_edge(graph, e)

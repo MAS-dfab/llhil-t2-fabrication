@@ -24,19 +24,23 @@ def _get_support_points(graph, support_points=None):
     return pts
 
 
-def _empty_classification_return(return_tertiary, return_node_edge_report=False):
-    """Return correctly-shaped empty outputs for classifier API."""
-    if return_tertiary and return_node_edge_report:
-        return [], [], [], [], []
-    if return_tertiary:
-        return [], [], [], []
-    return [], [], []
-
-
 def _edge_key(edge):
     """Return orientation-independent edge key for undirected graph edges."""
     u, v = edge
     return frozenset((u, v))
+
+
+def edges_from_keys(graph, edge_keys):
+    """Convert edge keys back to actual Line objects for visualization."""
+    lines = []
+    for edge in graph.edges():
+        if _edge_key(edge) in edge_keys:
+            u, v = edge
+            pu = graph.node_attribute(u, "point")
+            pv = graph.node_attribute(v, "point")
+            if pu is not None and pv is not None:
+                lines.append(Line(pu, pv))
+    return lines
 
 
 def _edge_xy_direction(graph, edge):
@@ -146,194 +150,195 @@ def _find_continuation_edges(
     return [], "none"
 
 
+def _group_center_xy(group_records, support_pts=None):
+    """Calculate center of group, biased toward nearest support point."""
+    pts = [Point(r["point"].x, r["point"].y, 0.0) for r in group_records]
+    c = centroid_points(pts)
+    cx, cy = c[0], c[1]
+    
+    if not support_pts:
+        return cx, cy
+    
+    best = None
+    best_d2 = float("inf")
+    for sp in support_pts:
+        dx = sp.x - cx
+        dy = sp.y - cy
+        d2 = dx * dx + dy * dy
+        if d2 < best_d2:
+            best_d2 = d2
+            best = sp
+    
+    return (best.x, best.y) if best else (cx, cy)
+
+
+def _angle_delta(a, b):
+    """Normalize angle difference to [-π, π]."""
+    d = a - b
+    while d <= -math.pi:
+        d += 2.0 * math.pi
+    while d > math.pi:
+        d -= 2.0 * math.pi
+    return d
+
+
+def _candidate_entries_for_node(graph, node, candidates, used_edge_keys):
+    """Get candidate edges for node with their directions, excluding used edges."""
+    entries = []
+    for item in candidates:
+        if _edge_key(item["edge"]) in used_edge_keys:
+            continue
+        dxy = _edge_xy_direction_from_node(graph, item["edge"], node)
+        if dxy is not None:
+            entries.append((item, dxy))
+    return entries
+
+
+def _pick_best_tangent_entry(entries, rec):
+    """Pick entry whose direction is closest to the tangent angle."""
+    tangent = rec.get("tangent_ccw")
+    if tangent is None or tangent.length < 1e-9:
+        return None, None
+
+    tangent_angle = math.atan2(tangent.y, tangent.x)
+    best = None, None, float("inf")
+    for item, dxy in entries:
+        direction_angle = math.atan2(dxy.y, dxy.x)
+        angle_gap = abs(_angle_delta(direction_angle, tangent_angle))
+        if angle_gap < best[2]:
+            best = item, dxy, angle_gap
+    return best[0], best[1]
+
+
+def _split_primary_by_direction(graph, primary_edges, parallel_tol):
+    if not primary_edges:
+        return set(), set()
+
+    # Direction from origin to global center of all nodes
+    all_pts = [graph.node_attribute(n, "point") for n in graph.nodes() if graph.node_attribute(n, "point") is not None]
+    cx = sum(p.x for p in all_pts) / len(all_pts)
+    cy = sum(p.y for p in all_pts) / len(all_pts)
+    center = Point(cx, cy, 0.0)
+    main_primary_keys = set()
+    primary_keys = set()
+
+    for edge in primary_edges:
+        dxy = _edge_xy_direction(graph, edge)
+        mid_edge = (graph.node_point(edge[0]) + graph.node_point(edge[1])) * 0.5
+        mid_edge.z = 0.0
+        
+        center_dir = Vector.from_start_end(center, mid_edge)
+        center_dir.unitize()
+
+        print(abs(dxy.dot(center_dir)))
+        if dxy is None:
+            primary_keys.add(_edge_key(edge))
+            continue
+        if abs(dxy.dot(center_dir)) >= parallel_tol:
+            primary_keys.add(_edge_key(edge))
+        else:
+            main_primary_keys.add(_edge_key(edge))
+
+    return main_primary_keys, primary_keys
+
+
+def _add_edge_and_grow(item, node, direction, graph, items_list, keys_set, secondary_by_node, parallel_tol, plane_tol):
+    """Add an edge to the list and grow it with continuations."""
+    items_list.append(item)
+    keys_set.add(_edge_key(item["edge"]))
+    
+    grow_node = _grow_node_for(item["edge"], node)
+    grow_pt = graph.node_attribute(grow_node, "point")
+    if grow_pt is not None:
+        next_items, _ = _find_continuation_edges(
+            graph=graph,
+            grow_node=grow_node,
+            secondary_by_node=secondary_by_node,
+            secondary_keys=keys_set,
+            chosen_dir=direction,
+            seed_origin=grow_pt,
+            parallel_tol=parallel_tol,
+            plane_tol=plane_tol,
+        )
+        for nxt in next_items:
+            items_list.append(nxt)
+            keys_set.add(_edge_key(nxt["edge"]))
+
+
 def _split_secondary_by_level_one_seed(
     graph,
-    primary_edges,
-    secondary_items,
     parallel_tol,
     plane_tol=1e-3,
-    return_node_edge_report=False,
 ):
-    """Split leftover edges into secondary and tertiary."""
-    if not secondary_items:
-        return ([], [], []) if return_node_edge_report else ([], [])
-
-    primary_keys = set(_edge_key(e) for e in primary_edges)
+    """Split leftover edges into secondary and tertiary via spatial/directional grouping."""
+    
+    # Identify level-1 nodes connected to primary edges
+    primary_keys = set(_edge_key(e) for e in graph.edges() if graph.edge_attribute(e, "hierarchy") == "primary")
     level1_nodes = []
+    
     for n in graph.nodes():
         try:
             level = int(float(graph.node_attribute(n, "level")))
         except (TypeError, ValueError):
             continue
-        if level != 1:
-            continue
-        if any(_edge_key((n, nbr)) in primary_keys for nbr in graph.neighbors(n)):
+        if level == 1 and any(_edge_key((n, nbr)) in primary_keys for nbr in graph.neighbors(n)):
             level1_nodes.append(n)
-
-    if not level1_nodes:
-        return ([], list(secondary_items), []) if return_node_edge_report else ([], list(secondary_items))
-
+    
+    # Gather all secondary items indexed by node
+    secondary_items = [{"edge": e} for e in graph.edges() if graph.edge_attribute(e, "hierarchy") != "primary"]
     secondary_by_node = {}
     for item in secondary_items:
         u, v = item["edge"]
         secondary_by_node.setdefault(u, []).append(item)
         secondary_by_node.setdefault(v, []).append(item)
-
+    
+    # Build node records from level-1 nodes with candidates
     node_records = []
-    for node in sorted(level1_nodes, key=lambda x: str(x)):
+    for node in sorted(level1_nodes, key=str):
         pt = graph.node_attribute(node, "point")
         candidates = secondary_by_node.get(node, [])
+        
         if pt is None or not candidates:
             continue
-
+        
+        # Find primary direction at this node
         primary_dir = None
         for nbr in graph.neighbors(node):
             if _edge_key((node, nbr)) in primary_keys:
                 primary_dir = _edge_xy_direction(graph, (node, nbr))
                 if primary_dir is not None:
                     break
-        if primary_dir is None:
-            continue
-
-        node_records.append({"node": node, "point": pt, "primary_dir": primary_dir, "candidates": candidates})
-
+        
+        if primary_dir is not None:
+            node_records.append({"node": node, "point": pt, "primary_dir": primary_dir, "candidates": candidates})
+    
+    # Early exit if no viable level-1 nodes
     if not node_records:
-        return ([], list(secondary_items), []) if return_node_edge_report else ([], list(secondary_items))
-
+        return [], secondary_items
+    
+    # Spatially partition node records into 4 tiles
     support_pts = _get_support_points(graph)
-
-    def _group_center_xy(group_nodes):
-        pts = [Point(r["point"].x, r["point"].y, 0.0) for r in group_nodes]
-        c = centroid_points(pts)
-        cx, cy = c[0], c[1]
-        if not support_pts:
-            return cx, cy
-
-        best = None
-        best_d2 = float("inf")
-        for sp in support_pts:
-            dx = sp.x - cx
-            dy = sp.y - cy
-            d2 = dx * dx + dy * dy
-            if d2 < best_d2:
-                best_d2 = d2
-                best = sp
-
-        if best is None:
-            return cx, cy
-        return best.x, best.y
-
     xs = [r["point"].x for r in node_records]
     ys = [r["point"].y for r in node_records]
     mid_x = 0.5 * (min(xs) + max(xs))
     mid_y = 0.5 * (min(ys) + max(ys))
-
+    
     tiles = {(0, 0): [], (1, 0): [], (0, 1): [], (1, 1): []}
     for rec in node_records:
         ix = 0 if rec["point"].x <= mid_x else 1
         iy = 0 if rec["point"].y <= mid_y else 1
         tiles[(ix, iy)].append(rec)
-
-    def _candidate_entries_for_node(rec, used_edge_keys):
-        out = []
-        n = rec["node"]
-        for item in rec["candidates"]:
-            if _edge_key(item["edge"]) in used_edge_keys:
-                continue
-            dxy = _edge_xy_direction_from_node(graph, item["edge"], n)
-            if dxy is None:
-                continue
-            out.append((item, dxy))
-        return out
-
-    def _xy_intersection_penalty(edge_a, edge_b):
-        ua, va = edge_a
-        ub, vb = edge_b
-        pa = graph.node_attribute(ua, "point")
-        qa = graph.node_attribute(va, "point")
-        pb = graph.node_attribute(ub, "point")
-        qb = graph.node_attribute(vb, "point")
-        if not pa or not qa or not pb or not qb:
-            return 0.0
-
-        def orient(p, q, r):
-            return (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)
-
-        o1 = orient(pa, qa, pb)
-        o2 = orient(pa, qa, qb)
-        o3 = orient(pb, qb, pa)
-        o4 = orient(pb, qb, qa)
-        if (o1 * o2 < 0.0) and (o3 * o4 < 0.0):
-            return 1.0
-        return 0.0
-
-    def _angle_delta(a, b):
-        d = a - b
-        while d <= -math.pi:
-            d += 2.0 * math.pi
-        while d > math.pi:
-            d -= 2.0 * math.pi
-        return d
-
+    
+    # Process each tile's direction groups
     secondary_group = []
     secondary_keys = set()
-    node_edge_report = []
-
-    def _pick_best_tangent_entry(entries, rec):
-        best_item, best_dir, best_score = None, None, -1e9
-        for item, dxy in entries:
-            score = dxy.dot(rec["tangent_ccw"])
-            if score > best_score:
-                best_item, best_dir, best_score = item, dxy, score
-        return best_item, best_dir
-
-    def _add_chain(grp_idx, rec, seed_item, seed_dir):
-        node = rec["node"]
-        seed_origin = graph.node_attribute(node, "point")
-        if seed_origin is None:
-            return
-        grow_node = _grow_node_for(seed_item["edge"], node)
-
-        secondary_group.append(seed_item)
-        secondary_keys.add(_edge_key(seed_item["edge"]))
-
-        next_items, mode = _find_continuation_edges(
-            graph=graph,
-            grow_node=grow_node,
-            secondary_by_node=secondary_by_node,
-            secondary_keys=secondary_keys,
-            chosen_dir=seed_dir,
-            seed_origin=seed_origin,
-            parallel_tol=parallel_tol,
-            plane_tol=plane_tol,
-        )
-        for nxt in next_items:
-            secondary_group.append(nxt)
-            secondary_keys.add(_edge_key(nxt["edge"]))
-
-        if return_node_edge_report:
-            node_edge_report.append({
-                "group": grp_idx,
-                "node": node,
-                "candidate_edges": [it["edge"] for it in rec["candidates"]],
-                "seed_edge": seed_item["edge"],
-                "grow_node": grow_node,
-                "next_edges": [n["edge"] for n in next_items],
-                "next_edge": next_items[0]["edge"] if next_items else None,
-                "continuation_mode": mode,
-            })
-
-    def _add_best_single(grp_idx, rec, entries):
-        best_item, best_dir = _pick_best_tangent_entry(entries, rec)
-        if best_item is not None:
-            _add_chain(grp_idx, rec, best_item, best_dir)
-
-    block_order = [(0, 0), (1, 0), (0, 1), (1, 1)]
-    for bidx, tile_key in enumerate(block_order):
+    
+    for bidx, tile_key in enumerate([(0, 0), (1, 0), (0, 1), (1, 1)]):
         block_records = tiles[tile_key]
         if not block_records:
             continue
-
+        
+        # Group by parallel primary direction
         direction_groups = []
         for rec in block_records:
             matched = None
@@ -341,14 +346,19 @@ def _split_secondary_by_level_one_seed(
                 if abs(rec["primary_dir"].dot(grp["ref_dir"])) >= parallel_tol:
                     matched = grp
                     break
+            
             if matched:
                 matched["nodes"].append(rec)
             else:
                 direction_groups.append({"ref_dir": rec["primary_dir"], "nodes": [rec]})
-
+        
+        # Process each direction group
         for lidx, grp in enumerate(direction_groups):
-            cx, cy = _group_center_xy(grp["nodes"])
-            for rec in grp["nodes"]:
+            cx, cy = _group_center_xy(grp["nodes"], support_pts)
+            group_nodes = sorted(grp["nodes"], key=lambda r: math.atan2(r["point"].y - cy, r["point"].x - cx))
+            
+            # Calculate tangents and angles
+            for rec in group_nodes:
                 px, py = rec["point"].x, rec["point"].y
                 rec["angle"] = math.atan2(py - cy, px - cx)
                 rv = Vector(px - cx, py - cy, 0.0)
@@ -357,73 +367,60 @@ def _split_secondary_by_level_one_seed(
                     tangent = Vector(-rv.y, rv.x, 0.0)
                 else:
                     tangent = Vector(-rec["primary_dir"].y, rec["primary_dir"].x, 0.0)
-                if tangent.length > 1e-9:
-                    tangent.unitize()
-                rec["tangent_ccw"] = tangent
-
-            group_nodes = sorted(grp["nodes"], key=lambda r: r["angle"])
+                rec["tangent_ccw"] = tangent if tangent.length < 1e-9 else (tangent.unitize() or tangent)
+            
+            # Match and chain nodes
             used_nodes = set()
             out_group_id = bidx * 10 + lidx
-
+            
             for rec in group_nodes:
-                node = rec["node"]
-                if node in used_nodes:
+                if rec["node"] in used_nodes:
                     continue
-
+                
+                entries_a = _candidate_entries_for_node(graph, rec["node"], rec["candidates"], secondary_keys)
+                if not entries_a:
+                    used_nodes.add(rec["node"])
+                    continue
+                
+                # Find best partner at opposite angle
                 partner = None
                 best_gap = None
                 for other in group_nodes:
-                    onode = other["node"]
-                    if onode == node or onode in used_nodes:
+                    if other["node"] in used_nodes or other["node"] == rec["node"]:
                         continue
                     gap = abs(abs(_angle_delta(rec["angle"], other["angle"])) - math.pi)
                     if partner is None or gap < best_gap:
-                        partner = other
-                        best_gap = gap
-
-                entries_a = _candidate_entries_for_node(rec, secondary_keys)
-                if not entries_a:
-                    used_nodes.add(node)
-                    continue
-
+                        partner, best_gap = other, gap
+                
+                # Single or paired chain
                 if partner is None:
-                    _add_best_single(out_group_id, rec, entries_a)
-                    used_nodes.add(node)
-                    continue
-
-                entries_b = _candidate_entries_for_node(partner, secondary_keys)
-                if not entries_b:
-                    _add_best_single(out_group_id, rec, entries_a)
-                    used_nodes.add(node)
-                    continue
-
-                best_combo = None
-                best_score = -1e9
-                for item_a, dir_a in entries_a:
-                    grow_a = _grow_node_for(item_a["edge"], rec["node"])
-                    tan_a = dir_a.dot(rec["tangent_ccw"])
-                    for item_b, dir_b in entries_b:
-                        grow_b = _grow_node_for(item_b["edge"], partner["node"])
-                        tan_b = dir_b.dot(partner["tangent_ccw"])
-                        parallel_score = abs(dir_a.dot(dir_b))
-                        crossing_penalty = _xy_intersection_penalty(item_a["edge"], item_b["edge"])
-                        same_grow_penalty = 1.0 if grow_a == grow_b else 0.0
-
-                        score = 3.0 * parallel_score + tan_a + tan_b - 4.0 * crossing_penalty - 2.0 * same_grow_penalty
-                        if score > best_score:
-                            best_score = score
-                            best_combo = (item_a, dir_a, item_b, dir_b)
-
-                if best_combo:
-                    item_a, dir_a, item_b, dir_b = best_combo
-                    _add_chain(out_group_id, rec, item_a, dir_a)
-                    _add_chain(out_group_id, partner, item_b, dir_b)
-                used_nodes.add(node)
-                used_nodes.add(partner["node"])
-
+                    item, direction = _pick_best_tangent_entry(entries_a, rec)
+                    if item:
+                        _add_edge_and_grow(item, rec["node"], direction, graph, secondary_group, secondary_keys, secondary_by_node, parallel_tol, plane_tol)
+                    used_nodes.add(rec["node"])
+                else:
+                    entries_b = _candidate_entries_for_node(graph, partner["node"], partner["candidates"], secondary_keys)
+                    if not entries_b:
+                        item, direction = _pick_best_tangent_entry(entries_a, rec)
+                        if item:
+                            _add_edge_and_grow(item, rec["node"], direction, graph, secondary_group, secondary_keys, secondary_by_node, parallel_tol, plane_tol)
+                        used_nodes.add(rec["node"])
+                        continue
+                    
+                    item_a, dir_a = _pick_best_tangent_entry(entries_a, rec)
+                    item_b, dir_b = _pick_best_tangent_entry(entries_b, partner)
+                    
+                    if item_a:
+                        _add_edge_and_grow(item_a, rec["node"], dir_a, graph, secondary_group, secondary_keys, secondary_by_node, parallel_tol, plane_tol)
+                    if item_b:
+                        _add_edge_and_grow(item_b, partner["node"], dir_b, graph, secondary_group, secondary_keys, secondary_by_node, parallel_tol, plane_tol)
+                    
+                    used_nodes.add(rec["node"])
+                    used_nodes.add(partner["node"])
+    
+    # All unselected secondary items become tertiary
     tertiary_group = [item for item in secondary_items if _edge_key(item["edge"]) not in secondary_keys]
-    if return_node_edge_report:
-        return secondary_group, tertiary_group, node_edge_report
+    
     return secondary_group, tertiary_group
 
 
@@ -431,120 +428,82 @@ def classify_edges_by_support_direction(
     graph,
     parallel_tol=None,
     debug=False,
-    support_points=None,
-    return_tertiary=False,
     seed_plane_tol=1e-3,
-    return_node_edge_report=False,
 ):
     """Classify edges into primary/secondary and optionally tertiary."""
     if parallel_tol is None:
         parallel_tol = DEFAULT_PARALLEL_TOL
 
-    sup_pts = _get_support_points(graph, support_points=support_points)
-    if not sup_pts:
-        if debug:
-            print("WARNING: No support points available!")
-        return _empty_classification_return(return_tertiary, return_node_edge_report)
-
-    primary_lines, secondary_lines, data = [], [], []
-    primary_edges, secondary_items = [], []
-
-    def _set_hierarchy(edge, etype):
-        # Keep explicit edge hierarchy in sync with classifier labels so
-        # downstream filters can target hierarchies directly.
-        if etype in ("primary", "secondary", "tertiary", "double"):
-            graph.edge_attribute(edge, "hierarchy", etype)
-
-    def _store(edge, line, etype, support_idx, dot):
-        data.append({"edge": edge, "support_idx": support_idx, "dot": dot, "type": etype})
-        graph.edge_attribute(edge, "hierarchy", etype)
-        graph.edge_attribute(edge, "parallel_score", dot)
-        graph.edge_attribute(edge, "nearest_support", support_idx)
-        if etype == "primary":
-            primary_lines.append(line)
-            primary_edges.append(edge)
-        elif etype == "secondary":
-            secondary_lines.append(line)
-            secondary_items.append({"edge": edge, "line": line})
-
+    sup_edges = graph.get_support_edges()
+    
+    # Mark support edges as primary and collect their plane information
+    primary_keys = set()
+    support_planes = []  # List of (origin_point, direction_vector) tuples
+    
+    for edge in sup_edges:
+        primary_keys.add(_edge_key(edge))
+        graph.edge_attribute(edge, "hierarchy", "primary")
+        
+        # Extract plane from support edge
+        u, v = edge
+        pu = graph.node_attribute(u, "point")
+        pv = graph.node_attribute(v, "point")
+        if pu is not None and pv is not None:
+            # Direction of support edge
+            dir_xy = _edge_xy_direction(graph, edge)
+            if dir_xy is not None:
+                support_planes.append((pu, dir_xy))
+    
+    # Find all other edges on the same plane as support edges
+    secondary_items = []
     for edge in graph.edges():
-        if graph.edge_attribute(edge, "hierarchy") == "double":
-            line = graph.edge_line(edge)
-            if line is not None:
-                primary_lines.append(line)
-                primary_edges.append(edge)
-                data.append({"edge": edge, "support_idx": None, "dot": None, "type": "double"})
+        if _edge_key(edge) in primary_keys:
             continue
-
-        line = graph.edge_line(edge)
-        if line is None:
-            continue
-
-        mid = graph.edge_midpoint(edge)
-        if mid is None:
-            continue
-
-        nearest_idx, nearest_pt = None, None
-        best_dist = float("inf")
-        for i, sp in enumerate(sup_pts):
-            d = distance_point_point_xy(mid, sp)
-            if d < best_dist:
-                best_dist = d
-                nearest_idx = i
-                nearest_pt = Point(sp.x, sp.y, 0.0)
-        if nearest_pt is None:
-            continue
-
-        edge_vec_xy = Vector(line.end.x - line.start.x, line.end.y - line.start.y, 0.0)
-        if edge_vec_xy.length < 1e-9:
-            _store(edge, line, "secondary", nearest_idx, 0.0)
-            continue
-        edge_vec_xy.unitize()
-
-        sup_vec = Vector.from_start_end(Point(mid.x, mid.y, 0.0), nearest_pt)
-        if sup_vec.length < 1e-9:
-            _store(edge, line, "primary", nearest_idx, 1.0)
-            continue
-        sup_vec.unitize()
-
-        dot = abs(edge_vec_xy.dot(sup_vec))
-        _store(edge, line, "primary" if dot >= parallel_tol else "secondary", nearest_idx, dot)
-
-    if return_tertiary:
-        split_result = _split_secondary_by_level_one_seed(
-            graph,
-            primary_edges=primary_edges,
-            secondary_items=secondary_items,
-            parallel_tol=parallel_tol,
-            plane_tol=seed_plane_tol,
-            return_node_edge_report=return_node_edge_report,
-        )
-
-        if return_node_edge_report:
-            secondary_group, tertiary_group, node_edge_report = split_result
+        
+        # Check if this edge lies on any support plane
+        on_support_plane = False
+        for origin, plane_dir in support_planes:
+            if _edge_on_seed_plane(graph, edge, origin, plane_dir, seed_plane_tol):
+                on_support_plane = True
+                break
+        
+        if on_support_plane:
+            # Add to primary
+            primary_keys.add(_edge_key(edge))
+            graph.edge_attribute(edge, "hierarchy", "primary")
         else:
-            secondary_group, tertiary_group = split_result
+            # Add to secondary processing list
+            secondary_items.append({"edge": edge})
+    
+    # Split remaining edges into secondary and tertiary
+    split_result = _split_secondary_by_level_one_seed(
+        graph,
+        parallel_tol=parallel_tol,
+        plane_tol=seed_plane_tol,
+    )
 
-        secondary_lines = [item["line"] for item in secondary_group]
-        tertiary_lines = [item["line"] for item in tertiary_group]
+    secondary_group, tertiary_group = split_result
 
-        secondary_keys = set(_edge_key(item["edge"]) for item in secondary_group)
-        tertiary_keys = set(_edge_key(item["edge"]) for item in tertiary_group)
+    secondary_keys = set(_edge_key(item["edge"]) for item in secondary_group)
+    tertiary_keys = set(_edge_key(item["edge"]) for item in tertiary_group)
 
-        for d in data:
-            k = _edge_key(d["edge"])
-            if k in secondary_keys:
-                d["type"] = "secondary"
-                graph.edge_attribute(d["edge"], "hierarchy", "secondary")
-            elif k in tertiary_keys:
-                d["type"] = "tertiary"
-                graph.edge_attribute(d["edge"], "hierarchy", "tertiary")
+    # Separate primary edges into main_primary (dominant direction) and primary (others)
+    primary_edges = [edge for edge in graph.edges() if _edge_key(edge) in primary_keys]
+    main_primary_keys, primary_keys = _split_primary_by_direction(graph, primary_edges, parallel_tol)
 
-        if return_node_edge_report:
-            return primary_lines, secondary_lines, tertiary_lines, data, node_edge_report
-        return primary_lines, secondary_lines, tertiary_lines, data
+    # Update hierarchy attributes
+    for edge in graph.edges():
+        ek = _edge_key(edge)
+        if ek in main_primary_keys:
+            graph.edge_attribute(edge, "hierarchy", "main_primary")
+        elif ek in primary_keys:
+            graph.edge_attribute(edge, "hierarchy", "primary")
+        elif ek in secondary_keys:
+            graph.edge_attribute(edge, "hierarchy", "secondary")
+        elif ek in tertiary_keys:
+            graph.edge_attribute(edge, "hierarchy", "tertiary")
 
-    return primary_lines, secondary_lines, data
+    return main_primary_keys, primary_keys, secondary_keys, tertiary_keys
 
 def build_category_index(graph, category_mode=2):
     """Build reusable node/edge category metadata."""
@@ -703,121 +662,31 @@ def find_dominant_direction(vecs, angle_tol=None):
     return None
 
 
-def is_segment_near_support(subgraph, sup_pts, threshold):
-    """Return True if any subgraph node is near a support."""
-    sg = subgraph["graph"]
-    for n in sg.nodes():
-        pt = sg.node_attribute(n, "point")
-        if pt:
-            for sp in sup_pts:
-                dist = ((pt.x - sp.x)**2 + (pt.y - sp.y)**2)**0.5
-                if dist < threshold:
-                    return True
-    return False
+def assign_edges_dimensions(graph):
+    """
+    Assign width and height attributes to edges based on their hierarchy and level.
+    Widths are defined by hierarchies, and height are defined by levels.
+    """
+    widths = [0.08, 0.10, 0.12]  # hierarchy
+    heights = [0.10, 0.12, 0.14]  # level
 
-
-def classify_subgraph_edges(subgraph, sup_pts, near_threshold=None, parallel_tol=None):
-    """Classify subgraph edges; near supports keep labels, far uses dominant dir."""
-    if near_threshold is None:
-        near_threshold = DEFAULT_NEAR_THRESHOLD
-    if parallel_tol is None:
-        parallel_tol = DEFAULT_PARALLEL_TOL
-    
-    sg = subgraph["graph"]
-    near_sup = is_segment_near_support(subgraph, sup_pts, near_threshold)
-
-    all_edges = []
-    primary_vecs = []
-
-    for u, v in sg.edges():
-        pu = sg.node_attribute(u, "point")
-        pv = sg.node_attribute(v, "point")
-        if not pu or not pv:
-            continue
-
-        evec = Vector(pv.x - pu.x, pv.y - pu.y, 0.0)
-        if evec.length < 1e-9:
-            continue
-        evec.unitize()
-
-        etype = sg.edge_attribute((u, v), "hierarchy") or "secondary"
-        line = Line(pu, pv)
-
-        all_edges.append({"vec": evec, "etype": etype, "line": line, "edge": (u, v)})
-
-        if etype == "primary":
-            primary_vecs.append(evec)
-
-    primary_lines = []
-    secondary_lines = []
-    double_lines = []
-
-    if near_sup:
-        for ed in all_edges:
-            if ed["etype"] == "double":
-                double_lines.append(ed["line"])
-            elif ed["etype"] == "primary":
-                primary_lines.append(ed["line"])
-            else:
-                secondary_lines.append(ed["line"])
-    else:
-        dom_dir = find_dominant_direction(primary_vecs)
-
-        for ed in all_edges:
-            if ed["etype"] == "double":
-                double_lines.append(ed["line"])
-                continue
+    for edge in graph.edges():
+        hie = graph.edge_attribute(edge, 'hierarchy')
+        if hie in ('main_primary', 'primary'):
+            hie_key = 2
+        elif hie is 'secondary':
+            hie_key = 1
+        elif hie is 'tertiary':
+            hie_key = 0
+        else:
+            hie_key = 0  # temp.
             
-            new_etype = ed["etype"]
-            
-            if dom_dir:
-                dot = abs(ed["vec"].dot(dom_dir))
-                if dot >= parallel_tol:
-                    new_etype = "primary"
-                else:
-                    new_etype = "secondary"
-            
-            if new_etype == "primary":
-                primary_lines.append(ed["line"])
-            else:
-                secondary_lines.append(ed["line"])
-            
-            sg.edge_attribute(ed["edge"], "hierarchy", new_etype)
+        lvl = graph.edge_attribute(edge, 'level')
 
-    return primary_lines, secondary_lines, double_lines, near_sup, sg
+        graph.edge_attribute(edge, 'width', widths[hie_key])
+        graph.edge_attribute(edge, 'height', heights[lvl])
+    
+    return
 
 
-def classify_single_segment(graph, segment_index, seg_x=None, seg_y=None, 
-                            parallel_tol=None, near_threshold=None):
-    """Classify edges for one spatial segment."""
-    if seg_x is None:
-        seg_x = DEFAULT_SEG_X
-    if seg_y is None:
-        seg_y = DEFAULT_SEG_Y
-    if parallel_tol is None:
-        parallel_tol = DEFAULT_PARALLEL_TOL
-    if near_threshold is None:
-        near_threshold = DEFAULT_NEAR_THRESHOLD
-    
-    classify_edges_by_support_direction(graph, parallel_tol)
-    
-    subgraphs, window = create_subgraphs(graph, seg_x, seg_y, debug=True)
-    
-    sup_pts = _get_support_points(graph)
-    
-    idx = int(segment_index) % len(subgraphs)
-    sg_data = subgraphs[idx]
-    
-    primary, secondary, double, near_sup, sg = classify_subgraph_edges(
-        sg_data, sup_pts, near_threshold, parallel_tol
-    )
-    
-    return {
-        "primary_lines": primary,
-        "secondary_lines": secondary,
-        "double_lines": double,
-        "near_support": near_sup,
-        "segment_index": idx,
-        "subgraph": sg,
-        "window": window
-    }
+
