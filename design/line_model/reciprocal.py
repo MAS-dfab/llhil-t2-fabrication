@@ -633,7 +633,7 @@ def reciprocal_width_from_subgraph(
         if _is_target(u, v):
             reciprocal_edges.append((u, v))
             w = subgraph.edge_attribute((u, v), 'width')
-            beam_shifts[(u, v)] = (w / 2.0) if w else engage_len
+            beam_shifts[(u, v)] = (w * 2.0 / 3.0) if w else engage_len
             beam_lines[(u, v)] = _get_line(subgraph, (u, v))
         else:
             secondary_lines.append(_get_line(subgraph, (u, v)))
