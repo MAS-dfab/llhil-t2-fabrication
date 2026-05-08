@@ -441,7 +441,14 @@ def build_graph_from_records(records, relations):
     for p1, p2, group_id, etype in relations:
         u = ng.get_or_add_point_node(p1)
         v = ng.get_or_add_point_node(p2)
-        ng.add_graph_edge(u, v, group=group_id, etype=etype)
+        
+        # ===== 新增: 让边继承 level (取两端节点 level 的较小值) =====
+        lvl_u = ng.node_attribute(u, "level")
+        lvl_v = ng.node_attribute(v, "level")
+        valid_levels = [x for x in (lvl_u, lvl_v) if x is not None]
+        edge_level = min(valid_levels) if valid_levels else 0
+        
+        ng.add_graph_edge(u, v, group=group_id, etype=etype, level=edge_level)
     
     return ng
 

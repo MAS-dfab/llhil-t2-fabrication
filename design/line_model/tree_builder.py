@@ -447,7 +447,16 @@ def build_graph_from_records(records, relations):
 
         frames = rec.get("inset_frames") or [None] * len(rec["inset_corners"])
         for ic, oc, frame in zip(rec["inset_corners"], rec["original_corners"], frames):
-            ng.get_or_add_point_node(ic, ntype="inset", level=0, mobility="fixed", original_point=oc, brep_frame=frame)
+            ng.get_or_add_point_node(
+                ic,
+                ntype="inset",
+                level=0,
+                mobility="fixed",
+                original_point=oc,
+                brep_frame=frame,
+                group=rec["group"],
+                support_id=rec["support_id"]
+            )
 
         # Track child nodes
         child_nodes = []

@@ -180,7 +180,7 @@ class FoundationSolver:
 # -------------------------------
 # Main API
 # -------------------------------
-def trim_anchored_beams_and_find_cut_planes(graph, min_radius=0.60, min_height=0.26, min_gap=0.02):
+def trim_anchored_beams_and_find_cut_planes(graph, min_radius=0.60, min_height=0.26, min_gap=0.02, _step = 0.01):
     """
     xxx
 
@@ -231,7 +231,7 @@ def trim_anchored_beams_and_find_cut_planes(graph, min_radius=0.60, min_height=0
             min_radius=min_radius,
             min_height=min_height,
             min_gap=min_gap,
-            step=0.01,
+            step=_step,
             max_attempts=100
         )
         crosecs, step = solver.solve()
