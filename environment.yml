@@ -1,4 +1,4 @@
-name: t2_2526
+# name: t2_2526
 channels:
   - conda-forge
   - defaults
