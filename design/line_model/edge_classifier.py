@@ -667,8 +667,10 @@ def assign_edges_dimensions(graph):
     Assign width and height attributes to edges based on their hierarchy and level.
     Widths are defined by hierarchies, and height are defined by levels.
     """
-    widths = [0.08, 0.10, 0.12]  # hierarchy
-    heights = [0.10, 0.12, 0.14]  # level
+    #widths = [0.08, 0.10, 0.12]  # hierarchy
+    #heights = [0.10, 0.12, 0.14]  # level
+    widths = [80.0, 100.0, 120.0]  # hierarchy
+    heights = [100.0, 120.0, 140.0]  # level
 
     for edge in graph.edges():
         hie = graph.edge_attribute(edge, 'hierarchy')
