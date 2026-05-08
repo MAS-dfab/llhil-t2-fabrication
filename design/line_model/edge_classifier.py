@@ -211,38 +211,34 @@ def _pick_best_tangent_entry(entries, rec):
 
 
 def _split_primary_by_direction(graph, primary_edges, parallel_tol):
-    """Split primary edges into main_primary (dominant direction) and primary (others)."""
     if not primary_edges:
         return set(), set()
-    
-    # Collect directions and group by parallel alignment
-    direction_groups = []
+
+    # Direction from origin to global center of all nodes
+    all_pts = [graph.node_attribute(n, "point") for n in graph.nodes() if graph.node_attribute(n, "point") is not None]
+    cx = sum(p.x for p in all_pts) / len(all_pts)
+    cy = sum(p.y for p in all_pts) / len(all_pts)
+    center = Point(cx, cy, 0.0)
+    main_primary_keys = set()
+    primary_keys = set()
+
     for edge in primary_edges:
         dxy = _edge_xy_direction(graph, edge)
+        mid_edge = (graph.node_point(edge[0]) + graph.node_point(edge[1])) * 0.5
+        mid_edge.z = 0.0
+        
+        center_dir = Vector.from_start_end(center, mid_edge)
+        center_dir.unitize()
+
+        print(abs(dxy.dot(center_dir)))
         if dxy is None:
+            primary_keys.add(_edge_key(edge))
             continue
-        
-        # Find group with matching parallel direction
-        matched = None
-        for grp in direction_groups:
-            if abs(dxy.dot(grp["ref_dir"])) >= parallel_tol:
-                matched = grp
-                break
-        
-        if matched:
-            matched["edges"].append(edge)
+        if abs(dxy.dot(center_dir)) >= parallel_tol:
+            primary_keys.add(_edge_key(edge))
         else:
-            direction_groups.append({"ref_dir": dxy, "edges": [edge]})
-    
-    # Main direction is the largest group
-    if not direction_groups:
-        return set(), set(_edge_key(e) for e in primary_edges)
-    
-    main_group = max(direction_groups, key=lambda g: len(g["edges"]))
-    main_primary_keys = set(_edge_key(e) for e in main_group["edges"])
-    
-    primary_keys = set(_edge_key(e) for e in primary_edges if _edge_key(e) not in main_primary_keys)
-    
+            main_primary_keys.add(_edge_key(edge))
+
     return main_primary_keys, primary_keys
 
 
@@ -666,6 +662,31 @@ def find_dominant_direction(vecs, angle_tol=None):
     return None
 
 
+def assign_edges_dimensions(graph):
+    """
+    Assign width and height attributes to edges based on their hierarchy and level.
+    Widths are defined by hierarchies, and height are defined by levels.
+    """
+    widths = [0.08, 0.10, 0.12]  # hierarchy
+    heights = [0.10, 0.12, 0.14]  # level
+
+    for edge in graph.edges():
+        hie = graph.edge_attribute(edge, 'hierarchy')
+        if hie in ('main_primary', 'primary'):
+            hie_key = 2
+        elif hie is 'secondary':
+            hie_key = 1
+        elif hie is 'tertiary':
+            hie_key = 0
+        else:
+            hie_key = 0  # temp.
+            
+        lvl = graph.edge_attribute(edge, 'level')
+
+        graph.edge_attribute(edge, 'width', widths[hie_key])
+        graph.edge_attribute(edge, 'height', heights[lvl])
+    
+    return
 
 
 

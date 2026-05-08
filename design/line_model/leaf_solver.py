@@ -117,16 +117,40 @@ def create_shoes_from_graph(graph, extension_length=0.35):
                 p2_dir = Vector.from_start_end(p0, p2).unitized()
                 p0_ext = p0 + p0_dir * extension_length
                 p2_ext = p2 + p2_dir * extension_length
-                shoe_lines.append(Line(p0_ext, p2_ext))
+
+                ln = Line(p0_ext, p2_ext)
+                attrs = {'shifted_line': ln, 'hierarchy': 'shoe', 'level': 0}
+                graph.add_graph_edge(
+                    sorted_nodes[0],
+                    sorted_nodes[2],
+                    **attrs
+                )
+                shoe_lines.append(ln)
+
             if p1 and p3:
                 p1_dir = Vector.from_start_end(p3, p1).unitized()
                 p3_dir = Vector.from_start_end(p1, p3).unitized()
                 p1_ext = p1 + p1_dir * extension_length
                 p3_ext = p3 + p3_dir * extension_length
-                shoe_lines.append(Line(p1_ext, p3_ext))
+
+                ln = Line(p1_ext, p3_ext)
+                attrs = {'shifted_line': ln, 'hierarchy': 'shoe', 'level': 0}
+                graph.add_graph_edge(
+                    sorted_nodes[1],
+                    sorted_nodes[3],
+                    **attrs
+                )
+                shoe_lines.append(ln)
         else:
             if sorted_pts[0] and sorted_pts[-1]:
-                shoe_lines.append(Line(sorted_pts[0], sorted_pts[-1]))
+                ln = Line(sorted_pts[0], sorted_pts[-1])
+                attrs = {'shifted_line': ln, 'hierarchy': 'shoe', 'level': 0}
+                graph.add_graph_edge(
+                    sorted_nodes[0],
+                    sorted_nodes[-1],
+                    **attrs
+                )
+                shoe_lines.append(ln)
 
         for n in sorted_nodes:
             f = graph.node_attribute(n, "brep_frame")
