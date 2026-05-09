@@ -16,11 +16,11 @@ Usage in Grasshopper:
 """
 
 from nodegraph_WN import NodeGraph
-from config import (
+from config_WN import (
     DEFAULT_DIV_X, DEFAULT_DIV_Y, DEFAULT_NUM_LEVELS,
     DEFAULT_INSET_EDGE, DEFAULT_INSET_INTERIOR, DEFAULT_REACH_TOL
 )
-from compas_rhino.conversions import curve_to_compas_polyline, point_to_compas
+from compas_rhino.conversions import point_to_compas
 from compas.geometry import Point, Vector, Frame
 import Rhino.Geometry as rg
 
@@ -31,8 +31,27 @@ import Rhino.Geometry as rg
 
 def get_plane_and_size(boundary):
     """Extract frame and dimensions from a rectangular boundary curve."""
-    polyline = curve_to_compas_polyline(boundary)
-    pts = polyline.points
+    if boundary is None:
+        raise ValueError(
+            "boundary is None. Check that the 'boundary' input on the GH component "
+            "is connected and its type hint is set to 'Curve'."
+        )
+
+    # Try direct polyline extraction first (works for PolylineCurve)
+    ok, rg_polyline = boundary.TryGetPolyline()
+    if ok and rg_polyline is not None and rg_polyline.Count >= 4:
+        rg_pts = list(rg_polyline)
+        pts = [point_to_compas(p) for p in rg_pts]
+    else:
+        # Fallback: divide the curve at 4 equal segments (handles NurbsCurve rectangles)
+        t_params = boundary.DivideByCount(4, True)
+        if t_params is None or len(t_params) < 4:
+            raise ValueError(
+                "boundary could not be converted to a 4-point polyline. "
+                "Make sure 'boundary' is a closed rectangular curve."
+            )
+        pts = [point_to_compas(boundary.PointAt(t)) for t in t_params]
+
     p0, p1, p3 = pts[0], pts[1], pts[3]
 
     xaxis = Vector.from_start_end(p0, p1)
@@ -60,6 +79,16 @@ def project_to_brep(pt, brep):
     if brep is None:
         return pt
 
+    def _point3d_to_compas(candidate):
+        if candidate is None:
+            return None
+        x = getattr(candidate, "X", None)
+        y = getattr(candidate, "Y", None)
+        z = getattr(candidate, "Z", None)
+        if x is None or y is None or z is None:
+            return None
+        return Point(x, y, z)
+
     line_start = rg.Point3d(pt.x, pt.y, pt.z - 1000)
     line_end = rg.Point3d(pt.x, pt.y, pt.z + 1000)
     line_curve = rg.LineCurve(line_start, line_end)
@@ -72,18 +101,32 @@ def project_to_brep(pt, brep):
         best_hit = None
         best_dist = float('inf')
         for hp in hit_points:
+            if hp is None:
+                continue
             dz = abs(hp.Z - pt.z)
             if dz < best_dist:
                 best_dist = dz
                 best_hit = hp
-        if best_hit is not None:
-            return Point(best_hit.X, best_hit.Y, best_hit.Z)
+        projected = _point3d_to_compas(best_hit)
+        if projected is not None:
+            return projected
 
     # Fallback
     origin = rg.Point3d(pt.x, pt.y, pt.z)
     rc = brep.ClosestPoint(origin)
-    if rc:
-        return Point(rc.X, rc.Y, rc.Z)
+
+    # RhinoCommon return shape differs between runtimes:
+    # direct Point3d, (bool, Point3d, ...), or None.
+    if isinstance(rc, tuple):
+        for item in rc:
+            projected = _point3d_to_compas(item)
+            if projected is not None:
+                return projected
+    else:
+        projected = _point3d_to_compas(rc)
+        if projected is not None:
+            return projected
+
     return pt
 
 
