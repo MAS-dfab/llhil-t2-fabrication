@@ -1,5 +1,5 @@
 from compas.datastructures import Graph
-from compas.geometry import Point, Line, Vector
+from compas.geometry import Point, Line, Vector, Polyline
 
 # Import config - handle both package and standalone execution
 try:
@@ -125,6 +125,84 @@ class NodeGraph(Graph):
                 attr["etype"] = "parent_child"
             
             self.add_edge(u, v, **attr)
+
+    def add_polyline_edge(self, polyline, group=None, hierarchy="plate", level=0):
+        """
+        Add a single edge that carries a full polyline boundary as an attribute.
+
+        This allows one logical plate edge per group without creating one edge per
+        boundary segment. The underlying graph edge still needs two node endpoints,
+        but the full polyline is preserved on the edge.
+
+        Parameters
+        ----------
+        polyline : Polyline or sequence of points
+            Boundary polyline to store.
+        group : int, optional
+            Group identifier for this plate edge.
+        hierarchy : str
+            Edge hierarchy label.
+        level : int
+            Edge level.
+        etype : str
+            Edge type.
+
+        Returns
+        -------
+        tuple
+            The created edge key (u, v), or None if the polyline is invalid.
+        """
+        if polyline is None:
+            return None
+
+        if isinstance(polyline, Polyline):
+            points = [Point(p.x, p.y, p.z) for p in polyline]
+        else:
+            points = []
+            for pt in polyline:
+                if pt is None:
+                    continue
+                if hasattr(pt, "X") and hasattr(pt, "Y") and hasattr(pt, "Z"):
+                    points.append(Point(pt.X, pt.Y, pt.Z))
+                elif hasattr(pt, "x") and hasattr(pt, "y") and hasattr(pt, "z"):
+                    points.append(Point(pt.x, pt.y, pt.z))
+                else:
+                    raise ValueError("Unsupported point type for polyline edge")
+
+        if len(points) < 2:
+            return None
+
+        u = self.get_or_add_point_node(points[0], group=group, level=level)
+        v = self.get_or_add_point_node(points[-1], group=group, level=level)
+
+        attrs = {
+            "hierarchy": hierarchy,
+            "level": level,
+            "boundary": polyline,
+        }
+        if group is not None:
+            attrs["group"] = group
+
+        self.add_graph_edge(u, v, **attrs)
+        return (u, v)
+
+    def edge_polylines_by_group(self, group_id):
+        """
+        Return stored polyline boundaries for edges in a given group.
+
+        Parameters
+        ----------
+        group_id : int
+            Group identifier.
+
+        Returns
+        -------
+        list
+            Stored polylines on matching edges.
+        """
+        return [self.edge_attribute(edge, "boundary")
+                for edge in self.edges_where({"group": group_id})
+                if self.edge_attribute(edge, "boundary") is not None]
 
     def edge_lines_by_group(self, group_id):
         """

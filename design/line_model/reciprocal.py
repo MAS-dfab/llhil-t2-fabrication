@@ -367,7 +367,7 @@ def _get_line(subgraph, edge):
 # Coplanar Group Detection
 # ==============================================================================
 
-def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True, allowed_edges=None, max_degree=10):
+def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True, allowed_edges=None, max_degree=10, engage_len=0.11):
     """
     Find groups of eligible edges that lie on the same plane.
     Returns groups where 2+ edges meet at a joint.
@@ -506,11 +506,17 @@ def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True, allo
             sorted_edges, sorted_dirs = _cyclic_sort(node_edge_list, dirs, normal)
             angles = _compute_angles(sorted_dirs, normal)
             
+            
             if debug:
                 print(f"\n  Plane {plane_idx}, Joint {node}: {len(node_edge_list)} edges")
                 print(f"    Angles: {[f'{a:.0f}' for a in angles]} = {sum(angles):.0f}°")
             
             lines = [_get_line(subgraph, e) for e in sorted_edges]
+            beam_heights = [subgraph.edge_attribute(e, 'height') for e in sorted_edges]
+            angles_remap = [remap(ang, min(angles), max(angles),0,1) for ang in angles]
+            engage_lengths = []
+            for ang, h in zip(angles_remap, beam_heights):
+                engage_lengths.append((ang+1.0) *(h/2 + engage_len))
             groups.append({
                 'node': node,
                 'point': joint_pt,
@@ -519,6 +525,8 @@ def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True, allo
                 'normal': [normal.x, normal.y, normal.z],
                 'degree': len(node_edge_list),
                 'angles': angles,
+                'engage_lengths': engage_lengths,
+                
             })
     
     if debug:
@@ -577,7 +585,11 @@ def _compute_angles(dirs, normal):
     return angles
 
 
-
+def remap(value, old_min, old_max, new_min, new_max):
+    """Remap value from one range to another."""
+    if old_max - old_min < 1e-9:
+        return new_min
+    return new_min + (value - old_min) * (new_max - new_min) / (old_max - old_min)
 # ==============================================================================
 # Main API
 # ==============================================================================
@@ -625,7 +637,7 @@ def reciprocal_width_from_subgraph(
 
     # --- collect edges ---
     beam_lines = {}   # (u,v) -> Line, updated during solve
-    beam_shifts = {}  # (u,v) -> float, fixed
+    #beam_shifts = {}  # (u,v) -> float, fixed
     secondary_lines = []
     reciprocal_edges = []
 
@@ -633,7 +645,7 @@ def reciprocal_width_from_subgraph(
         if _is_target(u, v):
             reciprocal_edges.append((u, v))
             w = subgraph.edge_attribute((u, v), 'width')
-            beam_shifts[(u, v)] = (w * 2.0 / 3.0) if w else engage_len
+            #beam_shifts[(u, v)] = engage_len
             beam_lines[(u, v)] = _get_line(subgraph, (u, v))
         else:
             secondary_lines.append(_get_line(subgraph, (u, v)))
@@ -641,7 +653,7 @@ def reciprocal_width_from_subgraph(
     # --- find coplanar groups ---
     groups = find_coplanar_groups(
         subgraph, min_degree=min_degree, plane_tol=0.1, debug=False,
-        allowed_edges=reciprocal_edges, max_degree=max_degree
+        allowed_edges=reciprocal_edges, max_degree=max_degree, engage_len=engage_len
     )
 
     if not groups:
@@ -661,6 +673,9 @@ def reciprocal_width_from_subgraph(
         intended_moves = {}  # (edge, end_idx) -> [x, y, z]
 
         for g in groups:
+            beam_shifts = {g['edges'][i]: g['engage_lengths'][i] for i in range(len(g['edges']))}
+            
+            
             gsign = rotation_sign
             print(f"Group at node {g['node']} with degree {g['degree']} and sign {gsign}")
 
@@ -672,23 +687,26 @@ def reciprocal_width_from_subgraph(
                 ln = beam_lines[edge]
                 node = g['node']
                 if edge[0] == node:
+                    leng = beam_shifts[edge]
                     d = subtract_vectors(ln.end, ln.start)
                     if length_vector(d) > 1e-9:
                         beam_lines[edge] = Line(
-                            Point(*add_vectors(ln.start, scale_vector(normalize_vector(d), engage_len))),
+                            Point(*add_vectors(ln.start, scale_vector(normalize_vector(d), leng))),
                             ln.end,
                         )
                 else:
+                    leng = beam_shifts[edge]
                     d = subtract_vectors(ln.start, ln.end)
                     if length_vector(d) > 1e-9:
                         beam_lines[edge] = Line(
                             ln.start,
-                            Point(*add_vectors(ln.end, scale_vector(normalize_vector(d), engage_len))),
+                            Point(*add_vectors(ln.end, scale_vector(normalize_vector(d), leng))),
                         )
                 continue
 
             current_lines = []
             beam_mapping = []
+            
             for e in g['edges']:
                 edge = _actual(e)
                 ln = beam_lines[edge]
