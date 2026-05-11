@@ -27,7 +27,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "f623aab3-1a49-47ee-a14d-259b25c0306d"
+                        "guid": "82cf3ec9-ba41-4b9c-a02b-a50a6c4a616c"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -65,7 +65,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "d2a39322-2ca0-4f63-86f4-d198e93eeb85"
+                        "guid": "2de540d0-537f-4069-adb3-f2f96c1e1b1f"
                     },
                     "group": 0,
                     "height": 0.1,
@@ -103,7 +103,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "a52e8c89-0091-472b-b058-0c2633e67f83"
+                        "guid": "5c4a8bd4-7fe7-44b4-b5e0-bf474ca103d0"
                     },
                     "group": 0,
                     "height": 0.1,
@@ -141,7 +141,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "e5bea119-af83-4ce3-b78b-e6b3a2469b50"
+                        "guid": "88452a50-2612-463b-9001-02cafd306a8e"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -179,7 +179,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "a8c29fc1-aa89-4398-8ae0-4b78e377169d"
+                        "guid": "ab293a3b-3abe-43e1-81b4-2ba8d784047b"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -217,7 +217,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "52a87734-c944-41cf-92ff-918d3b206dcb"
+                        "guid": "62cf04c5-f20d-4f92-9304-69b56370347a"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -255,7 +255,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "df039210-a80f-4621-af2c-12ad5d2c29c0"
+                        "guid": "b5865375-0fa6-478c-8c1b-0c16fa6718f6"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -293,7 +293,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "9a43acdb-3a00-48d0-bece-237e7b0652f0"
+                        "guid": "026637f9-6f88-4647-86c0-89bfc8981615"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -331,7 +331,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "8911a22c-f598-4960-9509-d04e6568bae4"
+                        "guid": "1542cead-0d2d-4bae-a96f-78bc273e5da5"
                     },
                     "group": 0,
                     "height": 0.1,
@@ -369,7 +369,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "268780e9-c0c0-4b1d-8866-6edc2157cc70"
+                        "guid": "7bb716e0-1001-476b-9eb8-ef888ef38309"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -407,7 +407,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "bf829f20-1eb0-47b9-af77-639c548e4fdc"
+                        "guid": "9fb871bf-eca6-4913-a9e4-d4a1876a322e"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -445,7 +445,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "14aef28d-1d8a-4f72-8230-06455b588ddd"
+                        "guid": "d747c4ed-9eab-4925-afc9-fdff2e1e5bdf"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -483,7 +483,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "909c0fe8-669f-47ca-8cba-37a890e1d14b"
+                        "guid": "c956a4a9-3735-4aff-80f6-b9e9a9d91df3"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -521,7 +521,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "b4f7e1ae-730e-47af-ae16-278b0dda699d"
+                        "guid": "41d5e2b7-33fe-46bf-8ea8-f03190e58efa"
                     },
                     "group": 0,
                     "height": 0.1,
@@ -559,7 +559,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "3f4c80b6-b3f8-49a0-a430-a2db3175ca58"
+                        "guid": "d21ff3cb-6ff7-4025-b927-24876f9cda08"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -597,7 +597,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "faf57b8b-cb4d-4048-ab1b-d5c3368feed3"
+                        "guid": "df0260df-186c-4aef-9000-b991a7b8a889"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -635,7 +635,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "d1125dc2-f3fc-41ac-8208-1ebf51280e3d"
+                        "guid": "330fd133-5400-46ca-87ae-1d1f1389d1c5"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -673,7 +673,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "e976a0cc-c84a-4564-a7dd-444d6e949276"
+                        "guid": "86cafa58-0b42-4035-94d3-1f87a0b466a9"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -711,7 +711,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "1a094801-9864-421e-875a-4cd240cfc425"
+                        "guid": "ce51d716-c8c5-4701-8014-05d97e036679"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -749,7 +749,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "1aea9137-1789-4210-9f29-b61735b44f94"
+                        "guid": "48419ee7-0325-43fe-9ee7-af87df7b6ca2"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -787,7 +787,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "65c4abf0-8f8a-4f3d-95d3-7c78b0c2962a"
+                        "guid": "319fc5f6-3366-458a-8f36-b54c61e4ee3f"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -825,7 +825,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "59a9086d-6282-4514-b950-fb84c2ccf0b4"
+                        "guid": "95dc20ec-9b2c-4ea4-a83c-189d460b1e21"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -863,7 +863,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "17c281cf-d18f-4257-8968-6c8147fc1c5e"
+                        "guid": "7d9cf6a6-eaee-4ac9-aff8-425e500c5732"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -901,7 +901,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "d9e3739c-5af9-4a11-81f7-32ea2b2058fc"
+                        "guid": "ec199a24-cabf-4f10-911d-cd86cb99f8b5"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -939,7 +939,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "0d0eb286-d2af-405e-9cb6-90d52da547c7"
+                        "guid": "b5095591-9d41-4741-9b61-28eca8e868ba"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -977,7 +977,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "2fb7d886-699a-47ab-82da-b3e3d9ec985f"
+                        "guid": "60dadca1-3931-4b89-85ee-0a62ede03435"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -1015,7 +1015,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "1e0f2b6b-5270-489f-9d57-0a419c49c3cb"
+                        "guid": "f3eb0b15-43db-4698-b787-49cf55d1c508"
                     },
                     "group": 0,
                     "height": 0.1,
@@ -1053,7 +1053,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "893d5144-aaa8-4fee-8319-84d6b8cac6f5"
+                        "guid": "c9e9bd55-6ad0-4764-a8e3-a68c76efa9ce"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -1091,7 +1091,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "39e695e0-1e3e-4e53-8bee-a772dd842d27"
+                        "guid": "25d98745-e553-4897-9cb1-364e81f41ee6"
                     },
                     "group": 0,
                     "height": 0.1,
@@ -1129,7 +1129,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "41dfff20-5809-46b3-b18e-de0a2c135fc2"
+                        "guid": "8f68ee46-06fc-4dae-ab7d-20282b81555e"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -1167,7 +1167,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "8fbf0db8-d8f7-40da-a0f6-18314a7b6cfd"
+                        "guid": "c8d29cd6-efed-4828-a3ad-8785ee466cfc"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -1205,7 +1205,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "e8673f68-110a-47a5-a01f-1e0ded9b28ae"
+                        "guid": "cd33e070-d73d-49c8-ab0e-df59ea1be378"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -1243,7 +1243,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "918d4fe7-87df-4536-acc5-68a9da5186c9"
+                        "guid": "1eedb95a-8676-4fff-9fda-e0ba26410392"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -1281,7 +1281,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "17dbd285-205d-48bd-ba89-11fd2bfb30df"
+                        "guid": "f7b4cdbb-a69e-48a8-ad78-f208ea28c55b"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -1319,7 +1319,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "6e8c78d3-1e20-43fb-8e5a-559b1e414adf"
+                        "guid": "6084e513-31bc-4c33-b7e5-224e0db4861a"
                     },
                     "group": 0,
                     "height": 0.1,
@@ -1357,7 +1357,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "95a89492-71a2-4c5d-8dd0-be76e86c039b"
+                        "guid": "04d7cad3-e10d-4bdf-9e13-0a23bebf2abe"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -1391,7 +1391,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "ba7fdd42-10f3-488c-8a93-c0c01a14a073"
+                        "guid": "6482a294-cb2b-4f60-bf9d-c4b92e46f3f0"
                     },
                     "length": 2.4515301344262443,
                     "local_outline_a": {
@@ -1493,7 +1493,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "75959da3-4cfc-4500-a2e8-42762447590b"
+                        "guid": "f3360e7e-97ed-44da-9bcf-fdf7c01b2898"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -1531,7 +1531,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "934c486d-e988-43d3-828c-692ca3243a46"
+                        "guid": "57b92a05-4c19-4231-a1e1-64e9bf7c92fa"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -1569,7 +1569,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "ac8b6629-30a3-424e-860f-2dfbb43b066b"
+                        "guid": "b49b572c-6d62-4e27-8e98-3db7ba2d483a"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -1607,7 +1607,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "bbb52594-a008-4853-af10-eab26d6eaa6c"
+                        "guid": "c5a712a7-9d4c-454f-b30a-be8ae80b9a16"
                     },
                     "group": 0,
                     "height": 0.1,
@@ -1645,7 +1645,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "fbc2c180-8762-47f0-9b7a-3f6f6be37ed5"
+                        "guid": "2d7c910d-3124-4c5c-bfec-7c102fb8589f"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -1683,7 +1683,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "00cad414-2de3-4221-9b42-8eef87d46792"
+                        "guid": "90d2591f-8913-4c22-8a49-b8c506d03481"
                     },
                     "group": 0,
                     "height": 0.1,
@@ -1721,7 +1721,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "45f3a546-2316-4d5c-991d-1dedc17a7767"
+                        "guid": "56e69bf9-9dc0-421b-acb8-9aff079b16da"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -1759,7 +1759,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "0de72fec-4bd4-4dce-9e65-86d622c80bc0"
+                        "guid": "3fa2f185-b7c1-46cd-b267-15a4a4b6adb9"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -1797,7 +1797,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "43cd20ad-0bed-4708-b9b3-8747f8d1362f"
+                        "guid": "18503924-7572-471e-8641-ad1b1f0c454d"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -1835,7 +1835,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "967964ed-776e-4fcd-bcd7-602a4da761c8"
+                        "guid": "4818a0d5-cb43-40b8-91a6-2c9d213ec902"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -1873,7 +1873,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "f8762cd9-6f60-4acf-9c4d-feade65a59e8"
+                        "guid": "e382d701-790f-432b-88df-4dd11da9dfec"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -1911,7 +1911,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "b2102d9a-496b-4254-870b-c7ed00f934cf"
+                        "guid": "a1436678-36d1-4744-b97a-8c17b90e9e2a"
                     },
                     "group": 0,
                     "height": 0.1,
@@ -1949,7 +1949,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "0dad1ba7-56d6-4b35-b6f2-253057eea306"
+                        "guid": "ea9bad0f-a6e5-456f-84c0-80d01d1ed0d5"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -1987,7 +1987,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "c13b57f6-f4b4-4e89-9766-beb336135cfc"
+                        "guid": "48af094c-6891-400d-86d8-0d5378a6bdb2"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2025,7 +2025,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "4751e995-5bd0-477e-8fb0-d1afadba692a"
+                        "guid": "a2ac8bcc-b4a3-4ec4-ad76-e721434813ac"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -2063,7 +2063,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "9fc56db7-cd22-4767-9458-cf5a64bab0df"
+                        "guid": "b2816d8a-cd12-41bd-bd04-00513dd80b0e"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -2101,7 +2101,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "abbd512e-a2cb-43e2-8bf8-a56037fb86dc"
+                        "guid": "432bc265-fb96-43a7-b589-5db7654d24d0"
                     },
                     "group": 0,
                     "height": 0.1,
@@ -2139,7 +2139,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "12d4c525-ae82-4630-be69-337767e12f4f"
+                        "guid": "e87c4a03-9424-4eed-aa2d-eb3eb7ec4df8"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -2177,7 +2177,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "7946bb5c-9d10-4e9e-91da-f0b37cf2ef72"
+                        "guid": "cb5c2e9b-55bc-4979-b47f-be36c517a10d"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2215,7 +2215,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "136df5e6-f08f-4007-aa4b-770730865c14"
+                        "guid": "b91bbf3f-2749-422b-9c65-1332dc30d43f"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2253,7 +2253,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "0996ca21-f691-4afe-be26-db7fb6c2d102"
+                        "guid": "cc8500c0-4020-489d-9cda-94bab1f68cc8"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2291,7 +2291,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "285b2fbd-9c88-40af-b762-a4bc6d24126c"
+                        "guid": "fc8e4b44-7396-45aa-bfc6-72d5a7f56614"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2329,7 +2329,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "23fff474-3616-456b-aa45-1c9ca0be75a3"
+                        "guid": "8caaaf44-746f-4f1b-b00c-efd911217800"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -2367,7 +2367,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "95d2cb96-e1ca-415d-be29-5f02fe651a7f"
+                        "guid": "4732923a-2408-4657-92f6-7d47a46f10e5"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2405,7 +2405,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "ca3b401e-0ca5-45ac-bb23-0e4033296cee"
+                        "guid": "7f99fe1e-fbc2-495a-ae1e-354d8af2a666"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2443,7 +2443,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "468a3c86-ceb2-47e0-93dd-95a3798ca358"
+                        "guid": "d0c5caff-1e60-44c4-970e-24b512063e1e"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2481,7 +2481,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "e8580300-278a-44e6-86b6-125a1ea815d0"
+                        "guid": "a654ccd2-0c6b-487e-8fdc-004bd94911f3"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2519,7 +2519,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "c4bf6bb0-e24e-4dd9-865f-4169059e1219"
+                        "guid": "36069777-0c47-4535-8db2-6b05ded3000b"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -2557,7 +2557,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "d6d6384f-57f4-4c3d-bf7d-689a129d7f36"
+                        "guid": "27efc75d-6790-4551-a0e3-0392d04f8411"
                     },
                     "group": 0,
                     "height": 0.1,
@@ -2595,7 +2595,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "5d7cc3ba-7b55-4bf6-823c-4034a6697d0d"
+                        "guid": "5ab70827-632d-46a9-a9fc-b69ebd0c3d3d"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2633,7 +2633,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "679a882f-9841-44b0-b9c5-da6df32a1565"
+                        "guid": "918d7ca9-e316-4f4d-9073-6915cbc1bd1a"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2671,7 +2671,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "ae4cebf9-b036-4417-9d5b-61d638037e3d"
+                        "guid": "5add29b7-7cfa-475e-9d22-2998a96a659e"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -2709,7 +2709,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "96b0b130-8bab-436b-8c87-9abffec5f234"
+                        "guid": "3142c546-ca71-4e74-b82c-f302c06a0944"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2747,7 +2747,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "d05cfad7-1002-4eb4-b74b-0c0af6d066dd"
+                        "guid": "98609f07-12ec-461a-a47a-3b5c2cf7d7f9"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -2785,7 +2785,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "e74b0bff-5dde-49fe-be6d-e13909db6fcf"
+                        "guid": "716b3991-9a6e-4baf-be83-0162301d28a8"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2823,7 +2823,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "74c6f190-c069-4e35-aace-37607a74c842"
+                        "guid": "b4208175-f3e3-4c34-94f4-a791d26877a8"
                     },
                     "group": 0,
                     "height": 0.12,
@@ -2861,7 +2861,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "1cc86ef6-54c9-4e05-acb7-4dc6376ad995"
+                        "guid": "79849cae-64fc-4098-9e3e-14d67b173a20"
                     },
                     "group": 0,
                     "height": 0.08,
@@ -2899,7 +2899,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "8c3e6c5f-a861-4331-8966-6bc304e0e7fa"
+                        "guid": "a07db29c-e852-4ddc-a1f4-0ee89f0c6e9f"
                     },
                     "group": 0,
                     "height": 0.12,
