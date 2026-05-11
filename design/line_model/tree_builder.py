@@ -57,16 +57,27 @@ def project_to_brep(pt, brep):
     """Project a point vertically (Z) onto a Rhino brep."""
     if brep is None:
         return pt
+
+    def _first_valid_hit(hits):
+        if not hits:
+            return None
+        for hit in hits:
+            if hit is not None:
+                return hit
+        return None
+
     origin = rg.Point3d(pt.x, pt.y, pt.z)
     ray = rg.Ray3d(origin, rg.Vector3d.ZAxis)
     hits = rg.Intersect.Intersection.RayShoot(ray, [brep], 1)
-    if hits:
-        return Point(hits[0].X, hits[0].Y, hits[0].Z)
+    hit = _first_valid_hit(hits)
+    if hit is not None:
+        return Point(hit.X, hit.Y, hit.Z)
     # Try downward if upward missed
     ray = rg.Ray3d(origin, -rg.Vector3d.ZAxis)
     hits = rg.Intersect.Intersection.RayShoot(ray, [brep], 1)
-    if hits:
-        return Point(hits[0].X, hits[0].Y, hits[0].Z)
+    hit = _first_valid_hit(hits)
+    if hit is not None:
+        return Point(hit.X, hit.Y, hit.Z)
     return pt
 
 
