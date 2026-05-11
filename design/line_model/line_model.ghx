@@ -49,10 +49,10 @@
             <chunk name="Projection">
               <items count="2">
                 <item name="Target" type_name="gh_drawing_point" type_code="30">
-                  <X>-2977</X>
-                  <Y>-1187</Y>
+                  <X>-7612</X>
+                  <Y>-2750</Y>
                 </item>
-                <item name="Zoom" type_name="gh_single" type_code="5">1.7500001</item>
+                <item name="Zoom" type_name="gh_single" type_code="5">1.2643766</item>
               </items>
             </chunk>
             <chunk name="Views">
@@ -150,9 +150,9 @@
         </chunk>
         <chunk name="DefinitionObjects">
           <items count="1">
-            <item name="ObjectCount" type_name="gh_int32" type_code="3">118</item>
+            <item name="ObjectCount" type_name="gh_int32" type_code="3">123</item>
           </items>
-          <chunks count="118">
+          <chunks count="123">
             <chunk name="Object" index="0">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">719467e6-7cf5-4848-99b0-c5dd57e5442c</item>
@@ -4508,14 +4508,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>5197</X>
-                          <Y>2025</Y>
+                          <X>5193</X>
+                          <Y>2007</Y>
                           <W>148</W>
                           <H>113</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>5268</X>
-                          <Y>2082</Y>
+                          <X>5264</X>
+                          <Y>2064</Y>
                         </item>
                       </items>
                     </chunk>
@@ -4550,14 +4550,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>5199</X>
-                                  <Y>2027</Y>
+                                  <X>5195</X>
+                                  <Y>2009</Y>
                                   <W>54</W>
                                   <H>54</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>5227.5</X>
-                                  <Y>2054.25</Y>
+                                  <X>5223.5</X>
+                                  <Y>2036.25</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -4589,14 +4589,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>5199</X>
-                                  <Y>2081</Y>
+                                  <X>5195</X>
+                                  <Y>2063</Y>
                                   <W>54</W>
                                   <H>55</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>5227.5</X>
-                                  <Y>2108.75</Y>
+                                  <X>5223.5</X>
+                                  <Y>2090.75</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -4621,14 +4621,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>5283</X>
-                                  <Y>2027</Y>
+                                  <X>5279</X>
+                                  <Y>2009</Y>
                                   <W>60</W>
                                   <H>36</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>5313</X>
-                                  <Y>2045.1666</Y>
+                                  <X>5309</X>
+                                  <Y>2027.1666</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -4653,14 +4653,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>5283</X>
-                                  <Y>2063</Y>
+                                  <X>5279</X>
+                                  <Y>2045</Y>
                                   <W>60</W>
                                   <H>36</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>5313</X>
-                                  <Y>2081.5</Y>
+                                  <X>5309</X>
+                                  <Y>2063.5</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -4691,14 +4691,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>5283</X>
-                                  <Y>2099</Y>
+                                  <X>5279</X>
+                                  <Y>2081</Y>
                                   <W>60</W>
                                   <H>37</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>5313</X>
-                                  <Y>2117.8335</Y>
+                                  <X>5309</X>
+                                  <Y>2099.8335</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -7094,14 +7094,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6100</X>
-                          <Y>2141</Y>
+                          <X>6114</X>
+                          <Y>2145</Y>
                           <W>131</W>
                           <H>84</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>6154</X>
-                          <Y>2183</Y>
+                          <X>6168</X>
+                          <Y>2187</Y>
                         </item>
                       </items>
                     </chunk>
@@ -7137,14 +7137,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6102</X>
-                                  <Y>2143</Y>
+                                  <X>6116</X>
+                                  <Y>2147</Y>
                                   <W>37</W>
                                   <H>40</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6122</X>
-                                  <Y>2163</Y>
+                                  <X>6136</X>
+                                  <Y>2167</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -7176,14 +7176,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6102</X>
-                                  <Y>2183</Y>
+                                  <X>6116</X>
+                                  <Y>2187</Y>
                                   <W>37</W>
                                   <H>40</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6122</X>
-                                  <Y>2203</Y>
+                                  <X>6136</X>
+                                  <Y>2207</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -7208,14 +7208,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6169</X>
-                                  <Y>2143</Y>
+                                  <X>6183</X>
+                                  <Y>2147</Y>
                                   <W>60</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6199</X>
-                                  <Y>2153</Y>
+                                  <X>6213</X>
+                                  <Y>2157</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -7240,14 +7240,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6169</X>
-                                  <Y>2163</Y>
+                                  <X>6183</X>
+                                  <Y>2167</Y>
                                   <W>60</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6199</X>
-                                  <Y>2173</Y>
+                                  <X>6213</X>
+                                  <Y>2177</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -7278,14 +7278,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6169</X>
-                                  <Y>2183</Y>
+                                  <X>6183</X>
+                                  <Y>2187</Y>
                                   <W>60</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6199</X>
-                                  <Y>2193</Y>
+                                  <X>6213</X>
+                                  <Y>2197</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -7316,14 +7316,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6169</X>
-                                  <Y>2203</Y>
+                                  <X>6183</X>
+                                  <Y>2207</Y>
                                   <W>60</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6199</X>
-                                  <Y>2213</Y>
+                                  <X>6213</X>
+                                  <Y>2217</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -7342,7 +7342,7 @@ Bezier curve evaluator</item>
                         <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KZnJvbSBjb3B5IGltcG9ydCBkZWVwY29weQ0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQppZiBnaF9kaXIgbm90IGluIHN5cy5wYXRoOg0KICAgIHN5cy5wYXRoLmluc2VydCgwLCBnaF9kaXIpDQoNCmltcG9ydCBlZGdlX2NsYXNzaWZpZXINCmltcG9ydCByZWNpcHJvY2FsDQppbXBvcnQgbGluZV9jb25zdHJhaW50cw0KDQppbXBvcnRsaWIucmVsb2FkKGVkZ2VfY2xhc3NpZmllcikNCmltcG9ydGxpYi5yZWxvYWQocmVjaXByb2NhbCkNCmltcG9ydGxpYi5yZWxvYWQobGluZV9jb25zdHJhaW50cykNCg0KZ3JhcGggPSBkZWVwY29weShuZykNCg0KIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0KIyBjb250cm9scw0KIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0Kc2lnbl9wcmltYXJ5ID0gKzENCnNpZ25fc2Vjb25kYXJ5ID0gKzENCmVuZ2FnZV9sZW4gPSAwLjAxDQp0b2wgPSAwLjENCml0ZXJzID0gNQ0KDQoNCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCiMgMSkgcmVjaXByb2NhbCBwcmltYXJ5DQojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQpyZXNfcHJpbWFyeSA9IHJlY2lwcm9jYWwucmVjaXByb2NhbF93aWR0aF9mcm9tX3N1YmdyYXBoKA0KICAgIGdyYXBoLA0KICAgIHRhcmdldF9oaWVyYXJjaHk9InByaW1hcnkiLA0KICAgIGVuZ2FnZV9sZW49ZW5nYWdlX2xlbiwNCiAgICB0b2w9dG9sLA0KICAgIHJvdGF0aW9uX3NpZ249c2lnbl9wcmltYXJ5LA0KICAgIG1pbl9kZWdyZWU9MywNCiAgICBpdGVyYXRpb25zPWl0ZXJzLA0KICAgIG1heF9hbmdsZT0xODAuMCwgDQogICAgbWF4X2RlZ3JlZSA9IDQNCikNCmcgPSByZXNfcHJpbWFyeVsiZ3JhcGgiXQ0KDQojIFNuYXAgdG8gcHJpbWFyeSBwcmltYXJ5DQoNCmxpbmVfY29uc3RyYWludHMuc25hcF90b19ob3N0KA0KICAgIGcsDQogICAgdGFyZ2V0X2hpZXJhcmNoeT0ibWFpbl9wcmltYXJ5IiwNCiAgICBtb3ZlX25vZGVfbGV2ZWwgPSAwLA0KICAgIGhvc3RfaGllcmFyY2h5PSJwcmltYXJ5IiwNCiAgICB6X29mZnNldCA9IDAuMTAsDQogICAgd3JpdGVfYXR0cmlidXRlPVRydWUsDQogICAgZGVidWc9RmFsc2UNCikNCg0KcmVzX21haW5fcHJpbWFyeSA9IHJlY2lwcm9jYWwucmVjaXByb2NhbF93aWR0aF9mcm9tX3N1YmdyYXBoKA0KICAgIGdyYXBoLA0KICAgIHRhcmdldF9oaWVyYXJjaHk9Im1haW5fcHJpbWFyeSIsDQogICAgZW5nYWdlX2xlbj1lbmdhZ2VfbGVuLA0KICAgIHRvbD10b2wsDQogICAgcm90YXRpb25fc2lnbj1zaWduX3ByaW1hcnksDQogICAgbWluX2RlZ3JlZT0zLA0KICAgIGl0ZXJhdGlvbnM9aXRlcnMsDQogICAgbWF4X2FuZ2xlPTE4MC4wDQopDQpnID0gcmVzX21haW5fcHJpbWFyeVsiZ3JhcGgiXQ0KIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0KIyAyKSByZWdlbmVyYXRlIHNlY29uZGFyeSAobGV2ZWwgMSB1cCkNCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCmxpbmVfY29uc3RyYWludHMuc25hcF90b19ob3N0KA0KICAgIGcsDQogICAgdGFyZ2V0X2hpZXJhcmNoeT0ic2Vjb25kYXJ5IiwNCiAgICBtb3ZlX25vZGVfbGV2ZWwgPSAxLA0KICAgIGhvc3RfaGllcmFyY2h5PSJwcmltYXJ5IiwNCiAgICB6X29mZnNldCA9IHpfc2hpZnQsDQogICAgd3JpdGVfYXR0cmlidXRlPVRydWUsDQogICAgZGVidWc9RmFsc2UNCikNCg0KbGluZV9jb25zdHJhaW50cy5zbmFwX3RvX2hvc3QoDQogICAgZywNCiAgICB0YXJnZXRfaGllcmFyY2h5PSJzZWNvbmRhcnkiLA0KICAgIG1vdmVfbm9kZV9sZXZlbCA9IDEsDQogICAgaG9zdF9oaWVyYXJjaHk9Im1haW5fcHJpbWFyeSIsDQogICAgel9vZmZzZXQgPSB6X3NoaWZ0LA0KICAgIHdyaXRlX2F0dHJpYnV0ZT1UcnVlLA0KICAgIGRlYnVnPUZhbHNlDQopDQoNCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCiMgMykgcmVjaXByb2NhbCBzZWNvbmRhcnkNCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCnJlc19zZWNvbmRhcnkgPSByZWNpcHJvY2FsLnJlY2lwcm9jYWxfd2lkdGhfZnJvbV9zdWJncmFwaCgNCiAgICBnLA0KICAgIHRhcmdldF9oaWVyYXJjaHk9InNlY29uZGFyeSIsDQogICAgZW5nYWdlX2xlbj1lbmdhZ2VfbGVuLA0KICAgIHRvbD10b2wsDQogICAgcm90YXRpb25fc2lnbj1zaWduX3NlY29uZGFyeSwNCiAgICBtaW5fZGVncmVlPTMsDQogICAgaXRlcmF0aW9ucz1pdGVycywNCiAgICBtYXhfYW5nbGU9MTgwLjANCikNCmcgPSByZXNfc2Vjb25kYXJ5WyJncmFwaCJdDQoNCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCiMgNSkgcmVnZW5lcmF0ZSB0ZXJ0aWFyeSAobGV2ZWwgMCB1cCkNCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCmxpbmVfY29uc3RyYWludHMuc25hcF90b19ob3N0KA0KICAgIGcsDQogICAgdGFyZ2V0X2hpZXJhcmNoeT0idGVydGlhcnkiLA0KICAgIG1vdmVfbm9kZV9sZXZlbD0wLA0KICAgIGhvc3RfaGllcmFyY2h5PSJzZWNvbmRhcnkiICwNCiAgICB6X29mZnNldCA9IHpfc2hpZnQsDQogICAgd3JpdGVfYXR0cmlidXRlPVRydWUsDQogICAgZGVidWc9RmFsc2UNCikNCg0KbGluZV9jb25zdHJhaW50cy5zbmFwX3RvX2hvc3QoDQogICAgZywNCiAgICB0YXJnZXRfaGllcmFyY2h5PSJ0ZXJ0aWFyeSIsDQogICAgbW92ZV9ub2RlX2xldmVsPTAsDQogICAgaG9zdF9oaWVyYXJjaHk9InByaW1hcnkiLA0KICAgIHpfb2Zmc2V0ID0gel9zaGlmdCwNCiAgICB3cml0ZV9hdHRyaWJ1dGU9VHJ1ZSwNCiAgICBkZWJ1Zz1GYWxzZQ0KKQ0KDQpsaW5lX2NvbnN0cmFpbnRzLnNuYXBfdG9faG9zdCgNCiAgICBnLA0KICAgIHRhcmdldF9oaWVyYXJjaHk9InRlcnRpYXJ5IiwNCiAgICBtb3ZlX25vZGVfbGV2ZWw9MCwNCiAgICBob3N0X2hpZXJhcmNoeT0ibWFpbl9wcmltYXJ5IiwNCiAgICB6X29mZnNldCA9IHpfc2hpZnQsDQogICAgd3JpdGVfYXR0cmlidXRlPVRydWUsDQogICAgZGVidWc9RmFsc2UNCikNCg0KDQpncmFwaF9vdXQgPSBnDQpzaGlmdGVkID0gW10NCmZvciBlIGluIGcuZWRnZXMoKToNCiAgICBzaGlmdGVkLmFwcGVuZChnLmVkZ2VfYXR0cmlidXRlKGUsICJzaGlmdGVkX2xpbmUiKSkNCg0K</item>
+                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KZnJvbSBjb3B5IGltcG9ydCBkZWVwY29weQ0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQppZiBnaF9kaXIgbm90IGluIHN5cy5wYXRoOg0KICAgIHN5cy5wYXRoLmluc2VydCgwLCBnaF9kaXIpDQoNCmltcG9ydCBlZGdlX2NsYXNzaWZpZXINCmltcG9ydCByZWNpcHJvY2FsDQppbXBvcnQgbGluZV9jb25zdHJhaW50cw0KDQppbXBvcnRsaWIucmVsb2FkKGVkZ2VfY2xhc3NpZmllcikNCmltcG9ydGxpYi5yZWxvYWQocmVjaXByb2NhbCkNCmltcG9ydGxpYi5yZWxvYWQobGluZV9jb25zdHJhaW50cykNCg0KZ3JhcGggPSBkZWVwY29weShuZykNCg0KIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0KIyBjb250cm9scw0KIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0Kc2lnbl9wcmltYXJ5ID0gKzENCnNpZ25fc2Vjb25kYXJ5ID0gKzENCmVuZ2FnZV9sZW4gPSAwLjAxNQ0KdG9sID0gMC4xDQppdGVycyA9IDUNCg0KDQojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQojIDEpIHJlY2lwcm9jYWwgcHJpbWFyeQ0KIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0KcmVzX3ByaW1hcnkgPSByZWNpcHJvY2FsLnJlY2lwcm9jYWxfd2lkdGhfZnJvbV9zdWJncmFwaCgNCiAgICBncmFwaCwNCiAgICB0YXJnZXRfaGllcmFyY2h5PSJwcmltYXJ5IiwNCiAgICBlbmdhZ2VfbGVuPWVuZ2FnZV9sZW4sDQogICAgdG9sPXRvbCwNCiAgICByb3RhdGlvbl9zaWduPXNpZ25fcHJpbWFyeSwNCiAgICBtaW5fZGVncmVlPTMsDQogICAgaXRlcmF0aW9ucz1pdGVycywNCiAgICBtYXhfYW5nbGU9MTgwLjAsIA0KICAgIG1heF9kZWdyZWUgPSA0DQopDQpnID0gcmVzX3ByaW1hcnlbImdyYXBoIl0NCg0KIyBTbmFwIHRvIHByaW1hcnkgcHJpbWFyeQ0KDQpsaW5lX2NvbnN0cmFpbnRzLnNuYXBfdG9faG9zdCgNCiAgICBnLA0KICAgIHRhcmdldF9oaWVyYXJjaHk9Im1haW5fcHJpbWFyeSIsDQogICAgbW92ZV9ub2RlX2xldmVsID0gMCwNCiAgICBob3N0X2hpZXJhcmNoeT0icHJpbWFyeSIsDQogICAgel9vZmZzZXQgPSAwLjEwLA0KICAgIHdyaXRlX2F0dHJpYnV0ZT1UcnVlLA0KICAgIGRlYnVnPUZhbHNlDQopDQoNCnJlc19tYWluX3ByaW1hcnkgPSByZWNpcHJvY2FsLnJlY2lwcm9jYWxfd2lkdGhfZnJvbV9zdWJncmFwaCgNCiAgICBncmFwaCwNCiAgICB0YXJnZXRfaGllcmFyY2h5PSJtYWluX3ByaW1hcnkiLA0KICAgIGVuZ2FnZV9sZW49ZW5nYWdlX2xlbiwNCiAgICB0b2w9dG9sLA0KICAgIHJvdGF0aW9uX3NpZ249c2lnbl9wcmltYXJ5LA0KICAgIG1pbl9kZWdyZWU9MywNCiAgICBpdGVyYXRpb25zPWl0ZXJzLA0KICAgIG1heF9hbmdsZT0xODAuMA0KKQ0KZyA9IHJlc19tYWluX3ByaW1hcnlbImdyYXBoIl0NCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCiMgMikgcmVnZW5lcmF0ZSBzZWNvbmRhcnkgKGxldmVsIDEgdXApDQojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQpsaW5lX2NvbnN0cmFpbnRzLnNuYXBfdG9faG9zdCgNCiAgICBnLA0KICAgIHRhcmdldF9oaWVyYXJjaHk9InNlY29uZGFyeSIsDQogICAgbW92ZV9ub2RlX2xldmVsID0gMSwNCiAgICBob3N0X2hpZXJhcmNoeT0icHJpbWFyeSIsDQogICAgel9vZmZzZXQgPSB6X3NoaWZ0LA0KICAgIHdyaXRlX2F0dHJpYnV0ZT1UcnVlLA0KICAgIGRlYnVnPUZhbHNlDQopDQoNCmxpbmVfY29uc3RyYWludHMuc25hcF90b19ob3N0KA0KICAgIGcsDQogICAgdGFyZ2V0X2hpZXJhcmNoeT0ic2Vjb25kYXJ5IiwNCiAgICBtb3ZlX25vZGVfbGV2ZWwgPSAxLA0KICAgIGhvc3RfaGllcmFyY2h5PSJtYWluX3ByaW1hcnkiLA0KICAgIHpfb2Zmc2V0ID0gel9zaGlmdCwNCiAgICB3cml0ZV9hdHRyaWJ1dGU9VHJ1ZSwNCiAgICBkZWJ1Zz1GYWxzZQ0KKQ0KDQojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQojIDMpIHJlY2lwcm9jYWwgc2Vjb25kYXJ5DQojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQpyZXNfc2Vjb25kYXJ5ID0gcmVjaXByb2NhbC5yZWNpcHJvY2FsX3dpZHRoX2Zyb21fc3ViZ3JhcGgoDQogICAgZywNCiAgICB0YXJnZXRfaGllcmFyY2h5PSJzZWNvbmRhcnkiLA0KICAgIGVuZ2FnZV9sZW49ZW5nYWdlX2xlbiwNCiAgICB0b2w9dG9sLA0KICAgIHJvdGF0aW9uX3NpZ249c2lnbl9zZWNvbmRhcnksDQogICAgbWluX2RlZ3JlZT0zLA0KICAgIGl0ZXJhdGlvbnM9aXRlcnMsDQogICAgbWF4X2FuZ2xlPTE4MC4wDQopDQpnID0gcmVzX3NlY29uZGFyeVsiZ3JhcGgiXQ0KDQojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQojIDUpIHJlZ2VuZXJhdGUgdGVydGlhcnkgKGxldmVsIDAgdXApDQojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQpsaW5lX2NvbnN0cmFpbnRzLnNuYXBfdG9faG9zdCgNCiAgICBnLA0KICAgIHRhcmdldF9oaWVyYXJjaHk9InRlcnRpYXJ5IiwNCiAgICBtb3ZlX25vZGVfbGV2ZWw9MCwNCiAgICBob3N0X2hpZXJhcmNoeT0ic2Vjb25kYXJ5IiAsDQogICAgel9vZmZzZXQgPSB6X3NoaWZ0LA0KICAgIHdyaXRlX2F0dHJpYnV0ZT1UcnVlLA0KICAgIGRlYnVnPUZhbHNlDQopDQoNCmxpbmVfY29uc3RyYWludHMuc25hcF90b19ob3N0KA0KICAgIGcsDQogICAgdGFyZ2V0X2hpZXJhcmNoeT0idGVydGlhcnkiLA0KICAgIG1vdmVfbm9kZV9sZXZlbD0wLA0KICAgIGhvc3RfaGllcmFyY2h5PSJwcmltYXJ5IiwNCiAgICB6X29mZnNldCA9IHpfc2hpZnQsDQogICAgd3JpdGVfYXR0cmlidXRlPVRydWUsDQogICAgZGVidWc9RmFsc2UNCikNCg0KbGluZV9jb25zdHJhaW50cy5zbmFwX3RvX2hvc3QoDQogICAgZywNCiAgICB0YXJnZXRfaGllcmFyY2h5PSJ0ZXJ0aWFyeSIsDQogICAgbW92ZV9ub2RlX2xldmVsPTAsDQogICAgaG9zdF9oaWVyYXJjaHk9Im1haW5fcHJpbWFyeSIsDQogICAgel9vZmZzZXQgPSB6X3NoaWZ0LA0KICAgIHdyaXRlX2F0dHJpYnV0ZT1UcnVlLA0KICAgIGRlYnVnPUZhbHNlDQopDQoNCg0KZ3JhcGhfb3V0ID0gZw0Kc2hpZnRlZCA9IFtdDQpmb3IgZSBpbiBnLmVkZ2VzKCk6DQogICAgc2hpZnRlZC5hcHBlbmQoZy5lZGdlX2F0dHJpYnV0ZShlLCAic2hpZnRlZF9saW5lIikpDQoNCg==</item>
                         <item name="Title" type_name="gh_string" type_code="10">Py3</item>
                       </items>
                       <chunks count="1">
@@ -7357,10 +7357,10 @@ Bezier curve evaluator</item>
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>821</X>
-                          <Y>79</Y>
+                          <X>859</X>
+                          <Y>11</Y>
                           <W>722</W>
-                          <H>930</H>
+                          <H>980</H>
                         </item>
                       </items>
                     </chunk>
@@ -7375,9 +7375,10 @@ Bezier curve evaluator</item>
               </items>
               <chunks count="1">
                 <chunk name="Container">
-                  <items count="16">
+                  <items count="17">
                     <item name="Description" type_name="gh_string" type_code="10"></item>
                     <item name="GraftStandardOutputLines" type_name="gh_bool" type_code="1">true</item>
+                    <item name="Hidden" type_name="gh_bool" type_code="1">true</item>
                     <item name="IconDisplay" type_name="gh_int32" type_code="3">2</item>
                     <item name="IconOverride" type_name="gh_drawing_bitmap" type_code="37">
                       <bitmap length="1099">iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAALEQAACxEBf2RfkQAAA+1JREFUSEu1lW1MlWUYx/8DpENqYorBQY68eATJIdgcTZReRlaSiw/R4AOGRhuVqy3SsRabKz+gsth0rVgOGiabZRNqrJnpVqsxO6G2lm4ec75kLMPNQE3Q/Lv/zX0/w+OjfPLart3nPM/u/+96ue/rAYA464kA7gcwFUAygBkAZgF4CMBMACn2md49ACAJwH0AJtn9d7QEAAEAkwE8CCAVwGwAOQDmAZgPIBdA2D4LAUi3UMEEuitEUUyzEc4BkAfg2WB65hAApsyaN7q8vHoAQCeAVwAUAsi3sKDdK434WGFnSldlmAugQEKJiQGWlK7kzu4o39u8m1Wr1jErZwEFnDI1+UZoztxLzdt29VuIyqjSKgtfiFLNBFAeTA8NB5Ims/ql9fzgo33G3924k207Itx/cNR4a9sBZueWGBiABbacU2wPfQGqZ15cfALDuYX85LN+I9Tz3XkD6OqOerDa+mamZDzKvCfaHaDI9kS9EMC3D4pApWHl2gifrmzhsqfqWLDoSa6qazLCgi1eVsPUcBWzi5tZsKLXAdQP9c31wReQAWChNry8YdTzFbX7WNN4nhWrdzOYteRGeOk2IxwDcBncFaAMfAHud1ZBrRF1ALkFaJ8C1EGZuEQV9RFfgBXz9Tjgkr2cdwSoyToNpiQSlhc/0+KVSe/arXcGwK7p4GvJHuQtANPtRdWFVamcG0uzl8u3RMrKAZz452me+B5bIner1QuVS6vcmC6KxoAvwJVovPiX2eAbQQ/SYIPUZdWYkeu/brkxzR8dNYYLa1hasd1EHQsYL96TD/Y+AjaEPcjbJCtJRkleozUHUINEfP+xlQ2/ps3OuxKfEGD8pCSmZpay6PEmI+JqrsglvrcE3F8GNi4ce97R0cEr1/5n39nL/PiXQbb2md4Z0zRUvZSaMtHkVNPXAOgpXFz1l41S/pVWRS7x758Df3oBLM8Ze7+29yzXdJ/m+m/P8fiFqx5AQ0oQNceNa50szScNwHAccBlAox1u6ySmyCXetGRMvPj1zaz+4qTxziODt5RIZ1ffBB0rTUUdN2Wko6cR7prnGqd7YyAu8qL6TXy+K+r59v5/bgPINQkFUkbu6yaYVrmg+qIF1VDVXOIvvtPKsk+P3eJ7T1zkD6eGPEAsaLw7oFbBlJUA0eGR62z45hQHhkd5fPA/vvr1SRa3/WZWvSvrOHobwM/GZ6csdJnSdRS7j15g/tbDxj88OMChketm/fnPYbPqeazYRCaAShRSfev2RJmxJeL5w1sPsb3/b54bGuGGA2fM/1iBiUwlmkmyRIDyHb9z2sY+z0MtEZ65eJVv9v7BH0//a0CxAvfEbgLsq2A4t5HEigAAAABJRU5ErkJggg==</bitmap>
@@ -7732,14 +7733,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6492</X>
-                          <Y>2101</Y>
+                          <X>6547</X>
+                          <Y>2066</Y>
                           <W>131</W>
                           <H>124</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>6545</X>
-                          <Y>2163</Y>
+                          <X>6600</X>
+                          <Y>2128</Y>
                         </item>
                       </items>
                     </chunk>
@@ -7776,14 +7777,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6494</X>
-                                  <Y>2103</Y>
+                                  <X>6549</X>
+                                  <Y>2068</Y>
                                   <W>36</W>
                                   <H>120</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6513.5</X>
-                                  <Y>2163</Y>
+                                  <X>6568.5</X>
+                                  <Y>2128</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -7808,14 +7809,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6560</X>
-                                  <Y>2103</Y>
+                                  <X>6615</X>
+                                  <Y>2068</Y>
                                   <W>61</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6590.5</X>
-                                  <Y>2113</Y>
+                                  <X>6645.5</X>
+                                  <Y>2078</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -7840,14 +7841,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6560</X>
-                                  <Y>2123</Y>
+                                  <X>6615</X>
+                                  <Y>2088</Y>
                                   <W>61</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6590.5</X>
-                                  <Y>2133</Y>
+                                  <X>6645.5</X>
+                                  <Y>2098</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -7878,14 +7879,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6560</X>
-                                  <Y>2143</Y>
+                                  <X>6615</X>
+                                  <Y>2108</Y>
                                   <W>61</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6590.5</X>
-                                  <Y>2153</Y>
+                                  <X>6645.5</X>
+                                  <Y>2118</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -7916,14 +7917,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6560</X>
-                                  <Y>2163</Y>
+                                  <X>6615</X>
+                                  <Y>2128</Y>
                                   <W>61</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6590.5</X>
-                                  <Y>2173</Y>
+                                  <X>6645.5</X>
+                                  <Y>2138</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -7954,14 +7955,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6560</X>
-                                  <Y>2183</Y>
+                                  <X>6615</X>
+                                  <Y>2148</Y>
                                   <W>61</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6590.5</X>
-                                  <Y>2193</Y>
+                                  <X>6645.5</X>
+                                  <Y>2158</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -7992,14 +7993,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6560</X>
-                                  <Y>2203</Y>
+                                  <X>6615</X>
+                                  <Y>2168</Y>
                                   <W>61</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6590.5</X>
-                                  <Y>2213</Y>
+                                  <X>6645.5</X>
+                                  <Y>2178</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -8018,7 +8019,7 @@ Bezier curve evaluator</item>
                         <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KZ2hfZGlyID0gb3MucGF0aC5kaXJuYW1lKGdoZW52LkNvbXBvbmVudC5PblBpbmdEb2N1bWVudCgpLkZpbGVQYXRoKQ0KaWYgZ2hfZGlyIG5vdCBpbiBzeXMucGF0aDoNCiAgICBzeXMucGF0aC5pbnNlcnQoMCwgZ2hfZGlyKQ0KDQoNCmltcG9ydCBmb3VuZGF0aW9uX3NvbHZlcg0KaW1wb3J0bGliLnJlbG9hZChmb3VuZGF0aW9uX3NvbHZlcikNCmZyb20gZm91bmRhdGlvbl9zb2x2ZXIgaW1wb3J0IHRyaW1fYW5jaG9yZWRfYmVhbXNfYW5kX2ZpbmRfY3V0X3BsYW5lcw0KZnJvbSBjb3B5IGltcG9ydCBkZWVwY29weQ0KDQpmcm9tIGNvbXBhcy5nZW9tZXRyeSBpbXBvcnQgUG9seWdvbg0KDQojIyMjIyMjIyMjIyMtLS0tLS0tLU1haW4gQ29kZS0tLS0tLS0tLS0jIyMjIyMjIyMNCm5nID0gZGVlcGNvcHkoZ3JhcGgpDQpyZXN1bHQgPSB0cmltX2FuY2hvcmVkX2JlYW1zX2FuZF9maW5kX2N1dF9wbGFuZXMobmcsIG1pbl9nYXA9MC4xLCBtaW5faGVpZ2h0PTAuMDEsIF9zdGVwID0gMC4xKQ0KDQojIyMjIyMjIy0tLS0tLS0tT3V0cHV0IERhdGEtLS0tLS0tLS0jIyMjIyMjIyMNCmNyb19zZWNfZGljdCA9IHJlc3VsdFsiY3Jvc3Nfc2VjdGlvbnMiXQ0KY3Jvc2VjcyA9IFtdDQpmb3Igbm9kZSwgY3JvX3NlY19saXN0IGluIGNyb19zZWNfZGljdC5pdGVtcygpOg0KICAgIGZvciBjcm9zZWMgaW4gY3JvX3NlY19saXN0Og0KICAgICAgICBwb2x5ID0gUG9seWdvbihjcm9zZWMpDQogICAgICAgIGNyb3NlY3MuYXBwZW5kKHBvbHkpDQoNCmN1dF9wbG5fZGljdCA9IHJlc3VsdFsiY3V0X3BsYW5lcyJdDQpjdXRfcGxhbmVzID0gW10NCmZvciBub2RlLCBwbG4gaW4gY3V0X3Bsbl9kaWN0Lml0ZW1zKCk6DQogICAgY3V0X3BsYW5lcy5hcHBlbmQocGxuKQ0KDQoNCnN1cF9saW5lcyA9IFtdDQpmb3IgZWRnZSBpbiBuZy5nZXRfc3VwcG9ydF9lZGdlcygpOg0KICAgIGlmICJzaGlmdGVkX2xpbmUiIGluIGdyYXBoLmVkZ2VfYXR0cmlidXRlcyhlZGdlKToNCiAgICAgICAgbG4gPSBuZy5lZGdlX2F0dHJpYnV0ZShlZGdlLCAic2hpZnRlZF9saW5lIikNCiAgICBlbHNlOg0KICAgICAgICBsbiA9IG5nLmVkZ2VfbGluZShlZGdlKQ0KICAgIHN1cF9saW5lcy5hcHBlbmQobG4pDQoNCg0KdG90YWxfbGluZXMgPSBbXQ0KZm9yIGUgaW4gbmcuZWRnZXMoKToNCiAgICB0b3RhbF9saW5lcy5hcHBlbmQobmcuZWRnZV9hdHRyaWJ1dGUoZSwgInNoaWZ0ZWRfbGluZSIpKQ0KDQoNCmdyYXBoX291dCA9IG5nDQojIyMjIyMjIyMjIyMjLS0tLS0tLS0tLS1QcmludC0tLS0tLS0tLS0jIyMjIyMjIyMjDQojIHByaW50IChyZXN1bHRbImNyb3NzX3NlY3Rpb25zIl0pDQojIHByaW50ICgpDQojIHByaW50IChyZXN1bHRbImN1dF9wbGFuZXMiXSkNCnByaW50IChyZXN1bHRbImZvdW5kYXRpb25faGVpZ2h0cyJdKQ0KDQoNCmZvciBub2RlIGluIG5nLmdldF9zdXBwb3J0X25vZGVzKCk6DQogICAgcHJpbnQgKG5nLm5vZGVfYXR0cmlidXRlKG5vZGUsICdjdXRfcGxhbmUnKSkNCiAgICANCg0K</item>
+                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KZ2hfZGlyID0gb3MucGF0aC5kaXJuYW1lKGdoZW52LkNvbXBvbmVudC5PblBpbmdEb2N1bWVudCgpLkZpbGVQYXRoKQ0KaWYgZ2hfZGlyIG5vdCBpbiBzeXMucGF0aDoNCiAgICBzeXMucGF0aC5pbnNlcnQoMCwgZ2hfZGlyKQ0KDQoNCmltcG9ydCBmb3VuZGF0aW9uX3NvbHZlcg0KaW1wb3J0bGliLnJlbG9hZChmb3VuZGF0aW9uX3NvbHZlcikNCmZyb20gZm91bmRhdGlvbl9zb2x2ZXIgaW1wb3J0IHRyaW1fYW5jaG9yZWRfYmVhbXNfYW5kX2ZpbmRfY3V0X3BsYW5lcw0KZnJvbSBjb3B5IGltcG9ydCBkZWVwY29weQ0KDQpmcm9tIGNvbXBhcy5nZW9tZXRyeSBpbXBvcnQgUG9seWdvbg0KDQojIyMjIyMjIyMjIyMtLS0tLS0tLU1haW4gQ29kZS0tLS0tLS0tLS0jIyMjIyMjIyMNCm5nID0gZGVlcGNvcHkoZ3JhcGgpDQpyZXN1bHQgPSB0cmltX2FuY2hvcmVkX2JlYW1zX2FuZF9maW5kX2N1dF9wbGFuZXMobmcsIG1pbl9nYXA9MC4wMSwgbWluX2hlaWdodD0wLjAxLCBfc3RlcCA9IDAuMSkNCg0KIyMjIyMjIyMtLS0tLS0tLU91dHB1dCBEYXRhLS0tLS0tLS0tIyMjIyMjIyMjDQpjcm9fc2VjX2RpY3QgPSByZXN1bHRbImNyb3NzX3NlY3Rpb25zIl0NCmNyb3NlY3MgPSBbXQ0KZm9yIG5vZGUsIGNyb19zZWNfbGlzdCBpbiBjcm9fc2VjX2RpY3QuaXRlbXMoKToNCiAgICBmb3IgY3Jvc2VjIGluIGNyb19zZWNfbGlzdDoNCiAgICAgICAgcG9seSA9IFBvbHlnb24oY3Jvc2VjKQ0KICAgICAgICBjcm9zZWNzLmFwcGVuZChwb2x5KQ0KDQpjdXRfcGxuX2RpY3QgPSByZXN1bHRbImN1dF9wbGFuZXMiXQ0KY3V0X3BsYW5lcyA9IFtdDQpmb3Igbm9kZSwgcGxuIGluIGN1dF9wbG5fZGljdC5pdGVtcygpOg0KICAgIGN1dF9wbGFuZXMuYXBwZW5kKHBsbikNCg0KDQpzdXBfbGluZXMgPSBbXQ0KZm9yIGVkZ2UgaW4gbmcuZ2V0X3N1cHBvcnRfZWRnZXMoKToNCiAgICBpZiAic2hpZnRlZF9saW5lIiBpbiBncmFwaC5lZGdlX2F0dHJpYnV0ZXMoZWRnZSk6DQogICAgICAgIGxuID0gbmcuZWRnZV9hdHRyaWJ1dGUoZWRnZSwgInNoaWZ0ZWRfbGluZSIpDQogICAgZWxzZToNCiAgICAgICAgbG4gPSBuZy5lZGdlX2xpbmUoZWRnZSkNCiAgICBzdXBfbGluZXMuYXBwZW5kKGxuKQ0KDQoNCnRvdGFsX2xpbmVzID0gW10NCmZvciBlIGluIG5nLmVkZ2VzKCk6DQogICAgdG90YWxfbGluZXMuYXBwZW5kKG5nLmVkZ2VfYXR0cmlidXRlKGUsICJzaGlmdGVkX2xpbmUiKSkNCg0KDQpncmFwaF9vdXQgPSBuZw0KIyMjIyMjIyMjIyMjIy0tLS0tLS0tLS0tUHJpbnQtLS0tLS0tLS0tIyMjIyMjIyMjIw0KIyBwcmludCAocmVzdWx0WyJjcm9zc19zZWN0aW9ucyJdKQ0KIyBwcmludCAoKQ0KIyBwcmludCAocmVzdWx0WyJjdXRfcGxhbmVzIl0pDQpwcmludCAocmVzdWx0WyJmb3VuZGF0aW9uX2hlaWdodHMiXSkNCg0KDQpmb3Igbm9kZSBpbiBuZy5nZXRfc3VwcG9ydF9ub2RlcygpOg0KICAgIHByaW50IChuZy5ub2RlX2F0dHJpYnV0ZShub2RlLCAnY3V0X3BsYW5lJykpDQogICAgDQoNCg==</item>
                         <item name="Title" type_name="gh_string" type_code="10">Python 3 Script</item>
                       </items>
                       <chunks count="1">
@@ -8033,10 +8034,10 @@ Bezier curve evaluator</item>
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>95</X>
-                          <Y>8</Y>
+                          <X>603</X>
+                          <Y>374</Y>
                           <W>984</W>
-                          <H>922</H>
+                          <H>930</H>
                         </item>
                       </items>
                     </chunk>
@@ -8075,14 +8076,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6745</X>
-                          <Y>2116</Y>
+                          <X>6800</X>
+                          <Y>2081</Y>
                           <W>73</W>
                           <H>28</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>6781</X>
-                          <Y>2130</Y>
+                          <X>6836</X>
+                          <Y>2095</Y>
                         </item>
                       </items>
                     </chunk>
@@ -8114,14 +8115,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6747</X>
-                                  <Y>2118</Y>
+                                  <X>6802</X>
+                                  <Y>2083</Y>
                                   <W>19</W>
                                   <H>24</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6758</X>
-                                  <Y>2130</Y>
+                                  <X>6813</X>
+                                  <Y>2095</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -8152,14 +8153,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6796</X>
-                                  <Y>2118</Y>
+                                  <X>6851</X>
+                                  <Y>2083</Y>
                                   <W>20</W>
                                   <H>24</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6806</X>
-                                  <Y>2130</Y>
+                                  <X>6861</X>
+                                  <Y>2095</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -8226,14 +8227,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6754</X>
-                          <Y>2204</Y>
+                          <X>6809</X>
+                          <Y>2169</Y>
                           <W>73</W>
                           <H>28</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>6790</X>
-                          <Y>2218</Y>
+                          <X>6845</X>
+                          <Y>2183</Y>
                         </item>
                       </items>
                     </chunk>
@@ -8265,14 +8266,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6756</X>
-                                  <Y>2206</Y>
+                                  <X>6811</X>
+                                  <Y>2171</Y>
                                   <W>19</W>
                                   <H>24</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6767</X>
-                                  <Y>2218</Y>
+                                  <X>6822</X>
+                                  <Y>2183</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -8303,14 +8304,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6805</X>
-                                  <Y>2206</Y>
+                                  <X>6860</X>
+                                  <Y>2171</Y>
                                   <W>20</W>
                                   <H>24</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6815</X>
-                                  <Y>2218</Y>
+                                  <X>6870</X>
+                                  <Y>2183</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -8376,14 +8377,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6747</X>
-                          <Y>2151</Y>
+                          <X>6820</X>
+                          <Y>2131</Y>
                           <W>73</W>
                           <H>28</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>6783</X>
-                          <Y>2165</Y>
+                          <X>6856</X>
+                          <Y>2145</Y>
                         </item>
                       </items>
                     </chunk>
@@ -8415,14 +8416,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6749</X>
-                                  <Y>2153</Y>
+                                  <X>6822</X>
+                                  <Y>2133</Y>
                                   <W>19</W>
                                   <H>24</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6760</X>
-                                  <Y>2165</Y>
+                                  <X>6833</X>
+                                  <Y>2145</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -8453,14 +8454,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6798</X>
-                                  <Y>2153</Y>
+                                  <X>6871</X>
+                                  <Y>2133</Y>
                                   <W>20</W>
                                   <H>24</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6808</X>
-                                  <Y>2165</Y>
+                                  <X>6881</X>
+                                  <Y>2145</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -8534,20 +8535,20 @@ Bezier curve evaluator</item>
                   <items count="13">
                     <item name="Bold" type_name="gh_bool" type_code="1">false</item>
                     <item name="Ca" type_name="gh_drawing_pointf" type_code="31">
-                      <X>6491.149</X>
-                      <Y>2041.3699</Y>
+                      <X>6546.527</X>
+                      <Y>2006.5979</Y>
                     </item>
                     <item name="Cb" type_name="gh_drawing_pointf" type_code="31">
-                      <X>6609.301</X>
-                      <Y>2041.3699</Y>
+                      <X>6664.6787</X>
+                      <Y>2006.5979</Y>
                     </item>
                     <item name="Cc" type_name="gh_drawing_pointf" type_code="31">
-                      <X>6609.301</X>
-                      <Y>2059.8757</Y>
+                      <X>6664.6787</X>
+                      <Y>2025.1038</Y>
                     </item>
                     <item name="Cd" type_name="gh_drawing_pointf" type_code="31">
-                      <X>6491.149</X>
-                      <Y>2059.8757</Y>
+                      <X>6546.527</X>
+                      <Y>2025.1038</Y>
                     </item>
                     <item name="Description" type_name="gh_string" type_code="10">A quick note</item>
                     <item name="Font" type_name="gh_string" type_code="10">Microsoft Sans Serif</item>
@@ -8562,14 +8563,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6486.149</X>
-                          <Y>2036.3699</Y>
+                          <X>6541.527</X>
+                          <Y>2001.5979</Y>
                           <W>128.15186</W>
                           <H>28.50586</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>6491.149</X>
-                          <Y>2041.3699</Y>
+                          <X>6546.527</X>
+                          <Y>2006.5979</Y>
                         </item>
                       </items>
                     </chunk>
@@ -8597,14 +8598,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>4821</X>
-                          <Y>1296</Y>
+                          <X>4817</X>
+                          <Y>1288</Y>
                           <W>86</W>
                           <H>199</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>4893</X>
-                          <Y>1396</Y>
+                          <X>4889</X>
+                          <Y>1388</Y>
                         </item>
                       </items>
                     </chunk>
@@ -8623,14 +8624,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>4823</X>
-                              <Y>1298</Y>
+                              <X>4819</X>
+                              <Y>1290</Y>
                               <W>55</W>
                               <H>48</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>4852</X>
-                              <Y>1322.375</Y>
+                              <X>4848</X>
+                              <Y>1314.375</Y>
                             </item>
                           </items>
                         </chunk>
@@ -8650,14 +8651,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>4823</X>
-                              <Y>1346</Y>
+                              <X>4819</X>
+                              <Y>1338</Y>
                               <W>55</W>
                               <H>49</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>4852</X>
-                              <Y>1371.125</Y>
+                              <X>4848</X>
+                              <Y>1363.125</Y>
                             </item>
                           </items>
                         </chunk>
@@ -8707,14 +8708,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>4823</X>
-                              <Y>1395</Y>
+                              <X>4819</X>
+                              <Y>1387</Y>
                               <W>55</W>
                               <H>49</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>4852</X>
-                              <Y>1419.875</Y>
+                              <X>4848</X>
+                              <Y>1411.875</Y>
                             </item>
                           </items>
                         </chunk>
@@ -8733,14 +8734,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>4823</X>
-                              <Y>1444</Y>
+                              <X>4819</X>
+                              <Y>1436</Y>
                               <W>55</W>
                               <H>49</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>4852</X>
-                              <Y>1468.625</Y>
+                              <X>4848</X>
+                              <Y>1460.625</Y>
                             </item>
                           </items>
                         </chunk>
@@ -9038,14 +9039,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6822</X>
-                          <Y>2516</Y>
+                          <X>7136</X>
+                          <Y>2501</Y>
                           <W>109</W>
                           <H>113</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>6875</X>
-                          <Y>2573</Y>
+                          <X>7189</X>
+                          <Y>2558</Y>
                         </item>
                       </items>
                     </chunk>
@@ -9079,14 +9080,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6824</X>
-                                  <Y>2518</Y>
+                                  <X>7138</X>
+                                  <Y>2503</Y>
                                   <W>36</W>
                                   <H>109</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6843.5</X>
-                                  <Y>2572.5</Y>
+                                  <X>7157.5</X>
+                                  <Y>2557.5</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -9111,14 +9112,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6890</X>
-                                  <Y>2518</Y>
+                                  <X>7204</X>
+                                  <Y>2503</Y>
                                   <W>39</W>
                                   <H>36</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6909.5</X>
-                                  <Y>2536.1667</Y>
+                                  <X>7223.5</X>
+                                  <Y>2521.1667</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -9143,14 +9144,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6890</X>
-                                  <Y>2554</Y>
+                                  <X>7204</X>
+                                  <Y>2539</Y>
                                   <W>39</W>
                                   <H>36</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6909.5</X>
-                                  <Y>2572.5</Y>
+                                  <X>7223.5</X>
+                                  <Y>2557.5</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -9181,14 +9182,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6890</X>
-                                  <Y>2590</Y>
+                                  <X>7204</X>
+                                  <Y>2575</Y>
                                   <W>39</W>
                                   <H>37</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6909.5</X>
-                                  <Y>2608.8335</Y>
+                                  <X>7223.5</X>
+                                  <Y>2593.8335</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -9222,10 +9223,10 @@ Bezier curve evaluator</item>
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>622</X>
-                          <Y>131</Y>
+                          <X>639</X>
+                          <Y>32</Y>
                           <W>725</W>
-                          <H>798</H>
+                          <H>848</H>
                         </item>
                       </items>
                     </chunk>
@@ -9253,14 +9254,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>7090</X>
-                          <Y>2543</Y>
+                          <X>7404</X>
+                          <Y>2528</Y>
                           <W>86</W>
                           <H>199</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>7162</X>
-                          <Y>2643</Y>
+                          <X>7476</X>
+                          <Y>2628</Y>
                         </item>
                       </items>
                     </chunk>
@@ -9279,14 +9280,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>7092</X>
-                              <Y>2545</Y>
+                              <X>7406</X>
+                              <Y>2530</Y>
                               <W>55</W>
                               <H>48</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>7121</X>
-                              <Y>2569.375</Y>
+                              <X>7435</X>
+                              <Y>2554.375</Y>
                             </item>
                           </items>
                         </chunk>
@@ -9306,14 +9307,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>7092</X>
-                              <Y>2593</Y>
+                              <X>7406</X>
+                              <Y>2578</Y>
                               <W>55</W>
                               <H>49</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>7121</X>
-                              <Y>2618.125</Y>
+                              <X>7435</X>
+                              <Y>2603.125</Y>
                             </item>
                           </items>
                         </chunk>
@@ -9363,14 +9364,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>7092</X>
-                              <Y>2642</Y>
+                              <X>7406</X>
+                              <Y>2627</Y>
                               <W>55</W>
                               <H>49</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>7121</X>
-                              <Y>2666.875</Y>
+                              <X>7435</X>
+                              <Y>2651.875</Y>
                             </item>
                           </items>
                         </chunk>
@@ -9389,14 +9390,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>7092</X>
-                              <Y>2691</Y>
+                              <X>7406</X>
+                              <Y>2676</Y>
                               <W>55</W>
                               <H>49</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>7121</X>
-                              <Y>2715.625</Y>
+                              <X>7435</X>
+                              <Y>2700.625</Y>
                             </item>
                           </items>
                         </chunk>
@@ -9447,8 +9448,8 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="5">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6930</X>
-                          <Y>2631</Y>
+                          <X>7245</X>
+                          <Y>2617</Y>
                           <W>82</W>
                           <H>38</H>
                         </item>
@@ -9456,8 +9457,8 @@ Bezier curve evaluator</item>
                         <item name="MarginRight" type_name="gh_int32" type_code="3">0</item>
                         <item name="MarginTop" type_name="gh_int32" type_code="3">0</item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>6930.457</X>
-                          <Y>2631.7788</Y>
+                          <X>7245.014</X>
+                          <Y>2617.3716</Y>
                         </item>
                       </items>
                     </chunk>
@@ -9510,14 +9511,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6993</X>
-                          <Y>2542</Y>
+                          <X>7307</X>
+                          <Y>2527</Y>
                           <W>73</W>
                           <H>28</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>7029</X>
-                          <Y>2556</Y>
+                          <X>7343</X>
+                          <Y>2541</Y>
                         </item>
                       </items>
                     </chunk>
@@ -9549,14 +9550,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6995</X>
-                                  <Y>2544</Y>
+                                  <X>7309</X>
+                                  <Y>2529</Y>
                                   <W>19</W>
                                   <H>24</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>7006</X>
-                                  <Y>2556</Y>
+                                  <X>7320</X>
+                                  <Y>2541</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -9587,14 +9588,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>7044</X>
-                                  <Y>2544</Y>
+                                  <X>7358</X>
+                                  <Y>2529</Y>
                                   <W>20</W>
                                   <H>24</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>7054</X>
-                                  <Y>2556</Y>
+                                  <X>7368</X>
+                                  <Y>2541</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -9855,7 +9856,7 @@ Bezier curve evaluator</item>
                         <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="Text" type_name="gh_string" type_code="10">ZnJvbSBjb21wYXMuZGF0YSBpbXBvcnQganNvbl9kdW1wDQoNCmltcG9ydCBvcywgc3lzLCBpbXBvcnRsaWINCg0KZ2hfZGlyID0gb3MucGF0aC5kaXJuYW1lKGdoZW52LkNvbXBvbmVudC5PblBpbmdEb2N1bWVudCgpLkZpbGVQYXRoKQ0KaWYgZ2hfZGlyIG5vdCBpbiBzeXMucGF0aDoNCiAgICBzeXMucGF0aC5pbnNlcnQoMCwgZ2hfZGlyKQ0KDQpmaWxlX3BhdGggPSBvcy5wYXRoLmpvaW4oZ2hfZGlyLCAiZGF0YSIsICIwODA2X3NoaWZ0ZWRfbGluZXMuanNvbiIpDQpwcmludChmaWxlX3BhdGgpDQppZiBleHBvcnQ6DQogICAganNvbl9kdW1wKGdyYXBoLCBmaWxlX3BhdGgsIHByZXR0eSA9IFRydWUp</item>
+                        <item name="Text" type_name="gh_string" type_code="10">ZnJvbSBjb21wYXMuZGF0YSBpbXBvcnQganNvbl9kdW1wDQoNCmltcG9ydCBvcywgc3lzLCBpbXBvcnRsaWINCg0KZ2hfZGlyID0gb3MucGF0aC5kaXJuYW1lKGdoZW52LkNvbXBvbmVudC5PblBpbmdEb2N1bWVudCgpLkZpbGVQYXRoKQ0KaWYgZ2hfZGlyIG5vdCBpbiBzeXMucGF0aDoNCiAgICBzeXMucGF0aC5pbnNlcnQoMCwgZ2hfZGlyKQ0KDQpmaWxlX3BhdGggPSBvcy5wYXRoLmpvaW4oZ2hfZGlyLCAiZGF0YSIsICIwODA1X3NoaWZ0ZWRfbGluZXMuanNvbiIpDQpwcmludChmaWxlX3BhdGgpDQppZiBleHBvcnQ6DQogICAganNvbl9kdW1wKGdyYXBoLCBmaWxlX3BhdGgsIHByZXR0eSA9IFRydWUp</item>
                         <item name="Title" type_name="gh_string" type_code="10">Py3</item>
                       </items>
                       <chunks count="1">
@@ -9870,10 +9871,10 @@ Bezier curve evaluator</item>
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>672</X>
-                          <Y>131</Y>
+                          <X>629</X>
+                          <Y>32</Y>
                           <W>682</W>
-                          <H>798</H>
+                          <H>848</H>
                         </item>
                       </items>
                     </chunk>
@@ -10579,10 +10580,10 @@ Bezier curve evaluator</item>
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>821</X>
-                          <Y>8</Y>
+                          <X>174</X>
+                          <Y>0</Y>
                           <W>741</W>
-                          <H>922</H>
+                          <H>972</H>
                         </item>
                       </items>
                     </chunk>
@@ -11255,14 +11256,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6491</X>
-                          <Y>2796</Y>
+                          <X>7583</X>
+                          <Y>2433</Y>
                           <W>130</W>
                           <H>113</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>6544</X>
-                          <Y>2853</Y>
+                          <X>7636</X>
+                          <Y>2490</Y>
                         </item>
                       </items>
                     </chunk>
@@ -11296,14 +11297,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6493</X>
-                                  <Y>2798</Y>
+                                  <X>7585</X>
+                                  <Y>2435</Y>
                                   <W>36</W>
                                   <H>109</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6512.5</X>
-                                  <Y>2852.5</Y>
+                                  <X>7604.5</X>
+                                  <Y>2489.5</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -11328,14 +11329,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6559</X>
-                                  <Y>2798</Y>
+                                  <X>7651</X>
+                                  <Y>2435</Y>
                                   <W>60</W>
                                   <H>36</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6589</X>
-                                  <Y>2816.1667</Y>
+                                  <X>7681</X>
+                                  <Y>2453.1667</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -11360,14 +11361,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6559</X>
-                                  <Y>2834</Y>
+                                  <X>7651</X>
+                                  <Y>2471</Y>
                                   <W>60</W>
                                   <H>36</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6589</X>
-                                  <Y>2852.5</Y>
+                                  <X>7681</X>
+                                  <Y>2489.5</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -11398,14 +11399,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6559</X>
-                                  <Y>2870</Y>
+                                  <X>7651</X>
+                                  <Y>2507</Y>
                                   <W>60</W>
                                   <H>37</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6589</X>
-                                  <Y>2888.8335</Y>
+                                  <X>7681</X>
+                                  <Y>2525.8335</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -11439,10 +11440,10 @@ Bezier curve evaluator</item>
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>765</X>
-                          <Y>8</Y>
+                          <X>852</X>
+                          <Y>0</Y>
                           <W>601</W>
-                          <H>922</H>
+                          <H>972</H>
                         </item>
                       </items>
                     </chunk>
@@ -11482,14 +11483,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6654</X>
-                          <Y>2866</Y>
+                          <X>7746</X>
+                          <Y>2503</Y>
                           <W>73</W>
                           <H>28</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>6690</X>
-                          <Y>2880</Y>
+                          <X>7782</X>
+                          <Y>2517</Y>
                         </item>
                       </items>
                     </chunk>
@@ -11521,14 +11522,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6656</X>
-                                  <Y>2868</Y>
+                                  <X>7748</X>
+                                  <Y>2505</Y>
                                   <W>19</W>
                                   <H>24</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6667</X>
-                                  <Y>2880</Y>
+                                  <X>7759</X>
+                                  <Y>2517</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -11559,14 +11560,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6705</X>
-                                  <Y>2868</Y>
+                                  <X>7797</X>
+                                  <Y>2505</Y>
                                   <W>20</W>
                                   <H>24</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6715</X>
-                                  <Y>2880</Y>
+                                  <X>7807</X>
+                                  <Y>2517</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -11608,8 +11609,9 @@ Bezier curve evaluator</item>
               </items>
               <chunks count="1">
                 <chunk name="Container">
-                  <items count="5">
+                  <items count="6">
                     <item name="Description" type_name="gh_string" type_code="10">Retrieve a specific branch from a data tree.</item>
+                    <item name="Hidden" type_name="gh_bool" type_code="1">true</item>
                     <item name="InstanceGuid" type_name="gh_guid" type_code="9">aee18f72-ae3d-4562-97e3-002253f97499</item>
                     <item name="MaintainPaths" type_name="gh_bool" type_code="1">true</item>
                     <item name="Name" type_name="gh_string" type_code="10">Tree Branch</item>
@@ -11619,14 +11621,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6779</X>
-                          <Y>2865</Y>
+                          <X>7871</X>
+                          <Y>2502</Y>
                           <W>63</W>
                           <H>59</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>6809</X>
-                          <Y>2895</Y>
+                          <X>7901</X>
+                          <Y>2532</Y>
                         </item>
                       </items>
                     </chunk>
@@ -11645,14 +11647,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>6781</X>
-                              <Y>2867</Y>
+                              <X>7873</X>
+                              <Y>2504</Y>
                               <W>13</W>
                               <H>27</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>6789</X>
-                              <Y>2880.75</Y>
+                              <X>7881</X>
+                              <Y>2517.75</Y>
                             </item>
                           </items>
                         </chunk>
@@ -11672,14 +11674,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>6781</X>
-                              <Y>2894</Y>
+                              <X>7873</X>
+                              <Y>2531</Y>
                               <W>13</W>
                               <H>28</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>6789</X>
-                              <Y>2908.25</Y>
+                              <X>7881</X>
+                              <Y>2545.25</Y>
                             </item>
                           </items>
                         </chunk>
@@ -11699,14 +11701,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>6824</X>
-                              <Y>2867</Y>
+                              <X>7916</X>
+                              <Y>2504</Y>
                               <W>16</W>
                               <H>55</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>6832</X>
-                              <Y>2894.5</Y>
+                              <X>7924</X>
+                              <Y>2531.5</Y>
                             </item>
                           </items>
                         </chunk>
@@ -11735,14 +11737,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6548</X>
-                          <Y>2936</Y>
+                          <X>7641</X>
+                          <Y>2573</Y>
                           <W>160</W>
                           <H>20</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>6548.474</X>
-                          <Y>2936.2341</Y>
+                          <X>7641.0195</X>
+                          <Y>2573.653</Y>
                         </item>
                       </items>
                     </chunk>
@@ -12347,14 +12349,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>5686</X>
-                          <Y>2493</Y>
+                          <X>5081</X>
+                          <Y>2388</Y>
                           <W>50</W>
                           <H>20</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>5711.8784</X>
-                          <Y>2503.9788</Y>
+                          <X>5106.7764</X>
+                          <Y>2398.326</Y>
                         </item>
                       </items>
                     </chunk>
@@ -12406,14 +12408,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>5887</X>
-                          <Y>2486</Y>
+                          <X>5281</X>
+                          <Y>2380</Y>
                           <W>66</W>
                           <H>65</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>5918</X>
-                          <Y>2519</Y>
+                          <X>5312</X>
+                          <Y>2413</Y>
                         </item>
                       </items>
                     </chunk>
@@ -12431,14 +12433,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>5889</X>
-                              <Y>2488</Y>
+                              <X>5283</X>
+                              <Y>2382</Y>
                               <W>14</W>
                               <H>30</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>5897.5</X>
-                              <Y>2503.25</Y>
+                              <X>5291.5</X>
+                              <Y>2397.25</Y>
                             </item>
                           </items>
                         </chunk>
@@ -12458,14 +12460,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>5889</X>
-                              <Y>2518</Y>
+                              <X>5283</X>
+                              <Y>2412</Y>
                               <W>14</W>
                               <H>31</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>5897.5</X>
-                              <Y>2533.75</Y>
+                              <X>5291.5</X>
+                              <Y>2427.75</Y>
                             </item>
                           </items>
                         </chunk>
@@ -12484,14 +12486,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>5933</X>
-                              <Y>2488</Y>
+                              <X>5327</X>
+                              <Y>2382</Y>
                               <W>18</W>
                               <H>20</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>5942</X>
-                              <Y>2498.1667</Y>
+                              <X>5336</X>
+                              <Y>2392.1667</Y>
                             </item>
                           </items>
                         </chunk>
@@ -12510,14 +12512,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>5933</X>
-                              <Y>2508</Y>
+                              <X>5327</X>
+                              <Y>2402</Y>
                               <W>18</W>
                               <H>20</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>5942</X>
-                              <Y>2518.5</Y>
+                              <X>5336</X>
+                              <Y>2412.5</Y>
                             </item>
                           </items>
                         </chunk>
@@ -12536,14 +12538,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>5933</X>
-                              <Y>2528</Y>
+                              <X>5327</X>
+                              <Y>2422</Y>
                               <W>18</W>
                               <H>21</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>5942</X>
-                              <Y>2538.8335</Y>
+                              <X>5336</X>
+                              <Y>2432.8335</Y>
                             </item>
                           </items>
                         </chunk>
@@ -12570,14 +12572,14 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>5775</X>
-                          <Y>2477</Y>
+                          <X>5169</X>
+                          <Y>2371</Y>
                           <W>64</W>
                           <H>70</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>5805</X>
-                          <Y>2512</Y>
+                          <X>5199</X>
+                          <Y>2406</Y>
                         </item>
                       </items>
                     </chunk>
@@ -12596,14 +12598,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>5777</X>
-                              <Y>2479</Y>
+                              <X>5171</X>
+                              <Y>2373</Y>
                               <W>13</W>
                               <H>33</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>5785</X>
-                              <Y>2495.5</Y>
+                              <X>5179</X>
+                              <Y>2389.5</Y>
                             </item>
                           </items>
                         </chunk>
@@ -12623,14 +12625,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>5777</X>
-                              <Y>2512</Y>
+                              <X>5171</X>
+                              <Y>2406</Y>
                               <W>13</W>
                               <H>33</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>5785</X>
-                              <Y>2528.5</Y>
+                              <X>5179</X>
+                              <Y>2422.5</Y>
                             </item>
                           </items>
                         </chunk>
@@ -12675,14 +12677,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>5820</X>
-                              <Y>2479</Y>
+                              <X>5214</X>
+                              <Y>2373</Y>
                               <W>17</W>
                               <H>33</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>5828.5</X>
-                              <Y>2495.5</Y>
+                              <X>5222.5</X>
+                              <Y>2389.5</Y>
                             </item>
                           </items>
                         </chunk>
@@ -12702,14 +12704,14 @@ Bezier curve evaluator</item>
                         <chunk name="Attributes">
                           <items count="2">
                             <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                              <X>5820</X>
-                              <Y>2512</Y>
+                              <X>5214</X>
+                              <Y>2406</Y>
                               <W>17</W>
                               <H>33</H>
                             </item>
                             <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                              <X>5828.5</X>
-                              <Y>2528.5</Y>
+                              <X>5222.5</X>
+                              <Y>2422.5</Y>
                             </item>
                           </items>
                         </chunk>
@@ -12741,8 +12743,8 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="5">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6038</X>
-                          <Y>2468</Y>
+                          <X>5433</X>
+                          <Y>2362</Y>
                           <W>160</W>
                           <H>100</H>
                         </item>
@@ -12750,8 +12752,8 @@ Bezier curve evaluator</item>
                         <item name="MarginRight" type_name="gh_int32" type_code="3">0</item>
                         <item name="MarginTop" type_name="gh_int32" type_code="3">0</item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>6038.5425</X>
-                          <Y>2468.4285</Y>
+                          <X>5433.4404</X>
+                          <Y>2362.7756</Y>
                         </item>
                       </items>
                     </chunk>
@@ -12779,10 +12781,11 @@ Bezier curve evaluator</item>
               </items>
               <chunks count="1">
                 <chunk name="Container">
-                  <items count="14">
+                  <items count="15">
                     <item name="Description" type_name="gh_string" type_code="10"></item>
                     <item name="GraftStandardOutputLines" type_name="gh_bool" type_code="1">true</item>
-                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">210d38fb-bcfd-4f83-b0b4-a57702e5787c</item>
+                    <item name="Hidden" type_name="gh_bool" type_code="1">true</item>
+                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">d5556466-7e7e-4824-a45c-21b44cd6bac6</item>
                     <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                     <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
                     <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
@@ -12799,39 +12802,42 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>6969</X>
-                          <Y>2198</Y>
-                          <W>96</W>
-                          <H>44</H>
+                          <X>6155</X>
+                          <Y>2747</Y>
+                          <W>131</W>
+                          <H>104</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>7022</X>
-                          <Y>2220</Y>
+                          <X>6209</X>
+                          <Y>2799</Y>
                         </item>
                       </items>
                     </chunk>
                     <chunk name="ParameterData">
-                      <items count="6">
+                      <items count="9">
                         <item name="InputCount" type_name="gh_int32" type_code="3">2</item>
                         <item name="InputId" index="0" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
                         <item name="InputId" index="1" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
-                        <item name="OutputCount" type_name="gh_int32" type_code="3">2</item>
+                        <item name="OutputCount" type_name="gh_int32" type_code="3">5</item>
                         <item name="OutputId" index="0" type_name="gh_guid" type_code="9">3ede854e-c753-40eb-84cb-b48008f14fd4</item>
                         <item name="OutputId" index="1" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                        <item name="OutputId" index="2" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                        <item name="OutputId" index="3" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                        <item name="OutputId" index="4" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
                       </items>
-                      <chunks count="4">
+                      <chunks count="7">
                         <chunk name="InputParam" index="0">
                           <items count="13">
                             <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
                             <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
-                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">6f15880a-cdda-4eb4-9e61-2a19430bbd6c</item>
-                            <item name="Name" type_name="gh_string" type_code="10">graph</item>
-                            <item name="NickName" type_name="gh_string" type_code="10">graph</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">78c7b9b0-5617-44ea-a85b-e296cb44ca51</item>
+                            <item name="Name" type_name="gh_string" type_code="10">ng</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">ng</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">true</item>
                             <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
                             <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
                             <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
-                            <item name="Source" index="0" type_name="gh_guid" type_code="9">177845fe-8141-4c4f-8d8a-89fe3aa98141</item>
+                            <item name="Source" index="0" type_name="gh_guid" type_code="9">68d7bc63-6889-49c5-b97f-2efb80c87f1b</item>
                             <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
                             <item name="ToolTip" type_name="gh_string" type_code="10"></item>
                             <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
@@ -12840,14 +12846,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6971</X>
-                                  <Y>2200</Y>
-                                  <W>36</W>
-                                  <H>20</H>
+                                  <X>6157</X>
+                                  <Y>2749</Y>
+                                  <W>37</W>
+                                  <H>50</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6990.5</X>
-                                  <Y>2210</Y>
+                                  <X>6177</X>
+                                  <Y>2774</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -12860,41 +12866,40 @@ Bezier curve evaluator</item>
                           </chunks>
                         </chunk>
                         <chunk name="InputParam" index="1">
-                          <items count="14">
-                            <item name="Access" type_name="gh_int32" type_code="3">1</item>
+                          <items count="13">
                             <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
-                            <item name="Description" type_name="gh_string" type_code="10">Converts to collection of Breps (Boundary REPresentations)</item>
-                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">9a2662dd-0124-4264-9d8e-5ef112d07bf3</item>
-                            <item name="Name" type_name="gh_string" type_code="10">breps</item>
-                            <item name="NickName" type_name="gh_string" type_code="10">breps</item>
+                            <item name="Description" type_name="gh_string" type_code="10">Converts to collection of floating point numbers</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">77ea1070-6d16-4fdc-8e98-07048a8e4aa8</item>
+                            <item name="Name" type_name="gh_string" type_code="10">z_shift</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">z_shift</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">true</item>
-                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">1</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
                             <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
                             <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
-                            <item name="Source" index="0" type_name="gh_guid" type_code="9">e2a5bbfe-4f1d-4d9b-a6d9-ad66b0fa1b4c</item>
+                            <item name="Source" index="0" type_name="gh_guid" type_code="9">1e01c95e-0705-42da-9f29-f968605bc36a</item>
                             <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
                             <item name="ToolTip" type_name="gh_string" type_code="10"></item>
-                            <item name="TypeHintID" type_name="gh_guid" type_code="9">2ceb0405-fdfe-403d-a4d6-8786da45fb9d</item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">9d51e32e-c038-4352-9554-f4137ca91b9a</item>
                           </items>
                           <chunks count="2">
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>6971</X>
-                                  <Y>2220</Y>
-                                  <W>36</W>
-                                  <H>20</H>
+                                  <X>6157</X>
+                                  <Y>2799</Y>
+                                  <W>37</W>
+                                  <H>50</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>6990.5</X>
-                                  <Y>2230</Y>
+                                  <X>6177</X>
+                                  <Y>2824</Y>
                                 </item>
                               </items>
                             </chunk>
                             <chunk name="ConverterData">
                               <items count="2">
-                                <item name="AssemblyName" type_name="gh_string" type_code="10">RhinoCommon</item>
-                                <item name="TypeName" type_name="gh_string" type_code="10">Rhino.Geometry.Brep</item>
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Double</item>
                               </items>
                             </chunk>
                           </chunks>
@@ -12902,7 +12907,7 @@ Bezier curve evaluator</item>
                         <chunk name="OutputParam" index="0">
                           <items count="6">
                             <item name="Description" type_name="gh_string" type_code="10">Standard output and error contents collected during script run</item>
-                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">9ab1946e-50bb-4d97-8b68-e99f9b1935dd</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">6ad7cea5-c783-46d7-afeb-8777465e9ecf</item>
                             <item name="Name" type_name="gh_string" type_code="10">out</item>
                             <item name="NickName" type_name="gh_string" type_code="10">out</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -12912,14 +12917,14 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>7037</X>
-                                  <Y>2200</Y>
-                                  <W>26</W>
+                                  <X>6224</X>
+                                  <Y>2749</Y>
+                                  <W>60</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>7050</X>
-                                  <Y>2210</Y>
+                                  <X>6254</X>
+                                  <Y>2759</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -12929,7 +12934,45 @@ Bezier curve evaluator</item>
                           <items count="12">
                             <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
                             <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
-                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">0d8223ec-cff7-41f3-ad9d-013d7c74ba34</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">ef8bb081-fee4-4de1-94fe-ff767271802b</item>
+                            <item name="Name" type_name="gh_string" type_code="10">graph_out</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">graph_out</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">false</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10"></item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>6224</X>
+                                  <Y>2769</Y>
+                                  <W>60</W>
+                                  <H>20</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>6254</X>
+                                  <Y>2779</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                        <chunk name="OutputParam" index="2">
+                          <items count="12">
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
+                            <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">1758aaef-d4b0-448b-a61a-eeb072648558</item>
                             <item name="Name" type_name="gh_string" type_code="10">a</item>
                             <item name="NickName" type_name="gh_string" type_code="10">a</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -12944,14 +12987,90 @@ Bezier curve evaluator</item>
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>7037</X>
-                                  <Y>2220</Y>
-                                  <W>26</W>
+                                  <X>6224</X>
+                                  <Y>2789</Y>
+                                  <W>60</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>7050</X>
-                                  <Y>2230</Y>
+                                  <X>6254</X>
+                                  <Y>2799</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                        <chunk name="OutputParam" index="3">
+                          <items count="12">
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
+                            <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">33208df5-3b9f-4bc8-9a3d-2841ba0a7766</item>
+                            <item name="Name" type_name="gh_string" type_code="10">edges</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">edges</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">false</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10"></item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>6224</X>
+                                  <Y>2809</Y>
+                                  <W>60</W>
+                                  <H>20</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>6254</X>
+                                  <Y>2819</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                        <chunk name="OutputParam" index="4">
+                          <items count="12">
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
+                            <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">367e092e-b985-467a-acc8-c2bc8b5bb765</item>
+                            <item name="Name" type_name="gh_string" type_code="10">shifted</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">shifted</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">false</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10"></item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>6224</X>
+                                  <Y>2829</Y>
+                                  <W>60</W>
+                                  <H>20</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>6254</X>
+                                  <Y>2839</Y>
                                 </item>
                               </items>
                             </chunk>
@@ -12970,7 +13089,7 @@ Bezier curve evaluator</item>
                         <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KZ2hfZGlyID0gb3MucGF0aC5kaXJuYW1lKGdoZW52LkNvbXBvbmVudC5PblBpbmdEb2N1bWVudCgpLkZpbGVQYXRoKQ0KaWYgZ2hfZGlyIG5vdCBpbiBzeXMucGF0aDoNCiAgICBzeXMucGF0aC5pbnNlcnQoMCwgZ2hfZGlyKQ0KDQpmcm9tIGNvcHkgaW1wb3J0IGRlZXBjb3B5DQpmcm9tIGNvbXBhcy5nZW9tZXRyeSBpbXBvcnQgQnJlcA0KDQpuZyA9IGRlZXBjb3B5KGdyYXBoKQ0KDQpmb3IgaSwgYnJlcCBpbiBlbnVtZXJhdGUoYnJlcHMpOg0KDQogICAgYnJlcCA9IEJyZXAuZnJvbV9uYXRpdmUoYnJlcCkNCiAgICBwdHMgPSBbdmVydGV4LnBvaW50IGZvciB2ZXJ0ZXggaW4gYnJlcC52ZXJ0aWNlc10NCiAgICBwdHMuYXBwZW5kKHB0c1swXSkNCg0KDQogICAgbmcuYWRkX3BvbHlsaW5lX2VkZ2UoDQogICAgICAgIHB0cywNCiAgICAgICAgZ3JvdXA9aSwNCiAgICAgICAgaGllcmFyY2h5PSJwbGF0ZSIsDQogICAgICAgIGxldmVsPTANCiAgICApDQo=</item>
+                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KZnJvbSBjb3B5IGltcG9ydCBkZWVwY29weQ0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQppZiBnaF9kaXIgbm90IGluIHN5cy5wYXRoOg0KICAgIHN5cy5wYXRoLmluc2VydCgwLCBnaF9kaXIpDQoNCmltcG9ydCBlZGdlX2NsYXNzaWZpZXINCmltcG9ydCByZWNpcHJvY2FsDQppbXBvcnQgbGluZV9jb25zdHJhaW50cw0KDQppbXBvcnRsaWIucmVsb2FkKGVkZ2VfY2xhc3NpZmllcikNCmltcG9ydGxpYi5yZWxvYWQocmVjaXByb2NhbCkNCmltcG9ydGxpYi5yZWxvYWQobGluZV9jb25zdHJhaW50cykNCg0KZ3JhcGggPSBkZWVwY29weShuZykNCg0KIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0KIyBjb250cm9scw0KIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0Kc2lnbl9wcmltYXJ5ID0gKzENCnNpZ25fc2Vjb25kYXJ5ID0gKzENCmVuZ2FnZV9sZW4gPSAwLjAxDQp0b2wgPSAwLjENCml0ZXJzID0gNQ0KDQoNCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCiMgMSkgcmVjaXByb2NhbCBwcmltYXJ5DQojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQpmb3IgZSBpbiBncmFwaC5lZGdlcygpOg0KICAgIGggID0gbmcuZWRnZV9hdHRyaWJ1dGUoZSwgImhpZXJhcmNoeSIpDQogICAgaWYgaCA9PSAibWFpbl9wcmltYXJ5IjoNCiAgICAgICAgZ3JhcGguZWRnZV9hdHRyaWJ1dGUoZSwgImhpZXJhcmNoeSIsICJwcmltYXJ5IikNCg0KDQpyZXNfcHJpbWFyeSA9IHJlY2lwcm9jYWwucmVjaXByb2NhbF93aWR0aF9mcm9tX3N1YmdyYXBoKA0KICAgIGdyYXBoLA0KICAgIHRhcmdldF9oaWVyYXJjaHk9InByaW1hcnkiLA0KICAgIGVuZ2FnZV9sZW49ZW5nYWdlX2xlbiwNCiAgICB0b2w9dG9sLA0KICAgIHJvdGF0aW9uX3NpZ249c2lnbl9wcmltYXJ5LA0KICAgIG1pbl9kZWdyZWU9MywNCiAgICBpdGVyYXRpb25zPWl0ZXJzLA0KICAgIG1heF9hbmdsZT0xODAuMCwgDQogICAgbWF4X2RlZ3JlZSA9IDMNCikNCmcgPSByZXNfcHJpbWFyeVsiZ3JhcGgiXQ0KDQojIFNuYXAgdG8gcHJpbWFyeSBwcmltYXJ5DQoNCg0KIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0KIyAyKSByZWdlbmVyYXRlIHNlY29uZGFyeSAobGV2ZWwgMSB1cCkNCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCmxpbmVfY29uc3RyYWludHMuc25hcF90b19ob3N0KA0KICAgIGcsDQogICAgdGFyZ2V0X2hpZXJhcmNoeT0ic2Vjb25kYXJ5IiwNCiAgICBtb3ZlX25vZGVfbGV2ZWwgPSAxLA0KICAgIGhvc3RfaGllcmFyY2h5PSJwcmltYXJ5IiwNCiAgICB6X29mZnNldCA9IHpfc2hpZnQsDQogICAgd3JpdGVfYXR0cmlidXRlPVRydWUsDQogICAgZGVidWc9RmFsc2UNCikNCg0KDQojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQojIDMpIHJlY2lwcm9jYWwgc2Vjb25kYXJ5DQojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQpyZXNfc2Vjb25kYXJ5ID0gcmVjaXByb2NhbC5yZWNpcHJvY2FsX3dpZHRoX2Zyb21fc3ViZ3JhcGgoDQogICAgZywNCiAgICB0YXJnZXRfaGllcmFyY2h5PSJzZWNvbmRhcnkiLA0KICAgIGVuZ2FnZV9sZW49ZW5nYWdlX2xlbiwNCiAgICB0b2w9dG9sLA0KICAgIHJvdGF0aW9uX3NpZ249c2lnbl9zZWNvbmRhcnksDQogICAgbWluX2RlZ3JlZT0zLA0KICAgIGl0ZXJhdGlvbnM9aXRlcnMsDQogICAgbWF4X2FuZ2xlPTE4MC4wDQopDQpnID0gcmVzX3NlY29uZGFyeVsiZ3JhcGgiXQ0KDQoNCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCiMgNSkgcmVnZW5lcmF0ZSB0ZXJ0aWFyeSAobGV2ZWwgMCB1cCkNCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCmxpbmVfY29uc3RyYWludHMuc25hcF90b19ob3N0KA0KICAgIGcsDQogICAgdGFyZ2V0X2hpZXJhcmNoeT0idGVydGlhcnkiLA0KICAgIG1vdmVfbm9kZV9sZXZlbD0wLA0KICAgIGhvc3RfaGllcmFyY2h5PSJzZWNvbmRhcnkiICwNCiAgICB6X29mZnNldCA9IHpfc2hpZnQsDQogICAgd3JpdGVfYXR0cmlidXRlPVRydWUsDQogICAgZGVidWc9RmFsc2UNCikNCg0KbGluZV9jb25zdHJhaW50cy5zbmFwX3RvX2hvc3QoDQogICAgZywNCiAgICB0YXJnZXRfaGllcmFyY2h5PSJ0ZXJ0aWFyeSIsDQogICAgbW92ZV9ub2RlX2xldmVsPTAsDQogICAgaG9zdF9oaWVyYXJjaHk9InByaW1hcnkiLA0KICAgIHpfb2Zmc2V0ID0gel9zaGlmdCwNCiAgICB3cml0ZV9hdHRyaWJ1dGU9VHJ1ZSwNCiAgICBkZWJ1Zz1GYWxzZQ0KKQ0KDQoNCg0KZ3JhcGhfb3V0ID0gZw0KYSA9IHJlc19wcmltYXJ5WyJzaGlmdGVkX2xpbmVzIl0NCnNoaWZ0ZWQgPSBbXQ0KZm9yIGUgaW4gZy5lZGdlcygpOg0KICAgIHNoaWZ0ZWQuYXBwZW5kKGcuZWRnZV9hdHRyaWJ1dGUoZSwgInNoaWZ0ZWRfbGluZSIpKQ0KDQo=</item>
                         <item name="Title" type_name="gh_string" type_code="10">Py3</item>
                       </items>
                       <chunks count="1">
@@ -12985,10 +13104,10 @@ Bezier curve evaluator</item>
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>306</X>
-                          <Y>280</Y>
-                          <W>680</W>
-                          <H>650</H>
+                          <X>898</X>
+                          <Y>200</Y>
+                          <W>722</W>
+                          <H>979</H>
                         </item>
                       </items>
                     </chunk>
@@ -12998,6 +13117,395 @@ Bezier curve evaluator</item>
             </chunk>
             <chunk name="Object" index="117">
               <items count="2">
+                <item name="GUID" type_name="gh_guid" type_code="9">c9b2d725-6f87-4b07-af90-bd9aefef68eb</item>
+                <item name="Name" type_name="gh_string" type_code="10">COMPAS: Draw</item>
+              </items>
+              <chunks count="1">
+                <chunk name="Container">
+                  <items count="16">
+                    <item name="Description" type_name="gh_string" type_code="10"></item>
+                    <item name="GraftStandardOutputLines" type_name="gh_bool" type_code="1">true</item>
+                    <item name="IconDisplay" type_name="gh_int32" type_code="3">2</item>
+                    <item name="IconOverride" type_name="gh_drawing_bitmap" type_code="37">
+                      <bitmap length="1099">iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAALEAAACxABrSO9dQAAA+1JREFUSEu1lW1MlWUYx/8DpENqYorBQY68eATJIdgcTZReRlaSiw/R4AOGRhuVqy3SsRabKz+gsth0rVgOGiabZRNqrJnpVqsxO6G2lm4ec75kLMPNQE3Q/Lv/zX0/w+OjfPLart3nPM/u/+96ue/rAYA464kA7gcwFUAygBkAZgF4CMBMACn2md49ACAJwH0AJtn9d7QEAAEAkwE8CCAVwGwAOQDmAZgPIBdA2D4LAUi3UMEEuitEUUyzEc4BkAfg2WB65hAApsyaN7q8vHoAQCeAVwAUAsi3sKDdK434WGFnSldlmAugQEKJiQGWlK7kzu4o39u8m1Wr1jErZwEFnDI1+UZoztxLzdt29VuIyqjSKgtfiFLNBFAeTA8NB5Ims/ql9fzgo33G3924k207Itx/cNR4a9sBZueWGBiABbacU2wPfQGqZ15cfALDuYX85LN+I9Tz3XkD6OqOerDa+mamZDzKvCfaHaDI9kS9EMC3D4pApWHl2gifrmzhsqfqWLDoSa6qazLCgi1eVsPUcBWzi5tZsKLXAdQP9c31wReQAWChNry8YdTzFbX7WNN4nhWrdzOYteRGeOk2IxwDcBncFaAMfAHud1ZBrRF1ALkFaJ8C1EGZuEQV9RFfgBXz9Tjgkr2cdwSoyToNpiQSlhc/0+KVSe/arXcGwK7p4GvJHuQtANPtRdWFVamcG0uzl8u3RMrKAZz452me+B5bIner1QuVS6vcmC6KxoAvwJVovPiX2eAbQQ/SYIPUZdWYkeu/brkxzR8dNYYLa1hasd1EHQsYL96TD/Y+AjaEPcjbJCtJRkleozUHUINEfP+xlQ2/ps3OuxKfEGD8pCSmZpay6PEmI+JqrsglvrcE3F8GNi4ce97R0cEr1/5n39nL/PiXQbb2md4Z0zRUvZSaMtHkVNPXAOgpXFz1l41S/pVWRS7x758Df3oBLM8Ze7+29yzXdJ/m+m/P8fiFqx5AQ0oQNceNa50szScNwHAccBlAox1u6ySmyCXetGRMvPj1zaz+4qTxziODt5RIZ1ffBB0rTUUdN2Wko6cR7prnGqd7YyAu8qL6TXy+K+r59v5/bgPINQkFUkbu6yaYVrmg+qIF1VDVXOIvvtPKsk+P3eJ7T1zkD6eGPEAsaLw7oFbBlJUA0eGR62z45hQHhkd5fPA/vvr1SRa3/WZWvSvrOHobwM/GZ6csdJnSdRS7j15g/tbDxj88OMChketm/fnPYbPqeazYRCaAShRSfev2RJmxJeL5w1sPsb3/b54bGuGGA2fM/1iBiUwlmkmyRIDyHb9z2sY+z0MtEZ65eJVv9v7BH0//a0CxAvfEbgLsq2A4t5HEigAAAABJRU5ErkJggg==</bitmap>
+                    </item>
+                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">368ece2e-eccb-4071-91df-3184452aec57</item>
+                    <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
+                    <item name="MarshInputs" type_name="gh_bool" type_code="1">false</item>
+                    <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
+                    <item name="Name" type_name="gh_string" type_code="10">COMPAS: Draw</item>
+                    <item name="NickName" type_name="gh_string" type_code="10">Draw</item>
+                    <item name="ScriptComponentVersion" type_name="gh_int32" type_code="3">3</item>
+                    <item name="Tooltip" type_name="gh_string" type_code="10"></item>
+                    <item name="UsingLibraryInputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingScriptInputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingScriptOutputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingStandardOutputParam" type_name="gh_bool" type_code="1">false</item>
+                  </items>
+                  <chunks count="3">
+                    <chunk name="Attributes">
+                      <items count="2">
+                        <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                          <X>6411</X>
+                          <Y>2825</Y>
+                          <W>73</W>
+                          <H>28</H>
+                        </item>
+                        <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                          <X>6447</X>
+                          <Y>2839</Y>
+                        </item>
+                      </items>
+                    </chunk>
+                    <chunk name="ParameterData">
+                      <items count="4">
+                        <item name="InputCount" type_name="gh_int32" type_code="3">1</item>
+                        <item name="InputId" index="0" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                        <item name="OutputCount" type_name="gh_int32" type_code="3">1</item>
+                        <item name="OutputId" index="0" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                      </items>
+                      <chunks count="2">
+                        <chunk name="InputParam" index="0">
+                          <items count="13">
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Description" type_name="gh_string" type_code="10">The COMPAS geometry or datastructure to be drawn.</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">d070c458-4a87-4f45-90a3-bc37050415f7</item>
+                            <item name="Name" type_name="gh_string" type_code="10">cg</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">cg</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">true</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Source" index="0" type_name="gh_guid" type_code="9">367e092e-b985-467a-acc8-c2bc8b5bb765</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10">The COMPAS geometry or datastructure to be drawn.</item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>6413</X>
+                                  <Y>2827</Y>
+                                  <W>19</W>
+                                  <H>24</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>6424</X>
+                                  <Y>2839</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                        <chunk name="OutputParam" index="0">
+                          <items count="12">
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
+                            <item name="Description" type_name="gh_string" type_code="10">The Rhino geometry object.</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">bb899b48-4ab7-4393-b94a-2359de9284c7</item>
+                            <item name="Name" type_name="gh_string" type_code="10">rg</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">rg</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">false</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10">The Rhino geometry object.</item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>6462</X>
+                                  <Y>2827</Y>
+                                  <W>20</W>
+                                  <H>24</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>6472</X>
+                                  <Y>2839</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                      </chunks>
+                    </chunk>
+                    <chunk name="Script">
+                      <items count="5">
+                        <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
+                        <item name="MarshInputs" type_name="gh_bool" type_code="1">false</item>
+                        <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
+                        <item name="Text" type_name="gh_string" type_code="10">IyByOiBjb21wYXM+PTIuMTQuMQoiIiIKRHJhd3MgQ09NUEFTIGdlb21ldHJ5IGluIEdyYXNzaG9wcGVyLgoiIiIKCmZyb20gdHlwaW5nIGltcG9ydCBBbnkKCmltcG9ydCBHcmFzc2hvcHBlcgoKZnJvbSBjb21wYXMuc2NlbmUgaW1wb3J0IFNjZW5lT2JqZWN0CgoKY2xhc3MgQ29tcGFzVG9SaGlub0dlb21ldHJ5KEdyYXNzaG9wcGVyLktlcm5lbC5HSF9TY3JpcHRJbnN0YW5jZSk6CiAgICBkZWYgUnVuU2NyaXB0KHNlbGYsIGNnKToKICAgICAgICBpZiBub3QgY2c6CiAgICAgICAgICAgIHJldHVybiBOb25lCgogICAgICAgIHJldHVybiBTY2VuZU9iamVjdChpdGVtPWNnKS5kcmF3KCkK</item>
+                        <item name="Title" type_name="gh_string" type_code="10">S</item>
+                      </items>
+                      <chunks count="1">
+                        <chunk name="LanguageSpec">
+                          <items count="2">
+                            <item name="Taxon" type_name="gh_string" type_code="10">*.*.python</item>
+                            <item name="Version" type_name="gh_string" type_code="10">3.*</item>
+                          </items>
+                        </chunk>
+                      </chunks>
+                    </chunk>
+                  </chunks>
+                </chunk>
+              </chunks>
+            </chunk>
+            <chunk name="Object" index="118">
+              <items count="2">
+                <item name="GUID" type_name="gh_guid" type_code="9">c9b2d725-6f87-4b07-af90-bd9aefef68eb</item>
+                <item name="Name" type_name="gh_string" type_code="10">COMPAS: Draw</item>
+              </items>
+              <chunks count="1">
+                <chunk name="Container">
+                  <items count="17">
+                    <item name="Description" type_name="gh_string" type_code="10"></item>
+                    <item name="GraftStandardOutputLines" type_name="gh_bool" type_code="1">true</item>
+                    <item name="Hidden" type_name="gh_bool" type_code="1">true</item>
+                    <item name="IconDisplay" type_name="gh_int32" type_code="3">2</item>
+                    <item name="IconOverride" type_name="gh_drawing_bitmap" type_code="37">
+                      <bitmap length="1099">iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAALEAAACxABrSO9dQAAA+1JREFUSEu1lW1MlWUYx/8DpENqYorBQY68eATJIdgcTZReRlaSiw/R4AOGRhuVqy3SsRabKz+gsth0rVgOGiabZRNqrJnpVqsxO6G2lm4ec75kLMPNQE3Q/Lv/zX0/w+OjfPLart3nPM/u/+96ue/rAYA464kA7gcwFUAygBkAZgF4CMBMACn2md49ACAJwH0AJtn9d7QEAAEAkwE8CCAVwGwAOQDmAZgPIBdA2D4LAUi3UMEEuitEUUyzEc4BkAfg2WB65hAApsyaN7q8vHoAQCeAVwAUAsi3sKDdK434WGFnSldlmAugQEKJiQGWlK7kzu4o39u8m1Wr1jErZwEFnDI1+UZoztxLzdt29VuIyqjSKgtfiFLNBFAeTA8NB5Ims/ql9fzgo33G3924k207Itx/cNR4a9sBZueWGBiABbacU2wPfQGqZ15cfALDuYX85LN+I9Tz3XkD6OqOerDa+mamZDzKvCfaHaDI9kS9EMC3D4pApWHl2gifrmzhsqfqWLDoSa6qazLCgi1eVsPUcBWzi5tZsKLXAdQP9c31wReQAWChNry8YdTzFbX7WNN4nhWrdzOYteRGeOk2IxwDcBncFaAMfAHud1ZBrRF1ALkFaJ8C1EGZuEQV9RFfgBXz9Tjgkr2cdwSoyToNpiQSlhc/0+KVSe/arXcGwK7p4GvJHuQtANPtRdWFVamcG0uzl8u3RMrKAZz452me+B5bIner1QuVS6vcmC6KxoAvwJVovPiX2eAbQQ/SYIPUZdWYkeu/brkxzR8dNYYLa1hasd1EHQsYL96TD/Y+AjaEPcjbJCtJRkleozUHUINEfP+xlQ2/ps3OuxKfEGD8pCSmZpay6PEmI+JqrsglvrcE3F8GNi4ce97R0cEr1/5n39nL/PiXQbb2md4Z0zRUvZSaMtHkVNPXAOgpXFz1l41S/pVWRS7x758Df3oBLM8Ze7+29yzXdJ/m+m/P8fiFqx5AQ0oQNceNa50szScNwHAccBlAox1u6ySmyCXetGRMvPj1zaz+4qTxziODt5RIZ1ffBB0rTUUdN2Wko6cR7prnGqd7YyAu8qL6TXy+K+r59v5/bgPINQkFUkbu6yaYVrmg+qIF1VDVXOIvvtPKsk+P3eJ7T1zkD6eGPEAsaLw7oFbBlJUA0eGR62z45hQHhkd5fPA/vvr1SRa3/WZWvSvrOHobwM/GZ6csdJnSdRS7j15g/tbDxj88OMChketm/fnPYbPqeazYRCaAShRSfev2RJmxJeL5w1sPsb3/b54bGuGGA2fM/1iBiUwlmkmyRIDyHb9z2sY+z0MtEZ65eJVv9v7BH0//a0CxAvfEbgLsq2A4t5HEigAAAABJRU5ErkJggg==</bitmap>
+                    </item>
+                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">e1cd0d6d-d9f0-4382-bc4c-536392b711f5</item>
+                    <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
+                    <item name="MarshInputs" type_name="gh_bool" type_code="1">false</item>
+                    <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
+                    <item name="Name" type_name="gh_string" type_code="10">COMPAS: Draw</item>
+                    <item name="NickName" type_name="gh_string" type_code="10">Draw</item>
+                    <item name="ScriptComponentVersion" type_name="gh_int32" type_code="3">3</item>
+                    <item name="Tooltip" type_name="gh_string" type_code="10"></item>
+                    <item name="UsingLibraryInputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingScriptInputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingScriptOutputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingStandardOutputParam" type_name="gh_bool" type_code="1">false</item>
+                  </items>
+                  <chunks count="3">
+                    <chunk name="Attributes">
+                      <items count="2">
+                        <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                          <X>6411</X>
+                          <Y>2794</Y>
+                          <W>73</W>
+                          <H>28</H>
+                        </item>
+                        <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                          <X>6447</X>
+                          <Y>2808</Y>
+                        </item>
+                      </items>
+                    </chunk>
+                    <chunk name="ParameterData">
+                      <items count="4">
+                        <item name="InputCount" type_name="gh_int32" type_code="3">1</item>
+                        <item name="InputId" index="0" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                        <item name="OutputCount" type_name="gh_int32" type_code="3">1</item>
+                        <item name="OutputId" index="0" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                      </items>
+                      <chunks count="2">
+                        <chunk name="InputParam" index="0">
+                          <items count="13">
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Description" type_name="gh_string" type_code="10">The COMPAS geometry or datastructure to be drawn.</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">f5c19ccd-332b-486b-b540-a407f4177af6</item>
+                            <item name="Name" type_name="gh_string" type_code="10">cg</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">cg</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">true</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Source" index="0" type_name="gh_guid" type_code="9">33208df5-3b9f-4bc8-9a3d-2841ba0a7766</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10">The COMPAS geometry or datastructure to be drawn.</item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>6413</X>
+                                  <Y>2796</Y>
+                                  <W>19</W>
+                                  <H>24</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>6424</X>
+                                  <Y>2808</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                        <chunk name="OutputParam" index="0">
+                          <items count="12">
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
+                            <item name="Description" type_name="gh_string" type_code="10">The Rhino geometry object.</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">218998e3-cc1a-49fc-8547-70cecc602634</item>
+                            <item name="Name" type_name="gh_string" type_code="10">rg</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">rg</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">false</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10">The Rhino geometry object.</item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>6462</X>
+                                  <Y>2796</Y>
+                                  <W>20</W>
+                                  <H>24</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>6472</X>
+                                  <Y>2808</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                      </chunks>
+                    </chunk>
+                    <chunk name="Script">
+                      <items count="5">
+                        <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
+                        <item name="MarshInputs" type_name="gh_bool" type_code="1">false</item>
+                        <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
+                        <item name="Text" type_name="gh_string" type_code="10">IyByOiBjb21wYXM+PTIuMTQuMQoiIiIKRHJhd3MgQ09NUEFTIGdlb21ldHJ5IGluIEdyYXNzaG9wcGVyLgoiIiIKCmZyb20gdHlwaW5nIGltcG9ydCBBbnkKCmltcG9ydCBHcmFzc2hvcHBlcgoKZnJvbSBjb21wYXMuc2NlbmUgaW1wb3J0IFNjZW5lT2JqZWN0CgoKY2xhc3MgQ29tcGFzVG9SaGlub0dlb21ldHJ5KEdyYXNzaG9wcGVyLktlcm5lbC5HSF9TY3JpcHRJbnN0YW5jZSk6CiAgICBkZWYgUnVuU2NyaXB0KHNlbGYsIGNnKToKICAgICAgICBpZiBub3QgY2c6CiAgICAgICAgICAgIHJldHVybiBOb25lCgogICAgICAgIHJldHVybiBTY2VuZU9iamVjdChpdGVtPWNnKS5kcmF3KCkK</item>
+                        <item name="Title" type_name="gh_string" type_code="10">S</item>
+                      </items>
+                      <chunks count="1">
+                        <chunk name="LanguageSpec">
+                          <items count="2">
+                            <item name="Taxon" type_name="gh_string" type_code="10">*.*.python</item>
+                            <item name="Version" type_name="gh_string" type_code="10">3.*</item>
+                          </items>
+                        </chunk>
+                      </chunks>
+                    </chunk>
+                  </chunks>
+                </chunk>
+              </chunks>
+            </chunk>
+            <chunk name="Object" index="119">
+              <items count="2">
+                <item name="GUID" type_name="gh_guid" type_code="9">c552a431-af5b-46a9-a8a4-0fcbc27ef596</item>
+                <item name="Name" type_name="gh_string" type_code="10">Group</item>
+              </items>
+              <chunks count="1">
+                <chunk name="Container">
+                  <items count="18">
+                    <item name="Border" type_name="gh_int32" type_code="3">1</item>
+                    <item name="Colour" type_name="gh_drawing_color" type_code="36">
+                      <ARGB>150;255;255;255</ARGB>
+                    </item>
+                    <item name="Description" type_name="gh_string" type_code="10">A group of Grasshopper objects</item>
+                    <item name="ID" index="0" type_name="gh_guid" type_code="9">99d38ccd-1b47-4dc6-853a-6b315644443c</item>
+                    <item name="ID" index="1" type_name="gh_guid" type_code="9">d5556466-7e7e-4824-a45c-21b44cd6bac6</item>
+                    <item name="ID" index="2" type_name="gh_guid" type_code="9">3916e183-7c5b-4889-bf5b-3a8cacf04c5b</item>
+                    <item name="ID" index="3" type_name="gh_guid" type_code="9">deefcff0-d44b-4979-bcb9-ed2d9e382a1c</item>
+                    <item name="ID" index="4" type_name="gh_guid" type_code="9">cc2a4a5e-c3b5-48af-aac3-6ac8f620110c</item>
+                    <item name="ID" index="5" type_name="gh_guid" type_code="9">591e64b3-dfba-4450-8f2a-6e69482addb1</item>
+                    <item name="ID" index="6" type_name="gh_guid" type_code="9">ca7e3fd6-f75e-4b11-8335-4a3c82c6c8bc</item>
+                    <item name="ID" index="7" type_name="gh_guid" type_code="9">368ece2e-eccb-4071-91df-3184452aec57</item>
+                    <item name="ID" index="8" type_name="gh_guid" type_code="9">e1cd0d6d-d9f0-4382-bc4c-536392b711f5</item>
+                    <item name="ID" index="9" type_name="gh_guid" type_code="9">9ec11bbf-cbd9-47e9-997a-429491aef2d6</item>
+                    <item name="ID" index="10" type_name="gh_guid" type_code="9">343c7f83-1c22-43b3-8010-1c1f71e4b8b7</item>
+                    <item name="ID_Count" type_name="gh_int32" type_code="3">11</item>
+                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">176036b9-d06f-4060-be81-cad53e610199</item>
+                    <item name="Name" type_name="gh_string" type_code="10">Group</item>
+                    <item name="NickName" type_name="gh_string" type_code="10"></item>
+                  </items>
+                  <chunks count="1">
+                    <chunk name="Attributes" />
+                  </chunks>
+                </chunk>
+              </chunks>
+            </chunk>
+            <chunk name="Object" index="120">
+              <items count="2">
+                <item name="GUID" type_name="gh_guid" type_code="9">7f5c6c55-f846-4a08-9c9a-cfdc285cc6fe</item>
+                <item name="Name" type_name="gh_string" type_code="10">Scribble</item>
+              </items>
+              <chunks count="1">
+                <chunk name="Container">
+                  <items count="13">
+                    <item name="Bold" type_name="gh_bool" type_code="1">false</item>
+                    <item name="Ca" type_name="gh_drawing_pointf" type_code="31">
+                      <X>6033.4297</X>
+                      <Y>2700.4346</Y>
+                    </item>
+                    <item name="Cb" type_name="gh_drawing_pointf" type_code="31">
+                      <X>6490.705</X>
+                      <Y>2700.4346</Y>
+                    </item>
+                    <item name="Cc" type_name="gh_drawing_pointf" type_code="31">
+                      <X>6490.705</X>
+                      <Y>2723.8843</Y>
+                    </item>
+                    <item name="Cd" type_name="gh_drawing_pointf" type_code="31">
+                      <X>6033.4297</X>
+                      <Y>2723.8843</Y>
+                    </item>
+                    <item name="Description" type_name="gh_string" type_code="10">A quick note</item>
+                    <item name="Font" type_name="gh_string" type_code="10">Microsoft Sans Serif</item>
+                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">343c7f83-1c22-43b3-8010-1c1f71e4b8b7</item>
+                    <item name="Italic" type_name="gh_bool" type_code="1">false</item>
+                    <item name="Name" type_name="gh_string" type_code="10">Scribble</item>
+                    <item name="NickName" type_name="gh_string" type_code="10">Scribble</item>
+                    <item name="Size" type_name="gh_single" type_code="5">25</item>
+                    <item name="Text" type_name="gh_string" type_code="10">Shifting - op 2 different joint middle node</item>
+                  </items>
+                  <chunks count="1">
+                    <chunk name="Attributes">
+                      <items count="2">
+                        <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                          <X>6028.4297</X>
+                          <Y>2695.4346</Y>
+                          <W>467.2754</W>
+                          <H>33.449707</H>
+                        </item>
+                        <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                          <X>6033.4297</X>
+                          <Y>2700.4346</Y>
+                        </item>
+                      </items>
+                    </chunk>
+                  </chunks>
+                </chunk>
+              </chunks>
+            </chunk>
+            <chunk name="Object" index="121">
+              <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">57da07bd-ecab-415d-9d86-af36d7073abc</item>
                 <item name="Name" type_name="gh_string" type_code="10">Number Slider</item>
               </items>
@@ -13005,7 +13513,7 @@ Bezier curve evaluator</item>
                 <chunk name="Container">
                   <items count="6">
                     <item name="Description" type_name="gh_string" type_code="10">Numeric slider for single values</item>
-                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">baacc994-6621-44c6-8b2b-b6d81a22c301</item>
+                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">1e01c95e-0705-42da-9f29-f968605bc36a</item>
                     <item name="Name" type_name="gh_string" type_code="10">Number Slider</item>
                     <item name="NickName" type_name="gh_string" type_code="10"></item>
                     <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -13015,27 +13523,178 @@ Bezier curve evaluator</item>
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>5878</X>
-                          <Y>2258</Y>
+                          <X>5956</X>
+                          <Y>2809</Y>
                           <W>163</W>
                           <H>20</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>5878.4985</X>
-                          <Y>2258.5576</Y>
+                          <X>5956.3804</X>
+                          <Y>2809.8738</Y>
                         </item>
                       </items>
                     </chunk>
                     <chunk name="Slider">
                       <items count="7">
-                        <item name="Digits" type_name="gh_int32" type_code="3">3</item>
+                        <item name="Digits" type_name="gh_int32" type_code="3">2</item>
                         <item name="GripDisplay" type_name="gh_int32" type_code="3">1</item>
-                        <item name="Interval" type_name="gh_int32" type_code="3">1</item>
-                        <item name="Max" type_name="gh_double" type_code="6">100</item>
+                        <item name="Interval" type_name="gh_int32" type_code="3">0</item>
+                        <item name="Max" type_name="gh_double" type_code="6">0.1</item>
                         <item name="Min" type_name="gh_double" type_code="6">0</item>
                         <item name="SnapCount" type_name="gh_int32" type_code="3">0</item>
-                        <item name="Value" type_name="gh_double" type_code="6">0</item>
+                        <item name="Value" type_name="gh_double" type_code="6">0.05</item>
                       </items>
+                    </chunk>
+                  </chunks>
+                </chunk>
+              </chunks>
+            </chunk>
+            <chunk name="Object" index="122">
+              <items count="2">
+                <item name="GUID" type_name="gh_guid" type_code="9">c9b2d725-6f87-4b07-af90-bd9aefef68eb</item>
+                <item name="Name" type_name="gh_string" type_code="10">COMPAS: Draw</item>
+              </items>
+              <chunks count="1">
+                <chunk name="Container">
+                  <items count="17">
+                    <item name="Description" type_name="gh_string" type_code="10"></item>
+                    <item name="GraftStandardOutputLines" type_name="gh_bool" type_code="1">true</item>
+                    <item name="Hidden" type_name="gh_bool" type_code="1">true</item>
+                    <item name="IconDisplay" type_name="gh_int32" type_code="3">2</item>
+                    <item name="IconOverride" type_name="gh_drawing_bitmap" type_code="37">
+                      <bitmap length="1099">iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAALDwAACw8BkvkDpQAAA+1JREFUSEu1lW1MlWUYx/8DpENqYorBQY68eATJIdgcTZReRlaSiw/R4AOGRhuVqy3SsRabKz+gsth0rVgOGiabZRNqrJnpVqsxO6G2lm4ec75kLMPNQE3Q/Lv/zX0/w+OjfPLart3nPM/u/+96ue/rAYA464kA7gcwFUAygBkAZgF4CMBMACn2md49ACAJwH0AJtn9d7QEAAEAkwE8CCAVwGwAOQDmAZgPIBdA2D4LAUi3UMEEuitEUUyzEc4BkAfg2WB65hAApsyaN7q8vHoAQCeAVwAUAsi3sKDdK434WGFnSldlmAugQEKJiQGWlK7kzu4o39u8m1Wr1jErZwEFnDI1+UZoztxLzdt29VuIyqjSKgtfiFLNBFAeTA8NB5Ims/ql9fzgo33G3924k207Itx/cNR4a9sBZueWGBiABbacU2wPfQGqZ15cfALDuYX85LN+I9Tz3XkD6OqOerDa+mamZDzKvCfaHaDI9kS9EMC3D4pApWHl2gifrmzhsqfqWLDoSa6qazLCgi1eVsPUcBWzi5tZsKLXAdQP9c31wReQAWChNry8YdTzFbX7WNN4nhWrdzOYteRGeOk2IxwDcBncFaAMfAHud1ZBrRF1ALkFaJ8C1EGZuEQV9RFfgBXz9Tjgkr2cdwSoyToNpiQSlhc/0+KVSe/arXcGwK7p4GvJHuQtANPtRdWFVamcG0uzl8u3RMrKAZz452me+B5bIner1QuVS6vcmC6KxoAvwJVovPiX2eAbQQ/SYIPUZdWYkeu/brkxzR8dNYYLa1hasd1EHQsYL96TD/Y+AjaEPcjbJCtJRkleozUHUINEfP+xlQ2/ps3OuxKfEGD8pCSmZpay6PEmI+JqrsglvrcE3F8GNi4ce97R0cEr1/5n39nL/PiXQbb2md4Z0zRUvZSaMtHkVNPXAOgpXFz1l41S/pVWRS7x758Df3oBLM8Ze7+29yzXdJ/m+m/P8fiFqx5AQ0oQNceNa50szScNwHAccBlAox1u6ySmyCXetGRMvPj1zaz+4qTxziODt5RIZ1ffBB0rTUUdN2Wko6cR7prnGqd7YyAu8qL6TXy+K+r59v5/bgPINQkFUkbu6yaYVrmg+qIF1VDVXOIvvtPKsk+P3eJ7T1zkD6eGPEAsaLw7oFbBlJUA0eGR62z45hQHhkd5fPA/vvr1SRa3/WZWvSvrOHobwM/GZ6csdJnSdRS7j15g/tbDxj88OMChketm/fnPYbPqeazYRCaAShRSfev2RJmxJeL5w1sPsb3/b54bGuGGA2fM/1iBiUwlmkmyRIDyHb9z2sY+z0MtEZ65eJVv9v7BH0//a0CxAvfEbgLsq2A4t5HEigAAAABJRU5ErkJggg==</bitmap>
+                    </item>
+                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">5438738a-762f-43e8-a2dd-80b30f668563</item>
+                    <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
+                    <item name="MarshInputs" type_name="gh_bool" type_code="1">false</item>
+                    <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
+                    <item name="Name" type_name="gh_string" type_code="10">COMPAS: Draw</item>
+                    <item name="NickName" type_name="gh_string" type_code="10">Draw</item>
+                    <item name="ScriptComponentVersion" type_name="gh_int32" type_code="3">3</item>
+                    <item name="Tooltip" type_name="gh_string" type_code="10"></item>
+                    <item name="UsingLibraryInputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingScriptInputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingScriptOutputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingStandardOutputParam" type_name="gh_bool" type_code="1">false</item>
+                  </items>
+                  <chunks count="3">
+                    <chunk name="Attributes">
+                      <items count="2">
+                        <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                          <X>6411</X>
+                          <Y>2755</Y>
+                          <W>73</W>
+                          <H>28</H>
+                        </item>
+                        <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                          <X>6447</X>
+                          <Y>2769</Y>
+                        </item>
+                      </items>
+                    </chunk>
+                    <chunk name="ParameterData">
+                      <items count="4">
+                        <item name="InputCount" type_name="gh_int32" type_code="3">1</item>
+                        <item name="InputId" index="0" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                        <item name="OutputCount" type_name="gh_int32" type_code="3">1</item>
+                        <item name="OutputId" index="0" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                      </items>
+                      <chunks count="2">
+                        <chunk name="InputParam" index="0">
+                          <items count="13">
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Description" type_name="gh_string" type_code="10">The COMPAS geometry or datastructure to be drawn.</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">33576281-5251-4b72-801f-4abd6ac9cf67</item>
+                            <item name="Name" type_name="gh_string" type_code="10">cg</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">cg</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">true</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Source" index="0" type_name="gh_guid" type_code="9">1758aaef-d4b0-448b-a61a-eeb072648558</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10">The COMPAS geometry or datastructure to be drawn.</item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>6413</X>
+                                  <Y>2757</Y>
+                                  <W>19</W>
+                                  <H>24</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>6424</X>
+                                  <Y>2769</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                        <chunk name="OutputParam" index="0">
+                          <items count="12">
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
+                            <item name="Description" type_name="gh_string" type_code="10">The Rhino geometry object.</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">70568db7-2980-4327-80f8-d0a13d52be35</item>
+                            <item name="Name" type_name="gh_string" type_code="10">rg</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">rg</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">false</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10">The Rhino geometry object.</item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>6462</X>
+                                  <Y>2757</Y>
+                                  <W>20</W>
+                                  <H>24</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>6472</X>
+                                  <Y>2769</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                      </chunks>
+                    </chunk>
+                    <chunk name="Script">
+                      <items count="5">
+                        <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
+                        <item name="MarshInputs" type_name="gh_bool" type_code="1">false</item>
+                        <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
+                        <item name="Text" type_name="gh_string" type_code="10">IyByOiBjb21wYXM+PTIuMTQuMQoiIiIKRHJhd3MgQ09NUEFTIGdlb21ldHJ5IGluIEdyYXNzaG9wcGVyLgoiIiIKCmZyb20gdHlwaW5nIGltcG9ydCBBbnkKCmltcG9ydCBHcmFzc2hvcHBlcgoKZnJvbSBjb21wYXMuc2NlbmUgaW1wb3J0IFNjZW5lT2JqZWN0CgoKY2xhc3MgQ29tcGFzVG9SaGlub0dlb21ldHJ5KEdyYXNzaG9wcGVyLktlcm5lbC5HSF9TY3JpcHRJbnN0YW5jZSk6CiAgICBkZWYgUnVuU2NyaXB0KHNlbGYsIGNnKToKICAgICAgICBpZiBub3QgY2c6CiAgICAgICAgICAgIHJldHVybiBOb25lCgogICAgICAgIHJldHVybiBTY2VuZU9iamVjdChpdGVtPWNnKS5kcmF3KCkK</item>
+                        <item name="Title" type_name="gh_string" type_code="10">S</item>
+                      </items>
+                      <chunks count="1">
+                        <chunk name="LanguageSpec">
+                          <items count="2">
+                            <item name="Taxon" type_name="gh_string" type_code="10">*.*.python</item>
+                            <item name="Version" type_name="gh_string" type_code="10">3.*</item>
+                          </items>
+                        </chunk>
+                      </chunks>
                     </chunk>
                   </chunks>
                 </chunk>
@@ -13048,7 +13707,7 @@ Bezier curve evaluator</item>
     <chunk name="Thumbnail">
       <items count="1">
         <item name="Thumbnail" type_name="gh_drawing_bitmap" type_code="37">
-          <bitmap length="11578">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</bitmap>
+          <bitmap length="8838">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</bitmap>
         </item>
       </items>
     </chunk>
