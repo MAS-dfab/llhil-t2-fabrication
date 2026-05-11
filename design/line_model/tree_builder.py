@@ -23,7 +23,7 @@ from config import (
 )
 from compas_rhino.conversions import curve_to_compas_polyline, point_to_compas
 from compas.geometry import Point, Vector, Frame
-from compas_rhino.conversions import curve_to_compas
+from compas_rhino.conversions import curve_to_compas, polyline_to_compas
 import Rhino.Geometry as rg  # type: ignore
 
 
@@ -193,7 +193,7 @@ def boundary_from_breps_projection(input_breps, tolerance=0.01):
     poly = rg.Polyline(pts)
     return poly.ToNurbsCurve()
 
-def boundary_from_breps(input_breps):
+def boundary_from_breps(input_breps, tolerance=0.01):
     """Get brep edges."""
     if not input_breps:
         raise ValueError("input_breps is required")
@@ -201,17 +201,48 @@ def boundary_from_breps(input_breps):
     breps = [b for b in input_breps if b is not None]
     if not breps:
         raise ValueError("input_breps contains no valid Breps")
-
+    
+    world_xy = rg.Plane.WorldXY
     brep_edges = []
+    
     for brep in breps:
         for edge in brep.Edges:
             edge_curve = edge.ToNurbsCurve()
             if edge_curve is None:
                 continue
             brep_edges.append(edge_curve)
-    joint_crv = rg.Curve.JoinCurves(brep_edges, 0.01)
     
-    return joint_crv
+    if brep_edges:
+        joined = rg.Curve.JoinCurves(brep_edges, tolerance)
+        closed = [c for c in joined if c is not None and c.IsClosed]
+        if closed:
+            closed.sort(key=lambda c: abs(rg.AreaMassProperties.Compute(c).Area), reverse=True)
+            nurbs_crv = closed[0].ToNurbsCurve()
+            poly = rg.Polyline(nurbs_crv.Points.ControlPolygon())
+            return poly
+
+    # # Fallback: combined bounding box rectangle.
+    # bbox = breps[0].GetBoundingBox(world_xy)
+    # for brep in breps[1:]:
+    #     bbox.Union(brep.GetBoundingBox(world_xy))
+
+    # x0 = bbox.Min.X
+    # y0 = bbox.Min.Y
+    # x1 = bbox.Max.X
+    # y1 = bbox.Max.Y
+    # pts = [
+    #     rg.Point3d(x0, y0, 0.0),
+    #     rg.Point3d(x1, y0, 0.0),
+    #     rg.Point3d(x1, y1, 0.0),
+    #     rg.Point3d(x0, y1, 0.0),
+    #     rg.Point3d(x0, y0, 0.0),
+    # ]
+    # poly = rg.Polyline(pts)
+    # return poly.ToNurbsCurve()
+
+    # joint_crv = rg.Curve.JoinCurves(brep_edges, 0.01)
+    
+    # return joint_crv
 
 # --------------------------------------------------
 # Grid generation
@@ -485,7 +516,8 @@ def build_graph_from_records(records, relations):
             )
         
         if rec["reached"]:
-            ng.get_or_add_point_node(rec["apex"], clt_plate=curve_to_compas(*rec["clt_plate"]))
+            ng.get_or_add_point_node(rec["apex"], clt_plate=polyline_to_compas(rec["clt_plate"]))
+            # ng.get_or_add_point_node(rec["apex"], clt_plate=rec["clt_plate"])
 
         # Track child nodes
         child_nodes = []
