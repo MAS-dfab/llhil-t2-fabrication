@@ -219,30 +219,8 @@ def boundary_from_breps(input_breps, tolerance=0.01):
             closed.sort(key=lambda c: abs(rg.AreaMassProperties.Compute(c).Area), reverse=True)
             nurbs_crv = closed[0].ToNurbsCurve()
             poly = rg.Polyline(nurbs_crv.Points.ControlPolygon())
-            return poly
-
-    # # Fallback: combined bounding box rectangle.
-    # bbox = breps[0].GetBoundingBox(world_xy)
-    # for brep in breps[1:]:
-    #     bbox.Union(brep.GetBoundingBox(world_xy))
-
-    # x0 = bbox.Min.X
-    # y0 = bbox.Min.Y
-    # x1 = bbox.Max.X
-    # y1 = bbox.Max.Y
-    # pts = [
-    #     rg.Point3d(x0, y0, 0.0),
-    #     rg.Point3d(x1, y0, 0.0),
-    #     rg.Point3d(x1, y1, 0.0),
-    #     rg.Point3d(x0, y1, 0.0),
-    #     rg.Point3d(x0, y0, 0.0),
-    # ]
-    # poly = rg.Polyline(pts)
-    # return poly.ToNurbsCurve()
-
-    # joint_crv = rg.Curve.JoinCurves(brep_edges, 0.01)
-    
-    # return joint_crv
+            compas_poly = polyline_to_compas(poly)
+            return compas_poly
 
 # --------------------------------------------------
 # Grid generation
@@ -516,8 +494,7 @@ def build_graph_from_records(records, relations):
             )
         
         if rec["reached"]:
-            ng.get_or_add_point_node(rec["apex"], clt_plate=polyline_to_compas(rec["clt_plate"]))
-            # ng.get_or_add_point_node(rec["apex"], clt_plate=rec["clt_plate"])
+            ng.get_or_add_point_node(rec["apex"], clt_plate=rec["clt_plate"])
 
         # Track child nodes
         child_nodes = []
