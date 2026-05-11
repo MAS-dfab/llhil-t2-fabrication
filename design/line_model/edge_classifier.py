@@ -670,11 +670,11 @@ def assign_edges_dimensions(graph, scale="m"):
 
     #widths = [0.08, 0.10, 0.12]  # hierarchy
     #heights = [0.10, 0.12, 0.14]  # level
-    if scale == "m":
-        widths = [80.0, 100.0, 120.0]  # hierarchy
+    if scale == "mm":
+        widths = [100.0, 100.0, 100.0]  # hierarchy
         heights = [100.0, 120.0, 140.0]  # level
-    elif scale == "mm":
-        widths = [0.08, 0.10, 0.12]  # hierarchy
+    elif scale == "m":
+        widths = [0.10, 0.10, 0.10]  # hierarchy
         heights = [0.10, 0.12, 0.14]  # level
 
     for edge in graph.edges():

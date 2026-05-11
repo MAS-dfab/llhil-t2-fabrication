@@ -23,6 +23,7 @@ from config import (
 )
 from compas_rhino.conversions import curve_to_compas_polyline, point_to_compas
 from compas.geometry import Point, Vector, Frame
+from compas_rhino.conversions import curve_to_compas, polyline_to_compas
 import Rhino.Geometry as rg  # type: ignore
 
 
@@ -125,6 +126,11 @@ def boundary_from_brep_projection(input_brep, tolerance=0.01):
         raise ValueError("input_brep is required")
     return boundary_from_breps_projection([input_brep], tolerance)
 
+def boundary_from_brep(input_brep, tolerance=0.01):
+    """Derive a boundary curve from a single Brep."""
+    if input_brep is None:
+        raise ValueError("input_brep is required")
+    return boundary_from_breps([input_brep])
 
 def brep_center_point(brep):
     """Get the centroid of a Brep bounding box as a COMPAS Point."""
@@ -187,6 +193,34 @@ def boundary_from_breps_projection(input_breps, tolerance=0.01):
     poly = rg.Polyline(pts)
     return poly.ToNurbsCurve()
 
+def boundary_from_breps(input_breps, tolerance=0.01):
+    """Get brep edges."""
+    if not input_breps:
+        raise ValueError("input_breps is required")
+
+    breps = [b for b in input_breps if b is not None]
+    if not breps:
+        raise ValueError("input_breps contains no valid Breps")
+    
+    world_xy = rg.Plane.WorldXY
+    brep_edges = []
+    
+    for brep in breps:
+        for edge in brep.Edges:
+            edge_curve = edge.ToNurbsCurve()
+            if edge_curve is None:
+                continue
+            brep_edges.append(edge_curve)
+    
+    if brep_edges:
+        joined = rg.Curve.JoinCurves(brep_edges, tolerance)
+        closed = [c for c in joined if c is not None and c.IsClosed]
+        if closed:
+            closed.sort(key=lambda c: abs(rg.AreaMassProperties.Compute(c).Area), reverse=True)
+            nurbs_crv = closed[0].ToNurbsCurve()
+            poly = rg.Polyline(nurbs_crv.Points.ControlPolygon())
+            compas_poly = polyline_to_compas(poly)
+            return compas_poly
 
 # --------------------------------------------------
 # Grid generation
@@ -309,7 +343,7 @@ def build_level_zero(vertex_grid, sup_pts, z_steps, roof_brep, config, support_b
     return cell_grid, records, relations
 
 
-def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config):
+def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config, brep_edges=None):
     """Build hierarchical parent levels by merging 2x2 child cells."""
     records = []
     relations = []
@@ -377,7 +411,8 @@ def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config):
                     "inset_corners": [],
                     "inset_frames": [],
                     "children": child_pts,
-                    "level": level
+                    "level": level,
+                    "clt_plate": brep_edges
                 }
 
                 new_grid[j][i] = rec
@@ -457,6 +492,9 @@ def build_graph_from_records(records, relations):
                 group=rec["group"],
                 support_id=rec["support_id"]
             )
+        
+        if rec["reached"]:
+            ng.get_or_add_point_node(rec["apex"], clt_plate=rec["clt_plate"])
 
         # Track child nodes
         child_nodes = []
@@ -601,6 +639,7 @@ def _build_single_brep_tree(brep, sup_pt, sup_idx, div_x, div_y, num_levels, fla
     reach_tol = config["reach_tol"]
 
     boundary = boundary_from_brep_projection(brep)
+    brep_edges = boundary_from_brep(brep)
     plane, lx, ly = get_plane_and_size(boundary)
     vertex_grid = create_vertex_grid(plane, div_x, div_y, lx, ly)
 
@@ -666,7 +705,7 @@ def _build_single_brep_tree(brep, sup_pt, sup_idx, div_x, div_y, num_levels, fla
     # which all already point to sup_pt/sup_idx.
     higher_config = dict(config, use_nearest_support=False)
     records_upper, relations_upper = build_higher_levels(
-        cell_grid, [sup_pt], flat_steps, num_levels, higher_config
+        cell_grid, [sup_pt], flat_steps, num_levels, higher_config, brep_edges=brep_edges
     )
     records.extend(records_upper)
     relations.extend(relations_upper)

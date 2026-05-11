@@ -1,5 +1,5 @@
 from compas.datastructures import Graph
-from compas.geometry import Point, Line, Vector
+from compas.geometry import Point, Line, Vector, Polyline
 
 # Import config - handle both package and standalone execution
 try:
@@ -126,6 +126,7 @@ class NodeGraph(Graph):
             
             self.add_edge(u, v, **attr)
 
+   
     def edge_lines_by_group(self, group_id):
         """
         Extract Line objects for all edges in a group.
