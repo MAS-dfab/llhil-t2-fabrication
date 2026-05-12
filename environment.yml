@@ -1,4 +1,4 @@
-name: t2_2526
+name: compas_fab
 channels:
   - conda-forge
   - defaults

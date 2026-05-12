@@ -224,7 +224,7 @@ def snap_to_host(
         u, v = e
         lu = graph.node_attribute(u, "level")
         lv = graph.node_attribute(v, "level")
-
+        
         if lu == move_node_level:
             moved, fixed = u, v
         elif lv == move_node_level:
