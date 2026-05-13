@@ -33,8 +33,8 @@ def main():
     # ---------------------------------------------------------
     # 3. PREPARE SCENE (collision objects only — no trajectory yet)
     # ---------------------------------------------------------
-    seq_i = 10
-    assembled_elements = []
+    trajectory_planner.seq_i = 0
+    # assembled_elements = []
 
     
 
@@ -51,7 +51,7 @@ def main():
     #     assembled_elements.append(b_mesh)
     # trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
 
-    beam = in_seq_beams[seq_i]
+    
 
     # ---------------------------------------------------------
     # 4. LAUNCH VIEWER (no trajectory yet)
@@ -75,18 +75,25 @@ def main():
 
     # --- Button: Compute Trajectories ---
     def _on_compute():
+
+        # trajectory_planner.seq_i +=1
+        beam = in_seq_beams[trajectory_planner.seq_i]
         player._cleanup_previous_run()
 
-        # for p in timber_model.plates:
-    #     p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
-    #     assembled_elements.append(p_mesh)
-        for b in in_seq_beams[:seq_i]:
+        trajectory_planner.state.robot_configuration = trajectory_planner.safe_configuration
+
+        assembled_elements = []
+        assembled_elements.clear()
+        for p in timber_model.plates:
+            p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
+            assembled_elements.append(p_mesh)
+        for b in in_seq_beams[:trajectory_planner.seq_i]:
             b_mesh = b.geometry.transformed(trajectory_planner.at_T * b.attributes.get("parent_T")).to_viewmesh()[0]
             assembled_elements.append(b_mesh)
 
         trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
         player._draw_assembled_elements(assembled_elements)
-
+        
         if hasattr(trajectory_planner, 'workpiece_manager'):
             wm = trajectory_planner.workpiece_manager
             wm.rules.clear()

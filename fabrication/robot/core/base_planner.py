@@ -1,4 +1,5 @@
 import math
+import time
 
 from compas.geometry import Frame
 from compas.geometry import Transformation
@@ -50,6 +51,18 @@ class BaseRobotPlanner():
         else:
             full_config = self.state.robot_configuration
             return full_config
+        
+    def relauch_client_and_planner(self):
+        """Utility to relaunch the ROS client and MoveIt planner, useful for resetting state."""
+        self.client.close()
+        self.client.terminate()
+        time.sleep(1)  # Ensure clean shutdown
+        self.client.run()
+        self.planner = MoveItPlanner(self.client)
+        self.planner.set_robot_cell(self.robot_cell)
+        self.planner.set_robot_cell_state(self.state)
+        print("ROS client and MoveIt planner relaunched.")
+
 
     def get_current_end_frame(self):
         """Returns the current forward kinematics frame of the tool."""
@@ -155,7 +168,7 @@ class BaseRobotPlanner():
 
         self.state.robot_configuration = self.current_configuration
         plan_options = {
-            "allowed_planning_time": 30, 
+            "allowed_planning_time": 10, 
             "num_planning_attempts": 100,
             "max_steps": 0.1,
             "path_constraints": []

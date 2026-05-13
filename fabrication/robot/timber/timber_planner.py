@@ -91,7 +91,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
     def safe_configuration(self):
         configuration = self.robot_cell.zero_configuration(group=self.group)
         self.robot_cell.configuration_to_full_configuration(configuration)
-        configuration = self.state.robot_configuration
+        configuration = self.state.robot_configuration.copy()
         configuration["bridge1_joint_EA_X"] = 10
         configuration["robot12_joint_EA_Y"] = -6
         configuration["robot12_joint_EA_Z"] = -5
