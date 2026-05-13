@@ -44,7 +44,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         tool_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
         col_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperLong_col.stl")
         col_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
-        tool_frame = Frame([0.000, 0.000, 0.157],  [0.0, 1.0, 0.0], [1.0, 0.0, 0.0])
+        tool_frame = Frame([0.000, 0.000, 0.157],  [1.0, 0.0, 0.0], [0.0, 1.0, 0.0])
         self.add_tool_to_robot(
             viz_mesh=tool_mesh,
             col_mesh=col_mesh,
