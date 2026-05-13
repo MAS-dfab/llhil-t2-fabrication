@@ -6,7 +6,7 @@ Usage in grasshopper:
     models = graph_to_timber_models(graph, align_shoe=False)
     models = [apply_joints(model) for model in models]
 """
-from compas.geometry import Vector, angle_vectors, Translation
+from compas.geometry import Vector, angle_vectors, Translation, intersection_segment_plane
 from compas_timber.model import TimberModel
 from compas_timber.elements import Beam, Plate
 
@@ -16,9 +16,10 @@ from compas_timber.analyzers import TripletAnalyzer
 
 from compas_timber.connections import (
     JointTopology, TMultiStepJoint, TStepJoint, LMiterJoint,
-    TBirdsmouthJoint, XLapJoint, KBirdsmouthJoint, TButtJoint, TLapJoint
+    XLapJoint, KBirdsmouthJoint, TButtJoint, TLapJoint
 )
 
+from compas_timber.fabrication import JackRafterCut, LongitudinalCut
 from collections import Counter
 
 from timber_config import (
@@ -185,8 +186,12 @@ def _lap_flip_sign(candidate):
     if dir_xy.dot(Vector(0, 1, 0)) > 0:
         return True
     return False
-    
 
+def orientate_plane(plane):
+    """Orientate plane to have normal pointing downwards."""
+    if plane.normal.z > 0:
+        plane.normal = -plane.normal
+    return plane
 
 # --------------------------------------
 # Joinery planning
@@ -221,7 +226,9 @@ def _k_birdsmouth(model, mill_depth):
 def _which_t_joint(model):
     pass
 
-
+# --------------------------------------
+# Main API - Create Joints
+# --------------------------------------
 def apply_joints(model, max_distance=None, heel_threshold=None, mill_depth=None):
     # Default config
     if max_distance is None:
@@ -284,6 +291,22 @@ def apply_joints(model, max_distance=None, heel_threshold=None, mill_depth=None)
             continue
     return model
 
+def apply_processings(model):
+    for beam in model.beams:
+        beam.reset_computed_properties()
 
-def finalize_cuts(model):
-    pass
+        "JackRafterCut"
+        if beam.attributes["hierarchy"] == "primary" or beam.attributes["hierarchy"] == "main_primary" and beam.attributes["level"] == max(b.attributes["level"] for b in model.beams):
+            cutting_plane = model.attributes.get("cut_plane")
+            orientated_cutting_plane = orientate_plane(cutting_plane)
+            intersection = intersection_segment_plane(beam.centerline, orientated_cutting_plane)
+            if intersection:
+                jrc = JackRafterCut.from_plane_and_beam(orientated_cutting_plane, beam)
+                beam.add_feature(jrc)
+        else:
+            continue
+
+        # "LongitudinalCut"
+        # if beam.attributes["hierarchy"] == "shoe":
+
+    return model
