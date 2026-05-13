@@ -134,6 +134,7 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
             plate = create_plate(data['clt_plate'], g, thickness=plate_thickness, z_offset=plate_z_offset)
             plate_vec = plate.attributes['normal']
             model.add_element(plate)
+            model.attributes['clt_plate'] = plate
         
         if data['cut_plane']:
             model.attributes['cut_plane'] = data['cut_plane']
@@ -326,7 +327,7 @@ def apply_joints(
 
 def apply_processings(model):
     for beam in model.beams:
-        beam.reset_computed_properties()
+        # beam.reset_computed_properties()
 
         "JackRafterCut"
         if beam.attributes["hierarchy"] == "primary" or beam.attributes["hierarchy"] == "main_primary" and beam.attributes["level"] == max(b.attributes["level"] for b in model.beams):
@@ -336,10 +337,15 @@ def apply_processings(model):
             if intersection:
                 jrc = JackRafterCut.from_plane_and_beam(orientated_cutting_plane, beam)
                 beam.add_feature(jrc)
+
+            "LongitudinalCut"
+        elif beam.attributes["hierarchy"] == "shoe":
+            clt_plate = model.attributes.get("clt_plate")
+            if clt_plate:
+                cutting_frame = clt_plate.frame
+            lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam)
+            beam.add_feature(lc)
         else:
             continue
-
-        # "LongitudinalCut"
-        # if beam.attributes["hierarchy"] == "shoe":
 
     return model
