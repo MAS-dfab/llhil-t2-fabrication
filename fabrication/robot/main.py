@@ -9,6 +9,16 @@ from core.utils import combine_trajectories
 from mocap_utils import fetch_pickup_frame
 from timber.timber_planner import TimberProcessPlanner
 
+STEP_NAMES = [
+    "approach_to_pick",
+    "pick",
+    "retract_from_pick",
+    "approach_to_AT",
+    "place_at_AT",
+    "retract_from_AT",
+    "return_to_safe",
+]
+
 
 def main():
     # ---------------------------------------------------------
@@ -63,7 +73,8 @@ def main():
     )
 
 
-    export_path = "fabrication\\data\\merged_trajectory.json"
+    export_path = "fabrication\\data\\fabrication_sequence.json"
+    last_sequence = {"record": None}  # mutable container so closure can write to it
 
     # --- Button: Fetch Pickup Frame ---
     def _on_fetch():
@@ -135,6 +146,19 @@ def main():
         if failed:
             print("WARNING: step(s) {} failed, combining {} of {} steps.".format(
                 failed, len(valid), len(element_trajectories)))
+            # partial result — do not store for export
+            last_sequence["record"] = None
+        else:
+            last_sequence["record"] = {
+                "index": trajectory_planner.seq_i,
+                "beam_guid": str(beam.guid),
+                "pickup_frame": trajectory_planner._fetched_pickup_frame,
+                "place_frame": getattr(trajectory_planner, "_last_place_frame", None),
+                "steps": {
+                    name: element_trajectories[i] if i < len(element_trajectories) else None
+                    for i, name in enumerate(STEP_NAMES)
+                },
+            }
 
         merged_trajectory = combine_trajectories(valid)
 
@@ -152,11 +176,11 @@ def main():
 
     # --- Button: Export Trajectory ---
     def _on_export():
-        if player.trajectory is None:
-            print("ERROR: No trajectory to export. Compute first.")
+        if last_sequence["record"] is None:
+            print("ERROR: No fully computed sequence to export. Compute all steps successfully first.")
             return
-        json_dump(player.trajectory, export_path)
-        print("Trajectory exported to: {}".format(export_path))
+        json_dump(last_sequence["record"], export_path)
+        print("Exported sequence {} to: {}".format(last_sequence["record"]["index"], export_path))
 
     player.viewer.add_ui_element(Button(text="Fetch Pickup Frame", action=_on_fetch, label="Fetch"))
     player.viewer.add_ui_element(Button(text="Compute Trajectories", action=_on_compute, label="Compute"))
