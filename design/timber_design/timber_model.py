@@ -6,7 +6,7 @@ Usage in grasshopper:
     models = graph_to_timber_models(graph, align_shoe=False)
     models = [apply_joints(model) for model in models]
 """
-from compas.geometry import Vector, angle_vectors, Translation, intersection_segment_plane
+from compas.geometry import Vector, angle_vectors, Translation, intersection_segment_plane, Line, Point, intersection_line_line_xy
 from compas_timber.model import TimberModel
 from compas_timber.elements import Beam, Plate
 
@@ -23,8 +23,8 @@ from compas_timber.fabrication import JackRafterCut, LongitudinalCut
 from collections import Counter
 
 from timber_config import (
-    TIMBER_MODEL_TOL, PLATE_THICKNESS, PLATE_Z_OFFSET, MAX_JOINT_DIST, HEEL_THRESHOLD,
-    KBIRD_MILL_DEPTH
+    TIMBER_MODEL_TOL, PLATE_THICKNESS, PLATE_Z_OFFSET, MAX_JOINT_DIST,
+    TMULTI_HEEL_THRESHOLD, TMULTI_STEP_DEPTH, TMULTI_RISER_ANGLE, KBIRD_MILL_DEPTH
 )
 
 # ---------------------------------------
@@ -179,19 +179,33 @@ def _is_planar(element_a, element_b):
     # If the angle is close to 0 or 180 degrees, the beams are planar
     return abs(angle) < 1e-6 or abs(angle - 180) < 1e-6
 
-def _lap_flip_sign(candidate):
-    dir = candidate.centerline.direction
-    dir_xy = Vector(dir.x, dir.y, 0).unitized()
+def _determine_lap_flip(candidate_a, candidate_b, lap_flip):
+    """Align the lap side by finding"""
+    start = candidate_b.centerline.start
+    end = candidate_b.centerline.end
+    mid = candidate_b.centerline.midpoint  # Cross beam midpoint
 
-    if dir_xy.dot(Vector(0, 1, 0)) > 0:
-        return True
-    return False
+    # Pointing downwards
+    aligned = start - end if start.z > end.z else end - start
+    ori = start if start.z > end.z else end
+    
+    ln = Line(mid, mid + candidate_b.centerline.direction.cross(candidate_a.centerline.direction))
+    meet = intersection_line_line_xy(ln, Line(ori, ori + Vector(0, 1, 0)))
+
+    if meet:
+        pt = Point(*meet)
+        vec = pt - mid
+        cross = vec.cross(aligned)
+        return lap_flip ^ (cross.z <= 0)
+    return
+
 
 def orientate_plane(plane):
     """Orientate plane to have normal pointing downwards."""
     if plane.normal.z > 0:
         plane.normal = -plane.normal
     return plane
+
 
 # --------------------------------------
 # Joinery planning
@@ -223,21 +237,34 @@ def _k_birdsmouth(model, mill_depth):
             KBirdsmouthJoint.promote_cluster(model, cluster, reordered_elements=reordered_elements, mill_depth=mill_depth)
     return
 
-def _which_t_joint(model):
+def _which_pair_joint(model):
     pass
 
 # --------------------------------------
 # Main API - Create Joints
 # --------------------------------------
-def apply_joints(model, max_distance=None, heel_threshold=None, mill_depth=None):
+def apply_joints(
+        model,
+        max_distance=None,
+        heel_threshold=None,
+        step_depth=None,
+        riser_angle=None,
+        mill_depth=None,
+        mid_lap_flip=False
+    ):
+
     # Default config
     if max_distance is None:
         max_distance = MAX_JOINT_DIST
     if heel_threshold is None:
-        heel_threshold = HEEL_THRESHOLD
+        heel_threshold = TMULTI_HEEL_THRESHOLD
     if mill_depth is None:
         mill_depth = KBIRD_MILL_DEPTH
-    
+    if step_depth is None:
+        step_depth = TMULTI_STEP_DEPTH
+    if riser_angle is None:
+        riser_angle = TMULTI_RISER_ANGLE
+
     for beam in model.beams:
         beam.reset_computed_properties()
 
@@ -247,7 +274,7 @@ def apply_joints(model, max_distance=None, heel_threshold=None, mill_depth=None)
     _k_birdsmouth(model, mill_depth=mill_depth)
 
 
-    # Handle all pair joints, T, L, X
+    # 2. Handle all pair joints, T, L, X
     for candidate in model.joint_candidates:
         if candidate.is_promoted:  # all joints that are not k-topology
             continue
@@ -255,37 +282,43 @@ def apply_joints(model, max_distance=None, heel_threshold=None, mill_depth=None)
         topo = candidate.topology
         ca, cb = candidate.elements
 
-        # CLT shoe to Top Beam
-        if topo == JointTopology.TOPO_T and _is_planar(ca, cb):
+        is_planar = _is_planar(ca, cb)
+
+        # Planar T joints
+        if topo == JointTopology.TOPO_T and is_planar:
+            # CLT shoe to Top Beam
             if cb.name == 'shoe':
                 TStepJoint.create(model, ca, cb, step_shape="double")
 
+            # Middle T Lap Joint
             elif ca.attributes["is_middle_joint"]:
-                TLapJoint.create(model, ca, cb, flip_lap_side=_lap_flip_sign(cb))
+                # TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
+                TLapJoint.create(model, ca, cb)
 
             else:
                 if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < heel_threshold:
                     step_shape = "heel"
                 else:
                     step_shape = "step"
-                TMultiStepJoint.create(model, ca, cb, step_shape=step_shape, step_depth=.02, riser_angle=90)
 
-            # T - Non-Planar Step Joint
-        elif topo == JointTopology.TOPO_T and not _is_planar(ca, cb):
-            t_butt_joint = TButtJoint.create(model, ca, cb)
-            # t_np_step_joint = TMultiStepJoint.create(model, ca, cb,
-            # do_refine_cut=True,
-            # step_depth = .020,
-            # riser_angle = 90
-            # )
+                TMultiStepJoint.create(
+                    model, ca, cb,
+                    step_shape=step_shape,
+                    step_depth=step_depth,
+                    riser_angle=riser_angle
+                )
 
-            """L Mitre Joint"""
-        elif topo ==JointTopology.TOPO_L:
-            l_miter_joint = LMiterJoint.create(model, ca, cb, cutoff = False)
+        # Non-planar T joints
+        elif topo == JointTopology.TOPO_T and not is_planar:
+            TButtJoint.create(model, ca, cb)
 
-            """X Lap Joint"""
+        # L Miter Joint
+        elif topo == JointTopology.TOPO_L:
+            LMiterJoint.create(model, ca, cb, cutoff=False)
+
+        # X Lap Joint
         elif topo == JointTopology.TOPO_X:
-            x_lap_joint = XLapJoint.create(model, ca, cb)
+            XLapJoint.create(model, ca, cb)
 
         else:
             continue
