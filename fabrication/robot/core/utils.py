@@ -10,8 +10,10 @@ def combine_trajectories(trajectories: list[JointTrajectory]) -> JointTrajectory
     for each point and handles potential None values in planning_time
     and fraction.
     """
-    if not trajectories:
-        return JointTrajectory()
+    # if not trajectories:
+    #     return JointTrajectory()
+    
+    trajectories = [t for t in trajectories if t is not None and t.points]
 
     first_traj = trajectories[0]
     combined_points = []

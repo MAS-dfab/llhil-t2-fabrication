@@ -117,6 +117,7 @@ class BaseRobotPlanner():
         plan_options = self.default_options
         plan_options["avoid_collisions"] = avoid_collisions
 
+        trajectory = None
         try:
             trajectory = self.planner.plan_cartesian_motion(waypoints, self.state, group=self.group, options=plan_options)
             print(f"Cartesian trajectory planned. Fraction: {trajectory.fraction}")
@@ -137,6 +138,7 @@ class BaseRobotPlanner():
             "path_constraints": []
             }
 
+        trajectory = None
         try:
             trajectory = self.planner.plan_motion(frame_target, self.state, group=self.group, options=plan_options)
             print(f"Free-space motion to frame planned. Fraction: {trajectory.fraction}")
@@ -159,6 +161,7 @@ class BaseRobotPlanner():
             "path_constraints": []
             }
 
+        trajectory = None
         try:
             trajectory = self.planner.plan_motion(config_target, self.state, group=self.group, options=plan_options)
             print(f"Motion to configuration planned. Fraction: {trajectory.fraction}")
@@ -184,6 +187,7 @@ class BaseRobotPlanner():
         
         r_options = self.default_options.copy()
         r_options["avoid_collisions"] = avoid_collisions
+        trajectory = None
         try:
             trajectory = self.planner.plan_cartesian_motion(waypoints, self.state, group=self.group, options=r_options)
             print(f"Retract trajectory planned. Fraction: {trajectory.fraction}")

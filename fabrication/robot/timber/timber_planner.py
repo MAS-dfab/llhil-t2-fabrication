@@ -17,6 +17,7 @@ from core.base_planner import BaseRobotPlanner
 class TimberProcessPlanner(BaseRobotPlanner):
     def __init__(self, group="robot12_eaXYZ"):
         super().__init__(group=group)
+        self._fetched_pickup_frame = None  # Set by fetch_pickup_frame()
         
         # Inject project-specific constraints into the base planner's default options
         self.default_options["path_constraints"] = self.global_constraints
@@ -40,8 +41,10 @@ class TimberProcessPlanner(BaseRobotPlanner):
         
         # 1. Add Tool
         tool_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperLong_viz.stl")
+        tool_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
         col_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperLong_col.stl")
-        tool_frame = Frame([0.000, 0.000, 0.157],  [1.0, 0.0, 0.0], [0.0, 1.0, 0.0])
+        col_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
+        tool_frame = Frame([0.000, 0.000, 0.157],  [0.0, 1.0, 0.0], [1.0, 0.0, 0.0])
         self.add_tool_to_robot(
             viz_mesh=tool_mesh,
             col_mesh=col_mesh,
@@ -281,7 +284,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         print("getting trajectory back to safe configuration")
         trajectories.append(self.get_motion_to_configuration(self.safe_configuration))
 
-        json_dump(trajectories, "C:\\Users\\paulj\\Downloads\\element_trajs.json")
+        # json_dump(trajectories, "C:\\Users\\paulj\\Downloads\\element_trajs.json")
         return trajectories
 
     # =========================================================================
@@ -340,17 +343,20 @@ class TimberProcessPlanner(BaseRobotPlanner):
         return Frame(Point(gpx, point_y, element.height / 2), Vector.Xaxis(), -Vector.Yaxis()).scaled(0.001)
     
     def calculate_element_pickup_frame(self, grasp_frame, element_at_frame):
-        dist = 99999999999999999999999999
-        closest_ps_T = None
-        closest_ps_frame = None
-        for ps_T, ps_frame in zip(self.ps_Ts, self.ps_frames):
-            ps_at_dist = element_at_frame.point.distance_to_point(ps_frame.point)
-            if ps_at_dist < dist:
-                dist = ps_at_dist
-                closest_ps_T = ps_T
-                closest_ps_frame = ps_frame
-        element_pickup_frame = grasp_frame.transformed(closest_ps_T)      
-        return element_pickup_frame
+        if self._fetched_pickup_frame is not None:
+            # Use the live mocap-fetched pickup frame; apply the grasp offset
+            # relative to the fetched frame so the orientation follows the grasp.
+            pickup_frame = self._fetched_pickup_frame.copy()
+            # Preserve the grasp orientation axes from the computed grasp_frame
+            # pickup_frame.xaxis = grasp_frame.xaxis
+            # pickup_frame.yaxis = grasp_frame.yaxis
+            print(pickup_frame)
+            return pickup_frame.scaled(0.001)  # Convert from mm to m
+
+        raise RuntimeError(
+            "Pickup frame has not been fetched yet. "
+            "Press 'Fetch Pickup Frame' before computing trajectories."
+        )
     
     def get_inside_plate_thickness(self, element):
         siblings = element.parent.children
