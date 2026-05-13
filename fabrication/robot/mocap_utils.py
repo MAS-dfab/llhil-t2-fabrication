@@ -1,12 +1,12 @@
 import sys
 
-_ROCAP_PATH = r"C:\Users\akango\Documents\github\rocap"
+_ROCAP_PATH = r"C:\Users\paulj\Documents\github\rocap"
 if _ROCAP_PATH not in sys.path:
     sys.path.insert(0, _ROCAP_PATH)
 
 from robot_workflow import _load_calib, collect_frames, average_frames, compute_robot_frame  # noqa: E402
 
-MOCAP_WS_URL = "ws://127.0.0.1:8765"
+MOCAP_WS_URL = "ws://192.168.55.107:8765"  # rocap mocap WebSocket URL (IP of the machine running rocap)
 MOCAP_COLLECT_DURATION = 0.5  # seconds to average
 
 

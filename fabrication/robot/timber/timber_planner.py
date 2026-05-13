@@ -44,7 +44,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         tool_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
         col_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperLong_col.stl")
         col_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
-        tool_frame = Frame([0.000, 0.000, 0.157],  [1.0, 0.0, 0.0], [0.0, 1.0, 0.0])
+        tool_frame = Frame([0.000, 0.000, 0.157],  [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0])
         self.add_tool_to_robot(
             viz_mesh=tool_mesh,
             col_mesh=col_mesh,
@@ -92,7 +92,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         configuration["bridge1_joint_EA_X"] = 10
         configuration["robot12_joint_EA_Y"] = -6
         configuration["robot12_joint_EA_Z"] = -5
-        configuration["robot12_joint_1"] = math.radians(-90)
+        configuration["robot12_joint_1"] = math.radians(0)
         configuration["robot12_joint_2"] = math.radians(-55)
         configuration["robot12_joint_3"] = math.radians(55)
         configuration["robot12_joint_4"] = math.radians(180)
@@ -278,11 +278,12 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 7. Retract from AT
         print("getting element retract trajectory at AT")
-        trajectories.append(self.get_retract_trajectory(retract_distance=0.5, avoid_collisions=False))
+        trajectories.append(self.get_retract_trajectory(retract_distance=1.5, avoid_collisions=False))
 
         # 8. Return to safe configuration
         print("getting trajectory back to safe configuration")
-        trajectories.append(self.get_motion_to_configuration(self.safe_configuration))
+        # trajectories.append(self.get_motion_to_configuration(self.safe_configuration))
+        trajectories.append(self.get_motion_to_configuration(self.inter_configuration))
 
         # json_dump(trajectories, "C:\\Users\\paulj\\Downloads\\element_trajs.json")
         return trajectories
