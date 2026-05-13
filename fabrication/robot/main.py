@@ -73,9 +73,9 @@ def main():
     # merged_trajectory = combine_trajectories(trajectory_planner.trajectory_list)
     merged_trajectory = combine_trajectories(element_trajectories)
     
-    export_path = "C:\\Users\\paulj\\Downloads\\merged_traj_test.json"
-    merged_trajectory.to_json(export_path)
-    print(f"Successfully exported merged trajectory to: {export_path}")
+    # export_path = "C:\\Users\\paulj\\Downloads\\merged_traj_test.json"
+    # merged_trajectory.to_json(export_path)
+    # print(f"Successfully exported merged trajectory to: {export_path}")
 
     # ---------------------------------------------------------
     # 5. LAUNCH VIEWER
