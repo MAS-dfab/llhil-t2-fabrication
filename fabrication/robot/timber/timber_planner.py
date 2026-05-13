@@ -40,16 +40,16 @@ class TimberProcessPlanner(BaseRobotPlanner):
         print("Setting up physical cell geometry...")
         
         # 1. Add Tool
-        tool_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperLong_viz.stl")
-        tool_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
-        col_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperLong_col.stl")
-        col_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
-        tool_frame = Frame([0.000, 0.000, 0.157],  [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0])
+        tool_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperMedium_viz.stl")
+        # tool_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
+        col_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperMedium_col.stl")
+        # col_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
+        tool_frame = Frame([0.000, 0.000, 0.157],  [0.0, -1.0, 0.0], [1.0, 0.0, 0.0])
         self.add_tool_to_robot(
             viz_mesh=tool_mesh,
             col_mesh=col_mesh,
             tool_frame=tool_frame,
-            tool_name="GripperLong",
+            tool_name="GripperMedium",
             connected_to="robot12_tool0"
         )
         
@@ -252,7 +252,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         element_mesh_at = element_geometry_at.to_viewmesh()[0]
         # adjusted_grasp_frame = element_grasp_frame.copy()
         # adjusted_grasp_frame.point.z -= 0.08  # Account for gripper offset
-        self.attach_workpiece(str(element.guid), element_mesh_at, grasp_frame, attached_to_tool="GripperLong")
+        self.attach_workpiece(str(element.guid), element_mesh_at, grasp_frame, attached_to_tool="GripperMedium")
 
         # 3. Retract from pickpoint
         print("getting element retract trajectory at pickpoint")
@@ -278,12 +278,12 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 7. Retract from AT
         print("getting element retract trajectory at AT")
-        trajectories.append(self.get_retract_trajectory(retract_distance=1.5, avoid_collisions=False))
+        trajectories.append(self.get_retract_trajectory(retract_distance=0.5, avoid_collisions=False))
 
         # 8. Return to safe configuration
         print("getting trajectory back to safe configuration")
-        # trajectories.append(self.get_motion_to_configuration(self.safe_configuration))
-        trajectories.append(self.get_motion_to_configuration(self.inter_configuration))
+        trajectories.append(self.get_motion_to_configuration(self.safe_configuration))
+        # trajectories.append(self.get_motion_to_configuration(self.inter_configuration))
 
         # json_dump(trajectories, "C:\\Users\\paulj\\Downloads\\element_trajs.json")
         return trajectories
@@ -370,6 +370,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
             grasp_frame = element.attributes.get("grasp_frame") 
         e_at_frame = grasp_frame.transformed(self.at_T*element.attributes.get("parent_T"))
         grasp_frame.transform(element.transformation_to_local())
+        print(grasp_frame)
         element_geometry_at = element.geometry.transformed(element.transformation_to_local())
         # ip_thickness = self.get_inside_plate_thickness(element)
         # e_at_frame.translate(e_at_frame.zaxis * (ip_thickness * 0.001))  # OFFSET FOR INSIDE PLATE THICKNESS
