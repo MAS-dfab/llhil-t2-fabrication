@@ -346,6 +346,7 @@ def middle_node_solver(graph, t_value=.2, tolerance=1e-4, debug=False):
         for leaf in leaf_edges:
             leaf_vec = Vector.from_start_end(_get_point(graph, leaf[0]), _get_point(graph, leaf[1]))
             leaf_vec_xy = Vector(leaf_vec.x, leaf_vec.y, 0.0).unitized()
+            graph.edge_attribute(leaf, "middle_joint", True)
 
             
             for coplanar in coplanar_edges:
