@@ -46,10 +46,10 @@ def main():
     # for p in timber_model.plates:
     #     p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
     #     assembled_elements.append(p_mesh)
-    for b in in_seq_beams[:seq_i]:
-        b_mesh = b.geometry.transformed(trajectory_planner.at_T * b.attributes.get("parent_T")).to_viewmesh()[0]
-        assembled_elements.append(b_mesh)
-    trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
+    # for b in in_seq_beams[:seq_i]:
+    #     b_mesh = b.geometry.transformed(trajectory_planner.at_T * b.attributes.get("parent_T")).to_viewmesh()[0]
+    #     assembled_elements.append(b_mesh)
+    # trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
 
     beam = in_seq_beams[seq_i]
 
