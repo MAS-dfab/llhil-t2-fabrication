@@ -338,7 +338,7 @@ def build_level_zero(vertex_grid, sup_pts, z_steps, roof_brep, config, support_b
 
             edge_level = 0
             for ic in inset_corners:
-                relations.append((apex, ic, group_id, "apex_inset", edge_level))
+                relations.append((apex, ic, group_id, "apex_inset", edge_level, reached))
     
     return cell_grid, records, relations
 
@@ -420,7 +420,7 @@ def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config, brep_ed
 
                 edge_level = level
                 for ch in child_pts:
-                    relations.append((parent, ch, group_id, "parent_child", edge_level))
+                    relations.append((parent, ch, group_id, "parent_child", edge_level, reached))
 
         cell_grid = new_grid
     
@@ -504,10 +504,10 @@ def build_graph_from_records(records, relations):
         ng.node_attribute(apex_node, "children", child_nodes)
 
     # Add edges from relations
-    for p1, p2, group_id, etype, edge_level in relations:
+    for p1, p2, group_id, etype, edge_level, reached in relations:
         u = ng.get_or_add_point_node(p1)
         v = ng.get_or_add_point_node(p2)
-        ng.add_graph_edge(u, v, group=group_id, etype=etype, level=edge_level)
+        ng.add_graph_edge(u, v, group=group_id, etype=etype, level=edge_level, reached=reached)
     
     return ng
 
@@ -698,7 +698,7 @@ def _build_single_brep_tree(brep, sup_pt, sup_idx, div_x, div_y, num_levels, fla
 
             edge_level = 0
             for ic in inset_corners:
-                relations.append((apex, ic, sup_idx, "apex_inset", edge_level))
+                relations.append((apex, ic, sup_idx, "apex_inset", edge_level, reached))
 
     # Higher levels via shared builder.
     # use_nearest_support=False so group/support are inherited from level-0 cells,

@@ -81,20 +81,22 @@ def create_beam(graph, edge, group_id, plate_vec=None):
     h = get_edge_attribute(graph, edge, 'height', else_value=0.14)
     hie = get_edge_attribute(graph, edge, 'hierarchy')
     lvl = get_edge_attribute(graph, edge, 'level')
-    is_mid = get_edge_attribute(graph, edge, 'middle_joint', else_value=False)
+    reached = get_edge_attribute(graph, edge, 'reached', else_value=False)
+    has_mid = get_edge_attribute(graph, edge, 'has_middle_joint', else_value=False)
 
     if hie == 'shoe' and plate_vec is not None:
         beam = Beam.from_centerline(ln, w, h, plate_vec)
     else:
         beam = Beam.from_centerline(ln, w, h)
-    beam.name = hie  # temp.
+    # beam.name = hie  # temp.
     
     beam.attributes = {
         'hierarchy': hie,
         'edge': edge,
         'group': group_id,
         'level': lvl,
-        'is_middle_joint': is_mid
+        'reached': reached,
+        'has_middle_joint': has_mid
     }
     return beam
 
@@ -201,7 +203,7 @@ def _determine_lap_flip(candidate_a, candidate_b, lap_flip):
     return
 
 
-def orientate_plane(plane):
+def _orientate_plane(plane):
     """Orientate plane to have normal pointing downwards."""
     if plane.normal.z > 0:
         plane.normal = -plane.normal
@@ -251,7 +253,8 @@ def apply_joints(
         step_depth=None,
         riser_angle=None,
         mill_depth=None,
-        mid_lap_flip=False
+        mid_lap_flip=False,
+        debug=False
     ):
 
     # Default config
@@ -285,14 +288,14 @@ def apply_joints(
 
         is_planar = _is_planar(ca, cb)
 
-        # Planar T joints
+        ### Planar T joints
         if topo == JointTopology.TOPO_T and is_planar:
             # CLT shoe to Top Beam
-            if cb.name == 'shoe':
+            if cb.attributes["hierarchy"] == 'shoe':
                 TStepJoint.create(model, ca, cb, step_shape="double")
 
             # Middle T Lap Joint
-            elif ca.attributes["is_middle_joint"]:
+            elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
                 # TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
                 TLapJoint.create(model, ca, cb)
 
@@ -309,19 +312,21 @@ def apply_joints(
                     riser_angle=riser_angle
                 )
 
-        # Non-planar T joints
+        ### Non-planar T joints
         elif topo == JointTopology.TOPO_T and not is_planar:
             TButtJoint.create(model, ca, cb)
 
-        # L Miter Joint
-        elif topo == JointTopology.TOPO_L:
+        ### L Miter Joint
+        elif topo == JointTopology.TOPO_L and not all([ca.attributes['reached'], cb.attributes['reached']]):
             LMiterJoint.create(model, ca, cb, cutoff=False)
 
-        # X Lap Joint
+        ### X Lap Joint
         elif topo == JointTopology.TOPO_X:
             XLapJoint.create(model, ca, cb)
 
         else:
+            if debug:
+                print(f"Unhandled joint candidate with topology {topo}. edges: {ca.attributes['edge']}, {cb.attributes['edge']}")
             continue
     return model
 
@@ -329,23 +334,26 @@ def apply_processings(model):
     for beam in model.beams:
         # beam.reset_computed_properties()
 
-        "JackRafterCut"
-        if beam.attributes["hierarchy"] == "primary" or beam.attributes["hierarchy"] == "main_primary" and beam.attributes["level"] == max(b.attributes["level"] for b in model.beams):
+        # JackRafterCut
+        if beam.attributes['reached']:
             cutting_plane = model.attributes.get("cut_plane")
-            orientated_cutting_plane = orientate_plane(cutting_plane)
+            orientated_cutting_plane = _orientate_plane(cutting_plane)
+
             intersection = intersection_segment_plane(beam.centerline, orientated_cutting_plane)
+
             if intersection:
                 jrc = JackRafterCut.from_plane_and_beam(orientated_cutting_plane, beam)
                 beam.add_feature(jrc)
 
-            "LongitudinalCut"
+        # LongitudinalCut
         elif beam.attributes["hierarchy"] == "shoe":
             clt_plate = model.attributes.get("clt_plate")
+
             if clt_plate:
                 cutting_frame = clt_plate.frame
-            lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam)
-            beam.add_feature(lc)
+                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam)
+                beam.add_feature(lc)
+
         else:
             continue
-
     return model
