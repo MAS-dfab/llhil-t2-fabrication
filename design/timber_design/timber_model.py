@@ -71,7 +71,7 @@ def _polyline_aligned_frame(polyline, thickness):
     and its normal pointing DOWNWARDS.
     """
     longest = max(polyline.lines, key=lambda ln: ln.length)
-    
+
     normal = get_polyline_normal_vector(polyline)
     if normal.z < 0:
         normal = -normal
@@ -245,21 +245,35 @@ def _determine_lap_flip(candidate_a, candidate_b, lap_flip):
 def _orientate_plane(plane):
     """Orientate plane to have normal pointing downwards."""
     if plane.normal.z > 0:
-        plane.normal = -plane.normal
+        return Plane(plane.point, -plane.normal)
     return plane
 
-def _get_miter_plane(reordered_elements):
+def _get_vertical_miter_plane(reordered_elements, flip=False):
     _, a, b = reordered_elements
-    ori = a.centerline.start
+    ori = a.centerline.start  # temp.
 
     cross = a.centerline.direction.cross(b.centerline.direction)
+    if flip:
+        return Plane.from_frame(Frame(ori, cross, -Vector(0, 0, 1)))
     return Plane.from_frame(Frame(ori, cross, Vector(0, 0, 1)))
-    # return Frame(ori, cross, Vector(0, 0, 1))
+
+def _get_average_miter_plane(reordered_elements, flip=False):
+    _, a, b = reordered_elements
+    ori = a.centerline.start
+    dir_a = a.centerline.direction
+    dir_b = b.centerline.direction
+
+    cross = dir_a.cross(dir_b)
+
+    y = dir_a + dir_b
+    if flip:
+        return Plane.from_frame(Frame(ori, cross, -y))
+    return Plane.from_frame(Frame(ori, cross, y))
 
 # --------------------------------------
 # Joinery planning
 # --------------------------------------
-def _k_birdsmouth(model, mill_depth):
+def _k_birdsmouth(model, mill_depth, miter_condition='average', miter_flag=False):
     max_offset = max(candidate.distance for candidate in model.joint_candidates)
 
     # handle non-pair joints (in this case a 3-way connection using TripletAnalyzer)
@@ -283,7 +297,10 @@ def _k_birdsmouth(model, mill_depth):
                 raise ValueError(f"Something went wrong with the analyzer. There should be always 3 elements, got: {len(reordered_elements)}")
 
             # promote cluster
-            miter_pln = _get_miter_plane(reordered_elements)
+            if miter_condition == 'vertical':
+                miter_pln = _get_vertical_miter_plane(reordered_elements, flip=miter_flag)
+            elif miter_condition == 'average':
+                miter_pln = _get_average_miter_plane(reordered_elements, flip=miter_flag)
 
             kwargs = {"mill_depth": mill_depth, "miter_plane": miter_pln}
             KBirdsmouthJoint.promote_cluster(model, cluster, reordered_elements=reordered_elements, **kwargs)
