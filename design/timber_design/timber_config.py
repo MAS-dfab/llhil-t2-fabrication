@@ -9,7 +9,7 @@ TIMBER_MODEL_TOL = Tolerance(unit="M", absolute=0.001)
 
 # Plate parameters
 PLATE_THICKNESS = 0.10
-PLATE_Z_OFFSET = 0.04
+PLATE_Z_OFFSET = 0.02
 
 # Global parameter for finding joint candidates
 MAX_JOINT_DIST = 0.055

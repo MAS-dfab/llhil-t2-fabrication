@@ -33,7 +33,7 @@ def main():
     # ---------------------------------------------------------
     # 3. EXECUTE PLANNING LOOP
     # ---------------------------------------------------------
-    seq_i = 10
+    seq_i = 15
 
     trajectories = []
     assembled_elements = []
@@ -86,7 +86,7 @@ def main():
         robot_cell=trajectory_planner.robot_cell, 
         trajectory=merged_trajectory,
         cell_state=trajectory_planner.state,
-        # use_cache=True
+        use_cache=True
     )
     
     player.add_dynamic_workpieces(
