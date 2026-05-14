@@ -343,7 +343,7 @@ def build_level_zero(vertex_grid, sup_pts, z_steps, roof_brep, config, support_b
     return cell_grid, records, relations
 
 
-def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config, brep_edges=None, clt_edges=None):
+def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config, brep_edges=None, clt_polyline=None):
     """Build hierarchical parent levels by merging 2x2 child cells."""
     records = []
     relations = []
@@ -412,7 +412,7 @@ def build_higher_levels(cell_grid, sup_pts, z_steps, num_levels, config, brep_ed
                     "inset_frames": [],
                     "children": child_pts,
                     "level": level,
-                    "clt_plate": clt_edges
+                    "clt_plate": clt_polyline
                 }
 
                 new_grid[j][i] = rec
@@ -629,7 +629,7 @@ def build_tree_graph(
     return ng
 
 
-def _build_single_brep_tree(brep, sup_pt, sup_idx, div_x, div_y, num_levels, flat_steps, config, clt_edges=None):
+def _build_single_brep_tree(brep, sup_pt, sup_idx, div_x, div_y, num_levels, flat_steps, config, clt_polyline=None):
     """
     Build records and relations for one brep growing toward one support.
     No groups, no cross-brep logic.
@@ -705,7 +705,7 @@ def _build_single_brep_tree(brep, sup_pt, sup_idx, div_x, div_y, num_levels, fla
     # which all already point to sup_pt/sup_idx.
     higher_config = dict(config, use_nearest_support=False)
     records_upper, relations_upper = build_higher_levels(
-        cell_grid, [sup_pt], flat_steps, num_levels, higher_config, brep_edges=brep_edges, clt_edges=clt_edges
+        cell_grid, [sup_pt], flat_steps, num_levels, higher_config, brep_edges=brep_edges, clt_polyline=clt_polyline
     )
     records.extend(records_upper)
     relations.extend(relations_upper)
@@ -716,7 +716,7 @@ def _build_single_brep_tree(brep, sup_pt, sup_idx, div_x, div_y, num_levels, fla
 def build_tree_graph_from_breps(
     input_breps,
     supports,
-    clt_breps,
+    clt_polylines,
     div_x=None,
     div_y=None,
     num_levels=None,
@@ -789,9 +789,9 @@ def build_tree_graph_from_breps(
             print("Brep {} center ({:.2f},{:.2f},{:.2f}) -> Support {}: ({:.2f},{:.2f},{:.2f})  steps={}".format(
                 brep_idx, ctr.x, ctr.y, ctr.z, sup_idx, sup_pt.x, sup_pt.y, sup_pt.z, flat_steps))
     
-        clt_edges = boundary_from_brep(clt_breps[brep_idx]) if clt_breps and brep_idx < len(clt_breps) else None
+        clt_pls = clt_polylines[brep_idx] if clt_polylines and brep_idx < len(clt_polylines) else None
         recs, rels = _build_single_brep_tree(
-            brep , sup_pt, sup_idx, div_x, div_y, num_levels, flat_steps, config, clt_edges=clt_edges
+            brep , sup_pt, sup_idx, div_x, div_y, num_levels, flat_steps, config, clt_polyline=clt_pls
         )
         all_records.extend(recs)
         all_relations.extend(rels)
