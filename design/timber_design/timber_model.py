@@ -80,8 +80,13 @@ def _polyline_aligned_frame(polyline, thickness):
     center += normal.unitized() * thickness
 
     cross = longest.direction.cross(normal)
+    plane = Plane(center,normal)
+    
+    Frame.from_plane(plane)
+    
+    #Frame(center, longest.direction, cross)
 
-    return Frame(center, longest.direction, cross)
+    return Frame.from_plane(plane)
 
 # --------------------------------------
 # Element Creations
