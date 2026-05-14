@@ -94,7 +94,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         configuration = self.state.robot_configuration.copy()
         configuration["bridge1_joint_EA_X"] = 10
         configuration["robot12_joint_EA_Y"] = -6
-        configuration["robot12_joint_EA_Z"] = -5
+        configuration["robot12_joint_EA_Z"] = -4.5
         configuration["robot12_joint_1"] = math.radians(0)
         configuration["robot12_joint_2"] = math.radians(-55)
         configuration["robot12_joint_3"] = math.radians(55)
@@ -239,7 +239,8 @@ class TimberProcessPlanner(BaseRobotPlanner):
         trajectories = []
 
         grasp_frame, element_at_frame, element_geometry_at = self.calculate_element_at_frame(element)
-        
+        self._last_place_frame = element_at_frame
+
         element_pickup_frame = self.calculate_element_pickup_frame(grasp_frame, element_at_frame)
 
         # 1. Approach pickpoint
