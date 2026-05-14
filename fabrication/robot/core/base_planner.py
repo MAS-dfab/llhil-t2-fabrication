@@ -149,7 +149,7 @@ class BaseRobotPlanner():
         self.state.robot_configuration = self.current_configuration
         plan_options = {
             "allowed_planning_time": 10, 
-            "num_planning_attempts": 20,
+            "num_planning_attempts": 50,
             "max_steps": 0.1,
             "path_constraints": []
             }
