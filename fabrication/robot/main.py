@@ -149,11 +149,14 @@ def main():
             # partial result — do not store for export
             last_sequence["record"] = None
         else:
+            _approach = getattr(trajectory_planner, "_last_approach_frame", None)
+            _place = getattr(trajectory_planner, "_last_place_frame", None)
             last_sequence["record"] = {
                 "index": trajectory_planner.seq_i,
                 "beam_guid": str(beam.guid),
                 "pickup_frame": trajectory_planner._fetched_pickup_frame,
-                "place_frame": getattr(trajectory_planner, "_last_place_frame", None),
+                "approach_frame": _approach.scaled(1000) if _approach is not None else None,
+                "place_frame": _place.scaled(1000) if _place is not None else None,
                 "steps": {
                     name: element_trajectories[i] if i < len(element_trajectories) else None
                     for i, name in enumerate(STEP_NAMES)

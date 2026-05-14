@@ -120,7 +120,7 @@ class BaseRobotPlanner():
         """Generates an approach frame backed off along the Z-axis of the target frame."""
         return target_frame.translated(target_frame.zaxis * -approach_distance)
 
-    def get_cartesian_trajectory(self, frames_list, avoid_collisions=True):
+    def get_cartesian_trajectory(self, frames_list, avoid_collisions=True, planning_group=None):
         """Plans a Cartesian trajectory through a list of frames."""
         current_frame = self.get_current_end_frame()
         frames_list.insert(0, current_frame)
@@ -132,7 +132,10 @@ class BaseRobotPlanner():
 
         trajectory = None
         try:
-            trajectory = self.planner.plan_cartesian_motion(waypoints, self.state, group=self.group, options=plan_options)
+            if planning_group:
+                trajectory = self.planner.plan_cartesian_motion(waypoints, self.state, group=planning_group, options=plan_options)
+            else:
+                trajectory = self.planner.plan_cartesian_motion(waypoints, self.state, group=self.group, options=plan_options)
             print(f"Cartesian trajectory planned. Fraction: {trajectory.fraction}")
             self.trajectory_list.append(trajectory)
             self.update_state_from_trajectory(trajectory)
@@ -140,7 +143,7 @@ class BaseRobotPlanner():
             print(f"Cartesian planning failed: {e}")
         return trajectory
 
-    def get_motion_to_frame(self, target_frame):
+    def get_motion_to_frame(self, target_frame, planning_group=None):
         """Plans a free-space (non-Cartesian) motion to a target frame."""
         frame_target = FrameTarget(target_frame, target_mode=TargetMode.TOOL)
         self.state.robot_configuration = self.current_configuration
@@ -153,7 +156,10 @@ class BaseRobotPlanner():
 
         trajectory = None
         try:
-            trajectory = self.planner.plan_motion(frame_target, self.state, group=self.group, options=plan_options)
+            if planning_group:
+                trajectory = self.planner.plan_motion(frame_target, self.state, group=planning_group, options=plan_options)
+            else:
+                trajectory = self.planner.plan_motion(frame_target, self.state, group=self.group, options=plan_options)
             print(f"Free-space motion to frame planned. Fraction: {trajectory.fraction}")
             self.trajectory_list.append(trajectory)
             self.update_state_from_trajectory(trajectory)
@@ -161,7 +167,7 @@ class BaseRobotPlanner():
             print(f"Free-space planning failed: {e}")
         return trajectory
 
-    def get_motion_to_configuration(self, target_configuration):
+    def get_motion_to_configuration(self, target_configuration, planning_group=None):
         """Plans a free-space motion to a specific joint configuration."""
         def_tol = ConfigurationTarget.generate_default_tolerances(target_configuration, 0.01, math.radians(0.1))
         config_target = ConfigurationTarget(target_configuration, def_tol[0], def_tol[1])
@@ -176,7 +182,10 @@ class BaseRobotPlanner():
 
         trajectory = None
         try:
-            trajectory = self.planner.plan_motion(config_target, self.state, group=self.group, options=plan_options)
+            if planning_group:
+                trajectory = self.planner.plan_motion(config_target, self.state, group=planning_group, options=plan_options)
+            else:
+                trajectory = self.planner.plan_motion(config_target, self.state, group=self.group, options=plan_options)
             print(f"Motion to configuration planned. Fraction: {trajectory.fraction}")
             self.trajectory_list.append(trajectory)
             self.update_state_from_trajectory(trajectory)
@@ -184,7 +193,7 @@ class BaseRobotPlanner():
             print(f"Configuration planning failed: {e}")
         return trajectory
 
-    def get_retract_trajectory(self, retract_distance=0.5, z_axis_only=False, avoid_collisions=True):
+    def get_retract_trajectory(self, retract_distance=0.5, z_axis_only=False, avoid_collisions=True, planning_group=None):
         """
         Plans a Cartesian retract motion. 
         If z_axis_only is True, it moves straight up in world Z. 
@@ -202,7 +211,10 @@ class BaseRobotPlanner():
         r_options["avoid_collisions"] = avoid_collisions
         trajectory = None
         try:
-            trajectory = self.planner.plan_cartesian_motion(waypoints, self.state, group=self.group, options=r_options)
+            if planning_group:
+                trajectory = self.planner.plan_cartesian_motion(waypoints, self.state, group=planning_group, options=r_options)
+            else:
+                trajectory = self.planner.plan_cartesian_motion(waypoints, self.state, group=self.group, options=r_options)
             print(f"Retract trajectory planned. Fraction: {trajectory.fraction}")
             self.trajectory_list.append(trajectory)
             self.update_state_from_trajectory(trajectory)

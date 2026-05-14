@@ -44,7 +44,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         # tool_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
         col_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperMedium_col.stl")
         # col_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
-        tool_frame = Frame([0.000, 0.000, 0.157],  [0.0, -1.0, 0.0], [1.0, 0.0, 0.0])
+        tool_frame = Frame([0.000, 0.000, 0.00],  [1.0, 0.0, 0.0], [0.0, 1.0, 0.0])
         self.add_tool_to_robot(
             viz_mesh=tool_mesh,
             col_mesh=col_mesh,
@@ -241,11 +241,12 @@ class TimberProcessPlanner(BaseRobotPlanner):
         grasp_frame, element_at_frame, element_geometry_at = self.calculate_element_at_frame(element)
         self._last_place_frame = element_at_frame
 
-        element_pickup_frame = self.calculate_element_pickup_frame(grasp_frame, element_at_frame)
+        element_pickup_frame = self.calculate_element_pickup_frame()
 
         # 1. Approach pickpoint
         print("getting element approach trajectory to pickpoint")
-        approach_frame = self.get_approach_frame(element_pickup_frame, approach_distance=0.5)
+        approach_frame = self.get_approach_frame(element_pickup_frame, approach_distance=0.2)
+        self._last_approach_frame = approach_frame
         trajectories.append(self.get_motion_to_frame(approach_frame))
 
         # 2. Pick Element at pickpoint
@@ -347,7 +348,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         return Frame(Point(gpx, point_y, element.height / 2), Vector.Xaxis(), -Vector.Yaxis()).scaled(0.001)
     
-    def calculate_element_pickup_frame(self, grasp_frame, element_at_frame):
+    def calculate_element_pickup_frame(self):
         if self._fetched_pickup_frame is not None:
             # Use the live mocap-fetched pickup frame; apply the grasp offset
             # relative to the fetched frame so the orientation follows the grasp.
@@ -372,6 +373,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
     def calculate_element_at_frame(self, element, grasp_frame=None):
         if not grasp_frame:
             grasp_frame = element.attributes.get("grasp_frame") 
+            grasp_frame = grasp_frame.rotated(math.radians(90), grasp_frame.zaxis, grasp_frame.point)
         e_at_frame = grasp_frame.transformed(self.at_T*element.attributes.get("parent_T"))
         new_grasp_frame = grasp_frame.transformed(element.transformation_to_local())
         element_geometry_at = element.geometry.transformed(element.transformation_to_local())
