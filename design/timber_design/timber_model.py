@@ -6,7 +6,10 @@ Usage in grasshopper:
     models = graph_to_timber_models(graph, align_shoe=False)
     models = [apply_joints(model) for model in models]
 """
-from compas.geometry import Vector, angle_vectors, Translation, intersection_segment_plane, Line, Point, intersection_line_line_xy
+from compas.geometry import (
+    Vector, Frame, Plane, Line, Point, Translation,
+    angle_vectors, intersection_segment_plane, intersection_line_line_xy
+)
 from compas_timber.model import TimberModel
 from compas_timber.elements import Beam, Plate
 
@@ -52,21 +55,51 @@ def get_edge_attribute(graph, key, name, else_value=None):
         return value
     return else_value
 
+# --------------------------------------
+# Geometry helpers
+# --------------------------------------
+def _average_points(points):
+    x = sum(p.x for p in points) / len(points)
+    y = sum(p.y for p in points) / len(points)
+    z = sum(p.z for p in points) / len(points)
+    return Point(x, y, z)
+
+def _polyline_aligned_frame(polyline, thickness):
+    """
+    Create a compas Frame at the centroid of the polyline,
+    aligned x with longest edge,
+    and its normal pointing DOWNWARDS.
+    """
+    longest = max(polyline.lines, key=lambda ln: ln.length)
+    
+    normal = get_polyline_normal_vector(polyline)
+    if normal.z < 0:
+        normal = -normal
+
+    center = _average_points(polyline.points[:-1])
+    center += normal.unitized() * thickness
+
+    cross = longest.direction.cross(normal)
+
+    return Frame(center, longest.direction, cross)
 
 # --------------------------------------
 # Element Creations
 # --------------------------------------
 def create_plate(polyline, group_id, thickness, z_offset):
-    """Create a plate pointing upwards."""
+    """Create a plate pointing UPWARDS."""
     if z_offset:
         polyline = polyline.transformed(Translation.from_vector(Vector(0, 0, z_offset)))
 
-    vec = get_polyline_normal_vector(polyline)
-    if vec.z < 0:
-        vec = -vec
-    plate = Plate.from_outline_thickness(polyline, thickness, vec)
+    # Create a frame for orienting elements to the fabrication station
+    neg_frame = _polyline_aligned_frame(polyline, thickness)
+    pos_normal = -neg_frame.normal
+
+    plate = Plate.from_outline_thickness(polyline, thickness, pos_normal)
+
     plate.attributes = {
-        'normal': vec,
+        'positive_normal': pos_normal,
+        'negative_frame': neg_frame,
         'group': group_id
     }
     return plate
@@ -134,8 +167,9 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
         plate_vec = None
         if data['clt_plate']:
             plate = create_plate(data['clt_plate'], g, thickness=plate_thickness, z_offset=plate_z_offset)
-            plate_vec = plate.attributes['normal']
+            plate_vec = plate.attributes['positive_normal']
             model.add_element(plate)
+
             model.attributes['clt_plate'] = plate
         
         if data['cut_plane']:
@@ -209,6 +243,13 @@ def _orientate_plane(plane):
         plane.normal = -plane.normal
     return plane
 
+def _get_miter_plane(reordered_elements):
+    _, a, b = reordered_elements
+    ori = a.centerline.start
+
+    cross = a.centerline.direction.cross(b.centerline.direction)
+    return Plane.from_frame(Frame(ori, cross, Vector(0, 0, 1)))
+    # return Frame(ori, cross, Vector(0, 0, 1))
 
 # --------------------------------------
 # Joinery planning
@@ -237,11 +278,12 @@ def _k_birdsmouth(model, mill_depth):
                 raise ValueError(f"Something went wrong with the analyzer. There should be always 3 elements, got: {len(reordered_elements)}")
 
             # promote cluster
-            KBirdsmouthJoint.promote_cluster(model, cluster, reordered_elements=reordered_elements, mill_depth=mill_depth)
+            miter_pln = _get_miter_plane(reordered_elements)
+
+            kwargs = {"mill_depth": mill_depth, "miter_plane": miter_pln}
+            KBirdsmouthJoint.promote_cluster(model, cluster, reordered_elements=reordered_elements, **kwargs)
     return
 
-def _which_pair_joint(model):
-    pass
 
 # --------------------------------------
 # Main API - Create Joints
