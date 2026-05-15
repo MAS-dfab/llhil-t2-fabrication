@@ -2,7 +2,11 @@
 Minimal line-constraint helpers for the current workflow.
 """
 
+import math
+
 from compas.geometry import Line, Point, Vector, Plane
+
+# from design.line_model.edge_classifier import _edge_support_direction
 
 
 def _resolve_edge(graph, edge):
@@ -13,6 +17,13 @@ def _resolve_edge(graph, edge):
         return (v, u)
     return None
 
+def _edge_node_orientation(graph, edge, node):
+    u, v = edge
+    n = node 
+    if n == u:
+        return (u, v)
+    else:
+        return (v, u)
 
 def _edge_key(edge):
     u, v = edge
@@ -145,6 +156,7 @@ def snap_to_host(
     host_level_pair=None,
     z_offset=0.0,
     write_attribute=True,
+    snap_8_degree_edges=True,
     debug=False,
 ):
     """
@@ -212,7 +224,7 @@ def snap_to_host(
         u, v = e
         lu = graph.node_attribute(u, "level")
         lv = graph.node_attribute(v, "level")
-
+        
         if lu == move_node_level:
             moved, fixed = u, v
         elif lv == move_node_level:
@@ -260,9 +272,16 @@ def snap_to_host(
 
         best_pt = min(preferred or host_candidates, key=lambda x: x[1])[0]
 
-        new_pt = Point(best_pt.x, best_pt.y, best_pt.z + (float(z_offset) if prefer_up else -float(z_offset)))
-        new_line = Line(new_pt, fixed_pt) if moved == u else Line(fixed_pt, new_pt)
-
+        if snap_8_degree_edges == True:
+            if graph.degree(moved) < 8:
+                new_pt = Point(best_pt.x, best_pt.y, best_pt.z + (float(z_offset) if prefer_up else -float(z_offset)))
+                new_line = Line(new_pt, fixed_pt) if moved == u else Line(fixed_pt, new_pt)
+            else:
+                new_line = Line(moved_pt, fixed_pt) if moved == u else Line(fixed_pt, moved_pt)
+        else:
+            new_pt = Point(best_pt.x, best_pt.y, best_pt.z + (float(z_offset) if prefer_up else -float(z_offset)))
+            new_line = Line(new_pt, fixed_pt) if moved == u else Line(fixed_pt, new_pt)
+            
         oriented = _resolve_edge(graph, e)
         if write_attribute and oriented is not None:
             graph.edge_attribute(oriented, "line", new_line)
@@ -295,3 +314,75 @@ def snap_to_host(
         "debug": debug_info if debug else None,
     }
 
+def _assign_middle_joint(graph):
+    groups = {}
+    for u, v in graph.edges():
+        if graph.degree(u) >= 8:
+            groups.setdefault(u, []).append((u, v))
+            graph.edge_attribute((u, v), "has_middle_joint", True)
+            
+        elif graph.degree(v) >= 8:
+            groups.setdefault(v, []).append((u, v))
+            graph.edge_attribute((u, v), "has_middle_joint", True)
+    
+        else:
+            graph.edge_attribute((u, v), "has_middle_joint", False)
+    return list(groups.keys())  # Change to return groups only, and refine the following definition if we have time
+
+def middle_node_solver(graph, t_value=.2, tolerance=1e-4, debug=False):
+    """ Target middle node of the module and shift lines along the edge that is coplanar with leaf edge."""
+    
+    target_nodes = _assign_middle_joint(graph)
+    shifted_lines = []
+
+    # Step 2: For each target node, find the leaf edge and the coplanar edge, then shift the middle node along the coplanar edge.
+    for node in target_nodes:
+        leaf_edges = []
+        coplanar_edges = []
+        for edge in graph.node_edges(node):
+            oriented = _resolve_edge(graph, edge)
+            if oriented is None:
+                continue
+            if graph.edge_attribute(oriented, "level") == 0:
+                edge_from_node = _edge_node_orientation(graph, oriented, node)
+                leaf_edges.append(edge_from_node)
+            else:
+                # NOTE: orient shifted line acording to the node not edge becaus ewe are using shifted line
+                edge_from_node = _edge_node_orientation(graph, oriented, node)
+                coplanar_edges.append(edge_from_node)
+            # NOTE: Move the primary and main primary lines category to original position...question is where????
+        if not leaf_edges or not coplanar_edges:
+            continue
+        # Find the direction of the coplanar edge  
+        if debug:
+            print (coplanar_edges)
+        for leaf in leaf_edges:
+            leaf_vec = Vector.from_start_end(_get_point(graph, leaf[0]), _get_point(graph, leaf[1]))
+            leaf_vec_xy = Vector(leaf_vec.x, leaf_vec.y, 0.0).unitized()
+
+            
+            for coplanar in coplanar_edges:
+                cop_vec = Vector.from_start_end(_get_point(graph, coplanar[0]), _get_point(graph, coplanar[1]))
+                cop_vec_xy = Vector(cop_vec.x, cop_vec.y, 0.0).unitized()
+                dot = round(leaf_vec_xy.dot(cop_vec_xy), 4)
+                # print(dot)
+                if dot == 1.00:  # Parallel and same direction
+                    if debug:
+                        print(f"DEBUG: Leaf edge {leaf} and Coplanar edge {coplanar} are parallel and same direction (Dot: {dot:.4f})")
+                    coplanar_line = _get_line(graph, coplanar)
+                    pt = coplanar_line.point_at(t_value)  # Get a point along the coplanar edge at t_value (0.2 means 20% along the edge)
+                    u, v = leaf
+                    shifted_line = Line(_get_point(graph, v), pt)
+                    # graph.edge_attribute(leaf, "line", shifted_line)
+                    graph.edge_attribute(leaf, "shifted_line", shifted_line)
+                    shifted_lines.append(shifted_line)
+
+    return shifted_lines
+            
+            # if debug:
+                # for coplanar in coplanar_edges:
+                #     cop_vec = Vector.from_start_end(_get_point(graph, coplanar[0]), _get_point(graph, coplanar[1]))
+                #     cop_vec_xy = Vector(cop_vec.x, cop_vec.y, 0.0).unitized()
+                #     dot = leaf_vec_xy.dot(cop_vec_xy)
+                #     print(f"DEBUG: Leaf edge {leaf} and Coplanar edge {coplanar} - Dot: {dot:.4f}")
+            

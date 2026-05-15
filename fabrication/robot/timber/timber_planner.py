@@ -281,7 +281,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         print("getting trajectory back to safe configuration")
         trajectories.append(self.get_motion_to_configuration(self.safe_configuration))
 
-        json_dump(trajectories, "C:\\Users\\paulj\\Downloads\\element_trajs.json")
+        # json_dump(trajectories, "C:\\Users\\paulj\\Downloads\\element_trajs.json")
         return trajectories
 
     # =========================================================================
