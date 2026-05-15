@@ -49,10 +49,10 @@
             <chunk name="Projection">
               <items count="2">
                 <item name="Target" type_name="gh_drawing_point" type_code="30">
-                  <X>-896</X>
-                  <Y>-78</Y>
+                  <X>-1535</X>
+                  <Y>-528</Y>
                 </item>
-                <item name="Zoom" type_name="gh_single" type_code="5">0.7269868</item>
+                <item name="Zoom" type_name="gh_single" type_code="5">1.3814663</item>
               </items>
             </chunk>
             <chunk name="Views">
@@ -132,9 +132,9 @@
         </chunk>
         <chunk name="DefinitionObjects">
           <items count="1">
-            <item name="ObjectCount" type_name="gh_int32" type_code="3">34</item>
+            <item name="ObjectCount" type_name="gh_int32" type_code="3">36</item>
           </items>
-          <chunks count="34">
+          <chunks count="36">
             <chunk name="Object" index="0">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">719467e6-7cf5-4848-99b0-c5dd57e5442c</item>
@@ -293,7 +293,7 @@
                         <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQppZiBnaF9kaXIgbm90IGluIHN5cy5wYXRoOg0KICAgIHN5cy5wYXRoLmluc2VydCgwLCBnaF9kaXIpDQoNCmltcG9ydCB0aW1iZXJfY29uZmlnDQppbXBvcnRsaWIucmVsb2FkKHRpbWJlcl9jb25maWcpDQoNCmltcG9ydCB0aW1iZXJfbW9kZWwNCmltcG9ydGxpYi5yZWxvYWQodGltYmVyX21vZGVsKQ0KZnJvbSB0aW1iZXJfbW9kZWwgaW1wb3J0IGdyYXBoX3RvX3RpbWJlcl9tb2RlbHMNCg0KIw0KbW9kZWxzID0gZ3JhcGhfdG9fdGltYmVyX21vZGVscyhncmFwaCwgYWxpZ25fc2hvZT1GYWxzZSkNCg0KcHJpbnQgKGxpc3QobS5hdHRyaWJ1dGVzWydncm91cCddIGZvciBtIGluIG1vZGVscykpDQoNCg0KbW9kZWxzLnNvcnQoa2V5PWxhbWJkYSBtOiBtLmF0dHJpYnV0ZXNbJ2dyb3VwJ10pDQoNCnByaW50IChsaXN0KG0uYXR0cmlidXRlc1snZ3JvdXAnXSBmb3IgbSBpbiBtb2RlbHMpKQ0KDQoNCg==</item>
+                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQoNCnBhcmVudCA9IG9zLnBhdGguZGlybmFtZShnaF9kaXIpICAgICAgICAgICAgICAjIGdvIHVwIG9uZSBsZXZlbA0Kc3JjX2RpciA9IG9zLnBhdGguam9pbihwYXJlbnQsICJzcmMiKSAgICAgICAgICMgZ28gaW50byBzcmMgZm9sZGVyDQppZiBzcmNfZGlyIG5vdCBpbiBzeXMucGF0aDoNCiAgICBzeXMucGF0aC5pbnNlcnQoMCwgc3JjX2RpcikNCg0KcHJpbnQgKGdoX2RpcikNCnByaW50IChwYXJlbnQpDQpwcmludCAoc3JjX2RpcikNCg0KDQojIyMjIyMjLS0tLS0tLS0tSW1wb3J0cy0tLS0tLS0tLS0tLSMjIyMjIyMjIyMNCmltcG9ydCB0aW1iZXJfY29uZmlnDQppbXBvcnRsaWIucmVsb2FkKHRpbWJlcl9jb25maWcpDQoNCmltcG9ydCB0aW1iZXJfbW9kZWwNCmltcG9ydGxpYi5yZWxvYWQodGltYmVyX21vZGVsKQ0KZnJvbSB0aW1iZXJfbW9kZWwgaW1wb3J0IGdyYXBoX3RvX3RpbWJlcl9tb2RlbHMNCg0KDQojIyMjIyMjIy0tLS0tLS0tLS1NYWluIENvZGUtLS0tLS0tLS0tLV8jIyMjIyMjIyMjIw0KbW9kZWxzID0gZ3JhcGhfdG9fdGltYmVyX21vZGVscyhncmFwaCwgYWxpZ25fc2hvZT1GYWxzZSkNCg0KcHJpbnQgKGxpc3QobS5hdHRyaWJ1dGVzWydncm91cCddIGZvciBtIGluIG1vZGVscykpDQoNCg0KbW9kZWxzLnNvcnQoa2V5PWxhbWJkYSBtOiBtLmF0dHJpYnV0ZXNbJ2dyb3VwJ10pDQoNCnByaW50IChsaXN0KG0uYXR0cmlidXRlc1snZ3JvdXAnXSBmb3IgbSBpbiBtb2RlbHMpKQ0KDQoNCg==</item>
                         <item name="Title" type_name="gh_string" type_code="10">Py3</item>
                       </items>
                       <chunks count="1">
@@ -308,10 +308,10 @@
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>404</X>
-                          <Y>31</Y>
+                          <X>221</X>
+                          <Y>0</Y>
                           <W>685</W>
-                          <H>849</H>
+                          <H>872</H>
                         </item>
                       </items>
                     </chunk>
@@ -650,10 +650,10 @@
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>419</X>
+                          <X>185</X>
                           <Y>0</Y>
                           <W>725</W>
-                          <H>972</H>
+                          <H>872</H>
                         </item>
                       </items>
                     </chunk>
@@ -831,7 +831,7 @@
                     <item name="Hidden" type_name="gh_bool" type_code="1">true</item>
                     <item name="IconDisplay" type_name="gh_int32" type_code="3">2</item>
                     <item name="IconOverride" type_name="gh_drawing_bitmap" type_code="37">
-                      <bitmap length="1330">iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAABIAAAAAQAAAEgAAAABAAKgAgAEAAAAAQAAABigAwAEAAAAAQAAABgAAAAAkQahUgAAAAlwSFlzAAALEwAACxMBAJqcGAAABF9JREFUSA21VV9o21UU/tKmWbMmXdukNWup7dqlottodWSd7MGXTUFY7V4qghVBEaXiS30SFMQxtzg3RJiMgS36oKIPlS1MFJWlm6BD17SjkIV0HR1JtEvXLWlqkrY/z3d/ubFp7KMHvpz79/vuOefeXywAKgQ0awGV4tfDIv1VAf1aoU2fL/TXj8lQqZGUAvQk3SKwFfpsayGSaJCYglnBSsGLU8Y1JbaReKvM2gU73I2er+7MJ5yNTe35Bnd9Mjx97QcZHxdcFeQEFFgWGAItLs1SowBPWi1wCijwps1WPfjQwz58dO4UojdCVdPXf/XksvnBm9Hrgw5nneFwODPO2vpwJDw5IOsZhU6XNFV09MqYV7fAIdglp/4ynU45jgwMwbf/kFqwkPwLrW1d2NnVrfqTE5fx8am3MRO+wv4ewWIBjIqpI4pWjKCi0nqhvsGD908H0OHdg3RqEdFICI/s3odEfBahPy5hMvQ7AoExuHa+ApgCVcKka0gBpqvEKMAobGurK+g5dA7ffPszMouf4F5yBj2PHUDPXqDT242j7w5jLpGHs7kfNvsDmoSE3K+9Hi96LcBFqHV3K7Adn70EQ/rB34I46e83alqeszR5O5BOTnFamybX/TLP8MrC0qts1XVwtfVhi7PLYq/t0MPrRXh7uF+juEY3GAFNiSQTIbg8ZjHNYfP35uQoQJTbhJxwSVS2l0+ZIxQguXogzro2lRpOUYymBT9VPXmRcqGt8lIuy64zcn9k4zsyRR5ybMxIVk/wLoMp2d7+BJvK2NZCHNDk9GfiasmY/H4t4IvnjdIHVjWVfpaKZXdXxoqmI1hPXikRvNGslvTLLx8byflg+RXgYyVqBEqRp+cdRnDsJRVBw3/UgWmhCMnpn6oXVqH4MIKTstViGMYt8ccE7QJGAosYG3zmFDh6N/FL30LsindxIWaXWTS2+IopUzmXtPDkJKfI0xSRsx4P4YPR0VE8+/wLCCX+RujPZSznWRLzkTAsfkHpGaZsVSHvE/9Mc2u3LzYX0rfkvIwdHvYKeZspQqFj14BAFHg9MIeMELu3WvHyXhe6XNUqAlVg2cjbxEj4lWTRfhIEhdwihZqQ87wnfRZ0XNLi58kPi9B3MZO8d8iPZIbJAHY31cDbwLOauWKRSc6YKEYBpo4XQHmZ6JQ2bwbxhYBp8U+lTfJHXz0Bz4EjcnrzO5dbJZ1pJKFpckZA8DtPoYwgJbhfaHNsTQo6OzIyotIy8NZpuPb3YSm3UkTrtiqM3+K2UqPYRjACXkF6XjspK5pFIJLKrhjDF2eNeCpn3LizbLx2fsboPTulPOcOjkyrMLhRG6PYzJgabiDYbv8xeg8XI3cVhno9OPHkg/h8Yh6+Fgc+Ex9LMVjzxKqxyQ9FCTO5//5HWy+EFyAnVTgevI3Hz07Cbq1AS60N80t5OYVZB12DTfhLhlWRJT2tHI2nc7gvAhqp3CoOdm6Df/y28t+/uKtk8//W+QdK3p1cQ9VeLQAAAABJRU5ErkJggg==</bitmap>
+                      <bitmap length="1325">iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAABIAAAAAQAAAEgAAAABAAKgAgAEAAAAAQAAABigAwAEAAAAAQAAABgAAAAAkQahUgAAAAlwSFlzAAALEwAACxMBAJqcGAAABFpJREFUSA21VG9I3HUcfk7dec6/eXo6xRTdGTRNS5zWBsHYCgLNvTGCiEHRH4ze+CIIFkRruGsrIliMIKVeFNQLw8kiqDZdNQY1T6Fhorkm07adU+/Uef759Tzf3/2Ou9182Qee+3z/fT7P59/vXADSCElGDOnUiXBxv0lIb8XW0uuxfeIZj5JFTkUgLaeZhDu219ohkhMHcizCNWIjpqmM6E2SyLnjeCfXuUQBUe8rKbtCPV7sqw42NO0/z/VR4gBRSOTHIBsFJD/KMEXkPJvIIvIIEbzldnsC9Y37M3s+HoT/oUf4xpWzHFlqWLhzsy0nt+DVouKSI3WNrQdm/pns53tlo0wsQiTScdFBEZFD7GHUXy8tLeYc7uxCc+sh82g+dBMVlbXYXdtg9qMjF/HJh0cxNf6L9vXEQgxRapEJcVHtVWtPWnrG2fwCH94/NYBqfz0i4QVMTgTxcN1ezM1OI/jHBYwGf8fgYD+8u19h8QzBDto6PRRBUvTcm+YqC/fW5gYaD32Gb7/7GSsLn2IxNIXGx/ahsQmo8Tfg2LvduD63jtyyDrizSmQrSSzLfXugDHRhLvOKGiBIZqcvwOJ66PIQTgY6rOzy510+fzUioTFzH/uRXUrUiQ+U3rYP3J4CeCvbkZlb68rKq47bJZBoLGXvIP7GWSgDiSEJzQXhLbUzsI/t379H+wAhVUYY4TJZdqVe2ScikHPzgeQWVJrS6EpkEofwc7Nj0zwEh/oirU5zfmj4Dq/kRz7urciac6E5hkqyq+pJLY1o7RDpwHEufXrWPNF38A2h70kT5QTsNHxNjCmzy7O4OBkkOk9nBm+WmScd/O0k5Fzjrg9WX7egD9gwKnrNMIb6XzIZFN6nDyqLSORc+ukH6JUuTk3gJE1dlmVdoz5OVBHKBC6KFvrzEsGxu+Gr7Vcv/eafvz2TxVsUlzfHS2ZqzrIocjkXyTMiYaw9QXzQ19eH5154EcG5uwj+u4rVdbXEnn+lpT8saaVJU5PyXupnq2qeaJ6e/NWZkgGetXX76bzSJhHR8SvA4CTwxuB1rNBx0c4MvNzkRa3XYzIwDaahpkmZ6G9YTfuJGKJzFxs1wnje414NHWZZAoq8jUTf37Cdt3QFEFpRMYA6Xzb8hYrVrpWaLOfKSWQiUOk0AEbzooZrTYbwFaGyBMYitvNHXzuB0n2HGb39PxfdlDtb5ETiOFcGwiohohUiTCzF1jrbYkOne3t7TVk63/4I3tZ2LEc34qjI34HhazJLFpHdC2WgEZTW2LGtKCPBRHhtw+o+N23NhqPWX7dXrdcHpqyWM2NG6+5g758mDRk6oiy2E5VGBoLWVT9OLuLcxB2DrpZSnHjqQXw5cgvN5Tn4gvpGWMnaEZvFNj8iFezi2s3XAGScHZ8HIzXoGZrB42dGkZWRhvI8N24trzMKuw9OD7bxn3RsmszyVOh0NhLFEgkchKObOFiTj8DwjNE/HNmTZPy/bf4Dlb+M2gEJXU4AAAAASUVORK5CYII=</bitmap>
                     </item>
                     <item name="InstanceGuid" type_name="gh_guid" type_code="9">9f7d9024-cb71-47c8-89ff-58454bfca448</item>
                     <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
@@ -1034,7 +1034,7 @@
                     <item name="GraftStandardOutputLines" type_name="gh_bool" type_code="1">true</item>
                     <item name="IconDisplay" type_name="gh_int32" type_code="3">2</item>
                     <item name="IconOverride" type_name="gh_drawing_bitmap" type_code="37">
-                      <bitmap length="1330">iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAABIAAAAAQAAAEgAAAABAAKgAgAEAAAAAQAAABigAwAEAAAAAQAAABgAAAAAkQahUgAAAAlwSFlzAAALEwAACxMBAJqcGAAABF9JREFUSA21VV9o21UU/tKmWbMmXdukNWup7dqlottodWSd7MGXTUFY7V4qghVBEaXiS30SFMQxtzg3RJiMgS36oKIPlS1MFJWlm6BD17SjkIV0HR1JtEvXLWlqkrY/z3d/ubFp7KMHvpz79/vuOefeXywAKgQ0awGV4tfDIv1VAf1aoU2fL/TXj8lQqZGUAvQk3SKwFfpsayGSaJCYglnBSsGLU8Y1JbaReKvM2gU73I2er+7MJ5yNTe35Bnd9Mjx97QcZHxdcFeQEFFgWGAItLs1SowBPWi1wCijwps1WPfjQwz58dO4UojdCVdPXf/XksvnBm9Hrgw5nneFwODPO2vpwJDw5IOsZhU6XNFV09MqYV7fAIdglp/4ynU45jgwMwbf/kFqwkPwLrW1d2NnVrfqTE5fx8am3MRO+wv4ewWIBjIqpI4pWjKCi0nqhvsGD908H0OHdg3RqEdFICI/s3odEfBahPy5hMvQ7AoExuHa+ApgCVcKka0gBpqvEKMAobGurK+g5dA7ffPszMouf4F5yBj2PHUDPXqDT242j7w5jLpGHs7kfNvsDmoSE3K+9Hi96LcBFqHV3K7Adn70EQ/rB34I46e83alqeszR5O5BOTnFamybX/TLP8MrC0qts1XVwtfVhi7PLYq/t0MPrRXh7uF+juEY3GAFNiSQTIbg8ZjHNYfP35uQoQJTbhJxwSVS2l0+ZIxQguXogzro2lRpOUYymBT9VPXmRcqGt8lIuy64zcn9k4zsyRR5ybMxIVk/wLoMp2d7+BJvK2NZCHNDk9GfiasmY/H4t4IvnjdIHVjWVfpaKZXdXxoqmI1hPXikRvNGslvTLLx8byflg+RXgYyVqBEqRp+cdRnDsJRVBw3/UgWmhCMnpn6oXVqH4MIKTstViGMYt8ccE7QJGAosYG3zmFDh6N/FL30LsindxIWaXWTS2+IopUzmXtPDkJKfI0xSRsx4P4YPR0VE8+/wLCCX+RujPZSznWRLzkTAsfkHpGaZsVSHvE/9Mc2u3LzYX0rfkvIwdHvYKeZspQqFj14BAFHg9MIeMELu3WvHyXhe6XNUqAlVg2cjbxEj4lWTRfhIEhdwihZqQ87wnfRZ0XNLi58kPi9B3MZO8d8iPZIbJAHY31cDbwLOauWKRSc6YKEYBpo4XQHmZ6JQ2bwbxhYBp8U+lTfJHXz0Bz4EjcnrzO5dbJZ1pJKFpckZA8DtPoYwgJbhfaHNsTQo6OzIyotIy8NZpuPb3YSm3UkTrtiqM3+K2UqPYRjACXkF6XjspK5pFIJLKrhjDF2eNeCpn3LizbLx2fsboPTulPOcOjkyrMLhRG6PYzJgabiDYbv8xeg8XI3cVhno9OPHkg/h8Yh6+Fgc+Ex9LMVjzxKqxyQ9FCTO5//5HWy+EFyAnVTgevI3Hz07Cbq1AS60N80t5OYVZB12DTfhLhlWRJT2tHI2nc7gvAhqp3CoOdm6Df/y28t+/uKtk8//W+QdK3p1cQ9VeLQAAAABJRU5ErkJggg==</bitmap>
+                      <bitmap length="1325">iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAABIAAAAAQAAAEgAAAABAAKgAgAEAAAAAQAAABigAwAEAAAAAQAAABgAAAAAkQahUgAAAAlwSFlzAAALEwAACxMBAJqcGAAABFpJREFUSA21VG9I3HUcfk7dec6/eXo6xRTdGTRNS5zWBsHYCgLNvTGCiEHRH4ze+CIIFkRruGsrIliMIKVeFNQLw8kiqDZdNQY1T6Fhorkm07adU+/Uef759Tzf3/2Ou9182Qee+3z/fT7P59/vXADSCElGDOnUiXBxv0lIb8XW0uuxfeIZj5JFTkUgLaeZhDu219ohkhMHcizCNWIjpqmM6E2SyLnjeCfXuUQBUe8rKbtCPV7sqw42NO0/z/VR4gBRSOTHIBsFJD/KMEXkPJvIIvIIEbzldnsC9Y37M3s+HoT/oUf4xpWzHFlqWLhzsy0nt+DVouKSI3WNrQdm/pns53tlo0wsQiTScdFBEZFD7GHUXy8tLeYc7uxCc+sh82g+dBMVlbXYXdtg9qMjF/HJh0cxNf6L9vXEQgxRapEJcVHtVWtPWnrG2fwCH94/NYBqfz0i4QVMTgTxcN1ezM1OI/jHBYwGf8fgYD+8u19h8QzBDto6PRRBUvTcm+YqC/fW5gYaD32Gb7/7GSsLn2IxNIXGx/ahsQmo8Tfg2LvduD63jtyyDrizSmQrSSzLfXugDHRhLvOKGiBIZqcvwOJ66PIQTgY6rOzy510+fzUioTFzH/uRXUrUiQ+U3rYP3J4CeCvbkZlb68rKq47bJZBoLGXvIP7GWSgDiSEJzQXhLbUzsI/t379H+wAhVUYY4TJZdqVe2ScikHPzgeQWVJrS6EpkEofwc7Nj0zwEh/oirU5zfmj4Dq/kRz7urciac6E5hkqyq+pJLY1o7RDpwHEufXrWPNF38A2h70kT5QTsNHxNjCmzy7O4OBkkOk9nBm+WmScd/O0k5Fzjrg9WX7egD9gwKnrNMIb6XzIZFN6nDyqLSORc+ukH6JUuTk3gJE1dlmVdoz5OVBHKBC6KFvrzEsGxu+Gr7Vcv/eafvz2TxVsUlzfHS2ZqzrIocjkXyTMiYaw9QXzQ19eH5154EcG5uwj+u4rVdbXEnn+lpT8saaVJU5PyXupnq2qeaJ6e/NWZkgGetXX76bzSJhHR8SvA4CTwxuB1rNBx0c4MvNzkRa3XYzIwDaahpkmZ6G9YTfuJGKJzFxs1wnje414NHWZZAoq8jUTf37Cdt3QFEFpRMYA6Xzb8hYrVrpWaLOfKSWQiUOk0AEbzooZrTYbwFaGyBMYitvNHXzuB0n2HGb39PxfdlDtb5ETiOFcGwiohohUiTCzF1jrbYkOne3t7TVk63/4I3tZ2LEc34qjI34HhazJLFpHdC2WgEZTW2LGtKCPBRHhtw+o+N23NhqPWX7dXrdcHpqyWM2NG6+5g758mDRk6oiy2E5VGBoLWVT9OLuLcxB2DrpZSnHjqQXw5cgvN5Tn4gvpGWMnaEZvFNj8iFezi2s3XAGScHZ8HIzXoGZrB42dGkZWRhvI8N24trzMKuw9OD7bxn3RsmszyVOh0NhLFEgkchKObOFiTj8DwjNE/HNmTZPy/bf4Dlb+M2gEJXU4AAAAASUVORK5CYII=</bitmap>
                     </item>
                     <item name="InstanceGuid" type_name="gh_guid" type_code="9">b0dfc224-d222-43fc-a39c-298d0a549b7f</item>
                     <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
@@ -1200,13 +1200,13 @@
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>968</X>
+                          <X>930</X>
                           <Y>424</Y>
                           <W>111</W>
                           <H>44</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>1022</X>
+                          <X>984</X>
                           <Y>446</Y>
                         </item>
                       </items>
@@ -1241,13 +1241,13 @@
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>970</X>
+                                  <X>932</X>
                                   <Y>426</Y>
                                   <W>37</W>
                                   <H>40</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>990</X>
+                                  <X>952</X>
                                   <Y>446</Y>
                                 </item>
                               </items>
@@ -1273,13 +1273,13 @@
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>1037</X>
+                                  <X>999</X>
                                   <Y>426</Y>
                                   <W>40</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>1057</X>
+                                  <X>1019</X>
                                   <Y>436</Y>
                                 </item>
                               </items>
@@ -1305,13 +1305,13 @@
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>1037</X>
+                                  <X>999</X>
                                   <Y>446</Y>
                                   <W>40</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>1057</X>
+                                  <X>1019</X>
                                   <Y>456</Y>
                                 </item>
                               </items>
@@ -1331,7 +1331,7 @@
                         <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQppZiBnaF9kaXIgbm90IGluIHN5cy5wYXRoOg0KICAgIHN5cy5wYXRoLmluc2VydCgwLCBnaF9kaXIpDQoNCmltcG9ydCB0aW1iZXJfY29uZmlnDQppbXBvcnRsaWIucmVsb2FkKHRpbWJlcl9jb25maWcpDQoNCmltcG9ydCB0aW1iZXJfbW9kZWwNCmltcG9ydGxpYi5yZWxvYWQodGltYmVyX21vZGVsKQ0KZnJvbSB0aW1iZXJfbW9kZWwgaW1wb3J0IGFwcGx5X2pvaW50cw0KDQpmcm9tIGNvcHkgaW1wb3J0IGRlZXBjb3B5DQoNCm1vZGVscyA9IGRlZXBjb3B5KG1vZGVscykNCg0KDQojDQpmb3IgbW9kZWwgaW4gbW9kZWxzOg0KICAgIGFwcGx5X2pvaW50cyhtb2RlbCwgZGVidWc9VHJ1ZSk=</item>
+                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQoNCnBhcmVudCA9IG9zLnBhdGguZGlybmFtZShnaF9kaXIpICAgICAgICAgICAgICAjIGdvIHVwIG9uZSBsZXZlbA0Kc3JjX2RpciA9IG9zLnBhdGguam9pbihwYXJlbnQsICJzcmMiKSAgICAgICAgICMgZ28gaW50byBzcmMgZm9sZGVyDQppZiBzcmNfZGlyIG5vdCBpbiBzeXMucGF0aDoNCiAgICBzeXMucGF0aC5pbnNlcnQoMCwgc3JjX2RpcikNCg0KDQppbXBvcnQgdGltYmVyX2NvbmZpZw0KaW1wb3J0bGliLnJlbG9hZCh0aW1iZXJfY29uZmlnKQ0KDQppbXBvcnQgdGltYmVyX21vZGVsDQppbXBvcnRsaWIucmVsb2FkKHRpbWJlcl9tb2RlbCkNCmZyb20gdGltYmVyX21vZGVsIGltcG9ydCBhcHBseV9qb2ludHMNCg0KZnJvbSBjb3B5IGltcG9ydCBkZWVwY29weQ0KDQptb2RlbHMgPSBkZWVwY29weShtb2RlbHMpDQoNCg0KIw0KZm9yIG1vZGVsIGluIG1vZGVsczoNCiAgICBhcHBseV9qb2ludHMobW9kZWwsIGRlYnVnPVRydWUp</item>
                         <item name="Title" type_name="gh_string" type_code="10">Py3</item>
                       </items>
                       <chunks count="1">
@@ -1346,10 +1346,10 @@
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>152</X>
+                          <X>394</X>
                           <Y>0</Y>
                           <W>648</W>
-                          <H>898</H>
+                          <H>872</H>
                         </item>
                       </items>
                     </chunk>
@@ -1888,7 +1888,7 @@
                         <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="Text" type_name="gh_string" type_code="10">ZnJvbSBjb21wYXMuZGF0YSBpbXBvcnQganNvbl9sb2FkDQoNCmltcG9ydCBvcywgc3lzLCBpbXBvcnRsaWINCg0KZ2hfZGlyID0gb3MucGF0aC5kaXJuYW1lKGdoZW52LkNvbXBvbmVudC5PblBpbmdEb2N1bWVudCgpLkZpbGVQYXRoKQ0KZ2hfcGFyID0gb3MucGF0aC5kaXJuYW1lKGdoX2RpcikNCmZpbGVfcGF0aCA9IG9zLnBhdGguam9pbihnaF9wYXIsICJsaW5lX21vZGVsIiwiZGF0YSIsICIyNjA1MTNfdjZfc2hpZnRlZF9saW5lcy5qc29uIikNCg0KcHJpbnQoZmlsZV9wYXRoKQ0KDQpsaW5lX21vZGVsID0ganNvbl9sb2FkKGZpbGVfcGF0aCk=</item>
+                        <item name="Text" type_name="gh_string" type_code="10">ZnJvbSBjb21wYXMuZGF0YSBpbXBvcnQganNvbl9sb2FkDQoNCmltcG9ydCBvcywgc3lzLCBpbXBvcnRsaWINCg0KZ2hfZGlyID0gb3MucGF0aC5kaXJuYW1lKGdoZW52LkNvbXBvbmVudC5PblBpbmdEb2N1bWVudCgpLkZpbGVQYXRoKQ0KZ2hfcGFyID0gb3MucGF0aC5kaXJuYW1lKGdoX2RpcikNCmZpbGVfcGF0aCA9IG9zLnBhdGguam9pbihnaF9wYXIsICJsaW5lX21vZGVsIiwgImRhdGEiLCAiMjYwNTEzX3Y2X3NoaWZ0ZWRfbGluZXMuanNvbiIpDQoNCnByaW50KGZpbGVfcGF0aCkNCg0KbGluZV9tb2RlbCA9IGpzb25fbG9hZChmaWxlX3BhdGgp</item>
                         <item name="Title" type_name="gh_string" type_code="10">Py3</item>
                       </items>
                       <chunks count="1">
@@ -1903,10 +1903,10 @@
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>239</X>
+                          <X>638</X>
                           <Y>0</Y>
                           <W>802</W>
-                          <H>981</H>
+                          <H>872</H>
                         </item>
                       </items>
                     </chunk>
@@ -1915,195 +1915,6 @@
               </chunks>
             </chunk>
             <chunk name="Object" index="15">
-              <items count="2">
-                <item name="GUID" type_name="gh_guid" type_code="9">719467e6-7cf5-4848-99b0-c5dd57e5442c</item>
-                <item name="Name" type_name="gh_string" type_code="10">Python 3 Script</item>
-              </items>
-              <chunks count="1">
-                <chunk name="Container">
-                  <items count="16">
-                    <item name="Description" type_name="gh_string" type_code="10"></item>
-                    <item name="GraftStandardOutputLines" type_name="gh_bool" type_code="1">true</item>
-                    <item name="Hidden" type_name="gh_bool" type_code="1">true</item>
-                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">f369c5ad-b2af-4682-b1b7-f3fbe87e27c2</item>
-                    <item name="Locked" type_name="gh_bool" type_code="1">true</item>
-                    <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
-                    <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
-                    <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                    <item name="Name" type_name="gh_string" type_code="10">Python 3 Script</item>
-                    <item name="NickName" type_name="gh_string" type_code="10">Py3</item>
-                    <item name="ScriptComponentVersion" type_name="gh_int32" type_code="3">3</item>
-                    <item name="Tooltip" type_name="gh_string" type_code="10"></item>
-                    <item name="UsingLibraryInputParam" type_name="gh_bool" type_code="1">false</item>
-                    <item name="UsingScriptInputParam" type_name="gh_bool" type_code="1">false</item>
-                    <item name="UsingScriptOutputParam" type_name="gh_bool" type_code="1">false</item>
-                    <item name="UsingStandardOutputParam" type_name="gh_bool" type_code="1">true</item>
-                  </items>
-                  <chunks count="4">
-                    <chunk name="Attributes">
-                      <items count="2">
-                        <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>918</X>
-                          <Y>606</Y>
-                          <W>111</W>
-                          <H>44</H>
-                        </item>
-                        <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>972</X>
-                          <Y>628</Y>
-                        </item>
-                      </items>
-                    </chunk>
-                    <chunk name="ParameterData">
-                      <items count="5">
-                        <item name="InputCount" type_name="gh_int32" type_code="3">1</item>
-                        <item name="InputId" index="0" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
-                        <item name="OutputCount" type_name="gh_int32" type_code="3">2</item>
-                        <item name="OutputId" index="0" type_name="gh_guid" type_code="9">3ede854e-c753-40eb-84cb-b48008f14fd4</item>
-                        <item name="OutputId" index="1" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
-                      </items>
-                      <chunks count="3">
-                        <chunk name="InputParam" index="0">
-                          <items count="15">
-                            <item name="Access" type_name="gh_int32" type_code="3">1</item>
-                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
-                            <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
-                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">1e635770-a114-4853-8f1e-d5d882a7eacc</item>
-                            <item name="Locked" type_name="gh_bool" type_code="1">true</item>
-                            <item name="Name" type_name="gh_string" type_code="10">models</item>
-                            <item name="NickName" type_name="gh_string" type_code="10">models</item>
-                            <item name="Optional" type_name="gh_bool" type_code="1">true</item>
-                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">1</item>
-                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
-                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
-                            <item name="Source" index="0" type_name="gh_guid" type_code="9">73bca0e3-21bf-4899-b8d9-572e16663439</item>
-                            <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
-                            <item name="ToolTip" type_name="gh_string" type_code="10"></item>
-                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
-                          </items>
-                          <chunks count="2">
-                            <chunk name="Attributes">
-                              <items count="2">
-                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>920</X>
-                                  <Y>608</Y>
-                                  <W>37</W>
-                                  <H>40</H>
-                                </item>
-                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>940</X>
-                                  <Y>628</Y>
-                                </item>
-                              </items>
-                            </chunk>
-                            <chunk name="ConverterData">
-                              <items count="2">
-                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
-                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
-                              </items>
-                            </chunk>
-                          </chunks>
-                        </chunk>
-                        <chunk name="OutputParam" index="0">
-                          <items count="7">
-                            <item name="Description" type_name="gh_string" type_code="10">Standard output and error contents collected during script run</item>
-                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">b5a935b2-c20e-4eb2-91c7-e279845bd94e</item>
-                            <item name="Locked" type_name="gh_bool" type_code="1">true</item>
-                            <item name="Name" type_name="gh_string" type_code="10">out</item>
-                            <item name="NickName" type_name="gh_string" type_code="10">out</item>
-                            <item name="Optional" type_name="gh_bool" type_code="1">false</item>
-                            <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
-                          </items>
-                          <chunks count="1">
-                            <chunk name="Attributes">
-                              <items count="2">
-                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>987</X>
-                                  <Y>608</Y>
-                                  <W>40</W>
-                                  <H>20</H>
-                                </item>
-                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>1007</X>
-                                  <Y>618</Y>
-                                </item>
-                              </items>
-                            </chunk>
-                          </chunks>
-                        </chunk>
-                        <chunk name="OutputParam" index="1">
-                          <items count="13">
-                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
-                            <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
-                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">d9eb36ba-771a-482d-a37f-6cfa530da8e2</item>
-                            <item name="Locked" type_name="gh_bool" type_code="1">true</item>
-                            <item name="Name" type_name="gh_string" type_code="10">models</item>
-                            <item name="NickName" type_name="gh_string" type_code="10">models</item>
-                            <item name="Optional" type_name="gh_bool" type_code="1">false</item>
-                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
-                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
-                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
-                            <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
-                            <item name="ToolTip" type_name="gh_string" type_code="10"></item>
-                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
-                          </items>
-                          <chunks count="2">
-                            <chunk name="Attributes">
-                              <items count="2">
-                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>987</X>
-                                  <Y>628</Y>
-                                  <W>40</W>
-                                  <H>20</H>
-                                </item>
-                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>1007</X>
-                                  <Y>638</Y>
-                                </item>
-                              </items>
-                            </chunk>
-                            <chunk name="ConverterData">
-                              <items count="2">
-                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
-                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
-                              </items>
-                            </chunk>
-                          </chunks>
-                        </chunk>
-                      </chunks>
-                    </chunk>
-                    <chunk name="Script">
-                      <items count="5">
-                        <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
-                        <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQppZiBnaF9kaXIgbm90IGluIHN5cy5wYXRoOg0KICAgIHN5cy5wYXRoLmluc2VydCgwLCBnaF9kaXIpDQoNCmltcG9ydCB0aW1iZXJfbW9kZWwNCmltcG9ydGxpYi5yZWxvYWQodGltYmVyX21vZGVsKQ0KZnJvbSB0aW1iZXJfbW9kZWwgaW1wb3J0IGFwcGx5X2pvaW50cw0KZnJvbSBjb3B5IGltcG9ydCBkZWVwY29weQ0KDQpmcm9tIGNvbXBhc190aW1iZXIubW9kZWwgaW1wb3J0IFRpbWJlck1vZGVsDQpmcm9tIGNvbXBhcy50b2xlcmFuY2UgaW1wb3J0IFRvbGVyYW5jZQ0KDQptb2RlbHMgPSBkZWVwY29weShtb2RlbHMpDQojDQpubSA9IFRpbWJlck1vZGVsKFRvbGVyYW5jZSh1bml0PSJNIiwgYWJzb2x1dGU9MC4wMDEpKQ0KZm9yIG1vZGVsIGluIG1vZGVsczoNCiAgICBubS5hZGRfZWxlbWVudHMobW9kZWwucGxhdGVzKQ0KDQpubS5jb25uZWN0X2FkamFjZW50X3BsYXRlcygpDQoNCmZvciBjYW5kIGluIG5tLmpvaW50X2NhbmRpZGF0ZXM6DQogICAgcHJpbnQgKGNhbmQpDQoNCg==</item>
-                        <item name="Title" type_name="gh_string" type_code="10">Py3</item>
-                      </items>
-                      <chunks count="1">
-                        <chunk name="LanguageSpec">
-                          <items count="2">
-                            <item name="Taxon" type_name="gh_string" type_code="10">*.*.python</item>
-                            <item name="Version" type_name="gh_string" type_code="10">3.*</item>
-                          </items>
-                        </chunk>
-                      </chunks>
-                    </chunk>
-                    <chunk name="ScriptEditor">
-                      <items count="1">
-                        <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>298</X>
-                          <Y>164</Y>
-                          <W>685</W>
-                          <H>799</H>
-                        </item>
-                      </items>
-                    </chunk>
-                  </chunks>
-                </chunk>
-              </chunks>
-            </chunk>
-            <chunk name="Object" index="16">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">719467e6-7cf5-4848-99b0-c5dd57e5442c</item>
                 <item name="Name" type_name="gh_string" type_code="10">Python 3 Script</item>
@@ -2131,13 +1942,13 @@
                     <chunk name="Attributes">
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>1285</X>
+                          <X>1281</X>
                           <Y>444</Y>
                           <W>115</W>
                           <H>44</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>1343</X>
+                          <X>1339</X>
                           <Y>466</Y>
                         </item>
                       </items>
@@ -2173,13 +1984,13 @@
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>1287</X>
+                                  <X>1283</X>
                                   <Y>446</Y>
                                   <W>41</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>1309</X>
+                                  <X>1305</X>
                                   <Y>456</Y>
                                 </item>
                               </items>
@@ -2212,13 +2023,13 @@
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>1287</X>
+                                  <X>1283</X>
                                   <Y>466</Y>
                                   <W>41</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>1309</X>
+                                  <X>1305</X>
                                   <Y>476</Y>
                                 </item>
                               </items>
@@ -2244,13 +2055,13 @@
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>1358</X>
+                                  <X>1354</X>
                                   <Y>446</Y>
                                   <W>40</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>1378</X>
+                                  <X>1374</X>
                                   <Y>456</Y>
                                 </item>
                               </items>
@@ -2276,13 +2087,13 @@
                             <chunk name="Attributes">
                               <items count="2">
                                 <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>1358</X>
+                                  <X>1354</X>
                                   <Y>466</Y>
                                   <W>40</W>
                                   <H>20</H>
                                 </item>
                                 <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>1378</X>
+                                  <X>1374</X>
                                   <Y>476</Y>
                                 </item>
                               </items>
@@ -2302,7 +2113,7 @@
                         <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQppZiBnaF9kaXIgbm90IGluIHN5cy5wYXRoOg0KICAgIHN5cy5wYXRoLmluc2VydCgwLCBnaF9kaXIpDQoNCmltcG9ydCB0aW1iZXJfY29uZmlnDQppbXBvcnRsaWIucmVsb2FkKHRpbWJlcl9jb25maWcpDQoNCmltcG9ydCB0aW1iZXJfbW9kZWwNCmltcG9ydGxpYi5yZWxvYWQodGltYmVyX21vZGVsKQ0KZnJvbSB0aW1iZXJfbW9kZWwgaW1wb3J0IGFwcGx5X3Byb2Nlc3NpbmdzDQoNCmZyb20gY29weSBpbXBvcnQgZGVlcGNvcHkNCg0KbW9kZWxzID0gZGVlcGNvcHkobW9kZWxzKQ0KDQoNCiMNCmlmIHByb2Nlc3M6DQogICAgZm9yIG1vZGVsIGluIG1vZGVsczoNCiAgICAgICAgbW9kZWwucHJvY2Vzc19qb2luZXJ5KCkNCiAgICAgICAgbW9kZWwgPSBhcHBseV9wcm9jZXNzaW5ncyhtb2RlbCk=</item>
+                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQoNCnBhcmVudCA9IG9zLnBhdGguZGlybmFtZShnaF9kaXIpICAgICAgICAgICAgICAjIGdvIHVwIG9uZSBsZXZlbA0Kc3JjX2RpciA9IG9zLnBhdGguam9pbihwYXJlbnQsICJzcmMiKSAgICAgICAgICMgZ28gaW50byBzcmMgZm9sZGVyDQppZiBzcmNfZGlyIG5vdCBpbiBzeXMucGF0aDoNCiAgICBzeXMucGF0aC5pbnNlcnQoMCwgc3JjX2RpcikNCg0KcHJpbnQgKGdoX2RpcikNCnByaW50IChwYXJlbnQpDQpwcmludCAoc3JjX2RpcikNCg0KaW1wb3J0IHRpbWJlcl9jb25maWcNCmltcG9ydGxpYi5yZWxvYWQodGltYmVyX2NvbmZpZykNCg0KaW1wb3J0IHRpbWJlcl9tb2RlbA0KaW1wb3J0bGliLnJlbG9hZCh0aW1iZXJfbW9kZWwpDQpmcm9tIHRpbWJlcl9tb2RlbCBpbXBvcnQgYXBwbHlfcHJvY2Vzc2luZ3MNCg0KZnJvbSBjb3B5IGltcG9ydCBkZWVwY29weQ0KDQptb2RlbHMgPSBkZWVwY29weShtb2RlbHMpDQoNCg0KIw0KaWYgcHJvY2VzczoNCiAgICBmb3IgbW9kZWwgaW4gbW9kZWxzOg0KICAgICAgICBhcHBseV9wcm9jZXNzaW5ncyhtb2RlbCk=</item>
                         <item name="Title" type_name="gh_string" type_code="10">Py3</item>
                       </items>
                       <chunks count="1">
@@ -2317,7 +2128,7 @@
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>268</X>
+                          <X>577</X>
                           <Y>0</Y>
                           <W>556</W>
                           <H>872</H>
@@ -2328,7 +2139,7 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="17">
+            <chunk name="Object" index="16">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">2e78987b-9dfb-42a2-8b76-3923ac8bd91a</item>
                 <item name="Name" type_name="gh_string" type_code="10">Boolean Toggle</item>
@@ -2342,14 +2153,14 @@
                     <item name="NickName" type_name="gh_string" type_code="10">Toggle</item>
                     <item name="Optional" type_name="gh_bool" type_code="1">false</item>
                     <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
-                    <item name="ToggleValue" type_name="gh_bool" type_code="1">true</item>
+                    <item name="ToggleValue" type_name="gh_bool" type_code="1">false</item>
                   </items>
                   <chunks count="1">
                     <chunk name="Attributes">
                       <items count="1">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>1127</X>
-                          <Y>509</Y>
+                          <X>1151</X>
+                          <Y>465</Y>
                           <W>99</W>
                           <H>22</H>
                         </item>
@@ -2359,7 +2170,7 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="18">
+            <chunk name="Object" index="17">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">c552a431-af5b-46a9-a8a4-0fcbc27ef596</item>
                 <item name="Name" type_name="gh_string" type_code="10">Group</item>
@@ -2386,7 +2197,7 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="19">
+            <chunk name="Object" index="18">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">7f5c6c55-f846-4a08-9c9a-cfdc285cc6fe</item>
                 <item name="Name" type_name="gh_string" type_code="10">Scribble</item>
@@ -2397,19 +2208,19 @@
                     <item name="Bold" type_name="gh_bool" type_code="1">false</item>
                     <item name="Ca" type_name="gh_drawing_pointf" type_code="31">
                       <X>1230.0399</X>
-                      <Y>391.44656</Y>
+                      <Y>384.21713</Y>
                     </item>
                     <item name="Cb" type_name="gh_drawing_pointf" type_code="31">
                       <X>1398.5946</X>
-                      <Y>391.44656</Y>
+                      <Y>384.21713</Y>
                     </item>
                     <item name="Cc" type_name="gh_drawing_pointf" type_code="31">
                       <X>1398.5946</X>
-                      <Y>414.5911</Y>
+                      <Y>407.36166</Y>
                     </item>
                     <item name="Cd" type_name="gh_drawing_pointf" type_code="31">
                       <X>1230.0399</X>
-                      <Y>414.5911</Y>
+                      <Y>407.36166</Y>
                     </item>
                     <item name="Description" type_name="gh_string" type_code="10">A quick note</item>
                     <item name="Font" type_name="gh_string" type_code="10">Microsoft Sans Serif</item>
@@ -2425,13 +2236,13 @@
                       <items count="2">
                         <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
                           <X>1225.0399</X>
-                          <Y>386.44656</Y>
+                          <Y>379.21713</Y>
                           <W>178.55469</W>
                           <H>33.14453</H>
                         </item>
                         <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
                           <X>1230.0399</X>
-                          <Y>391.44656</Y>
+                          <Y>384.21713</Y>
                         </item>
                       </items>
                     </chunk>
@@ -2439,197 +2250,7 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="20">
-              <items count="2">
-                <item name="GUID" type_name="gh_guid" type_code="9">719467e6-7cf5-4848-99b0-c5dd57e5442c</item>
-                <item name="Name" type_name="gh_string" type_code="10">Python 3 Script</item>
-              </items>
-              <chunks count="1">
-                <chunk name="Container">
-                  <items count="14">
-                    <item name="Description" type_name="gh_string" type_code="10"></item>
-                    <item name="GraftStandardOutputLines" type_name="gh_bool" type_code="1">true</item>
-                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">9c507d67-e4be-48e7-988d-105419e5d020</item>
-                    <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
-                    <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
-                    <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                    <item name="Name" type_name="gh_string" type_code="10">Python 3 Script</item>
-                    <item name="NickName" type_name="gh_string" type_code="10">Py3</item>
-                    <item name="ScriptComponentVersion" type_name="gh_int32" type_code="3">3</item>
-                    <item name="Tooltip" type_name="gh_string" type_code="10"></item>
-                    <item name="UsingLibraryInputParam" type_name="gh_bool" type_code="1">false</item>
-                    <item name="UsingScriptInputParam" type_name="gh_bool" type_code="1">false</item>
-                    <item name="UsingScriptOutputParam" type_name="gh_bool" type_code="1">false</item>
-                    <item name="UsingStandardOutputParam" type_name="gh_bool" type_code="1">false</item>
-                  </items>
-                  <chunks count="4">
-                    <chunk name="Attributes">
-                      <items count="2">
-                        <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>1676</X>
-                          <Y>464</Y>
-                          <W>68</W>
-                          <H>44</H>
-                        </item>
-                        <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                          <X>1730</X>
-                          <Y>486</Y>
-                        </item>
-                      </items>
-                    </chunk>
-                    <chunk name="ParameterData">
-                      <items count="4">
-                        <item name="InputCount" type_name="gh_int32" type_code="3">2</item>
-                        <item name="InputId" index="0" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
-                        <item name="InputId" index="1" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
-                        <item name="OutputCount" type_name="gh_int32" type_code="3">0</item>
-                      </items>
-                      <chunks count="2">
-                        <chunk name="InputParam" index="0">
-                          <items count="14">
-                            <item name="Access" type_name="gh_int32" type_code="3">1</item>
-                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
-                            <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
-                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">c8c4f2bb-ff1b-4628-8c28-44b8c673ef01</item>
-                            <item name="Name" type_name="gh_string" type_code="10">models</item>
-                            <item name="NickName" type_name="gh_string" type_code="10">models</item>
-                            <item name="Optional" type_name="gh_bool" type_code="1">true</item>
-                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">1</item>
-                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
-                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
-                            <item name="Source" index="0" type_name="gh_guid" type_code="9">9b5a1ebd-d455-49be-9976-3ae8d6f76dc1</item>
-                            <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
-                            <item name="ToolTip" type_name="gh_string" type_code="10"></item>
-                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
-                          </items>
-                          <chunks count="2">
-                            <chunk name="Attributes">
-                              <items count="2">
-                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>1678</X>
-                                  <Y>466</Y>
-                                  <W>37</W>
-                                  <H>20</H>
-                                </item>
-                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>1698</X>
-                                  <Y>476</Y>
-                                </item>
-                              </items>
-                            </chunk>
-                            <chunk name="ConverterData">
-                              <items count="2">
-                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
-                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
-                              </items>
-                            </chunk>
-                          </chunks>
-                        </chunk>
-                        <chunk name="InputParam" index="1">
-                          <items count="13">
-                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
-                            <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
-                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">06c30b7c-05f1-4ef0-933d-b68728c9f82d</item>
-                            <item name="Name" type_name="gh_string" type_code="10">save</item>
-                            <item name="NickName" type_name="gh_string" type_code="10">save</item>
-                            <item name="Optional" type_name="gh_bool" type_code="1">true</item>
-                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
-                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
-                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
-                            <item name="Source" index="0" type_name="gh_guid" type_code="9">2663f7bf-6563-426f-986c-3994a9a58d50</item>
-                            <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
-                            <item name="ToolTip" type_name="gh_string" type_code="10"></item>
-                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
-                          </items>
-                          <chunks count="2">
-                            <chunk name="Attributes">
-                              <items count="2">
-                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                                  <X>1678</X>
-                                  <Y>486</Y>
-                                  <W>37</W>
-                                  <H>20</H>
-                                </item>
-                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
-                                  <X>1698</X>
-                                  <Y>496</Y>
-                                </item>
-                              </items>
-                            </chunk>
-                            <chunk name="ConverterData">
-                              <items count="2">
-                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
-                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
-                              </items>
-                            </chunk>
-                          </chunks>
-                        </chunk>
-                      </chunks>
-                    </chunk>
-                    <chunk name="Script">
-                      <items count="5">
-                        <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
-                        <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KZnJvbSBjb21wYXMuZGF0YSBpbXBvcnQganNvbl9kdW1wDQoNCmdoX2RpciA9IG9zLnBhdGguZGlybmFtZShnaGVudi5Db21wb25lbnQuT25QaW5nRG9jdW1lbnQoKS5GaWxlUGF0aCkNCmdoX3BhciA9IG9zLnBhdGguZGlybmFtZShnaF9kaXIpDQpmaWxlX3BhdGggPSBvcy5wYXRoLmpvaW4oZ2hfcGFyLCAidGltYmVyX2Rlc2lnbiIsImRhdGEiKQ0KDQppZiBzYXZlOg0KICAgIGZvciBpLCBtIGluIGVudW1lcmF0ZShtb2RlbHMpOg0KICAgICAgICAiIiJTZXJpYWxpemUgbW9kZWxzIHRvIC5KU09OIiIiDQogICAgICAgIG91dHB1dF9wYXRoID0gb3MucGF0aC5qb2luKGZpbGVfcGF0aCwgZiIyNjA2MTRfdjJfdGltYmVyX21vZGVsX3tpfS5qc29uIikNCiAgICAgICAgbS50b19qc29uKG91dHB1dF9wYXRoLCBwcmV0dHk9VHJ1ZSkNCiAgICAgICAgcHJpbnQoZiJNb2RlbCB3cml0dGVuIHRvIHtvdXRwdXRfcGF0aH0iKQ==</item>
-                        <item name="Title" type_name="gh_string" type_code="10">Py3</item>
-                      </items>
-                      <chunks count="1">
-                        <chunk name="LanguageSpec">
-                          <items count="2">
-                            <item name="Taxon" type_name="gh_string" type_code="10">*.*.python</item>
-                            <item name="Version" type_name="gh_string" type_code="10">3.*</item>
-                          </items>
-                        </chunk>
-                      </chunks>
-                    </chunk>
-                    <chunk name="ScriptEditor">
-                      <items count="1">
-                        <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>412</X>
-                          <Y>0</Y>
-                          <W>1028</W>
-                          <H>872</H>
-                        </item>
-                      </items>
-                    </chunk>
-                  </chunks>
-                </chunk>
-              </chunks>
-            </chunk>
-            <chunk name="Object" index="21">
-              <items count="2">
-                <item name="GUID" type_name="gh_guid" type_code="9">a8b97322-2d53-47cd-905e-b932c3ccd74e</item>
-                <item name="Name" type_name="gh_string" type_code="10">Button</item>
-              </items>
-              <chunks count="1">
-                <chunk name="Container">
-                  <items count="8">
-                    <item name="Description" type_name="gh_string" type_code="10">Button object with two values</item>
-                    <item name="ExpressionNormal" type_name="gh_string" type_code="10">False</item>
-                    <item name="ExpressionPressed" type_name="gh_string" type_code="10">True</item>
-                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">2663f7bf-6563-426f-986c-3994a9a58d50</item>
-                    <item name="Name" type_name="gh_string" type_code="10">Button</item>
-                    <item name="NickName" type_name="gh_string" type_code="10">Button</item>
-                    <item name="Optional" type_name="gh_bool" type_code="1">false</item>
-                    <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
-                  </items>
-                  <chunks count="1">
-                    <chunk name="Attributes">
-                      <items count="1">
-                        <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
-                          <X>1534</X>
-                          <Y>485</Y>
-                          <W>99</W>
-                          <H>22</H>
-                        </item>
-                      </items>
-                    </chunk>
-                  </chunks>
-                </chunk>
-              </chunks>
-            </chunk>
-            <chunk name="Object" index="22">
+            <chunk name="Object" index="19">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">57da07bd-ecab-415d-9d86-af36d7073abc</item>
                 <item name="Name" type_name="gh_string" type_code="10">Number Slider</item>
@@ -2667,14 +2288,14 @@
                         <item name="Max" type_name="gh_double" type_code="6">255</item>
                         <item name="Min" type_name="gh_double" type_code="6">0</item>
                         <item name="SnapCount" type_name="gh_int32" type_code="3">0</item>
-                        <item name="Value" type_name="gh_double" type_code="6">118</item>
+                        <item name="Value" type_name="gh_double" type_code="6">154</item>
                       </items>
                     </chunk>
                   </chunks>
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="23">
+            <chunk name="Object" index="20">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">ac750e41-2450-4f98-9658-98fef97b01b2</item>
                 <item name="Name" type_name="gh_string" type_code="10">Brep Wireframe</item>
@@ -2807,7 +2428,7 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="24">
+            <chunk name="Object" index="21">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">9c53bac0-ba66-40bd-8154-ce9829b9db1a</item>
                 <item name="Name" type_name="gh_string" type_code="10">Colour Swatch</item>
@@ -2844,7 +2465,7 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="25">
+            <chunk name="Object" index="22">
               <items count="3">
                 <item name="GUID" type_name="gh_guid" type_code="9">a77d0879-94c2-4101-be44-e4a616ffeb0c</item>
                 <item name="Lib" type_name="gh_guid" type_code="9">5f86fa9f-c62b-50e8-157b-b454ef3e00fa</item>
@@ -3035,18 +2656,19 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="26">
+            <chunk name="Object" index="23">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">719467e6-7cf5-4848-99b0-c5dd57e5442c</item>
                 <item name="Name" type_name="gh_string" type_code="10">Python 3 Script</item>
               </items>
               <chunks count="1">
                 <chunk name="Container">
-                  <items count="15">
+                  <items count="16">
                     <item name="Description" type_name="gh_string" type_code="10"></item>
                     <item name="GraftStandardOutputLines" type_name="gh_bool" type_code="1">true</item>
                     <item name="Hidden" type_name="gh_bool" type_code="1">true</item>
                     <item name="InstanceGuid" type_name="gh_guid" type_code="9">9333eeff-80ff-4c9d-aa0d-0ef99c6487a3</item>
+                    <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                     <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                     <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
                     <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
@@ -3087,11 +2709,12 @@
                       </items>
                       <chunks count="6">
                         <chunk name="InputParam" index="0">
-                          <items count="14">
+                          <items count="15">
                             <item name="Access" type_name="gh_int32" type_code="3">1</item>
                             <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
                             <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
                             <item name="InstanceGuid" type_name="gh_guid" type_code="9">f4f7a84f-592d-4932-905b-e16be74bb881</item>
+                            <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                             <item name="Name" type_name="gh_string" type_code="10">models</item>
                             <item name="NickName" type_name="gh_string" type_code="10">models</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">true</item>
@@ -3127,9 +2750,10 @@
                           </chunks>
                         </chunk>
                         <chunk name="OutputParam" index="0">
-                          <items count="6">
+                          <items count="7">
                             <item name="Description" type_name="gh_string" type_code="10">Standard output and error contents collected during script run</item>
                             <item name="InstanceGuid" type_name="gh_guid" type_code="9">ab284b66-f69d-4950-89a5-aaa5f79b0fb4</item>
+                            <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                             <item name="Name" type_name="gh_string" type_code="10">out</item>
                             <item name="NickName" type_name="gh_string" type_code="10">out</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3153,10 +2777,11 @@
                           </chunks>
                         </chunk>
                         <chunk name="OutputParam" index="1">
-                          <items count="12">
+                          <items count="13">
                             <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
                             <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
                             <item name="InstanceGuid" type_name="gh_guid" type_code="9">0e145fe8-7bfe-47f1-8d90-e8a77a18dd18</item>
+                            <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                             <item name="Name" type_name="gh_string" type_code="10">models</item>
                             <item name="NickName" type_name="gh_string" type_code="10">models</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3191,10 +2816,11 @@
                           </chunks>
                         </chunk>
                         <chunk name="OutputParam" index="2">
-                          <items count="12">
+                          <items count="13">
                             <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
                             <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
                             <item name="InstanceGuid" type_name="gh_guid" type_code="9">52782fe8-832c-483b-9ef2-987b021abee5</item>
+                            <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                             <item name="Name" type_name="gh_string" type_code="10">geo_tree</item>
                             <item name="NickName" type_name="gh_string" type_code="10">geo_tree</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3229,10 +2855,11 @@
                           </chunks>
                         </chunk>
                         <chunk name="OutputParam" index="3">
-                          <items count="12">
+                          <items count="13">
                             <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
                             <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
                             <item name="InstanceGuid" type_name="gh_guid" type_code="9">5c0f2869-c59e-4725-acf7-0b9bcc068dfd</item>
+                            <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                             <item name="Name" type_name="gh_string" type_code="10">rh_pln_tree</item>
                             <item name="NickName" type_name="gh_string" type_code="10">rh_pln_tree</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3267,10 +2894,11 @@
                           </chunks>
                         </chunk>
                         <chunk name="OutputParam" index="4">
-                          <items count="12">
+                          <items count="13">
                             <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
                             <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
                             <item name="InstanceGuid" type_name="gh_guid" type_code="9">0e803117-595c-4b2c-9b0f-fd26e107d79a</item>
+                            <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                             <item name="Name" type_name="gh_string" type_code="10">flipped_geo_tree</item>
                             <item name="NickName" type_name="gh_string" type_code="10">flipped_geo_tree</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3311,7 +2939,7 @@
                         <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
                         <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
-                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQppZiBnaF9kaXIgbm90IGluIHN5cy5wYXRoOg0KICAgIHN5cy5wYXRoLmluc2VydCgwLCBnaF9kaXIpDQoNCmltcG9ydCB0aW1iZXJfY29uZmlnDQppbXBvcnRsaWIucmVsb2FkKHRpbWJlcl9jb25maWcpDQoNCmltcG9ydCB0aW1iZXJfbW9kZWwNCmltcG9ydGxpYi5yZWxvYWQodGltYmVyX21vZGVsKQ0KZnJvbSB0aW1iZXJfbW9kZWwgaW1wb3J0IGFwcGx5X2pvaW50cw0KDQoNCmZyb20gR3Jhc3Nob3BwZXIgaW1wb3J0IERhdGFUcmVlDQpmcm9tIEdyYXNzaG9wcGVyLktlcm5lbC5EYXRhIGltcG9ydCBHSF9QYXRoDQpmcm9tIGNvbXBhc19yaGluby5jb252ZXJzaW9ucyBpbXBvcnQgZnJhbWVfdG9fcmhpbm9fcGxhbmUNCg0KZnJvbSBjb21wYXMuZ2VvbWV0cnkgaW1wb3J0IFRyYW5zZm9ybWF0aW9uLCBGcmFtZQ0KDQojDQpnZW9fdHJlZSA9IERhdGFUcmVlW29iamVjdF0oKQ0KcmhfcGxuX3RyZWUgPSBEYXRhVHJlZVtvYmplY3RdKCkNCmZsaXBwZWRfZ2VvX3RyZWUgPSBEYXRhVHJlZVtvYmplY3RdKCkNCg0KIyBSb2JvdCBzdGF0aW9uIGxvY2F0aW9uDQp0b19mcmFtZSA9IEZyYW1lLndvcmxkWFkoKQ0KDQpmb3IgbW9kZWwgaW4gbW9kZWxzOg0KICAgIGcgPSBtb2RlbC5hdHRyaWJ1dGVzWydncm91cCddDQogICAgcGF0aCA9IEdIX1BhdGgoZykNCiAgICANCiAgICAjIEdldCBPTkUgY2x0IHBsYXRlIGZvciBlYWNoIG1vZHVsZQ0KICAgIHBsYXRlID0gbW9kZWwuYXR0cmlidXRlc1snY2x0X3BsYXRlJ10NCg0KICAgICMgR2V0IHNwZWNpYWwgZnJhbWUgZm9yIG5lc3RpbmcNCiAgICBmcm9tX2ZyYW1lID0gcGxhdGUuYXR0cmlidXRlc1snbmVnYXRpdmVfZnJhbWUnXQ0KICAgIE8gPSBUcmFuc2Zvcm1hdGlvbi5mcm9tX2ZyYW1lX3RvX2ZyYW1lKGZyb21fZnJhbWUsIHRvX2ZyYW1lKQ0KICAgIA0KICAgIHJoX3Bsbl90cmVlLkFkZChmcmFtZV90b19yaGlub19wbGFuZShmcm9tX2ZyYW1lKSwgcGF0aCkNCg0KICAgIGdlbyA9IHBsYXRlLmdlb21ldHJ5DQogICAgZ2VvX3RyZWUuQWRkKGdlbywgcGF0aCkNCg0KICAgIGZsaXBwZWRfZ2VvX3RyZWUuQWRkKGdlby50cmFuc2Zvcm1lZChPKSwgcGF0aCkNCg0KICAgIGZvciBiZWFtIGluIG1vZGVsLmJlYW1zOg0KICAgICAgICBnZW8gPSBiZWFtLmdlb21ldHJ5DQogICAgICAgIGdlb190cmVlLkFkZChnZW8sIHBhdGgpDQoNCiAgICAgICAgZmxpcHBlZF9nZW9fdHJlZS5BZGQoZ2VvLnRyYW5zZm9ybWVkKE8pLCBwYXRoKQ==</item>
+                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQoNCnBhcmVudCA9IG9zLnBhdGguZGlybmFtZShnaF9kaXIpICAgICAgICAgICAgICAjIGdvIHVwIG9uZSBsZXZlbA0Kc3JjX2RpciA9IG9zLnBhdGguam9pbihwYXJlbnQsICJzcmMiKSAgICAgICAgICMgZ28gaW50byBzcmMgZm9sZGVyDQppZiBzcmNfZGlyIG5vdCBpbiBzeXMucGF0aDoNCiAgICBzeXMucGF0aC5pbnNlcnQoMCwgc3JjX2RpcikNCg0KcHJpbnQgKGdoX2RpcikNCnByaW50IChwYXJlbnQpDQpwcmludCAoc3JjX2RpcikNCg0KaW1wb3J0IHRpbWJlcl9jb25maWcNCmltcG9ydGxpYi5yZWxvYWQodGltYmVyX2NvbmZpZykNCg0KaW1wb3J0IHRpbWJlcl9tb2RlbA0KaW1wb3J0bGliLnJlbG9hZCh0aW1iZXJfbW9kZWwpDQpmcm9tIHRpbWJlcl9tb2RlbCBpbXBvcnQgYXBwbHlfam9pbnRzDQoNCg0KZnJvbSBHcmFzc2hvcHBlciBpbXBvcnQgRGF0YVRyZWUNCmZyb20gR3Jhc3Nob3BwZXIuS2VybmVsLkRhdGEgaW1wb3J0IEdIX1BhdGgNCmZyb20gY29tcGFzX3JoaW5vLmNvbnZlcnNpb25zIGltcG9ydCBmcmFtZV90b19yaGlub19wbGFuZQ0KDQpmcm9tIGNvbXBhcy5nZW9tZXRyeSBpbXBvcnQgVHJhbnNmb3JtYXRpb24sIEZyYW1lDQoNCiMNCmdlb190cmVlID0gRGF0YVRyZWVbb2JqZWN0XSgpDQpyaF9wbG5fdHJlZSA9IERhdGFUcmVlW29iamVjdF0oKQ0KZmxpcHBlZF9nZW9fdHJlZSA9IERhdGFUcmVlW29iamVjdF0oKQ0KDQojIFJvYm90IHN0YXRpb24gbG9jYXRpb24NCnRvX2ZyYW1lID0gRnJhbWUud29ybGRYWSgpDQoNCmZvciBtb2RlbCBpbiBtb2RlbHM6DQogICAgZyA9IG1vZGVsLmF0dHJpYnV0ZXNbJ2dyb3VwJ10NCiAgICBwYXRoID0gR0hfUGF0aChnKQ0KICAgIA0KICAgICMgR2V0IE9ORSBjbHQgcGxhdGUgZm9yIGVhY2ggbW9kdWxlDQogICAgcGxhdGUgPSBtb2RlbC5hdHRyaWJ1dGVzWydjbHRfcGxhdGUnXQ0KDQogICAgIyBHZXQgc3BlY2lhbCBmcmFtZSBmb3IgbmVzdGluZw0KICAgIGZyb21fZnJhbWUgPSBwbGF0ZS5hdHRyaWJ1dGVzWyduZWdhdGl2ZV9mcmFtZSddDQogICAgTyA9IFRyYW5zZm9ybWF0aW9uLmZyb21fZnJhbWVfdG9fZnJhbWUoZnJvbV9mcmFtZSwgdG9fZnJhbWUpDQogICAgDQogICAgcmhfcGxuX3RyZWUuQWRkKGZyYW1lX3RvX3JoaW5vX3BsYW5lKGZyb21fZnJhbWUpLCBwYXRoKQ0KDQogICAgZ2VvID0gcGxhdGUuZ2VvbWV0cnkNCiAgICBnZW9fdHJlZS5BZGQoZ2VvLCBwYXRoKQ0KDQogICAgZmxpcHBlZF9nZW9fdHJlZS5BZGQoZ2VvLnRyYW5zZm9ybWVkKE8pLCBwYXRoKQ0KDQogICAgZm9yIGJlYW0gaW4gbW9kZWwuYmVhbXM6DQogICAgICAgIGdlbyA9IGJlYW0uZ2VvbWV0cnkNCiAgICAgICAgZ2VvX3RyZWUuQWRkKGdlbywgcGF0aCkNCg0KICAgICAgICBmbGlwcGVkX2dlb190cmVlLkFkZChnZW8udHJhbnNmb3JtZWQoTyksIHBhdGgp</item>
                         <item name="Title" type_name="gh_string" type_code="10">Py3</item>
                       </items>
                       <chunks count="1">
@@ -3326,7 +2954,7 @@
                     <chunk name="ScriptEditor">
                       <items count="1">
                         <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
-                          <X>469</X>
+                          <X>452</X>
                           <Y>0</Y>
                           <W>648</W>
                           <H>872</H>
@@ -3337,21 +2965,22 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="27">
+            <chunk name="Object" index="24">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">c9b2d725-6f87-4b07-af90-bd9aefef68eb</item>
                 <item name="Name" type_name="gh_string" type_code="10">COMPAS: Draw</item>
               </items>
               <chunks count="1">
                 <chunk name="Container">
-                  <items count="16">
-                    <item name="Description" type_name="gh_string" type_code="10">Draws COMPAS geometry</item>
+                  <items count="17">
+                    <item name="Description" type_name="gh_string" type_code="10"></item>
                     <item name="GraftStandardOutputLines" type_name="gh_bool" type_code="1">true</item>
                     <item name="IconDisplay" type_name="gh_int32" type_code="3">2</item>
                     <item name="IconOverride" type_name="gh_drawing_bitmap" type_code="37">
-                      <bitmap length="1349">iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAABIAAAAAQAAAEgAAAABAAKgAgAEAAAAAQAAABigAwAEAAAAAQAAABgAAAAAkQahUgAAAAlwSFlzAAALEwAACxMBAJqcGAAABHJJREFUSA21VV1Mm1UYfkp/1g5aCkVkIANh5cJtgUkYMyTqBdPEZJPdkHhhYqIxOowXYowxwcTMLBuZ24XJdDGK0Qs1eoHZGvyJWwZblvlLYVnCSPkJBMhGR6FQRks5vs/5eggFufRNnr7n5zvPc973PefUBiBHQHNkYBe/ETbppwX0a5k2fSrT3zgmQ9lGUgrQk3SHwJXps22ESGJAYgquCFYzXpw2fpNlm4l3yqxH8Ki/oOi72Nys96HiR1JOlzM6NTn6q4z3Cf4QJAUUWBYogRGXZrYxbJ+ApF4BBd52udwvNhw6jONvnUXkThi3b93Ezes9GI3cQp7Xr9xuTyKVSg7Nx6Kt8n1csCgwKWN060aBIkGeYK/s+tsHD5bzjrW2gQK0+9G7KK+owZ6aWt0f6L+Gj892YGToOvv7BbEMGBXJswSYIubanWN3XJJ04J2Oz1EV3I/FeAyR4TAe23cQM9NjCP99FQPhvxAKdSOw51XAEnDKWlNDCjBdWUYBRuFaS6+i7vBn+OHHK0jEPsF8dAR1jzehrh6oDtbiww/aMTGTgre0BS7Pw4aEhFxvvBlf90aAH8FXVKvB9vTYVSjp9/7eizOdLSq37AVbcbAKi9FBThsz5Ka/xTO8LWGZr1xuPwIVR7HDW2Pz+KrM8EYRnh6uN1j/xjQYAU2LRGfCCJRYxbSGrd/RgS8BYqv1yw6XRGXX1ilrhAIk1xfE66/QqeEUxWhG8AvdkxvpFsihviarzsv5kYXvyxR5yLE5IytmgjcSTMmuyqfY1Ma2EeKAIac/P60/6Zbf7wW88TxRZsO6ptJfoeKWsytj62Yi2EhulwjeLNWftMgvLxvJedx5YXlZiVyBVuTueYbR2/2yjqDwP+rAtFCE5PTPFgirUHw0jDOy1KaUGhd/cjmNSo9d88ImRl4+ESzSCU+uP5xfuDthd7iV3elRJZVPqgNPd7BG6rjfOimycxWqh/q5Ceq3Zqh3a63xrq4ulUil1Y2JJfXpn7Pq3I27XKcvCcPiC0rPMGV/OuSD4p8vCFQ0zEXHzSm5KGNH2oPAcxVWJIzm5D9AKAK8EZpAIrWGop0OvFIfQE3AbWNRdIHFU5Gp4ivJol0W9Aq5TQrVL0fkhPRZ0D5JS6dTsnxEhH6assgb2zoRTfC9A/YV5yJYyL1aNWCRSc5jZt53CvMAaC8T1dJmPolvBDgVRuegvKHc+YHXTqOk6ZjsnlSyy7TOjm6ThGbIGQHBd56RJAR8jhcybY6tSUHHJOeavPW9cwgcOoql5Oo6yvOd6Bvnsmyj2GYwAnO+eezk7KBUBIbjK6uqvWdMTceT6s7ssnr94ohqvDCoPeeau27rMEhgjFFsZ0wNFxC2haSqvBKZR8/wnEZbYwlOP7MbX/ffQ0NZHr4SPxVnsNaOdWObH4oSVnIz/9E+l81xaeg+ZKcap3on8cSFAXgcOSjzuXBvKSXFsupgarANf9awLrKkp5yj04tJLIiAQTyZRnN1Pjr7JrX/5aW9WYv/t86/Bfmt1cJLRHAAAAAASUVORK5CYII=</bitmap>
+                      <bitmap length="1331">iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAABIAAAAAQAAAEgAAAABAAKgAgAEAAAAAQAAABigAwAEAAAAAQAAABgAAAAAkQahUgAAAAlwSFlzAAALEwAACxMBAJqcGAAABGBJREFUSA21VU1MnFUUPQPDlL+hyAClEApCh0RpA9pQarpw02piUqQbjIkYE41RMS7ElUlNjE1TsNaFSU1jFKILNbrAtKTGRk2hXahRGWgagUCnlnSm0qmUgUF+P89537wJA7L0Jmfu+z3n3Xvf+8YDIIOQeZPIpF8PD/urhPxasi2/nOyvH+NQuolUAvIi3Ub4kn21rZBILEQswUViJenpjGlNmm0kzuVsDnF/UaD0y7uxv/wlpbuW8/JzY+HJPy5yfJD4hVgiJLBAOIQVZzPdJKCTZhN+QgJv+HzZ7Q/UN+OV109jYiyUde3qT2Uej7f9+sTV9nx/oZObm5fIyMgcjUb+bON6RWHTxaaJTt6Y8lpM5BP1PPUXicR8/tG2DjQdOGwWMApUVtVhd12D6Q8PXcYHp49hcvSK+nuJmSQUlVInpCwVQUam93yguBxdxz5GTXAv5uIzmBgP4cE9+xGNhBH67RKGQ7+iv78Pgd0vAq5AFplsDSWgdKWZBBSFb211BY2HP8LX3/yIxMyHuBebROPDB9G4D6gNNuD42524GV2Gv7wVvpwdlkSE2m+9HU95K6BFKChuMFA7Er4Eh/2BnwdwqrvVyat42lMarMFcbETT1iy57W/yCm9TWHaVL7sQgaoWbPPXeXIKauzwehHdHu23SK2xDUUgMyKxaAiBMreY7rD7e324FxA22xBPOE+VnZun3BEJiNw8EH9hlUmNpiQms4KfmB5fJC+0ly/lMned4f3hxrc4JR5xbMzIop3QXYZSsrP6UTWNqW2FNGDJ5c9EzJI+/n5F6MXrRtkDm5qyvyjFTXeXYymzEawnz2QEr5WbJa381WMTuR6svgJ6rEIeYRR1et1hDPQ9byIo+o86KC0SEbn84/eRlRTvjeMUt3ocx7lBf4KZq+bxFQk8NDX0zCVwPBq+2HJnajA4OxPN4SxKKppSKTM5Z1p0cpFL5AmJ8KwnQ3i3t7cXTz3zLELRfxC6vYCFZZXEfSQKS19QeYXJrSbk/fRPluyoa5q+PWZvyTmOHekMkrzKFZHQid+B/gng1f6bSJC4ONeLF/YFUBfINhGYAnMjo0t9JVW0H4gBkntYqCGe5x32VdBBpqVbJz9CoW9vueTNHd2IJZQMYE9pHoJFOqubKxVZ5IpJYvoMK3W6AMZzopZt3Qzhc0Jp6R6Zc8kfeqkLZQeP8vTud25pVXSuiURmyVULQd95CSWIODGbbGtsjQUN9/T0mLS0vfk+AgdaML+0kkLl9iwM3tC2dJPYRigCXUF5XTuWFeUUGI8vrjidF8JOJL7kjN1ZcF4+N+k0nx0xXnOHeq6ZMLTRmqLYypQabRA8DLH6+4l7uDD+t0FHcxm6HtuFz4am0VSRj0/pb8UVrHti09jiR6KCm9zkfzSvnPf86F3wpAYnB6bwyNlh5HgzUFHgw/T8Movl1sHWYAv+tGFTZKanUqORuSXMUsAivrSKQ7Xb0T04Zfx3z9Wnbf7fOv8CaxacAgzJQ5oAAAAASUVORK5CYII=</bitmap>
                     </item>
                     <item name="InstanceGuid" type_name="gh_guid" type_code="9">4885b95a-14a0-4423-845b-8c29dd0266c7</item>
+                    <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                     <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                     <item name="MarshInputs" type_name="gh_bool" type_code="1">false</item>
                     <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
@@ -3388,10 +3017,11 @@
                       </items>
                       <chunks count="2">
                         <chunk name="InputParam" index="0">
-                          <items count="13">
+                          <items count="14">
                             <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
                             <item name="Description" type_name="gh_string" type_code="10">The COMPAS geometry or datastructure to be drawn.</item>
                             <item name="InstanceGuid" type_name="gh_guid" type_code="9">920a1f39-ccc8-439f-897a-7c86abf06831</item>
+                            <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                             <item name="Name" type_name="gh_string" type_code="10">cg</item>
                             <item name="NickName" type_name="gh_string" type_code="10">cg</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">true</item>
@@ -3427,10 +3057,11 @@
                           </chunks>
                         </chunk>
                         <chunk name="OutputParam" index="0">
-                          <items count="12">
+                          <items count="13">
                             <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
                             <item name="Description" type_name="gh_string" type_code="10">The Rhino geometry object.</item>
                             <item name="InstanceGuid" type_name="gh_guid" type_code="9">64578244-d6c8-46ba-a59d-676fd14b54b0</item>
+                            <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                             <item name="Name" type_name="gh_string" type_code="10">rg</item>
                             <item name="NickName" type_name="gh_string" type_code="10">rg</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3487,17 +3118,18 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="28">
+            <chunk name="Object" index="25">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">378d0690-9da0-4dd1-ab16-1d15246e7c22</item>
                 <item name="Name" type_name="gh_string" type_code="10">Orient</item>
               </items>
               <chunks count="1">
                 <chunk name="Container">
-                  <items count="5">
+                  <items count="6">
                     <item name="Description" type_name="gh_string" type_code="10">Orient an object. Orientation is sometimes called a 'ChangeBasis tranformation'. It allows for remapping of geometry from one axis-system to another.</item>
                     <item name="Hidden" type_name="gh_bool" type_code="1">true</item>
                     <item name="InstanceGuid" type_name="gh_guid" type_code="9">ec67d4ee-57ae-4458-9e78-8e7d45af3c6e</item>
+                    <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                     <item name="Name" type_name="gh_string" type_code="10">Orient</item>
                     <item name="NickName" type_name="gh_string" type_code="10">Orient</item>
                   </items>
@@ -3517,9 +3149,10 @@
                       </items>
                     </chunk>
                     <chunk name="param_input" index="0">
-                      <items count="7">
+                      <items count="8">
                         <item name="Description" type_name="gh_string" type_code="10">Base geometry</item>
                         <item name="InstanceGuid" type_name="gh_guid" type_code="9">0f5f2248-cd46-4945-bdae-9eb65601c21d</item>
+                        <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                         <item name="Name" type_name="gh_string" type_code="10">Geometry</item>
                         <item name="NickName" type_name="gh_string" type_code="10">G</item>
                         <item name="Optional" type_name="gh_bool" type_code="1">true</item>
@@ -3544,9 +3177,10 @@
                       </chunks>
                     </chunk>
                     <chunk name="param_input" index="1">
-                      <items count="7">
+                      <items count="8">
                         <item name="Description" type_name="gh_string" type_code="10">Initial plane</item>
                         <item name="InstanceGuid" type_name="gh_guid" type_code="9">3be0c7cb-bf56-42b9-bc73-520c2e4d8c7f</item>
+                        <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                         <item name="Name" type_name="gh_string" type_code="10">Source</item>
                         <item name="NickName" type_name="gh_string" type_code="10">A</item>
                         <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3601,9 +3235,10 @@
                       </chunks>
                     </chunk>
                     <chunk name="param_input" index="2">
-                      <items count="6">
+                      <items count="7">
                         <item name="Description" type_name="gh_string" type_code="10">Final plane</item>
                         <item name="InstanceGuid" type_name="gh_guid" type_code="9">d2bd3fa3-9ec2-4e56-ae4b-2bec4adf1b2e</item>
+                        <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                         <item name="Name" type_name="gh_string" type_code="10">Target</item>
                         <item name="NickName" type_name="gh_string" type_code="10">B</item>
                         <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3657,9 +3292,10 @@
                       </chunks>
                     </chunk>
                     <chunk name="param_output" index="0">
-                      <items count="6">
+                      <items count="7">
                         <item name="Description" type_name="gh_string" type_code="10">Reoriented geometry</item>
                         <item name="InstanceGuid" type_name="gh_guid" type_code="9">b6006739-d8c5-4236-8f4c-461b7bdd2097</item>
+                        <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                         <item name="Name" type_name="gh_string" type_code="10">Geometry</item>
                         <item name="NickName" type_name="gh_string" type_code="10">G</item>
                         <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3683,9 +3319,10 @@
                       </chunks>
                     </chunk>
                     <chunk name="param_output" index="1">
-                      <items count="6">
+                      <items count="7">
                         <item name="Description" type_name="gh_string" type_code="10">Transformation data</item>
                         <item name="InstanceGuid" type_name="gh_guid" type_code="9">4ce98fbb-8f7a-4d82-a95c-501cc6fbf2dc</item>
+                        <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                         <item name="Name" type_name="gh_string" type_code="10">Transform</item>
                         <item name="NickName" type_name="gh_string" type_code="10">X</item>
                         <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3712,22 +3349,23 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="29">
+            <chunk name="Object" index="26">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">c9b2d725-6f87-4b07-af90-bd9aefef68eb</item>
                 <item name="Name" type_name="gh_string" type_code="10">COMPAS: Draw</item>
               </items>
               <chunks count="1">
                 <chunk name="Container">
-                  <items count="17">
+                  <items count="18">
                     <item name="Description" type_name="gh_string" type_code="10"></item>
                     <item name="GraftStandardOutputLines" type_name="gh_bool" type_code="1">true</item>
                     <item name="Hidden" type_name="gh_bool" type_code="1">true</item>
                     <item name="IconDisplay" type_name="gh_int32" type_code="3">2</item>
                     <item name="IconOverride" type_name="gh_drawing_bitmap" type_code="37">
-                      <bitmap length="1349">iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAABIAAAAAQAAAEgAAAABAAKgAgAEAAAAAQAAABigAwAEAAAAAQAAABgAAAAAkQahUgAAAAlwSFlzAAALEwAACxMBAJqcGAAABHJJREFUSA21VV9M21UU/kpLaYGyjhZkEARh5cFtgUkYMyTqA9PEZJO9kPhgYqIxOowPYowxwcTMLFsztweT6WIUow9q9AGzEfyTuaxsWeZfCssShmUQlkEGZWyFElra6/nur7ehVB49yddz77m/e757/txbG4ACAcWRgV30RthknhJQpzNj6mRmvtEmplyhUxJQ02mRwJmZc2yI6MSAjkm4JljPaFFa+E2ObHZcLKtuwSPbyyu+vbc476morE263EXRmel/fhH7sOB3QUJAglWBEhhyGeYKwy4T0KlHQIK3nE7XC237D+DIm6cQuRnGjevXcO3KEG5FrqPU41Vud3E8nU6PRxfmuuX7mGBZYFLG6LJCAr+gVLBLTv3N6mq89HB3D0hAWYzeRW1dE3Y2Nev56MhlfHSqD5PjVzjfI1jKgFHReQ4BU8RcuwrsjvP+ihq83fcZGgJ7sBxbQmQijEd378Pc7BTCf13CaPhPDA4OwLfzFcAiKJS9poYkYLpyhASMwplOraPlwKf4/oeLiC99jPvRSbQ81oGWVqAx0IwP3u/FzFwSnuouON0PGSd0yP1GG3tWGwJ+hDJ/swbHs1OXoGQe+i2Ek8EuVVLzvK0y0IDl6BiXjRjnZp6nGV5eWOYrp8sLX90hFHmabO6yBmPeSMLu4X6D7DdmwAgomiQ6F4avyiqmZbZ+b41+ARD5MiInXBGWHflLloUEdK4viMdbp1PDJZJRDOHneiY30iWQpr4su85I/8jG92SJfuhjc0bWzAJvJJiSHfVPcqiFY0NEg3FOfWZWfzIgv98JeOPZUebAuqYyXyNjXu+KLSsmgo3O7RLBG9X6ky755WWjc7Y7LywvK1Ei0Iw8PXsYoYGXdATl/1EHpoUkdE79zHbxKi4+nMBJ2WpTSk2LPibXuV7YGAlsItR8IlikoyUef9jrq4vbHS5lL3Srqvon1N6n+lgjdcRrdYqcXA22Qv3UAXWhE+qdZsve39+v4smUujqzoj75Y0GdvnqX+/QlYVh8QakZppxPh7xP9HO+ioa26Pyk6ZJzYjvYGwCerbMiYTTH/gYGI8DrgzOIJ9PwFzvwcqsPTT6XjaHoAosmI1PFV5JF+1UQEuc2KdSItMhRmbOgw5KWYKFk+aAQ/XjHct7eE0Q0zvcO2F1ZgkA5z2rlikWmc7aZed9JzAbQWhYaZcx8El8LcDyM4Ji8oTz53ldPoKrjsJyeruSUKZ0dPaYTinHOCAi+84wkLuBz/CAzpi0tBZ2SnGvn3e+ehm//Iawk1rOo3VaI4WluyxWSbQYjYAtSs+2kd1AtBBOxtXXVOzSlZmMJdXNhVb12blK1nx3Tmmud/Td0GNxohFFsJUwNNxC2eBr1FyL3MTRxT6OnvQonnn4YX43Mo62mFF+KvhNjsNaJ9WCLH5ISVnIz/9HFBXCcH1+EnFTjeOg2Hj87CrejADVlTsyvJKVYVh1MDbbwn2PWRZb01NI6u5zAAyEwiCVS6GzchuDwba1/fnFXzub/bfIv4Hir1CJET70AAAAASUVORK5CYII=</bitmap>
+                      <bitmap length="1332">iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAABIAAAAAQAAAEgAAAABAAKgAgAEAAAAAQAAABigAwAEAAAAAQAAABgAAAAAkQahUgAAAAlwSFlzAAALEwAACxMBAJqcGAAABGFJREFUSA21VV1Mm1UYfgql0LVlSBm/wSKsxLAtoAswswtvNk1MhuwGYyLGRGNUjBfilYkmxmVhdU4Tk5nFKEQv1OgFZiMzGn9W8EKNSoGQQFMGDinIusH6g7SUz/c5X09DqVz6Jk/f8/s8533fc75aABQIaNYMCsXvhEX6aQH9dqZNn8r0d47JUK6RlAL0JC0W2DJ9trUQSTRITMFNwVbGi1PGNTm2m3ifzNoF97grqj6P3FxxHaj0pErLXJHQ7NS3Mj4q+FWQFFBgQ2AItLg0c40CPGmJwCWgwCs2W0nvvS0deOHlCwjNBoqmp36u3k6j93poqtfpKjMcDmeiuNg+8+dCsEfWMwqdLmmq6OiVMa8VAqfgkJz6s3g85jzd04f2YyfVgluRv1HvacbB5lbVnxgfw3sXXsPczE/sHxGsZcComDoia9kICgqtV8rdNRh490M0eo8gFl1DKBhAy+EOLIfnEfj9GiYCv2FkZBjug88CpkCRMOkaUoDpyjEKMArbdnoLbSc/wJdf/YDE2vtYj8yh7f7jaDsKNHlbceaNftxYTsFV2w2bvUqTkJD7tdfjWa8FuAilFa0KbIfnr8GQvv8XP877ug1H3eOWSm8jYpFJTmvT5Lqf5xleXlh6la2kDG5PF4pdzRZ7aaMe3inC28P9Gtk1usEIaEokshyAu9ospjls/l6fGAKIfBuXE8ZFpSZ/yhyhAMnVA3GVeVRqOEUxmhb8SPXkRcqFtspLGZNdF+X+yMbXZYo85NidkU09wbsMpqSm4UE2lbGthTigyekvhtWSYfn9QsAXzxulD6xqKv1NKubdXRnLmo5gJ3mhRPBSrVrSLb98bCTng+VXgI+VcAiUIk/POwz/8NMqgvL/qAPTQhGS0z98l7AKxdtBnJetFsMwFsSfFTQIGAksYmzwmVPgzOrij12Rv8a867fDdpnFgbr2bMpUziUtPDnJKfIIReSsAwG8NTQ0hMeeeBKB5X8QWNnARoolMR8Jw+IXlJ5hylYVcof4R6tqW9pXlqb1LbksY6f6vULuMUUodPYPYCQEvDhyAwkhrthnxTNH3Wh2l6gIVIFlI28TI+FXkkX7XuAXcosUalzO86b0WdBRSYuPJz8lQl8vmeSdfT5EEkwGcLjSAW85z2rmikUmOWOiGAWYOl4A5WWiSdq8GcSnAqbFNxkzye977hyqj5+W05vfuWSadKaRhKbJGQHB7zyFEoKo4E6mzbFtKej84OCgSkvPq+/AfawL8eRWFvX7izC6wG25RrHdYAS8gvS8dlJW1IpAMLq5ZfRfnTfC0aQxe3PDeP7ynNF5aVJ5zp0YnFZhcKM2RrGXMTXcQFhkYcN3oXVcDd5W6OusxrmH7sYn46tor3PiY/FLUQZrnlg19vihKGEmN/MfLWFar8zcgpxUYcC/iAcuTcBuLUBdqQ2r8ZQUy6yDrsEe/DnDqsiSnnqOhmNJ3BEBjWgyjRNN++EbXVT+m6cO5Wz+3zr/Ajt1nQZ6WRofAAAAAElFTkSuQmCC</bitmap>
                     </item>
                     <item name="InstanceGuid" type_name="gh_guid" type_code="9">bb21b606-fd63-428e-a5b5-af0501b7f9e6</item>
+                    <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                     <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
                     <item name="MarshInputs" type_name="gh_bool" type_code="1">false</item>
                     <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
@@ -3764,10 +3402,11 @@
                       </items>
                       <chunks count="2">
                         <chunk name="InputParam" index="0">
-                          <items count="13">
+                          <items count="14">
                             <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
                             <item name="Description" type_name="gh_string" type_code="10">The COMPAS geometry or datastructure to be drawn.</item>
                             <item name="InstanceGuid" type_name="gh_guid" type_code="9">f3525f6c-b193-4f43-96a0-064e110931c9</item>
+                            <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                             <item name="Name" type_name="gh_string" type_code="10">cg</item>
                             <item name="NickName" type_name="gh_string" type_code="10">cg</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">true</item>
@@ -3803,10 +3442,11 @@
                           </chunks>
                         </chunk>
                         <chunk name="OutputParam" index="0">
-                          <items count="12">
+                          <items count="13">
                             <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
                             <item name="Description" type_name="gh_string" type_code="10">The Rhino geometry object.</item>
                             <item name="InstanceGuid" type_name="gh_guid" type_code="9">e9ef400c-713f-4174-b6e7-c75a0b6f74f9</item>
+                            <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                             <item name="Name" type_name="gh_string" type_code="10">rg</item>
                             <item name="NickName" type_name="gh_string" type_code="10">rg</item>
                             <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3863,16 +3503,17 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="30">
+            <chunk name="Object" index="27">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">ac2bc2cb-70fb-4dd5-9c78-7e1ea97fe278</item>
                 <item name="Name" type_name="gh_string" type_code="10">Geometry</item>
               </items>
               <chunks count="1">
                 <chunk name="Container">
-                  <items count="7">
+                  <items count="8">
                     <item name="Description" type_name="gh_string" type_code="10">Contains a collection of generic geometry</item>
                     <item name="InstanceGuid" type_name="gh_guid" type_code="9">a5cc10e8-75be-4558-b20d-35508e4e4ee7</item>
+                    <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                     <item name="Name" type_name="gh_string" type_code="10">Geometry</item>
                     <item name="NickName" type_name="gh_string" type_code="10">Geo</item>
                     <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3898,16 +3539,17 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="31">
+            <chunk name="Object" index="28">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">ac2bc2cb-70fb-4dd5-9c78-7e1ea97fe278</item>
                 <item name="Name" type_name="gh_string" type_code="10">Geometry</item>
               </items>
               <chunks count="1">
                 <chunk name="Container">
-                  <items count="7">
+                  <items count="8">
                     <item name="Description" type_name="gh_string" type_code="10">Contains a collection of generic geometry</item>
                     <item name="InstanceGuid" type_name="gh_guid" type_code="9">b4159362-838d-454c-b3ec-8bb7a82881df</item>
+                    <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                     <item name="Name" type_name="gh_string" type_code="10">Geometry</item>
                     <item name="NickName" type_name="gh_string" type_code="10">Geo</item>
                     <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3933,17 +3575,18 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="32">
+            <chunk name="Object" index="29">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">4f8984c4-7c7a-4d69-b0a2-183cbb330d20</item>
                 <item name="Name" type_name="gh_string" type_code="10">Plane</item>
               </items>
               <chunks count="1">
                 <chunk name="Container">
-                  <items count="8">
+                  <items count="9">
                     <item name="Description" type_name="gh_string" type_code="10">Contains a collection of three-dimensional axis-systems</item>
                     <item name="Hidden" type_name="gh_bool" type_code="1">true</item>
                     <item name="InstanceGuid" type_name="gh_guid" type_code="9">b4531879-0df4-43c5-bb74-bde58434f6f9</item>
+                    <item name="Locked" type_name="gh_bool" type_code="1">true</item>
                     <item name="Name" type_name="gh_string" type_code="10">Plane</item>
                     <item name="NickName" type_name="gh_string" type_code="10">Pln</item>
                     <item name="Optional" type_name="gh_bool" type_code="1">false</item>
@@ -3969,7 +3612,7 @@
                 </chunk>
               </chunks>
             </chunk>
-            <chunk name="Object" index="33">
+            <chunk name="Object" index="30">
               <items count="2">
                 <item name="GUID" type_name="gh_guid" type_code="9">c552a431-af5b-46a9-a8a4-0fcbc27ef596</item>
                 <item name="Name" type_name="gh_string" type_code="10">Group</item>
@@ -4000,6 +3643,519 @@
                 </chunk>
               </chunks>
             </chunk>
+            <chunk name="Object" index="31">
+              <items count="2">
+                <item name="GUID" type_name="gh_guid" type_code="9">59e0b89a-e487-49f8-bab8-b5bab16be14c</item>
+                <item name="Name" type_name="gh_string" type_code="10">Panel</item>
+              </items>
+              <chunks count="1">
+                <chunk name="Container">
+                  <items count="9">
+                    <item name="Description" type_name="gh_string" type_code="10">A panel for custom notes and text values</item>
+                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">8d7b953f-1b3a-4e40-af7f-313436bdbc23</item>
+                    <item name="Name" type_name="gh_string" type_code="10">Panel</item>
+                    <item name="NickName" type_name="gh_string" type_code="10"></item>
+                    <item name="Optional" type_name="gh_bool" type_code="1">false</item>
+                    <item name="ScrollRatio" type_name="gh_double" type_code="6">0</item>
+                    <item name="Source" index="0" type_name="gh_guid" type_code="9">5afa6f4f-9e0b-4ce5-ae9f-57012be5b4c1</item>
+                    <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
+                    <item name="UserText" type_name="gh_string" type_code="10">Double click to edit panel content…</item>
+                  </items>
+                  <chunks count="2">
+                    <chunk name="Attributes">
+                      <items count="5">
+                        <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                          <X>699</X>
+                          <Y>513</Y>
+                          <W>398</W>
+                          <H>130</H>
+                        </item>
+                        <item name="MarginLeft" type_name="gh_int32" type_code="3">0</item>
+                        <item name="MarginRight" type_name="gh_int32" type_code="3">0</item>
+                        <item name="MarginTop" type_name="gh_int32" type_code="3">0</item>
+                        <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                          <X>699.1644</X>
+                          <Y>513.2897</Y>
+                        </item>
+                      </items>
+                    </chunk>
+                    <chunk name="PanelProperties">
+                      <items count="7">
+                        <item name="Colour" type_name="gh_drawing_color" type_code="36">
+                          <ARGB>255;255;250;90</ARGB>
+                        </item>
+                        <item name="DrawIndices" type_name="gh_bool" type_code="1">true</item>
+                        <item name="DrawPaths" type_name="gh_bool" type_code="1">true</item>
+                        <item name="Multiline" type_name="gh_bool" type_code="1">true</item>
+                        <item name="SpecialCodes" type_name="gh_bool" type_code="1">false</item>
+                        <item name="Stream" type_name="gh_bool" type_code="1">false</item>
+                        <item name="Wrap" type_name="gh_bool" type_code="1">true</item>
+                      </items>
+                    </chunk>
+                  </chunks>
+                </chunk>
+              </chunks>
+            </chunk>
+            <chunk name="Object" index="32">
+              <items count="2">
+                <item name="GUID" type_name="gh_guid" type_code="9">719467e6-7cf5-4848-99b0-c5dd57e5442c</item>
+                <item name="Name" type_name="gh_string" type_code="10">Python 3 Script</item>
+              </items>
+              <chunks count="1">
+                <chunk name="Container">
+                  <items count="14">
+                    <item name="Description" type_name="gh_string" type_code="10"></item>
+                    <item name="GraftStandardOutputLines" type_name="gh_bool" type_code="1">true</item>
+                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">28cc2125-7e4e-4447-a3fe-60358291fb4d</item>
+                    <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
+                    <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
+                    <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
+                    <item name="Name" type_name="gh_string" type_code="10">Python 3 Script</item>
+                    <item name="NickName" type_name="gh_string" type_code="10">Py3</item>
+                    <item name="ScriptComponentVersion" type_name="gh_int32" type_code="3">3</item>
+                    <item name="Tooltip" type_name="gh_string" type_code="10"></item>
+                    <item name="UsingLibraryInputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingScriptInputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingScriptOutputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingStandardOutputParam" type_name="gh_bool" type_code="1">false</item>
+                  </items>
+                  <chunks count="4">
+                    <chunk name="Attributes">
+                      <items count="2">
+                        <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                          <X>1658</X>
+                          <Y>464</Y>
+                          <W>68</W>
+                          <H>64</H>
+                        </item>
+                        <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                          <X>1712</X>
+                          <Y>496</Y>
+                        </item>
+                      </items>
+                    </chunk>
+                    <chunk name="ParameterData">
+                      <items count="5">
+                        <item name="InputCount" type_name="gh_int32" type_code="3">3</item>
+                        <item name="InputId" index="0" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                        <item name="InputId" index="1" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                        <item name="InputId" index="2" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                        <item name="OutputCount" type_name="gh_int32" type_code="3">0</item>
+                      </items>
+                      <chunks count="3">
+                        <chunk name="InputParam" index="0">
+                          <items count="14">
+                            <item name="Access" type_name="gh_int32" type_code="3">1</item>
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">8b81abbc-3b71-4979-aeba-0a426910f394</item>
+                            <item name="Name" type_name="gh_string" type_code="10">models</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">models</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">true</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">1</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Source" index="0" type_name="gh_guid" type_code="9">9b5a1ebd-d455-49be-9976-3ae8d6f76dc1</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10"></item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>1660</X>
+                                  <Y>466</Y>
+                                  <W>37</W>
+                                  <H>20</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>1680</X>
+                                  <Y>476</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                        <chunk name="InputParam" index="1">
+                          <items count="13">
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Description" type_name="gh_string" type_code="10">Converts to collection of integer numbers</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">fcd4d622-119b-47e2-a395-6f6cff02db3f</item>
+                            <item name="Name" type_name="gh_string" type_code="10">version</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">version</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">true</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Source" index="0" type_name="gh_guid" type_code="9">ea1995dc-5213-43c8-a706-eac6c085c4f0</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10"></item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">48d01794-d3d8-4aef-990e-127168822244</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>1660</X>
+                                  <Y>486</Y>
+                                  <W>37</W>
+                                  <H>20</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>1680</X>
+                                  <Y>496</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Int32</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                        <chunk name="InputParam" index="2">
+                          <items count="13">
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">ca66f732-9bd0-4ce2-87b1-4943f833c0bd</item>
+                            <item name="Name" type_name="gh_string" type_code="10">save</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">save</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">true</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Source" index="0" type_name="gh_guid" type_code="9">e326ebb1-da14-45bb-b5e3-3c4cc69c3a84</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10"></item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>1660</X>
+                                  <Y>506</Y>
+                                  <W>37</W>
+                                  <H>20</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>1680</X>
+                                  <Y>516</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                      </chunks>
+                    </chunk>
+                    <chunk name="Script">
+                      <items count="5">
+                        <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
+                        <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
+                        <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
+                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KZnJvbSBkYXRldGltZSBpbXBvcnQgZGF0ZQ0KDQpmcm9tIGNvbXBhcy5kYXRhIGltcG9ydCBqc29uX2R1bXANCg0KZ2hfZGlyID0gb3MucGF0aC5kaXJuYW1lKGdoZW52LkNvbXBvbmVudC5PblBpbmdEb2N1bWVudCgpLkZpbGVQYXRoKQ0KZ2hfcGFyID0gb3MucGF0aC5kaXJuYW1lKGdoX2RpcikNCmZpbGVfcGF0aCA9IG9zLnBhdGguam9pbihnaF9wYXIsICJ0aW1iZXJfZGVzaWduIiwgImRhdGEiKQ0KDQp0b2RheSA9IGRhdGUudG9kYXkoKS5zdHJmdGltZSgiJXklbSVkIikNCnByaW50KHRvZGF5KQ0KDQoNCg0KaWYgc2F2ZToNCiAgICBzZXJpYWxpemFibGUgPSBbXQ0KICAgIGZvciBtIGluIG1vZGVsczoNCiAgICAgICAgc2VyaWFsaXphYmxlLmFwcGVuZCh7DQogICAgICAgICAgICAiYXR0cmlidXRlcyI6IGRpY3QobS5hdHRyaWJ1dGVzKSwNCiAgICAgICAgICAgICJtb2RlbCI6IG0NCiAgICAgICAgfSkNCiAgICAgICAgDQogICAgb3V0cHV0X3BhdGggPSBvcy5wYXRoLmpvaW4oZmlsZV9wYXRoLCBmInt0b2RheX1fdnt2ZXJzaW9ufV90aW1iZXJfbW9kZWxzLmpzb24iKQ0KICAgIGR1bXAgPSBqc29uX2R1bXAoc2VyaWFsaXphYmxlLCBvdXRwdXRfcGF0aCwgcHJldHR5PVRydWUpDQogICAgcHJpbnQoZiJNb2RlbCB3cml0dGVuIHRvIHtvdXRwdXRfcGF0aH0iKQ0KDQoNCiMgc2VyaWFsaXphYmxlID0gW10NCiMgZm9yIG0gaW4gbW9kZWxzOg0KIyAgICAgc2VyaWFsaXphYmxlLmFwcGVuZCh7DQojICAgICAgICAgImF0dHJpYnV0ZXMiOiBkaWN0KG0uYXR0cmlidXRlcyksDQojICAgICAgICAgIm1vZGVsIjogbQ0KIyAgICAgfSkNCiMgcHJpbnQgKHNlcmlhbGl6YWJsZSk=</item>
+                        <item name="Title" type_name="gh_string" type_code="10">Py3</item>
+                      </items>
+                      <chunks count="1">
+                        <chunk name="LanguageSpec">
+                          <items count="2">
+                            <item name="Taxon" type_name="gh_string" type_code="10">*.*.python</item>
+                            <item name="Version" type_name="gh_string" type_code="10">3.*</item>
+                          </items>
+                        </chunk>
+                      </chunks>
+                    </chunk>
+                    <chunk name="ScriptEditor">
+                      <items count="1">
+                        <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
+                          <X>73</X>
+                          <Y>0</Y>
+                          <W>1028</W>
+                          <H>872</H>
+                        </item>
+                      </items>
+                    </chunk>
+                  </chunks>
+                </chunk>
+              </chunks>
+            </chunk>
+            <chunk name="Object" index="33">
+              <items count="2">
+                <item name="GUID" type_name="gh_guid" type_code="9">a8b97322-2d53-47cd-905e-b932c3ccd74e</item>
+                <item name="Name" type_name="gh_string" type_code="10">Button</item>
+              </items>
+              <chunks count="1">
+                <chunk name="Container">
+                  <items count="8">
+                    <item name="Description" type_name="gh_string" type_code="10">Button object with two values</item>
+                    <item name="ExpressionNormal" type_name="gh_string" type_code="10">False</item>
+                    <item name="ExpressionPressed" type_name="gh_string" type_code="10">True</item>
+                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">e326ebb1-da14-45bb-b5e3-3c4cc69c3a84</item>
+                    <item name="Name" type_name="gh_string" type_code="10">Button</item>
+                    <item name="NickName" type_name="gh_string" type_code="10">Button</item>
+                    <item name="Optional" type_name="gh_bool" type_code="1">false</item>
+                    <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
+                  </items>
+                  <chunks count="1">
+                    <chunk name="Attributes">
+                      <items count="1">
+                        <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                          <X>1534</X>
+                          <Y>542</Y>
+                          <W>99</W>
+                          <H>22</H>
+                        </item>
+                      </items>
+                    </chunk>
+                  </chunks>
+                </chunk>
+              </chunks>
+            </chunk>
+            <chunk name="Object" index="34">
+              <items count="2">
+                <item name="GUID" type_name="gh_guid" type_code="9">57da07bd-ecab-415d-9d86-af36d7073abc</item>
+                <item name="Name" type_name="gh_string" type_code="10">Number Slider</item>
+              </items>
+              <chunks count="1">
+                <chunk name="Container">
+                  <items count="6">
+                    <item name="Description" type_name="gh_string" type_code="10">Numeric slider for single values</item>
+                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">ea1995dc-5213-43c8-a706-eac6c085c4f0</item>
+                    <item name="Name" type_name="gh_string" type_code="10">Number Slider</item>
+                    <item name="NickName" type_name="gh_string" type_code="10"></item>
+                    <item name="Optional" type_name="gh_bool" type_code="1">false</item>
+                    <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
+                  </items>
+                  <chunks count="2">
+                    <chunk name="Attributes">
+                      <items count="2">
+                        <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                          <X>1468</X>
+                          <Y>486</Y>
+                          <W>164</W>
+                          <H>20</H>
+                        </item>
+                        <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                          <X>1468.7488</X>
+                          <Y>486.65927</Y>
+                        </item>
+                      </items>
+                    </chunk>
+                    <chunk name="Slider">
+                      <items count="7">
+                        <item name="Digits" type_name="gh_int32" type_code="3">3</item>
+                        <item name="GripDisplay" type_name="gh_int32" type_code="3">1</item>
+                        <item name="Interval" type_name="gh_int32" type_code="3">1</item>
+                        <item name="Max" type_name="gh_double" type_code="6">10</item>
+                        <item name="Min" type_name="gh_double" type_code="6">1</item>
+                        <item name="SnapCount" type_name="gh_int32" type_code="3">0</item>
+                        <item name="Value" type_name="gh_double" type_code="6">1</item>
+                      </items>
+                    </chunk>
+                  </chunks>
+                </chunk>
+              </chunks>
+            </chunk>
+            <chunk name="Object" index="35">
+              <items count="2">
+                <item name="GUID" type_name="gh_guid" type_code="9">719467e6-7cf5-4848-99b0-c5dd57e5442c</item>
+                <item name="Name" type_name="gh_string" type_code="10">Python 3 Script</item>
+              </items>
+              <chunks count="1">
+                <chunk name="Container">
+                  <items count="15">
+                    <item name="Description" type_name="gh_string" type_code="10"></item>
+                    <item name="GraftStandardOutputLines" type_name="gh_bool" type_code="1">true</item>
+                    <item name="Hidden" type_name="gh_bool" type_code="1">true</item>
+                    <item name="InstanceGuid" type_name="gh_guid" type_code="9">bc3e39db-8608-4b62-9386-4e688f292bb6</item>
+                    <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
+                    <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
+                    <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
+                    <item name="Name" type_name="gh_string" type_code="10">Python 3 Script</item>
+                    <item name="NickName" type_name="gh_string" type_code="10">Py3</item>
+                    <item name="ScriptComponentVersion" type_name="gh_int32" type_code="3">3</item>
+                    <item name="Tooltip" type_name="gh_string" type_code="10"></item>
+                    <item name="UsingLibraryInputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingScriptInputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingScriptOutputParam" type_name="gh_bool" type_code="1">false</item>
+                    <item name="UsingStandardOutputParam" type_name="gh_bool" type_code="1">true</item>
+                  </items>
+                  <chunks count="4">
+                    <chunk name="Attributes">
+                      <items count="2">
+                        <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                          <X>1225</X>
+                          <Y>630</Y>
+                          <W>111</W>
+                          <H>44</H>
+                        </item>
+                        <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                          <X>1279</X>
+                          <Y>652</Y>
+                        </item>
+                      </items>
+                    </chunk>
+                    <chunk name="ParameterData">
+                      <items count="5">
+                        <item name="InputCount" type_name="gh_int32" type_code="3">1</item>
+                        <item name="InputId" index="0" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                        <item name="OutputCount" type_name="gh_int32" type_code="3">2</item>
+                        <item name="OutputId" index="0" type_name="gh_guid" type_code="9">3ede854e-c753-40eb-84cb-b48008f14fd4</item>
+                        <item name="OutputId" index="1" type_name="gh_guid" type_code="9">08908df5-fa14-4982-9ab2-1aa0927566aa</item>
+                      </items>
+                      <chunks count="3">
+                        <chunk name="InputParam" index="0">
+                          <items count="14">
+                            <item name="Access" type_name="gh_int32" type_code="3">1</item>
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">492089b7-61fa-430a-a1e1-10d51c5e9710</item>
+                            <item name="Name" type_name="gh_string" type_code="10">models</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">models</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">true</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">1</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="Source" index="0" type_name="gh_guid" type_code="9">af674446-4fe6-4cca-ab0f-4f4a871019c6</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10"></item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>1227</X>
+                                  <Y>632</Y>
+                                  <W>37</W>
+                                  <H>40</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>1247</X>
+                                  <Y>652</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                        <chunk name="OutputParam" index="0">
+                          <items count="6">
+                            <item name="Description" type_name="gh_string" type_code="10">Standard output and error contents collected during script run</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">230b8a33-9528-4e03-aa24-b16712bf8aa0</item>
+                            <item name="Name" type_name="gh_string" type_code="10">out</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">out</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">false</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
+                          </items>
+                          <chunks count="1">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>1294</X>
+                                  <Y>632</Y>
+                                  <W>40</W>
+                                  <H>20</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>1314</X>
+                                  <Y>642</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                        <chunk name="OutputParam" index="1">
+                          <items count="12">
+                            <item name="AllowTreeAccess" type_name="gh_bool" type_code="1">false</item>
+                            <item name="Description" type_name="gh_string" type_code="10">rhinoscriptsyntax geometry</item>
+                            <item name="InstanceGuid" type_name="gh_guid" type_code="9">a6c22645-b610-414f-af97-b9a1101e21b3</item>
+                            <item name="Name" type_name="gh_string" type_code="10">models</item>
+                            <item name="NickName" type_name="gh_string" type_code="10">models</item>
+                            <item name="Optional" type_name="gh_bool" type_code="1">false</item>
+                            <item name="ScriptParamAccess" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ScriptParameterVersion" type_name="gh_int32" type_code="3">2</item>
+                            <item name="ShowTypeHints" type_name="gh_bool" type_code="1">true</item>
+                            <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
+                            <item name="ToolTip" type_name="gh_string" type_code="10"></item>
+                            <item name="TypeHintID" type_name="gh_guid" type_code="9">1c282eeb-dd16-439f-94e4-7d92b542fe8b</item>
+                          </items>
+                          <chunks count="2">
+                            <chunk name="Attributes">
+                              <items count="2">
+                                <item name="Bounds" type_name="gh_drawing_rectanglef" type_code="35">
+                                  <X>1294</X>
+                                  <Y>652</Y>
+                                  <W>40</W>
+                                  <H>20</H>
+                                </item>
+                                <item name="Pivot" type_name="gh_drawing_pointf" type_code="31">
+                                  <X>1314</X>
+                                  <Y>662</Y>
+                                </item>
+                              </items>
+                            </chunk>
+                            <chunk name="ConverterData">
+                              <items count="2">
+                                <item name="AssemblyName" type_name="gh_string" type_code="10">System.Private.CoreLib</item>
+                                <item name="TypeName" type_name="gh_string" type_code="10">System.Object</item>
+                              </items>
+                            </chunk>
+                          </chunks>
+                        </chunk>
+                      </chunks>
+                    </chunk>
+                    <chunk name="Script">
+                      <items count="5">
+                        <item name="MarshGuids" type_name="gh_bool" type_code="1">true</item>
+                        <item name="MarshInputs" type_name="gh_bool" type_code="1">true</item>
+                        <item name="MarshOutputs" type_name="gh_bool" type_code="1">true</item>
+                        <item name="Text" type_name="gh_string" type_code="10">aW1wb3J0IG9zLCBzeXMsIGltcG9ydGxpYg0KDQpnaF9kaXIgPSBvcy5wYXRoLmRpcm5hbWUoZ2hlbnYuQ29tcG9uZW50Lk9uUGluZ0RvY3VtZW50KCkuRmlsZVBhdGgpDQoNCnBhcmVudCA9IG9zLnBhdGguZGlybmFtZShnaF9kaXIpICAgICAgICAgICAgICAjIGdvIHVwIG9uZSBsZXZlbA0Kc3JjX2RpciA9IG9zLnBhdGguam9pbihwYXJlbnQsICJzcmMiKSAgICAgICAgICMgZ28gaW50byBzcmMgZm9sZGVyDQppZiBzcmNfZGlyIG5vdCBpbiBzeXMucGF0aDoNCiAgICBzeXMucGF0aC5pbnNlcnQoMCwgc3JjX2RpcikNCg0KDQppbXBvcnQgdGltYmVyX2NvbmZpZw0KaW1wb3J0bGliLnJlbG9hZCh0aW1iZXJfY29uZmlnKQ0KDQppbXBvcnQgdGltYmVyX21vZGVsDQppbXBvcnRsaWIucmVsb2FkKHRpbWJlcl9tb2RlbCkNCmZyb20gdGltYmVyX21vZGVsIGltcG9ydCBhcHBseV9qb2ludHMNCg0KZnJvbSBjb3B5IGltcG9ydCBkZWVwY29weQ0KDQptb2RlbHMgPSBkZWVwY29weShtb2RlbHMpDQoNCg0KIw0KZm9yIG1vZGVsIGluIG1vZGVsczoNCiAgICAjIHByaW50IChtb2RlbCkNCiAgICAjIHByaW50IChtb2RlbC5hdHRyaWJ1dGVzKQ0KICAgIHBhc3MNCmZyb20gY29tcGFzLmRhdGEgaW1wb3J0IGpzb25fbG9hZA0KDQoNCiMgdGltYmVyX21vZGVsID0ganNvbl9sb2FkKGZpbGVfcGF0aCkNCnJlc3VsdHMgPSBqc29uX2xvYWQob3MucGF0aC5qb2luKHBhcmVudCwgInRpbWJlcl9kZXNpZ24iLCAiZGF0YSIsIGYiMjYwNTE1X3YxX3RpbWJlcl9tb2RlbHMuanNvbiIpKQ0KDQpmb3IgZGF0YSBpbiByZXN1bHRzOg0KICAgIG1vZGVsID0gZGF0YVsnbW9kZWwnXQ0KICAgIGF0dHJzID0gZGF0YVsnYXR0cmlidXRlcyddDQogICAgcHJpbnQgKG1vZGVsLmF0dHJpYnV0ZXMpDQoNCiAgICBtb2RlbC5hdHRyaWJ1dGVzID0gYXR0cnMNCiAgICAjIHByaW50IChtb2RlbC5hdHRyaWJ1dGVzKQ==</item>
+                        <item name="Title" type_name="gh_string" type_code="10">Py3</item>
+                      </items>
+                      <chunks count="1">
+                        <chunk name="LanguageSpec">
+                          <items count="2">
+                            <item name="Taxon" type_name="gh_string" type_code="10">*.*.python</item>
+                            <item name="Version" type_name="gh_string" type_code="10">3.*</item>
+                          </items>
+                        </chunk>
+                      </chunks>
+                    </chunk>
+                    <chunk name="ScriptEditor">
+                      <items count="1">
+                        <item name="StartBounds" type_name="gh_drawing_rectangle" type_code="34">
+                          <X>261</X>
+                          <Y>0</Y>
+                          <W>648</W>
+                          <H>872</H>
+                        </item>
+                      </items>
+                    </chunk>
+                  </chunks>
+                </chunk>
+              </chunks>
+            </chunk>
           </chunks>
         </chunk>
       </chunks>
@@ -4007,7 +4163,7 @@
     <chunk name="Thumbnail">
       <items count="1">
         <item name="Thumbnail" type_name="gh_drawing_bitmap" type_code="37">
-          <bitmap length="7338">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</bitmap>
+          <bitmap length="6414">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</bitmap>
         </item>
       </items>
     </chunk>

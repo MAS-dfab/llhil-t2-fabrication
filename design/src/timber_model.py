@@ -27,7 +27,8 @@ from collections import Counter
 
 from timber_config import (
     TIMBER_MODEL_TOL, PLATE_THICKNESS, PLATE_Z_OFFSET, MAX_JOINT_DIST,
-    TMULTI_HEEL_THRESHOLD, TMULTI_STEP_DEPTH, TMULTI_RISER_ANGLE, KBIRD_MILL_DEPTH
+    TMULTI_HEEL_THRESHOLD, TMULTI_STEP_DEPTH, TMULTI_RISER_ANGLE,
+    KBIRD_MILL_DEPTH, KBIRD_MITER_TYPE
 )
 
 # ---------------------------------------
@@ -80,13 +81,12 @@ def _polyline_aligned_frame(polyline, thickness):
     center += normal.unitized() * thickness
 
     cross = longest.direction.cross(normal)
-    plane = Plane(center,normal)
-    
-    Frame.from_plane(plane)
-    
-    #Frame(center, longest.direction, cross)
 
-    return Frame.from_plane(plane)
+    # plane = Plane(center, normal)
+    # Frame.from_plane(plane)
+    # return Frame.from_plane(plane)
+
+    return Frame(center, longest.direction, cross)
 
 # --------------------------------------
 # Element Creations
@@ -273,7 +273,27 @@ def _get_average_miter_plane(reordered_elements, flip=False):
 # --------------------------------------
 # Joinery planning
 # --------------------------------------
-def _k_birdsmouth(model, mill_depth, miter_condition='average', miter_flag=False):
+def _k_birdsmouth_solver(model, mill_depth, miter_type=None, miter_flag=False):
+    """
+    Handle K birdsmouth joints with three beams.
+
+    Parameters
+    ----------
+    model : TimberModel
+        The timber model after calling connect.adjacent_beams. 
+    mill_depth : float
+        The depth of the mill cut for the birdsmouth joint.
+    miter_type : str, optional
+        "VERTICAL" for a global Z aligned miter plane.
+        "AVERAGE" for a miter plane based on the average of the two beam directions.
+        If None, miter plane will generate within compas_timber definition, see k_birdsmouth.py.
+    miter_flag : bool, optional
+        Flip miter plane direction if generating weird cuts.
+    
+    Returns
+    -------
+    None
+    """
     max_offset = max(candidate.distance for candidate in model.joint_candidates)
 
     # handle non-pair joints (in this case a 3-way connection using TripletAnalyzer)
@@ -297,10 +317,12 @@ def _k_birdsmouth(model, mill_depth, miter_condition='average', miter_flag=False
                 raise ValueError(f"Something went wrong with the analyzer. There should be always 3 elements, got: {len(reordered_elements)}")
 
             # promote cluster
-            if miter_condition == 'vertical':
+            if miter_type == 'VERTICAL':
                 miter_pln = _get_vertical_miter_plane(reordered_elements, flip=miter_flag)
-            elif miter_condition == 'average':
+            elif miter_type == 'AVERAGE':
                 miter_pln = _get_average_miter_plane(reordered_elements, flip=miter_flag)
+            else:
+                miter_pln = None
 
             kwargs = {"mill_depth": mill_depth, "miter_plane": miter_pln}
             KBirdsmouthJoint.promote_cluster(model, cluster, reordered_elements=reordered_elements, **kwargs)
@@ -313,10 +335,12 @@ def _k_birdsmouth(model, mill_depth, miter_condition='average', miter_flag=False
 def apply_joints(
         model,
         max_distance=None,
+        k_mill_depth=None,
+        k_miter_type=None,
+        k_miter_flag=False,
         heel_threshold=None,
         step_depth=None,
         riser_angle=None,
-        mill_depth=None,
         mid_lap_flip=False,
         debug=False
     ):
@@ -324,10 +348,12 @@ def apply_joints(
     # Default config
     if max_distance is None:
         max_distance = MAX_JOINT_DIST
+    if k_mill_depth is None:
+        k_mill_depth = KBIRD_MILL_DEPTH
+    if k_miter_type is None:
+        k_miter_type = KBIRD_MITER_TYPE
     if heel_threshold is None:
         heel_threshold = TMULTI_HEEL_THRESHOLD
-    if mill_depth is None:
-        mill_depth = KBIRD_MILL_DEPTH
     if step_depth is None:
         step_depth = TMULTI_STEP_DEPTH
     if riser_angle is None:
@@ -339,8 +365,12 @@ def apply_joints(
     model.connect_adjacent_beams(max_distance)
 
     # 1. Handle K joints with three beams first
-    _k_birdsmouth(model, mill_depth=mill_depth)
-
+    _k_birdsmouth_solver(
+        model,
+        mill_depth=k_mill_depth,
+        miter_type=k_miter_type,
+        miter_flag=k_miter_flag
+    )
 
     # 2. Handle all pair joints, T, L, X
     for candidate in model.joint_candidates:
@@ -380,7 +410,7 @@ def apply_joints(
         elif topo == JointTopology.TOPO_T and not is_planar:
             TButtJoint.create(model, ca, cb)
 
-        ### L Miter Joint
+        ### L Miter Joint at the middle of the structure
         elif topo == JointTopology.TOPO_L and not all([ca.attributes['reached'], cb.attributes['reached']]):
             LMiterJoint.create(model, ca, cb, cutoff=False)
 
@@ -392,9 +422,11 @@ def apply_joints(
             if debug:
                 print(f"Unhandled joint candidate with topology {topo}. edges: {ca.attributes['edge']}, {cb.attributes['edge']}")
             continue
-    return model
+    return
 
 def apply_processings(model):
+    model.process_joinery()
+
     for beam in model.beams:
         # beam.reset_computed_properties()
 
@@ -420,4 +452,4 @@ def apply_processings(model):
 
         else:
             continue
-    return model
+    return
