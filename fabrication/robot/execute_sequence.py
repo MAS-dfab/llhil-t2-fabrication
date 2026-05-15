@@ -1,4 +1,5 @@
 import math
+import time
 
 import compas_rrc as rrc
 from compas.data import json_load
@@ -17,12 +18,6 @@ SPEED_HOLD       = 200
 SPEED_APPROACH_AT = 300
 SPEED_PICK       = 20
 SPEED_PLACE      = 20
-
-# ── Execution mode flags ────────────────────────────────────────────────────────
-# True  → run the MoveIt-planned joint trajectory (safe IK, absorb URDF error via soft-move)
-# False → skip trajectory and use MoveToRobtarget (MoveL) to exact stored frame
-USE_JOINT_PICK  = False
-USE_JOINT_PLACE = False
 
 
 # ── ROS ─────────────────────────────────────────────────────────────────────────
@@ -101,6 +96,7 @@ def _ext_r11_from_last_point(trajectory):
     return ext_r11
 
 
+
 def execute_trajectory(abb11, abb12, trajectory, speed):
     """Execute a JointTrajectory with R11 X and R12 Y/Z/joints in sync per point."""
     points = trajectory.points
@@ -118,8 +114,8 @@ def execute_trajectory(abb11, abb12, trajectory, speed):
             m12.feedback_level = rrc.FeedbackLevel.DONE
             f11 = abb11.send(m11)
             f12 = abb12.send(m12)
-            f11.result(timeout=300.0)
-            f12.result(timeout=300.0)
+            f11.result(timeout=60.0)
+            f12.result(timeout=60.0)
         elif is_last:
             # Wait for both robots to finish the final point
             m11 = rrc.MoveToJoints(HOME_JOINTS_R11, ext_r11, speed, zone)
@@ -128,8 +124,8 @@ def execute_trajectory(abb11, abb12, trajectory, speed):
             m12.feedback_level = rrc.FeedbackLevel.DONE
             f11 = abb11.send(m11)
             f12 = abb12.send(m12)
-            f11.result(timeout=300.0)
-            f12.result(timeout=300.0)
+            f11.result(timeout=60.0)
+            f12.result(timeout=60.0)
         else:
             # Fire-and-forget; controller buffers the move queue
             abb11.send(rrc.MoveToJoints(HOME_JOINTS_R11, ext_r11, speed, zone))
@@ -147,7 +143,8 @@ def execute_sequence(abb11, abb12, record):
 
     # 1. Approach to pick
     print("\n[1/7] approach_to_pick")
-    execute_trajectory(abb11, abb12, steps["approach_to_pick"], SPEED_FREE)
+    # execute_trajectory(abb11, abb12, steps["approach_to_pick"], SPEED_FREE)
+    # time.sleep(1.5)  # small pause to ensure we're settled at the end of the approach trajectory
 
     # Corrective Cartesian move to the exact approach frame before descending
     print("  Corrective move to approach frame...")
@@ -155,40 +152,35 @@ def execute_sequence(abb11, abb12, record):
     if approach_frame is not None:
         app_ext_r12 = _ext_r12_from_last_point(steps["approach_to_pick"])
         app_ext_r11 = _ext_r11_from_last_point(steps["approach_to_pick"])
-        m11 = rrc.MoveToJoints(HOME_JOINTS_R11, app_ext_r11, SPEED_HOLD, rrc.Zone.FINE)
-        m11.feedback_level = rrc.FeedbackLevel.DONE
-        m12 = rrc.MoveToRobtarget(approach_frame, app_ext_r12, SPEED_HOLD, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR)
-        m12.feedback_level = rrc.FeedbackLevel.DONE
-        f11 = abb11.send(m11)
-        f12 = abb12.send(m12)
-        f11.result(timeout=300.0)
-        f12.result(timeout=300.0)
+        abb11.send_and_wait(rrc.MoveToJoints(HOME_JOINTS_R11, app_ext_r11, SPEED_HOLD, rrc.Zone.FINE), timeout=30.0)
+        abb12.send_and_wait(rrc.MoveToJoints(abb12.send_and_wait(rrc.GetJoints())[0], app_ext_r12, SPEED_HOLD, rrc.Zone.FINE), timeout=60.0)
+        time.sleep(1.5)  # small pause to ensure we're settled before the next move
+        print("  Moving linearly to approach frame...", approach_frame)
+        abb12.send_and_wait(rrc.MoveToFrame(approach_frame, SPEED_HOLD, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=30.0)
+
     else:
         print("  WARNING: no approach_frame in record, skipping corrective move.")
 
     # 2. Pick
     print("\n[2/7] pick")
+    time.sleep(0.5)  # small pause to ensure we're settled before the next move
     soft_move_on(abb12)
-    try:
-        if USE_JOINT_PICK:
-            # Run the planned joint trajectory — IK is baked in, soft-move absorbs positional error
-            execute_trajectory(abb11, abb12, steps["pick"], SPEED_PICK)
-        else:
-            # MoveL to exact mocap-fetched pickup frame
-            pick_ext_r12 = _ext_r12_from_last_point(steps["pick"])
-            pick_ext_r11 = _ext_r11_from_last_point(steps["pick"])
-            m11 = rrc.MoveToJoints(HOME_JOINTS_R11, pick_ext_r11, SPEED_PICK, rrc.Zone.FINE)
-            abb11.send_and_wait(m11, timeout=300.0)
-            m12 = rrc.MoveToRobtarget(pickup_frame, pick_ext_r12, SPEED_PICK, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR)
-            abb12.send_and_wait(m12, timeout=300.0)
-            f12.result(timeout=300.0)
-        abb12.send_and_wait(rrc.Stop(), timeout=1000.0)
-    finally:
-        soft_move_off(abb12)
+    abb12.send_and_wait(rrc.MoveToFrame(pickup_frame, SPEED_PICK, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=30.0)
+    soft_move_off(abb12)
+    abb12.send(rrc.PrintText("Stopping here for a bit"))
+    abb12.send_and_wait(rrc.Stop(), timeout=100.0)
+
+        
 
     # 3. Retract from pick
     print("\n[3/7] retract_from_pick")
-    execute_trajectory(abb11, abb12, steps["retract_from_pick"], SPEED_HOLD)
+    pick_retract_frame = record.get("pick_retract_frame")
+    if pick_retract_frame is not None:
+        print("  MoveL to pick retract frame")
+        abb12.send_and_wait(rrc.MoveToFrame(pick_retract_frame, SPEED_HOLD, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=60.0)
+    else:
+        print("  WARNING: no pick_retract_frame in record, falling back to joint trajectory.")
+        execute_trajectory(abb11, abb12, steps["retract_from_pick"], SPEED_HOLD)
 
     # 4. Approach to assembly target
     print("\n[4/7] approach_to_AT")
@@ -196,26 +188,26 @@ def execute_sequence(abb11, abb12, record):
 
     # 5. Place at assembly target
     print("\n[5/7] place_at_AT")
-    if USE_JOINT_PLACE:
-        # Run the planned joint trajectory — IK is baked in
-        execute_trajectory(abb11, abb12, steps["place_at_AT"], SPEED_PLACE)
-    else:
-        # MoveL to exact stored place frame
-        place_ext_r12 = _ext_r12_from_last_point(steps["place_at_AT"])
-        place_ext_r11 = _ext_r11_from_last_point(steps["place_at_AT"])
-        m11 = rrc.MoveToJoints(HOME_JOINTS_R11, place_ext_r11, SPEED_PLACE, rrc.Zone.FINE)
-        m11.feedback_level = rrc.FeedbackLevel.DONE
-        m12 = rrc.MoveToRobtarget(place_frame, place_ext_r12, SPEED_PLACE, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR)
-        m12.feedback_level = rrc.FeedbackLevel.DONE
-        f11 = abb11.send(m11)
-        f12 = abb12.send(m12)
-        f11.result(timeout=300.0)
-        f12.result(timeout=300.0)
-    abb12.send_and_wait(rrc.Stop(), timeout=10.0)
+
+    # MoveL to exact stored place frame
+    place_ext_r12 = _ext_r12_from_last_point(steps["place_at_AT"])
+    place_ext_r11 = _ext_r11_from_last_point(steps["place_at_AT"])
+    m11 = rrc.MoveToJoints(HOME_JOINTS_R11, place_ext_r11, SPEED_PLACE, rrc.Zone.FINE)
+    m12 = rrc.MoveToRobtarget(place_frame, place_ext_r12, SPEED_PLACE, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR)
+    abb11.send_and_wait(m11, timeout=300.0)
+    abb12.send_and_wait(m12, timeout=300.0)
+    abb12.send(rrc.PrintText("Stopping here for a bit"))
+    abb12.send_and_wait(rrc.Stop(), timeout=100.0)
 
     # 6. Retract from assembly target
     print("\n[6/7] retract_from_AT")
-    execute_trajectory(abb11, abb12, steps["retract_from_AT"], SPEED_HOLD)
+    place_retract_frame = record.get("place_retract_frame")
+    if place_retract_frame is not None:
+        print("  MoveL to place retract frame")
+        abb12.send_and_wait(rrc.MoveToFrame(place_retract_frame, SPEED_HOLD, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=60.0)
+    else:
+        print("  WARNING: no place_retract_frame in record, falling back to joint trajectory.")
+        execute_trajectory(abb11, abb12, steps["retract_from_AT"], SPEED_HOLD)
 
     # 7. Return to safe configuration
     print("\n[7/7] return_to_safe")

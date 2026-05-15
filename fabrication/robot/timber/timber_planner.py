@@ -262,7 +262,12 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 3. Retract from pickpoint
         print("getting element retract trajectory at pickpoint")
-        trajectories.append(self.get_retract_trajectory(retract_distance=0.5))
+        pick_retract_traj = self.get_retract_trajectory(retract_distance=0.5)
+        if pick_retract_traj is not None:
+            self._last_pick_retract_frame = pick_retract_traj.points[-1]  # stored as last joint point
+            # compute the actual retract frame from the pickup frame
+            self._last_pick_retract_frame = element_pickup_frame.translated(element_pickup_frame.zaxis * -0.5)
+        trajectories.append(pick_retract_traj)
 
         # # 4. Safe AT 
         # print("getting element safe trajectory to AT")
@@ -284,7 +289,10 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 7. Retract from AT
         print("getting element retract trajectory at AT")
-        trajectories.append(self.get_retract_trajectory(retract_distance=0.5, avoid_collisions=False))
+        place_retract_traj = self.get_retract_trajectory(retract_distance=0.5, avoid_collisions=False)
+        if place_retract_traj is not None:
+            self._last_place_retract_frame = element_at_frame.translated(element_at_frame.zaxis * -0.5)
+        trajectories.append(place_retract_traj)
 
         # 8. Return to safe configuration
         print("getting trajectory back to safe configuration")

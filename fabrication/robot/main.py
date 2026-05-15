@@ -95,9 +95,9 @@ def main():
 
         assembled_elements = []
         assembled_elements.clear()
-        for p in timber_model.plates:
-            p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
-            assembled_elements.append(p_mesh)
+        # for p in timber_model.plates:
+        #     p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
+        #     assembled_elements.append(p_mesh)
         for b in in_seq_beams[:trajectory_planner.seq_i]:
             b_mesh = b.geometry.transformed(trajectory_planner.at_T * b.attributes.get("parent_T")).to_viewmesh()[0]
             assembled_elements.append(b_mesh)
@@ -151,12 +151,16 @@ def main():
         else:
             _approach = getattr(trajectory_planner, "_last_approach_frame", None)
             _place = getattr(trajectory_planner, "_last_place_frame", None)
+            _pick_retract = getattr(trajectory_planner, "_last_pick_retract_frame", None)
+            _place_retract = getattr(trajectory_planner, "_last_place_retract_frame", None)
             last_sequence["record"] = {
                 "index": trajectory_planner.seq_i,
                 "beam_guid": str(beam.guid),
                 "pickup_frame": trajectory_planner._fetched_pickup_frame,
                 "approach_frame": _approach.scaled(1000) if _approach is not None else None,
                 "place_frame": _place.scaled(1000) if _place is not None else None,
+                "pick_retract_frame": _pick_retract.scaled(1000) if _pick_retract is not None else None,
+                "place_retract_frame": _place_retract.scaled(1000) if _place_retract is not None else None,
                 "steps": {
                     name: element_trajectories[i] if i < len(element_trajectories) else None
                     for i, name in enumerate(STEP_NAMES)
