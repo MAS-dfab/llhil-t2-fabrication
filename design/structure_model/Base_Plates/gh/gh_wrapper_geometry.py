@@ -90,22 +90,61 @@ def _scale_breps_copy(breps, scale_factor):
         return [b for b in (breps or []) if b is not None]
 
     scaled = []
+    transformed_count = 0
+    passthrough_count = 0
     try:
         xform = Rhino.Geometry.Transform.Scale(Rhino.Geometry.Plane.WorldXY, scale_factor)
     except Exception:
         return [b for b in (breps or []) if b is not None]
 
-    for brep in (breps or []):
-        if brep is None:
+    for geom in (breps or []):
+        if geom is None:
             continue
         try:
-            dup = brep.DuplicateBrep()
+            dup = None
+
+            # Prefer geometry-preserving duplicate when available.
+            duplicate = getattr(geom, "Duplicate", None)
+            if callable(duplicate):
+                dup = duplicate()
+
+            # Fall back to Brep duplication path.
             if dup is None:
+                duplicate_brep = getattr(geom, "DuplicateBrep", None)
+                if callable(duplicate_brep):
+                    dup = duplicate_brep()
+
+            # Last resort: convert to Brep if possible.
+            if dup is None:
+                to_brep = getattr(geom, "ToBrep", None)
+                if callable(to_brep):
+                    try:
+                        dup = to_brep(False)
+                    except TypeError:
+                        dup = to_brep()
+
+            if dup is None:
+                passthrough_count += 1
+                scaled.append(geom)
                 continue
-            dup.Transform(xform)
+
+            if not dup.Transform(xform):
+                passthrough_count += 1
+                scaled.append(geom)
+                continue
+
+            transformed_count += 1
             scaled.append(dup)
         except Exception:
-            scaled.append(brep)
+            passthrough_count += 1
+            scaled.append(geom)
+
+    print(
+        "[GH Wrapper] footing scale transform: transformed={0}, passthrough={1}".format(
+            transformed_count,
+            passthrough_count,
+        )
+    )
     return scaled
 
 
