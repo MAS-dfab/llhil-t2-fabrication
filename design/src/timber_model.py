@@ -375,7 +375,7 @@ def apply_joints(
             TButtJoint.create(model, ca, cb)
 
         ### L Miter Joint at the middle of the structure
-        elif topo == JointTopology.TOPO_L and not all([ca.attributes['reached'], cb.attributes['reached']]):
+        elif topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
             LMiterJoint.create(model, ca, cb, cutoff=False)
 
         ### X Lap Joint
