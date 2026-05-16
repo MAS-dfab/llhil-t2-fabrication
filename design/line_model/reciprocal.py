@@ -513,7 +513,8 @@ def find_coplanar_groups(subgraph, min_degree=2, plane_tol=0.1, debug=True, allo
             
             lines = [_get_line(subgraph, e) for e in sorted_edges]
             beam_heights = [subgraph.edge_attribute(e, 'height') for e in sorted_edges]
-            angles_remap = [remap(ang, min(angles), max(angles),0,1) for ang in angles]
+            # print(angles)
+            angles_remap = [remap(abs(ang), 90.0, 180.0, 0.0,1) for ang in angles]
             engage_lengths = []
             for ang, h in zip(angles_remap, beam_heights):
                 engage_lengths.append((ang+1.0) *(h/2 + engage_len))

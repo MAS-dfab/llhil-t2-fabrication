@@ -314,15 +314,27 @@ def snap_to_host(
         "debug": debug_info if debug else None,
     }
 
+def _assign_middle_joint(graph):
+    groups = {}
+    for u, v in graph.edges():
+        if graph.degree(u) >= 8:
+            groups.setdefault(u, []).append((u, v))
+            graph.edge_attribute((u, v), "has_middle_joint", True)
+            
+        elif graph.degree(v) >= 8:
+            groups.setdefault(v, []).append((u, v))
+            graph.edge_attribute((u, v), "has_middle_joint", True)
+    
+        else:
+            graph.edge_attribute((u, v), "has_middle_joint", False)
+    return list(groups.keys())  # Change to return groups only, and refine the following definition if we have time
+
 def middle_node_solver(graph, t_value=.2, tolerance=1e-4, debug=False):
     """ Target middle node of the module and shift lines along the edge that is coplanar with leaf edge."""
     
-    target_nodes = []
+    target_nodes = _assign_middle_joint(graph)
     shifted_lines = []
-    
-    for node in graph.nodes():
-        if graph.node_valency(node) >= 8:
-            target_nodes.append(node)
+
     # Step 2: For each target node, find the leaf edge and the coplanar edge, then shift the middle node along the coplanar edge.
     for node in target_nodes:
         leaf_edges = []
@@ -342,18 +354,18 @@ def middle_node_solver(graph, t_value=.2, tolerance=1e-4, debug=False):
         if not leaf_edges or not coplanar_edges:
             continue
         # Find the direction of the coplanar edge  
-        
+        if debug:
+            print (coplanar_edges)
         for leaf in leaf_edges:
             leaf_vec = Vector.from_start_end(_get_point(graph, leaf[0]), _get_point(graph, leaf[1]))
             leaf_vec_xy = Vector(leaf_vec.x, leaf_vec.y, 0.0).unitized()
-            graph.edge_attribute(leaf, "middle_joint", True)
 
             
             for coplanar in coplanar_edges:
                 cop_vec = Vector.from_start_end(_get_point(graph, coplanar[0]), _get_point(graph, coplanar[1]))
                 cop_vec_xy = Vector(cop_vec.x, cop_vec.y, 0.0).unitized()
                 dot = round(leaf_vec_xy.dot(cop_vec_xy), 4)
-                print(dot)
+                # print(dot)
                 if dot == 1.00:  # Parallel and same direction
                     if debug:
                         print(f"DEBUG: Leaf edge {leaf} and Coplanar edge {coplanar} are parallel and same direction (Dot: {dot:.4f})")

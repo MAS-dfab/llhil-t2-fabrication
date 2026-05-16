@@ -149,6 +149,28 @@ class NodeGraph(Graph):
                 lines.append(Line(pu, pv))
         return lines
 
+    def get_node_attribute(self, key, name, else_value=None):
+        """Get node attribute with a fallback value if attribute is missing or None."""
+        attrs = self.node_attributes(key)
+        if name not in attrs:
+            return else_value
+        
+        value = self.node_attribute(key, name)
+        if value is not None:
+            return value
+        return else_value
+
+    def get_edge_attribute(self, key, name, else_value=None):
+        """Get edge attribute with a fallback value if attribute is missing or None."""
+        attrs = self.edge_attributes(key)
+        if name not in attrs:
+            return else_value
+        
+        value = self.edge_attribute(key, name)
+        if value is not None:
+            return value
+        return else_value
+
     def mark_y_parallel_as_double(self, threshold=0.99):
         """
         Mark edges that are parallel to the Y axis (in XY projection) as 'double'.
@@ -995,6 +1017,58 @@ class NodeGraph(Graph):
         self.node_attribute(node, "z", new_pt.z)
         
         return (pt, new_pt, constrained.length)
+    
+    def move_nodes(self, node, vector, axis_factors=None):
+        """
+        Move multiple nodes by a displacement vector, respecting their mobility constraints.
+        
+        Updates both the nodes' 'point' attributes and the internal point index
+        for spatial deduplication consistency.
+        
+        Parameters
+        ----------
+        nodes : list of int
+            List of node keys.
+        vector : Vector
+            Displacement vector (will be constrained by node's mobility).
+        axis_factors : dict, optional
+            Per-axis strength multipliers {"x": float, "y": float, "z": float}.
+            If None, uses config.AXIS_FACTORS.
+        
+        Returns
+        -------
+        tuple (Point, Point, float) or None
+            (old_point, new_point, displacement_magnitude), or None if node
+            doesn't exist or has no point.
+        """
+        
+        pt = self.node_attribute(node, "point")
+        if pt is None:
+            return None
+        
+        mobility = self.node_attribute(node, "mobility") or "fixed"
+        
+        new_pt = Point(
+            pt.x + vector.x,
+            pt.y + vector.y,
+            pt.z + vector.z
+        )
+        
+        # Update point index: remove old key, add new key
+        old_pkey = self.point_key(pt)
+        new_pkey = self.point_key(new_pt)
+        
+        if old_pkey in self._point_index:
+            del self._point_index[old_pkey]
+        self._point_index[new_pkey] = node
+        
+        # Update node attributes
+        self.node_attribute(node, "point", new_pt)
+        self.node_attribute(node, "x", new_pt.x)
+        self.node_attribute(node, "y", new_pt.y)
+        self.node_attribute(node, "z", new_pt.z)
+        
+        return self, new_pt
 
     def move_nodes_from_breps(self, breps, max_distance=10.0, strength=1.0, 
                                iterations=1, mobility_filter=None,
