@@ -31,31 +31,6 @@ from timber_config import (
     KBIRD_MILL_DEPTH, KBIRD_MITER_TYPE
 )
 
-# ---------------------------------------
-# Graph helpers
-# ---------------------------------------
-def get_node_attribute(graph, key, name, else_value=None):
-    """Get node attribute with a fallback value if attribute is missing or None."""
-    attrs = graph.node_attributes(key)
-    if name not in attrs:
-        return else_value
-    
-    value = graph.node_attribute(key, name)
-    if value is not None:
-        return value
-    return else_value
-
-def get_edge_attribute(graph, key, name, else_value=None):
-    """Get edge attribute with a fallback value if attribute is missing or None."""
-    attrs = graph.edge_attributes(key)
-    if name not in attrs:
-        return else_value
-    
-    value = graph.edge_attribute(key, name)
-    if value is not None:
-        return value
-    return else_value
-
 # --------------------------------------
 # Geometry helpers
 # --------------------------------------
@@ -81,11 +56,6 @@ def _polyline_aligned_frame(polyline, thickness):
     center += normal.unitized() * thickness
 
     cross = longest.direction.cross(normal)
-
-    # plane = Plane(center, normal)
-    # Frame.from_plane(plane)
-    # return Frame.from_plane(plane)
-
     return Frame(center, longest.direction, cross)
 
 # --------------------------------------
@@ -114,19 +84,19 @@ def create_beam(graph, edge, group_id, plate_vec=None):
     Create a beam aligned with global Z.
     If plate_vec is provided, align the SHOE beam with the plate normal.
     """
-    ln = get_edge_attribute(graph, edge, 'shifted_line', else_value=graph.edge_line(edge))
-    w = get_edge_attribute(graph, edge, 'width', else_value=0.10)
-    h = get_edge_attribute(graph, edge, 'height', else_value=0.14)
-    hie = get_edge_attribute(graph, edge, 'hierarchy')
-    lvl = get_edge_attribute(graph, edge, 'level')
-    reached = get_edge_attribute(graph, edge, 'reached', else_value=False)
-    has_mid = get_edge_attribute(graph, edge, 'has_middle_joint', else_value=False)
+    ln = graph.get_edge_attribute(edge, 'shifted_line', else_value=graph.edge_line(edge))
+    w = graph.get_edge_attribute(edge, 'width', else_value=0.10)
+    h = graph.get_edge_attribute(edge, 'height', else_value=0.14)
+    hie = graph.get_edge_attribute(edge, 'hierarchy')
+    lvl = graph.get_edge_attribute(edge, 'level')
+    reached = graph.get_edge_attribute(edge, 'reached', else_value=False)
+    has_mid = graph.get_edge_attribute(edge, 'has_middle_joint', else_value=False)
+    dir_id = graph.get_edge_attribute(edge, 'direction_id')
 
     if hie == 'shoe' and plate_vec is not None:
         beam = Beam.from_centerline(ln, w, h, plate_vec)
     else:
         beam = Beam.from_centerline(ln, w, h)
-    # beam.name = hie  # temp.
     
     beam.attributes = {
         'hierarchy': hie,
@@ -134,7 +104,8 @@ def create_beam(graph, edge, group_id, plate_vec=None):
         'group': group_id,
         'level': lvl,
         'reached': reached,
-        'has_middle_joint': has_mid
+        'has_middle_joint': has_mid,
+        'direction_id': dir_id
     }
     return beam
 
@@ -142,7 +113,7 @@ def create_beam(graph, edge, group_id, plate_vec=None):
 # --------------------------------------
 # Graph to TimberModels conversion
 # --------------------------------------
-def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_offset=None, align_shoe=True):
+def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_offset=None, align_shoe=False):
     """Convert graph to timber models based on group index."""
     if model_tol is None:
         model_tol = TIMBER_MODEL_TOL
@@ -153,14 +124,14 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
 
     groups = {}
     for edge in graph.edges():
-        g = get_edge_attribute(graph, edge, 'group')
+        g = graph.get_edge_attribute(edge, 'group')
         groups.setdefault(g, {'edges': [], 'clt_plate': None, 'cut_plane': None})['edges'].append(edge)
 
     for node in graph.nodes():
         for name in ('clt_plate', 'cut_plane'):
-            val = get_node_attribute(graph, node, name)
+            val = graph.get_node_attribute(node, name)
             if val:
-                g = get_node_attribute(graph, node, 'group')
+                g = graph.get_node_attribute(node, 'group')
                 groups[g][name] = val
     
 
@@ -240,13 +211,6 @@ def _determine_lap_flip(candidate_a, candidate_b, lap_flip):
         cross = vec.cross(aligned)
         return lap_flip ^ (cross.z <= 0)
     return
-
-
-def _orientate_plane(plane):
-    """Orientate plane to have normal pointing downwards."""
-    if plane.normal.z > 0:
-        return Plane(plane.point, -plane.normal)
-    return plane
 
 def _get_vertical_miter_plane(reordered_elements, flip=False):
     _, a, b = reordered_elements
@@ -425,6 +389,7 @@ def apply_joints(
     return
 
 def apply_processings(model):
+    """Process joinery and finalize cuts which need to be done after."""
     model.process_joinery()
 
     for beam in model.beams:
@@ -433,12 +398,11 @@ def apply_processings(model):
         # JackRafterCut
         if beam.attributes['reached']:
             cutting_plane = model.attributes.get("cut_plane")
-            orientated_cutting_plane = _orientate_plane(cutting_plane)
 
-            intersection = intersection_segment_plane(beam.centerline, orientated_cutting_plane)
+            intersection = intersection_segment_plane(beam.centerline, cutting_plane)
 
             if intersection:
-                jrc = JackRafterCut.from_plane_and_beam(orientated_cutting_plane, beam)
+                jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam)
                 beam.add_feature(jrc)
 
         # LongitudinalCut
