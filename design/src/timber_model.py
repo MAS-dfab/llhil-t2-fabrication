@@ -8,7 +8,7 @@ Usage in grasshopper:
 """
 from compas.geometry import (
     Vector, Frame, Plane, Line, Point, Translation,
-    angle_vectors, intersection_segment_plane, intersection_line_line_xy
+    angle_vectors, intersection_line_plane, intersection_line_line_xy
 )
 from compas_timber.model import TimberModel
 from compas_timber.elements import Beam, Plate
@@ -348,10 +348,14 @@ def apply_joints(
 
         ### Planar T joints
         if topo == JointTopology.TOPO_T and is_planar:
-            # CLT shoe to Top Beam
-            if cb.attributes["hierarchy"] == 'shoe':
-                TStepJoint.create(model, ca, cb, step_shape="double")
+            # CLT shoe to middle beam
+            if cb.attributes["hierarchy"] == 'shoe' and ca.attributes["has_middle_joint"]:
+                TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
 
+            # CLT shoe to Top Beam
+            elif cb.attributes["hierarchy"] == 'shoe':
+                TStepJoint.create(model, ca, cb, step_shape="double")
+            
             # Middle T Lap Joint
             elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
                 # TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
@@ -388,27 +392,31 @@ def apply_joints(
             continue
     return
 
-def apply_processings(model):
+def apply_processings_middle_prototype(model):
     """Process joinery and finalize cuts which need to be done after."""
     model.process_joinery()
-
+    
+    clt_plate = model.attributes.get("clt_plate")
     for beam in model.beams:
-        # beam.reset_computed_properties()
+        beam.reset_computed_properties()
 
-        # JackRafterCut
-        if beam.attributes['reached']:
-            cutting_plane = model.attributes.get("cut_plane")
+        # Middle joint cut
+        if beam.attributes["has_middle_joint"]:
+            if beam.attributes['reached']:
+                cutting_plane = model.attributes.get("cut_plane")
+                if intersection_line_plane(beam.centerline, cutting_plane):
+                    jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam)
+                    beam.add_feature(jrc)
+            
+            else:
+                if clt_plate:
+                    if intersection_line_plane(beam.centerline, Plane.from_frame(clt_plate.frame)):
+                        cutting_frame = clt_plate.frame
+                        jrc = JackRafterCut.from_plane_and_beam(cutting_frame, beam)
+                        beam.add_feature(jrc)
 
-            intersection = intersection_segment_plane(beam.centerline, cutting_plane)
-
-            if intersection:
-                jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam)
-                beam.add_feature(jrc)
-
-        # LongitudinalCut
+            # LongitudinalCut
         elif beam.attributes["hierarchy"] == "shoe":
-            clt_plate = model.attributes.get("clt_plate")
-
             if clt_plate:
                 cutting_frame = clt_plate.frame
                 lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam)
@@ -416,4 +424,38 @@ def apply_processings(model):
 
         else:
             continue
-    return
+    return model
+
+def apply_processings(model):
+    """Process joinery and finalize cuts which need to be done after."""
+    model.process_joinery()
+    
+    clt_plate = model.attributes.get("clt_plate")
+    for beam in model.beams:
+        beam.reset_computed_properties()
+
+        # Middle joint cut
+        if beam.attributes["has_middle_joint"]:
+            if clt_plate:
+                if intersection_line_plane(beam.centerline, Plane.from_frame(clt_plate.frame)):
+                    cutting_frame = clt_plate.frame
+                    jrc = JackRafterCut.from_plane_and_beam(cutting_frame, beam)
+                    beam.add_feature(jrc)
+
+            # LongitudinalCut
+        elif beam.attributes["hierarchy"] == "shoe":
+            if clt_plate:
+                cutting_frame = clt_plate.frame
+                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam)
+                beam.add_feature(lc)
+        
+            # End cut for reached beams
+        elif beam.attributes['reached']:
+                cutting_plane = model.attributes.get("cut_plane")
+                if intersection_line_plane(beam.centerline, cutting_plane):
+                    jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam)
+                    beam.add_feature(jrc)
+
+        else:
+            continue
+    return model
