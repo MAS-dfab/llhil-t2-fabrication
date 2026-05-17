@@ -24,7 +24,7 @@ REFERENCE = {
     "base_length": 800.0,
     "base_width": 800.0,
     "base_thickness": 20.0,
-    "hole_diameter": 50.0,
+    "hole_diameter": 30.0,
     "hole_spacing": (295.393, 292.9625),
     "edge_spacing": (104.607, 104.607, 107.037, 107.038),
     "omit_center_hole": False,
