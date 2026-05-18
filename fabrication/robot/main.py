@@ -69,7 +69,18 @@ def main():
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
 
     timber_model = json_load(filepath_model)
+    # def scale_model(model):
+    #     for beams in model.beams:
+    #         beams.geometry.scale(0.001)  # scale from mm to m
+    #         beams.frame.scale(0.001)
+    #     for plates in model.plates:
+    #         plates.elementgeometry.scale(0.001)  # scale from mm to m
+    #         plates.frame.scale(0.001)
+    #     return timber_model
+    # timber_model = scale_model(timber_model)
+
     timber_model.process_joinery()
+
 
     # ---------------------------------------------------------
     # 2. INITIALIZE PLANNER
@@ -215,7 +226,14 @@ def main():
         trajectory_planner.state.robot_configuration = trajectory_planner.safe_configuration
 
         assembled_elements = []
+        assembled_elements.clear() 
+        for p in timber_model.plates[:1]:
+            parent_T = p.transformation_to_local()
+            p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
+            assembled_elements.append(p_mesh)
+        beam.attributes["parent_T"] = parent_T  
         for b in in_seq_beams[:trajectory_planner.seq_i]:
+            b.attributes["parent_T"] = parent_T
             b_mesh = b.geometry.transformed(trajectory_planner.at_T * b.attributes.get("parent_T")).to_viewmesh()[0]
             assembled_elements.append(b_mesh)
 
@@ -321,9 +339,39 @@ def main():
             _set_label("all done!", _COL_COMPUTED)
             print("All {} beams assembled!".format(total_beams))
 
+    # --- Button: Prev / Next beam ---
+    def _jump_to(seq_i):
+        trajectory_planner.seq_i = seq_i
+        trajectory_planner._fetched_pickup_frame = None
+        last_sequence["record"] = None
+        if highlight_state["mesh"] is not None:
+            try:
+                player.viewer.remove_object(highlight_state["mesh"])
+            except Exception:
+                pass
+            highlight_state["mesh"] = None
+        _set_label("scan QR", _COL_WAITING)
+        print("Jumped to beam {}/{}.".format(seq_i + 1, total_beams))
+
+    def _on_prev():
+        new_i = trajectory_planner.seq_i - 1
+        if new_i < 0:
+            print("Already at first beam.")
+            return
+        _jump_to(new_i)
+
+    def _on_next():
+        new_i = trajectory_planner.seq_i + 1
+        if new_i >= total_beams:
+            print("Already at last beam.")
+            return
+        _jump_to(new_i)
+
     player.viewer.picker = True
     player.viewer.set_view(CameraView.FRONT_RIGHT)
     player.viewer.add_ui_element(id_label)
+    player.viewer.add_ui_element(Button(text="← Prev", action=_on_prev, label="Sequence"))
+    player.viewer.add_ui_element(Button(text="Next →", action=_on_next, label=None))
     player.viewer.add_ui_element(Button(text="Compute Trajectories", action=_on_compute, label="Compute"))
     player.viewer.add_ui_element(Button(text="Export Trajectory", action=_on_export, label="Export"))
 
