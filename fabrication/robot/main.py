@@ -321,9 +321,39 @@ def main():
             _set_label("all done!", _COL_COMPUTED)
             print("All {} beams assembled!".format(total_beams))
 
+    # --- Button: Prev / Next beam ---
+    def _jump_to(seq_i):
+        trajectory_planner.seq_i = seq_i
+        trajectory_planner._fetched_pickup_frame = None
+        last_sequence["record"] = None
+        if highlight_state["mesh"] is not None:
+            try:
+                player.viewer.remove_object(highlight_state["mesh"])
+            except Exception:
+                pass
+            highlight_state["mesh"] = None
+        _set_label("scan QR", _COL_WAITING)
+        print("Jumped to beam {}/{}.".format(seq_i + 1, total_beams))
+
+    def _on_prev():
+        new_i = trajectory_planner.seq_i - 1
+        if new_i < 0:
+            print("Already at first beam.")
+            return
+        _jump_to(new_i)
+
+    def _on_next():
+        new_i = trajectory_planner.seq_i + 1
+        if new_i >= total_beams:
+            print("Already at last beam.")
+            return
+        _jump_to(new_i)
+
     player.viewer.picker = True
     player.viewer.set_view(CameraView.FRONT_RIGHT)
     player.viewer.add_ui_element(id_label)
+    player.viewer.add_ui_element(Button(text="← Prev", action=_on_prev, label="Sequence"))
+    player.viewer.add_ui_element(Button(text="Next →", action=_on_next, label=None))
     player.viewer.add_ui_element(Button(text="Compute Trajectories", action=_on_compute, label="Compute"))
     player.viewer.add_ui_element(Button(text="Export Trajectory", action=_on_export, label="Export"))
 
