@@ -149,6 +149,28 @@ class NodeGraph(Graph):
                 lines.append(Line(pu, pv))
         return lines
 
+    def get_node_attribute(self, key, name, else_value=None):
+        """Get node attribute with a fallback value if attribute is missing or None."""
+        attrs = self.node_attributes(key)
+        if name not in attrs:
+            return else_value
+        
+        value = self.node_attribute(key, name)
+        if value is not None:
+            return value
+        return else_value
+
+    def get_edge_attribute(self, key, name, else_value=None):
+        """Get edge attribute with a fallback value if attribute is missing or None."""
+        attrs = self.edge_attributes(key)
+        if name not in attrs:
+            return else_value
+        
+        value = self.edge_attribute(key, name)
+        if value is not None:
+            return value
+        return else_value
+
     def mark_y_parallel_as_double(self, threshold=0.99):
         """
         Mark edges that are parallel to the Y axis (in XY projection) as 'double'.

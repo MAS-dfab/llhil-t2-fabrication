@@ -8,7 +8,7 @@ Usage in grasshopper:
 """
 from compas.geometry import (
     Vector, Frame, Plane, Line, Point, Translation,
-    angle_vectors, intersection_segment_plane, intersection_line_line_xy
+    angle_vectors, intersection_line_plane, intersection_line_line_xy
 )
 from compas_timber.model import TimberModel
 from compas_timber.elements import Beam, Plate
@@ -30,31 +30,6 @@ from timber_config import (
     TMULTI_HEEL_THRESHOLD, TMULTI_STEP_DEPTH, TMULTI_RISER_ANGLE,
     KBIRD_MILL_DEPTH, KBIRD_MITER_TYPE
 )
-
-# ---------------------------------------
-# Graph helpers
-# ---------------------------------------
-def get_node_attribute(graph, key, name, else_value=None):
-    """Get node attribute with a fallback value if attribute is missing or None."""
-    attrs = graph.node_attributes(key)
-    if name not in attrs:
-        return else_value
-    
-    value = graph.node_attribute(key, name)
-    if value is not None:
-        return value
-    return else_value
-
-def get_edge_attribute(graph, key, name, else_value=None):
-    """Get edge attribute with a fallback value if attribute is missing or None."""
-    attrs = graph.edge_attributes(key)
-    if name not in attrs:
-        return else_value
-    
-    value = graph.edge_attribute(key, name)
-    if value is not None:
-        return value
-    return else_value
 
 # --------------------------------------
 # Geometry helpers
@@ -81,11 +56,6 @@ def _polyline_aligned_frame(polyline, thickness):
     center += normal.unitized() * thickness
 
     cross = longest.direction.cross(normal)
-
-    # plane = Plane(center, normal)
-    # Frame.from_plane(plane)
-    # return Frame.from_plane(plane)
-
     return Frame(center, longest.direction, cross)
 
 # --------------------------------------
@@ -114,19 +84,19 @@ def create_beam(graph, edge, group_id, plate_vec=None):
     Create a beam aligned with global Z.
     If plate_vec is provided, align the SHOE beam with the plate normal.
     """
-    ln = get_edge_attribute(graph, edge, 'shifted_line', else_value=graph.edge_line(edge))
-    w = get_edge_attribute(graph, edge, 'width', else_value=0.10)
-    h = get_edge_attribute(graph, edge, 'height', else_value=0.14)
-    hie = get_edge_attribute(graph, edge, 'hierarchy')
-    lvl = get_edge_attribute(graph, edge, 'level')
-    reached = get_edge_attribute(graph, edge, 'reached', else_value=False)
-    has_mid = get_edge_attribute(graph, edge, 'has_middle_joint', else_value=False)
+    ln = graph.get_edge_attribute(edge, 'shifted_line', else_value=graph.edge_line(edge))
+    w = graph.get_edge_attribute(edge, 'width', else_value=0.10)
+    h = graph.get_edge_attribute(edge, 'height', else_value=0.14)
+    hie = graph.get_edge_attribute(edge, 'hierarchy')
+    lvl = graph.get_edge_attribute(edge, 'level')
+    reached = graph.get_edge_attribute(edge, 'reached', else_value=False)
+    has_mid = graph.get_edge_attribute(edge, 'has_middle_joint', else_value=False)
+    dir_id = graph.get_edge_attribute(edge, 'direction_id')
 
     if hie == 'shoe' and plate_vec is not None:
         beam = Beam.from_centerline(ln, w, h, plate_vec)
     else:
         beam = Beam.from_centerline(ln, w, h)
-    # beam.name = hie  # temp.
     
     beam.attributes = {
         'hierarchy': hie,
@@ -134,7 +104,8 @@ def create_beam(graph, edge, group_id, plate_vec=None):
         'group': group_id,
         'level': lvl,
         'reached': reached,
-        'has_middle_joint': has_mid
+        'has_middle_joint': has_mid,
+        'direction_id': dir_id
     }
     return beam
 
@@ -142,7 +113,7 @@ def create_beam(graph, edge, group_id, plate_vec=None):
 # --------------------------------------
 # Graph to TimberModels conversion
 # --------------------------------------
-def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_offset=None, align_shoe=True):
+def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_offset=None, align_shoe=False):
     """Convert graph to timber models based on group index."""
     if model_tol is None:
         model_tol = TIMBER_MODEL_TOL
@@ -153,14 +124,14 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
 
     groups = {}
     for edge in graph.edges():
-        g = get_edge_attribute(graph, edge, 'group')
+        g = graph.get_edge_attribute(edge, 'group')
         groups.setdefault(g, {'edges': [], 'clt_plate': None, 'cut_plane': None})['edges'].append(edge)
 
     for node in graph.nodes():
         for name in ('clt_plate', 'cut_plane'):
-            val = get_node_attribute(graph, node, name)
+            val = graph.get_node_attribute(node, name)
             if val:
-                g = get_node_attribute(graph, node, 'group')
+                g = graph.get_node_attribute(node, 'group')
                 groups[g][name] = val
     
 
@@ -240,13 +211,6 @@ def _determine_lap_flip(candidate_a, candidate_b, lap_flip):
         cross = vec.cross(aligned)
         return lap_flip ^ (cross.z <= 0)
     return
-
-
-def _orientate_plane(plane):
-    """Orientate plane to have normal pointing downwards."""
-    if plane.normal.z > 0:
-        return Plane(plane.point, -plane.normal)
-    return plane
 
 def _get_vertical_miter_plane(reordered_elements, flip=False):
     _, a, b = reordered_elements
@@ -384,10 +348,14 @@ def apply_joints(
 
         ### Planar T joints
         if topo == JointTopology.TOPO_T and is_planar:
-            # CLT shoe to Top Beam
-            if cb.attributes["hierarchy"] == 'shoe':
-                TStepJoint.create(model, ca, cb, step_shape="double")
+            # CLT shoe to middle beam
+            if cb.attributes["hierarchy"] == 'shoe' and ca.attributes["has_middle_joint"]:
+                TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
 
+            # CLT shoe to Top Beam
+            elif cb.attributes["hierarchy"] == 'shoe':
+                TStepJoint.create(model, ca, cb, step_shape="double")
+            
             # Middle T Lap Joint
             elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
                 # TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
@@ -411,7 +379,7 @@ def apply_joints(
             TButtJoint.create(model, ca, cb)
 
         ### L Miter Joint at the middle of the structure
-        elif topo == JointTopology.TOPO_L and not all([ca.attributes['reached'], cb.attributes['reached']]):
+        elif topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
             LMiterJoint.create(model, ca, cb, cutoff=False)
 
         ### X Lap Joint
@@ -424,27 +392,31 @@ def apply_joints(
             continue
     return
 
-def apply_processings(model):
+def apply_processings_middle_prototype(model):
+    """Process joinery and finalize cuts which need to be done after."""
     model.process_joinery()
-
+    
+    clt_plate = model.attributes.get("clt_plate")
     for beam in model.beams:
-        # beam.reset_computed_properties()
+        beam.reset_computed_properties()
 
-        # JackRafterCut
-        if beam.attributes['reached']:
-            cutting_plane = model.attributes.get("cut_plane")
-            orientated_cutting_plane = _orientate_plane(cutting_plane)
+        # Middle joint cut
+        if beam.attributes["has_middle_joint"]:
+            if beam.attributes['reached']:
+                cutting_plane = model.attributes.get("cut_plane")
+                if intersection_line_plane(beam.centerline, cutting_plane):
+                    jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam)
+                    beam.add_feature(jrc)
+            
+            else:
+                if clt_plate:
+                    if intersection_line_plane(beam.centerline, Plane.from_frame(clt_plate.frame)):
+                        cutting_frame = clt_plate.frame
+                        jrc = JackRafterCut.from_plane_and_beam(cutting_frame, beam)
+                        beam.add_feature(jrc)
 
-            intersection = intersection_segment_plane(beam.centerline, orientated_cutting_plane)
-
-            if intersection:
-                jrc = JackRafterCut.from_plane_and_beam(orientated_cutting_plane, beam)
-                beam.add_feature(jrc)
-
-        # LongitudinalCut
+            # LongitudinalCut
         elif beam.attributes["hierarchy"] == "shoe":
-            clt_plate = model.attributes.get("clt_plate")
-
             if clt_plate:
                 cutting_frame = clt_plate.frame
                 lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam)
@@ -452,4 +424,38 @@ def apply_processings(model):
 
         else:
             continue
-    return
+    return model
+
+def apply_processings(model):
+    """Process joinery and finalize cuts which need to be done after."""
+    model.process_joinery()
+    
+    clt_plate = model.attributes.get("clt_plate")
+    for beam in model.beams:
+        beam.reset_computed_properties()
+
+        # Middle joint cut
+        if beam.attributes["has_middle_joint"]:
+            if clt_plate:
+                if intersection_line_plane(beam.centerline, Plane.from_frame(clt_plate.frame)):
+                    cutting_frame = clt_plate.frame
+                    jrc = JackRafterCut.from_plane_and_beam(cutting_frame, beam)
+                    beam.add_feature(jrc)
+
+            # LongitudinalCut
+        elif beam.attributes["hierarchy"] == "shoe":
+            if clt_plate:
+                cutting_frame = clt_plate.frame
+                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam)
+                beam.add_feature(lc)
+        
+            # End cut for reached beams
+        elif beam.attributes['reached']:
+                cutting_plane = model.attributes.get("cut_plane")
+                if intersection_line_plane(beam.centerline, cutting_plane):
+                    jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam)
+                    beam.add_feature(jrc)
+
+        else:
+            continue
+    return model

@@ -180,7 +180,7 @@ class FoundationSolver:
 # -------------------------------
 # Main API
 # -------------------------------
-def trim_anchored_beams_and_find_cut_planes(graph, min_radius=0.60, min_height=0.26, min_gap=0.02, _step = 0.01):
+def trim_anchored_beams_and_find_cut_planes(graph, min_radius=0.60, min_height=0.26, min_gap=0.02, step = 0.01):
     """
     xxx
 
@@ -231,7 +231,7 @@ def trim_anchored_beams_and_find_cut_planes(graph, min_radius=0.60, min_height=0
             min_radius=min_radius,
             min_height=min_height,
             min_gap=min_gap,
-            step=_step,
+            step=step,
             max_attempts=100
         )
         crosecs, step = solver.solve()
@@ -241,7 +241,7 @@ def trim_anchored_beams_and_find_cut_planes(graph, min_radius=0.60, min_height=0
 
         # 3. Assign cut planes to nodes' attrubutes in graph
         sup_pt = graph.node_point(sup_node)
-        cut_pln = Plane(sup_pt + Vector(0, 0, step), Vector(0, 0, 1))
+        cut_pln = Plane(sup_pt + Vector(0, 0, step), Vector(0, 0, -1))
         cuts[sup_node] = cut_pln
         
         graph.node_attribute(sup_node, "cut_plane", cut_pln)

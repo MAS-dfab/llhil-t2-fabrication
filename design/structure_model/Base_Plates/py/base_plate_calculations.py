@@ -28,6 +28,8 @@ except Exception:
 
 
 Point3 = Tuple[float, float, float]
+SUPPORTED_GEOMETRY_UNITS = {"meters", "millimeters"}
+ANALYSIS_UNITS = "millimeters"
 
 
 @dataclass
@@ -66,6 +68,138 @@ def _sub(a: Point3, b: Point3) -> Point3:
 
 def _scale(v: Point3, s: float) -> Point3:
     return (v[0] * s, v[1] * s, v[2] * s)
+
+
+def _canonical_units(value: object, default: str = "millimeters") -> str:
+    if value is None:
+        return default
+    text = str(value).strip().lower()
+    aliases = {
+        "m": "meters",
+        "meter": "meters",
+        "meters": "meters",
+        "metre": "meters",
+        "metres": "meters",
+        "mm": "millimeters",
+        "millimeter": "millimeters",
+        "millimeters": "millimeters",
+        "millimetre": "millimeters",
+        "millimetres": "millimeters",
+    }
+    return aliases.get(text, default)
+
+
+def _unit_scale_factor(from_units: str, to_units: str) -> float:
+    source = _canonical_units(from_units, from_units)
+    target = _canonical_units(to_units, to_units)
+    if source == target:
+        return 1.0
+    if source == "meters" and target == "millimeters":
+        return 1000.0
+    if source == "millimeters" and target == "meters":
+        return 0.001
+    return 1.0
+
+
+def _scale_point_value(value: object, factor: float) -> object:
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)) and len(value) >= 3:
+        return (
+            float(value[0]) * factor,
+            float(value[1]) * factor,
+            float(value[2]) * factor,
+        )
+    return value
+
+
+def _scale_point_list(values: object, factor: float) -> object:
+    if not isinstance(values, list):
+        return values
+    return [_scale_point_value(value, factor) for value in values]
+
+
+def _median(values: Sequence[float], default: float = 0.0) -> float:
+    items = sorted(float(value) for value in values)
+    if not items:
+        return default
+    middle = len(items) // 2
+    if len(items) % 2:
+        return items[middle]
+    return 0.5 * (items[middle - 1] + items[middle])
+
+
+def _geometry_payload_units(payload: Dict[str, object]) -> str:
+    metadata = payload.get("metadata")
+    if isinstance(metadata, dict):
+        explicit = _canonical_units(metadata.get("geometry_units"), "")
+        if explicit in SUPPORTED_GEOMETRY_UNITS:
+            return explicit
+
+    widths: List[float] = []
+    for member in payload.get("members", []):
+        if isinstance(member, dict) and member.get("width") is not None:
+            widths.append(abs(float(member["width"])))
+    median_width = _median(widths, 0.0)
+    return "meters" if 0.0 < median_width < 10.0 else "millimeters"
+
+
+def _scale_plate_records(
+    plates: Sequence[Dict[str, object]],
+    from_units: str,
+    to_units: str,
+) -> List[Dict[str, object]]:
+    factor = _unit_scale_factor(from_units, to_units)
+    if abs(factor - 1.0) <= 1e-12:
+        return [dict(plate) for plate in plates]
+
+    scaled: List[Dict[str, object]] = []
+    for plate in plates:
+        plate_copy = dict(plate)
+        for key in ("length", "width", "thickness", "adjustment_along_member"):
+            if plate_copy.get(key) is not None:
+                plate_copy[key] = float(plate_copy[key]) * factor
+        for key in ("center",):
+            if key in plate_copy:
+                plate_copy[key] = _scale_point_value(plate_copy[key], factor)
+        for key in ("corners", "corners_adjusted"):
+            if key in plate_copy:
+                plate_copy[key] = _scale_point_list(plate_copy[key], factor)
+        scaled.append(plate_copy)
+    return scaled
+
+
+def _scale_geometry_payload(
+    geometry_payload: Dict[str, object],
+    from_units: str,
+    to_units: str,
+) -> Dict[str, object]:
+    factor = _unit_scale_factor(from_units, to_units)
+    scaled = _safe_payload_copy(geometry_payload)
+
+    members: List[Dict[str, object]] = []
+    for member in scaled.get("members", []):
+        if not isinstance(member, dict):
+            members.append(member)
+            continue
+        member_copy = dict(member)
+        for key in ("width", "height", "length"):
+            if member_copy.get(key) is not None:
+                member_copy[key] = float(member_copy[key]) * factor
+        for key in ("start", "end"):
+            if key in member_copy:
+                member_copy[key] = _scale_point_value(member_copy[key], factor)
+        members.append(member_copy)
+    scaled["members"] = members
+
+    scaled["base_plates"] = _scale_plate_records(
+        _plate_records(scaled),
+        from_units=from_units,
+        to_units=to_units,
+    )
+
+    metadata = dict(scaled.get("metadata") or {})
+    metadata["geometry_units"] = to_units
+    scaled["metadata"] = metadata
+    return scaled
 
 
 def _length(v: Point3) -> float:
@@ -228,7 +362,7 @@ def _build_synced_geometry_payload(
     sync_iterations: int,
     sync_applied: bool,
 ) -> Dict[str, object]:
-    synced = deepcopy(geometry_payload)
+    synced = _safe_payload_copy(geometry_payload)
     synced_base_plates: List[Dict[str, object]] = []
     for plate in adjusted_plates:
         plate_copy = dict(plate)
@@ -243,6 +377,92 @@ def _build_synced_geometry_payload(
     meta["sizing_sync_iterations"] = int(sync_iterations)
     synced["metadata"] = meta
     return synced
+
+
+def _safe_payload_copy(payload: Dict[str, object]) -> Dict[str, object]:
+    """Copy analytical payload data without forcing RhinoCommon geometry through deepcopy."""
+    copied: Dict[str, object] = {}
+    for key, value in payload.items():
+        if key in ("footing_breps", "preview"):
+            copied[key] = value
+            continue
+        try:
+            copied[key] = deepcopy(value)
+        except Exception:
+            copied[key] = value
+    return copied
+
+
+def _active_handoff(payload: Dict[str, object]) -> Dict[str, object]:
+    handoff = payload.get("handoff")
+    if isinstance(handoff, dict):
+        return handoff
+    return {}
+
+
+def _metric_to_analysis_units(value: object, payload_units: str) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        return float(value) * _unit_scale_factor(payload_units, ANALYSIS_UNITS)
+    except Exception:
+        return None
+
+
+def _engineering_overrides_from_geometry_payload(
+    geometry_payload: Dict[str, object],
+) -> Dict[str, object]:
+    """Extract resolved geometry inputs so checks report the geometry actually in play."""
+    source_units = _geometry_payload_units(geometry_payload)
+    handoff = _active_handoff(geometry_payload)
+    geometry = handoff.get("geometry") if isinstance(handoff.get("geometry"), dict) else {}
+    milling = handoff.get("milling") if isinstance(handoff.get("milling"), dict) else {}
+
+    overrides: Dict[str, object] = {}
+    members = [member for member in geometry_payload.get("members", []) if isinstance(member, dict)]
+    if members:
+        first_member = members[0]
+        member_width = _metric_to_analysis_units(first_member.get("width"), source_units)
+        member_height = _metric_to_analysis_units(first_member.get("height"), source_units)
+        if member_width is not None:
+            overrides["b_timber"] = member_width
+        if member_height is not None:
+            overrides["h_timber"] = member_height
+
+    mapping = {
+        "plate_thickness": ("geometry", "plate_thickness"),
+        "bolt_hole_dia": ("milling", "bolt_hole_diameter"),
+        "pitch_parallel": ("milling", "pitch_parallel"),
+        "gage_perp": ("milling", "gage_perp"),
+        "end_distance": ("milling", "end_distance"),
+        "edge_distance": ("milling", "edge_distance"),
+    }
+    for target_key, (section_name, source_key) in mapping.items():
+        section = geometry if section_name == "geometry" else milling
+        value = _metric_to_analysis_units(section.get(source_key), source_units)
+        if value is not None:
+            overrides[target_key] = value
+
+    if milling.get("plate_hole_rows") is not None:
+        overrides["rows"] = int(milling["plate_hole_rows"])
+    if milling.get("plate_holes_per_row") is not None:
+        overrides["holes_per_row"] = int(milling["plate_holes_per_row"])
+
+    base_thickness = _metric_to_analysis_units(geometry.get("base_thickness"), source_units)
+    base_diameter = _metric_to_analysis_units(geometry.get("base_diameter"), source_units)
+    base_length = _metric_to_analysis_units(geometry.get("base_length"), source_units)
+    base_width = _metric_to_analysis_units(geometry.get("base_width"), source_units)
+    if base_thickness is not None:
+        overrides["base_plate_thickness"] = base_thickness
+    if base_diameter is not None:
+        overrides["base_plate_length"] = base_diameter
+        overrides["base_plate_width"] = base_diameter
+    else:
+        if base_length is not None:
+            overrides["base_plate_length"] = base_length
+        if base_width is not None:
+            overrides["base_plate_width"] = base_width
+    return overrides
 
 
 def _validate_and_adjust_single(
@@ -442,6 +662,180 @@ def _run_part2_weld_report(
     return "\n".join(reports), utils, ok
 
 
+def _run_aisc_steel_node_report(
+    plate_thickness: float,
+    plate_width: float,
+    unsupported_plate_width: float,
+    weld_utils: Sequence[float],
+    corner_radius_mode: str,
+    corner_radius_input: float,
+    min_corner_radius: float,
+    project_min_corner_radius: float,
+    preferred_corner_radius_factor: float,
+    run_stress_concentration_check: bool,
+    stress_concentration_factor: float,
+    use_gusset_plates: bool,
+    use_web_stiffeners: bool,
+    weld_utilization_limit_for_gusset_warning: float,
+    plate_slenderness_limit: float,
+    eccentricity_mm: float,
+    concentrated_force_kN: float,
+    wall_thickness_mm: float,
+    concentrated_force_per_wall_thickness_limit: Optional[float],
+) -> Tuple[str, Dict[str, object], Dict[str, object], Dict[str, object], bool]:
+    governing_min_corner_radius = max(
+        float(min_corner_radius),
+        float(project_min_corner_radius),
+    )
+    preferred_corner_radius = max(
+        governing_min_corner_radius,
+        float(preferred_corner_radius_factor) * float(plate_thickness),
+    )
+    radius_mode = str(corner_radius_mode or "auto").strip().lower()
+    manual_radius_requested = radius_mode == "manual" and _truthy_override(corner_radius_input)
+    corner_radius = float(corner_radius_input) if manual_radius_requested else preferred_corner_radius
+
+    corner_radius_code_min_ok = corner_radius >= float(min_corner_radius)
+    corner_radius_project_min_ok = corner_radius >= float(project_min_corner_radius)
+    corner_radius_governing_min_ok = corner_radius >= governing_min_corner_radius
+
+    if not corner_radius_governing_min_ok:
+        corner_radius_status = "NG"
+    elif corner_radius < preferred_corner_radius:
+        corner_radius_status = "TIGHT"
+    else:
+        corner_radius_status = "OK"
+
+    weld_peak_utilization = max([float(value) for value in weld_utils] or [0.0])
+    plate_slenderness = _utilization(float(unsupported_plate_width), float(plate_thickness))
+    eccentricity_ratio = _utilization(float(eccentricity_mm), 0.25 * float(plate_width))
+    concentrated_force_ratio = _utilization(float(concentrated_force_kN), float(wall_thickness_mm))
+    force_density_limit = concentrated_force_per_wall_thickness_limit
+    force_density_trigger = (
+        force_density_limit is not None
+        and force_density_limit > 0.0
+        and concentrated_force_ratio > force_density_limit
+    )
+
+    gusset_trigger_weld = weld_peak_utilization > weld_utilization_limit_for_gusset_warning
+    gusset_trigger_slenderness = plate_slenderness > plate_slenderness_limit
+    gusset_trigger_eccentricity = eccentricity_ratio > 1.0
+    recommend_gusset = gusset_trigger_weld or gusset_trigger_slenderness or gusset_trigger_eccentricity
+    recommend_web_stiffener = force_density_trigger
+
+    checks: Dict[str, object] = {
+        "run_stress_concentration_check": bool(run_stress_concentration_check),
+        "corner_radius_status": corner_radius_status,
+        "corner_radius_ok": corner_radius_status == "OK",
+        "corner_radius_tight": corner_radius_status == "TIGHT",
+        "corner_radius_code_min_ok": corner_radius_code_min_ok,
+        "corner_radius_project_min_ok": corner_radius_project_min_ok,
+        "corner_radius_governing_min_ok": corner_radius_governing_min_ok,
+        "weld_utilization_warning": gusset_trigger_weld,
+        "plate_slenderness_warning": gusset_trigger_slenderness,
+        "eccentricity_warning": gusset_trigger_eccentricity,
+        "concentrated_force_warning": force_density_trigger,
+    }
+    values: Dict[str, object] = {
+        "corner_radius": corner_radius,
+        "corner_radius_min": governing_min_corner_radius,
+        "corner_radius_code_min": float(min_corner_radius),
+        "corner_radius_project_min": float(project_min_corner_radius),
+        "corner_radius_governing_min": governing_min_corner_radius,
+        "corner_radius_preferred": preferred_corner_radius,
+        "stress_concentration_factor": float(stress_concentration_factor),
+        "weld_peak_utilization": weld_peak_utilization,
+        "plate_slenderness": plate_slenderness,
+        "eccentricity_ratio": eccentricity_ratio,
+        "concentrated_force_per_wall_thickness": concentrated_force_ratio,
+        "concentrated_force_per_wall_thickness_limit": force_density_limit,
+    }
+    recommendations: Dict[str, object] = {
+        "recommend_gusset": recommend_gusset,
+        "recommend_web_stiffener": recommend_web_stiffener,
+        "use_gusset_plates": bool(use_gusset_plates),
+        "use_web_stiffeners": bool(use_web_stiffeners),
+    }
+
+    reports = [
+        "PART 2A: AISC-STYLE STEEL NODE DETAILING CHECK REPORT",
+        "Code references flagged: AISC 360 J2 welds, J3 bolts where applicable, J4 affected elements, and J10 concentrated-force/stiffener checks.",
+        "Corner radius check:",
+        "Provided radius = {0:.1f} mm ({1})".format(corner_radius, "manual" if manual_radius_requested else "auto"),
+        "Code minimum rule-of-thumb radius = {0:.1f} mm".format(min_corner_radius),
+        "Project minimum radius = {0:.1f} mm".format(project_min_corner_radius),
+        "Governing minimum radius = {0:.1f} mm".format(governing_min_corner_radius),
+        "Preferred radius = plate thickness x {0:.2f} = {1:.1f} mm".format(
+            preferred_corner_radius_factor,
+            preferred_corner_radius,
+        ),
+        "Status = {0}".format(corner_radius_status),
+    ]
+
+    if run_stress_concentration_check:
+        reports.extend(
+            [
+                "Stress concentration warning factor = {0:.2f} (placeholder flag, not a final code value).".format(
+                    stress_concentration_factor
+                ),
+                "AISC note: Stress concentration at welded re-entrant corners is not checked by a single ordinary static-strength equation. This module flags notch-sensitive geometry and checks weld strength, plate slenderness, local yielding/crippling, and stiffener need.",
+            ]
+        )
+    else:
+        reports.append("Stress concentration warning disabled by run_stress_concentration_check = False.")
+
+    reports.extend(
+        [
+            "Stiffener warning:",
+            "Peak weld utilization = {0:.2f}; warning threshold = {1:.2f}; trigger = {2}".format(
+                weld_peak_utilization,
+                weld_utilization_limit_for_gusset_warning,
+                gusset_trigger_weld,
+            ),
+            "Unsupported plate width / thickness = {0:.2f}; limit = {1:.2f}; trigger = {2}".format(
+                plate_slenderness,
+                plate_slenderness_limit,
+                gusset_trigger_slenderness,
+            ),
+            "Eccentricity / (0.25 x plate width) = {0:.2f}; trigger = {1}".format(
+                eccentricity_ratio,
+                gusset_trigger_eccentricity,
+            ),
+        ]
+    )
+    if force_density_limit is None or force_density_limit <= 0.0:
+        reports.append(
+            "Concentrated force / wall thickness = {0:.2f}; no trigger limit supplied, so J10 web-stiffener warning remains informational.".format(
+                concentrated_force_ratio
+            )
+        )
+    else:
+        reports.append(
+            "Concentrated force / wall thickness = {0:.2f}; limit = {1:.2f}; web-stiffener trigger = {2}".format(
+                concentrated_force_ratio,
+                force_density_limit,
+                force_density_trigger,
+            )
+        )
+    reports.extend(
+        [
+            "Recommend gusset review = {0}; configured use_gusset_plates = {1}".format(
+                recommend_gusset,
+                bool(use_gusset_plates),
+            ),
+            "Recommend web stiffener review = {0}; configured use_web_stiffeners = {1}".format(
+                recommend_web_stiffener,
+                bool(use_web_stiffeners),
+            ),
+            "Rounded corners reduce notch severity but do not replace gussets/web stiffeners when the force path remains eccentric or locally overstressed.",
+        ]
+    )
+
+    ok = corner_radius_governing_min_ok
+    reports.append("Part 2A steel-node detailing result: {0}".format("OK PRELIMINARY" if ok else "NG - INCREASE CORNER RADIUS"))
+    return "\n".join(reports), checks, values, recommendations, ok
+
+
 def _run_part3_anchor_report(
     V_lat_Ed: float,
     N_comp_Ed: float,
@@ -526,6 +920,8 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
 
     run_part2_weld_checks = bool(g("run_part2_weld_checks", True))
     run_part3_anchor_bolt_checks = bool(g("run_part3_anchor_bolt_checks", True))
+    run_aisc_steel_node_checks = bool(g("run_aisc_steel_node_checks", True))
+    run_stress_concentration_check = bool(g("run_stress_concentration_check", True))
     render_geometry = bool(g("render_geometry", True))
 
     b_timber = float(g("b_timber", 100.0))
@@ -544,7 +940,13 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     bolt_grade = str(g("bolt_grade", "4.6"))
     bolt_Fub = float(g("bolt_Fub", 400.0))
     hole_clearance = float(g("hole_clearance", 1.0))
-    bolt_hole_dia = float(g("bolt_hole_dia", bolt_dia + hole_clearance))
+    code_min_bolt_hole_dia = bolt_dia + hole_clearance
+    project_min_bolt_hole_dia = float(g("project_min_bolt_hole_dia", 20.0))
+    min_bolt_hole_dia = max(code_min_bolt_hole_dia, project_min_bolt_hole_dia)
+    bolt_hole_dia = float(g("bolt_hole_dia", 20.0))
+    bolt_hole_dia_code_min_ok = bolt_hole_dia >= code_min_bolt_hole_dia
+    bolt_hole_dia_project_min_ok = bolt_hole_dia >= project_min_bolt_hole_dia
+    bolt_hole_dia_min_ok = bolt_hole_dia >= min_bolt_hole_dia
 
     rows = int(g("rows", 2))
     holes_per_row = int(g("holes_per_row", 2))
@@ -584,6 +986,25 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     weld_force_share = g("weld_force_share", None)
     weld_eccentric_moment_Ed = float(g("weld_eccentric_moment_Ed", 0.0))
 
+    corner_radius_mode = str(g("corner_radius_mode", "auto"))
+    corner_radius_input = float(g("corner_radius", 0.0))
+    stress_concentration_factor = float(g("stress_concentration_factor", 2.0))
+    use_gusset_plates = bool(g("use_gusset_plates", False))
+    use_web_stiffeners = bool(g("use_web_stiffeners", False))
+    weld_utilization_limit_for_gusset_warning = float(g("weld_utilization_limit_for_gusset_warning", 0.70))
+    plate_slenderness_limit = float(g("plate_slenderness_limit", 18.0))
+    min_corner_radius = float(g("min_corner_radius", 10.0))
+    project_min_corner_radius = float(g("project_min_corner_radius", 20.0))
+    preferred_corner_radius_factor = float(g("preferred_corner_radius_factor", 1.0))
+    unsupported_plate_width_in = g("unsupported_plate_width", 0.0)
+    eccentricity_mm = float(g("eccentricity_mm", 0.0))
+    concentrated_force_kN_in = g("concentrated_force_kN", 0.0)
+    wall_thickness_mm_in = g("wall_thickness_mm", 0.0)
+    concentrated_force_per_wall_thickness_limit_raw = g(
+        "concentrated_force_per_wall_thickness_limit",
+        None,
+    )
+
     base_plate_width = float(g("base_plate_width", 300.0))
     base_plate_length = float(g("base_plate_length", 300.0))
     base_plate_thickness = float(g("base_plate_thickness", 20.0))
@@ -615,6 +1036,11 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
 
     plate_length = float(plate_length_in) if _truthy_override(plate_length_in) else (2.0 * end_distance + (holes_per_row - 1) * pitch_parallel)
     plate_depth = float(plate_depth_in) if _truthy_override(plate_depth_in) else (2.0 * edge_distance + (rows - 1) * gage_perp)
+    unsupported_plate_width = (
+        float(unsupported_plate_width_in)
+        if _truthy_override(unsupported_plate_width_in)
+        else plate_depth
+    )
 
     slot_width = t_plate + 2.0 * slot_clearance_each_side
     slot_length = plate_length + slot_extra_length
@@ -626,6 +1052,21 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     F_axial_Ed = max(abs(N_comp_Ed), abs(N_tens_Ed))
     F_combined_Ed = math.sqrt(F_axial_Ed ** 2 + V_lat_Ed ** 2)
     F_Ed_part1 = F_combined_Ed
+    concentrated_force_kN = (
+        float(concentrated_force_kN_in)
+        if _truthy_override(concentrated_force_kN_in)
+        else F_Ed_part1
+    )
+    wall_thickness_mm = (
+        float(wall_thickness_mm_in)
+        if _truthy_override(wall_thickness_mm_in)
+        else t_plate
+    )
+    concentrated_force_per_wall_thickness_limit = (
+        float(concentrated_force_per_wall_thickness_limit_raw)
+        if concentrated_force_per_wall_thickness_limit_raw not in (None, "")
+        else None
+    )
     V_Ed_per_bolt = F_Ed_part1 / max(n_bolts, 1)
 
     fh0k = 0.082 * (1.0 - 0.01 * bolt_dia) * rho_k
@@ -677,7 +1118,14 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     geometry_plate_fits_depth = plate_depth <= h_timber
     geometry_side_thickness_ok = t_side >= 3.0 * bolt_dia
     geometry_slot_ok = slot_width <= b_timber and slot_depth <= h_timber
-    geometry_ok = geometry_plate_fits_depth and geometry_side_thickness_ok and geometry_slot_ok and recess_geometry_ok and installation_absolute_ok
+    geometry_ok = (
+        geometry_plate_fits_depth
+        and geometry_side_thickness_ok
+        and geometry_slot_ok
+        and recess_geometry_ok
+        and installation_absolute_ok
+        and bolt_hole_dia_min_ok
+    )
 
     part1_utils = {
         "timber_embedment": util_embed,
@@ -750,7 +1198,14 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     part1_report_lines.append("Fastener mode: through-bolts with recessed nuts/washers; not free smooth dowels.")
     part1_report_lines.append("Timber: {0:.0f} mm thick x {1:.0f} mm deep; rho_k = {2:.0f} kg/m3".format(b_timber, h_timber, rho_k))
     part1_report_lines.append("Steel plate: {0:.0f} mm {1}; Fy = {2:.0f} N/mm2".format(t_plate, steel_grade, Fy_steel))
-    part1_report_lines.append("Bolts: {0} x M{1:.0f}, grade {2}, holes O{3:.0f} mm".format(n_bolts, bolt_dia, bolt_grade, bolt_hole_dia))
+    part1_report_lines.append(
+        "Bolts: {0} x M{1:.0f}, grade {2}, holes O{3:.0f} mm".format(
+            n_bolts,
+            bolt_dia,
+            bolt_grade,
+            bolt_hole_dia,
+        )
+    )
     part1_report_lines.append("Layout: {0} rows x {1} holes/row".format(rows, holes_per_row))
     part1_report_lines.append("Pitch along member p = {0:.0f} mm; gage across depth g = {1:.0f} mm".format(pitch_parallel, gage_perp))
     part1_report_lines.append("End distance e1 = {0:.0f} mm; edge distance e2 = {1:.0f} mm".format(end_distance, edge_distance))
@@ -772,6 +1227,20 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     part1_report_lines.append("Slot length = {0:.1f} mm".format(slot_length))
     part1_report_lines.append("Slot depth/height = {0:.1f} mm".format(slot_depth))
     part1_report_lines.append("Through bolt holes = O{0:.1f} mm".format(bolt_hole_dia))
+    part1_report_lines.append(
+        "Code minimum through-hole diameter = O{0:.1f} mm; provided = O{1:.1f} mm; OK = {2}".format(
+            code_min_bolt_hole_dia,
+            bolt_hole_dia,
+            bolt_hole_dia_code_min_ok,
+        )
+    )
+    part1_report_lines.append(
+        "Project minimum through-hole diameter = O{0:.1f} mm; provided = O{1:.1f} mm; OK = {2}".format(
+            project_min_bolt_hole_dia,
+            bolt_hole_dia,
+            bolt_hole_dia_project_min_ok,
+        )
+    )
     part1_report_lines.append("Washer/nut counterbore face diameter = O{0:.1f} mm".format(washer_face_dia))
     part1_report_lines.append("Washer/nut counterbore depth = {0:.1f} mm".format(washer_recess_depth))
     part1_report_lines.append("Timber plug depth allowance = {0:.1f} mm".format(plug_depth))
@@ -792,6 +1261,7 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     part1_report_lines.append("Slot fits timber: {0}".format(geometry_slot_ok))
     part1_report_lines.append("Recess geometry acceptable: {0}".format(recess_geometry_ok))
     part1_report_lines.append("Installation absolute clearance acceptable: {0}".format(installation_absolute_ok))
+    part1_report_lines.append("Provided through-hole diameter >= governing minimum diameter: {0}".format(bolt_hole_dia_min_ok))
     part1_report_lines.append("Part 1 result: {0}".format("OK PRELIMINARY" if (part1_strength_ok and geometry_ok) else "NG - REVISE GEOMETRY/SIZE/INSTALLATION ACCESS"))
 
     part1_report = "\n".join(part1_report_lines)
@@ -812,6 +1282,41 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
         weld_report = "PART 2: WELD CHECK REPORT\nWeld checks deactivated by run_part2_weld_checks = False."
         weld_utils = []
         weld_ok = None
+
+    if run_aisc_steel_node_checks:
+        (
+            steel_node_report,
+            steel_node_checks,
+            steel_node_values,
+            steel_node_recommendations,
+            steel_node_ok,
+        ) = _run_aisc_steel_node_report(
+            plate_thickness=t_plate,
+            plate_width=plate_depth,
+            unsupported_plate_width=unsupported_plate_width,
+            weld_utils=weld_utils,
+            corner_radius_mode=corner_radius_mode,
+            corner_radius_input=corner_radius_input,
+            min_corner_radius=min_corner_radius,
+            project_min_corner_radius=project_min_corner_radius,
+            preferred_corner_radius_factor=preferred_corner_radius_factor,
+            run_stress_concentration_check=run_stress_concentration_check,
+            stress_concentration_factor=stress_concentration_factor,
+            use_gusset_plates=use_gusset_plates,
+            use_web_stiffeners=use_web_stiffeners,
+            weld_utilization_limit_for_gusset_warning=weld_utilization_limit_for_gusset_warning,
+            plate_slenderness_limit=plate_slenderness_limit,
+            eccentricity_mm=eccentricity_mm,
+            concentrated_force_kN=concentrated_force_kN,
+            wall_thickness_mm=wall_thickness_mm,
+            concentrated_force_per_wall_thickness_limit=concentrated_force_per_wall_thickness_limit,
+        )
+    else:
+        steel_node_report = "PART 2A: AISC-STYLE STEEL NODE DETAILING CHECK REPORT\nSteel-node detailing checks deactivated by run_aisc_steel_node_checks = False."
+        steel_node_checks = {}
+        steel_node_values = {}
+        steel_node_recommendations = {}
+        steel_node_ok = None
 
     if run_part3_anchor_bolt_checks:
         anchor_report, anchor_utils, anchor_ok = _run_part3_anchor_report(
@@ -839,26 +1344,38 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
         anchor_utils = []
         anchor_ok = None
 
-    combined_report = "\n\n".join([part1_report, weld_report, anchor_report])
+    combined_report = "\n\n".join([part1_report, weld_report, steel_node_report, anchor_report])
 
     pass_fail_summary = {
         "part1_geometry_ok": geometry_ok,
         "part1_strength_ok": part1_strength_ok,
+        "part1_bolt_hole_diameter_code_min_ok": bolt_hole_dia_code_min_ok,
+        "part1_bolt_hole_diameter_project_min_ok": bolt_hole_dia_project_min_ok,
+        "part1_bolt_hole_diameter_min_ok": bolt_hole_dia_min_ok,
         "part1_installation_preferred_ok": installation_preferred_ok,
         "part1_installation_absolute_ok": installation_absolute_ok,
         "part1_installation_clearance_status": installation_clearance_status,
         "part2_weld_ok": weld_ok,
+        "part2a_steel_node_ok": steel_node_ok,
+        "steel_node_stiffener_review_recommended": bool(
+            steel_node_recommendations.get("recommend_gusset")
+            or steel_node_recommendations.get("recommend_web_stiffener")
+        ),
         "part3_anchor_screw_pier_ok": anchor_ok,
     }
 
     utilization_values = {
         "part1": part1_utils,
         "part2_weld": weld_utils,
+        "part2a_steel_node": steel_node_values,
         "part3_anchor_screw_pier": anchor_utils,
     }
 
     sizing_recommendations = {
         "bolt_hole_dia": bolt_hole_dia,
+        "code_min_bolt_hole_dia": code_min_bolt_hole_dia,
+        "project_min_bolt_hole_dia": project_min_bolt_hole_dia,
+        "min_bolt_hole_dia": min_bolt_hole_dia,
         "bolt_dia": bolt_dia,
         "rows": rows,
         "holes_per_row": holes_per_row,
@@ -869,6 +1386,12 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
         "plate_length": plate_length,
         "plate_width": plate_depth,
         "plate_thickness": t_plate,
+        "corner_radius": steel_node_values.get("corner_radius"),
+        "corner_radius_min": steel_node_values.get("corner_radius_min"),
+        "corner_radius_code_min": steel_node_values.get("corner_radius_code_min"),
+        "corner_radius_project_min": steel_node_values.get("corner_radius_project_min"),
+        "corner_radius_governing_min": steel_node_values.get("corner_radius_governing_min"),
+        "corner_radius_preferred": steel_node_values.get("corner_radius_preferred"),
         "anchor_pattern_x": anchor_pattern_x,
         "anchor_pattern_y": anchor_pattern_y,
         "anchor_bolt_dia": anchor_bolt_dia,
@@ -877,6 +1400,10 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
 
     fabrication_parameters = {
         "hole_clearance": hole_clearance,
+        "code_min_bolt_hole_dia": code_min_bolt_hole_dia,
+        "project_min_bolt_hole_dia": project_min_bolt_hole_dia,
+        "min_bolt_hole_dia": min_bolt_hole_dia,
+        "project_min_corner_radius": project_min_corner_radius,
         "slot_clearance_each_side": slot_clearance_each_side,
         "slot_extra_length": slot_extra_length,
         "slot_extra_depth": slot_extra_depth,
@@ -910,11 +1437,15 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
         "combined_report": combined_report,
         "part1_report": part1_report,
         "weld_report": weld_report,
+        "steel_node_report": steel_node_report,
         "anchor_report": anchor_report,
         "pass_fail_summary": pass_fail_summary,
         "utilization_values": utilization_values,
         "sizing_recommendations": sizing_recommendations,
         "fabrication_parameters": fabrication_parameters,
+        "steel_node_checks": steel_node_checks,
+        "steel_node_values": steel_node_values,
+        "steel_node_recommendations": steel_node_recommendations,
     }
 
 
@@ -938,14 +1469,25 @@ def run_validation(
         base_plate_max_thickness=base_plate_max_thickness,
     )
 
-    members = _member_map(geometry_payload)
-    plates = _plate_records(geometry_payload)
+    source_geometry_units = _geometry_payload_units(geometry_payload)
+    analysis_geometry_payload = _scale_geometry_payload(
+        geometry_payload,
+        from_units=source_geometry_units,
+        to_units=ANALYSIS_UNITS,
+    )
+
+    members = _member_map(analysis_geometry_payload)
+    plates = _plate_records(analysis_geometry_payload)
     results, adjusted_plates = _run_geometric_validation_pass(members, plates, cfg)
 
     passed_count = sum(1 for r in results if r.passed)
     failed_count = len(results) - passed_count
 
-    engineering = run_engineering_checks(overrides=engineering_overrides)
+    geometry_engineering_overrides = _engineering_overrides_from_geometry_payload(geometry_payload)
+    merged_engineering_overrides = dict(geometry_engineering_overrides)
+    if engineering_overrides:
+        merged_engineering_overrides.update(engineering_overrides)
+    engineering = run_engineering_checks(overrides=merged_engineering_overrides)
 
     sync_iters = max(1, int(sync_iterations or 1))
     sync_applied = False
@@ -964,11 +1506,21 @@ def run_validation(
             passed_count = sum(1 for r in results if r.passed)
             failed_count = len(results) - passed_count
 
-    synced_geometry_payload = _build_synced_geometry_payload(
-        geometry_payload=geometry_payload,
+    synced_geometry_payload_mm = _build_synced_geometry_payload(
+        geometry_payload=analysis_geometry_payload,
         adjusted_plates=adjusted_plates,
         sync_iterations=sync_iters if sync_applied else 0,
         sync_applied=sync_applied,
+    )
+    synced_geometry_payload = _scale_geometry_payload(
+        synced_geometry_payload_mm,
+        from_units=ANALYSIS_UNITS,
+        to_units=source_geometry_units,
+    )
+    adjusted_plates_output = _scale_plate_records(
+        adjusted_plates,
+        from_units=ANALYSIS_UNITS,
+        to_units=source_geometry_units,
     )
 
     report_lines = [
@@ -1008,6 +1560,10 @@ def run_validation(
             "sync_applied": sync_applied,
             "sync_iterations": sync_iters if sync_applied else 0,
             "passed": failed_count == 0,
+            "geometry_units": source_geometry_units,
+            "analysis_units": ANALYSIS_UNITS,
+            "geometry_engineering_overrides": geometry_engineering_overrides,
+            "explicit_engineering_overrides": dict(engineering_overrides or {}),
         },
         "report_text": "\n".join(report_lines),
         "member_results": [
@@ -1024,7 +1580,7 @@ def run_validation(
             }
             for r in results
         ],
-        "adjusted_base_plates": adjusted_plates,
+        "adjusted_base_plates": adjusted_plates_output,
         "synced_geometry_payload": synced_geometry_payload,
         "engineering": engineering,
         "a": engineering["a"],
@@ -1043,9 +1599,13 @@ def run_validation(
         "n": engineering["n"],
         "combined_report": engineering["combined_report"],
         "weld_report": engineering["weld_report"],
+        "steel_node_report": engineering["steel_node_report"],
         "anchor_report": engineering["anchor_report"],
         "pass_fail_summary": engineering["pass_fail_summary"],
         "utilization_values": engineering["utilization_values"],
+        "steel_node_checks": engineering["steel_node_checks"],
+        "steel_node_values": engineering["steel_node_values"],
+        "steel_node_recommendations": engineering["steel_node_recommendations"],
     }
     return payload
 

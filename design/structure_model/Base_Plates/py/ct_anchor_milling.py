@@ -21,6 +21,80 @@ except Exception:
 
 
 Point3 = Tuple[float, float, float]
+SUPPORTED_GEOMETRY_UNITS = {"meters", "millimeters"}
+
+
+def _canonical_units(value: object, default: str = "millimeters") -> str:
+    if value is None:
+        return default
+    text = str(value).strip().lower()
+    aliases = {
+        "m": "meters",
+        "meter": "meters",
+        "meters": "meters",
+        "metre": "meters",
+        "metres": "meters",
+        "mm": "millimeters",
+        "millimeter": "millimeters",
+        "millimeters": "millimeters",
+        "millimetre": "millimeters",
+        "millimetres": "millimeters",
+    }
+    return aliases.get(text, default)
+
+
+def _unit_scale_factor(from_units: str, to_units: str) -> float:
+    source = _canonical_units(from_units, from_units)
+    target = _canonical_units(to_units, to_units)
+    if source == target:
+        return 1.0
+    if source == "meters" and target == "millimeters":
+        return 1000.0
+    if source == "millimeters" and target == "meters":
+        return 0.001
+    return 1.0
+
+
+def _median(values: Sequence[float], default: float = 0.0) -> float:
+    items = sorted(float(value) for value in values)
+    if not items:
+        return default
+    middle = len(items) // 2
+    if len(items) % 2:
+        return items[middle]
+    return 0.5 * (items[middle - 1] + items[middle])
+
+
+def _geometry_payload_units(payload: Dict[str, object]) -> str:
+    metadata = payload.get("metadata")
+    if isinstance(metadata, dict):
+        explicit = _canonical_units(metadata.get("geometry_units"), "")
+        if explicit in SUPPORTED_GEOMETRY_UNITS:
+            return explicit
+
+    widths: List[float] = []
+    for member in payload.get("members", []):
+        if isinstance(member, dict) and member.get("width") is not None:
+            widths.append(abs(float(member["width"])))
+    median_width = _median(widths, 0.0)
+    return "meters" if 0.0 < median_width < 10.0 else "millimeters"
+
+
+def _scale_point_units(point: Point3, from_units: str, to_units: str) -> Point3:
+    factor = _unit_scale_factor(from_units, to_units)
+    return (point[0] * factor, point[1] * factor, point[2] * factor)
+
+
+def _scale_optional_point(value: object, from_units: str, to_units: str) -> object:
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)) and len(value) >= 3:
+        return _scale_point_units(_to_point3(value), from_units, to_units)
+    return value
+
+
+def _scale_optional_dimension(value: object, from_units: str, to_units: str) -> object:
+    if value is None:
+        return value
+    return float(value) * _unit_scale_factor(from_units, to_units)
 
 
 def _to_point3(seq: Sequence[float]) -> Point3:
@@ -164,11 +238,21 @@ def build_ct_records(
     bottom_face_mode: str,
     process_only_passed: bool = False,
 ) -> List[Dict[str, object]]:
+    source_geometry_units = _geometry_payload_units(geometry_payload)
+    output_units = "millimeters"
     member_results = _member_result_map(calc_payload)
     members = _member_map(geometry_payload)
     engineering = calc_payload.get("engineering") if isinstance(calc_payload.get("engineering"), dict) else {}
     sizing = engineering.get("sizing_recommendations") if isinstance(engineering, dict) and isinstance(engineering.get("sizing_recommendations"), dict) else {}
     fabrication = engineering.get("fabrication_parameters") if isinstance(engineering, dict) and isinstance(engineering.get("fabrication_parameters"), dict) else {}
+    geometry_handoff = geometry_payload.get("handoff") if isinstance(geometry_payload.get("handoff"), dict) else {}
+    geometry_milling = geometry_handoff.get("milling") if isinstance(geometry_handoff, dict) and isinstance(geometry_handoff.get("milling"), dict) else {}
+
+    def _geometry_milling_mm(key: str, default: float = 0.0) -> float:
+        value = geometry_milling.get(key)
+        if value is None:
+            return default
+        return float(_scale_optional_dimension(value, source_geometry_units, output_units))
 
     records: List[Dict[str, object]] = []
     for plate in calc_payload.get("adjusted_base_plates", []):
@@ -183,21 +267,31 @@ def build_ct_records(
         if process_only_passed and not passed:
             continue
 
-        corners = [_to_point3(c) for c in plate.get("corners_adjusted", plate.get("corners", []))]
-        center = _center_of_points(corners) if corners else _to_point3(plate.get("center", (0.0, 0.0, 0.0)))
+        corners_source = [_to_point3(c) for c in plate.get("corners_adjusted", plate.get("corners", []))]
+        center_source = (
+            _center_of_points(corners_source)
+            if corners_source
+            else _to_point3(plate.get("center", (0.0, 0.0, 0.0)))
+        )
+        center = _scale_point_units(center_source, source_geometry_units, output_units)
         x_axis = _unit(_to_point3(plate.get("x_axis", (1.0, 0.0, 0.0))), fallback=(1.0, 0.0, 0.0))
         y_axis = _unit(_to_point3(plate.get("y_axis", (0.0, 1.0, 0.0))), fallback=(0.0, 1.0, 0.0))
         normal = _unit(_to_point3(plate.get("normal", (0.0, 0.0, 1.0))), fallback=(0.0, 0.0, 1.0))
 
-        rows = max(int(sizing.get("rows") or 2), 1)
-        holes_per_row = max(int(sizing.get("holes_per_row") or 2), 1)
-        pitch_parallel = float(sizing.get("pitch_parallel") or 100.0)
-        gage_perp = float(sizing.get("gage_perp") or 60.0)
-        hole_dia = float(sizing.get("bolt_hole_dia") or 0.0)
+        rows = max(int(sizing.get("rows") or geometry_milling.get("plate_hole_rows") or 2), 1)
+        holes_per_row = max(int(sizing.get("holes_per_row") or geometry_milling.get("plate_holes_per_row") or 2), 1)
+        pitch_parallel = float(sizing.get("pitch_parallel") or _geometry_milling_mm("pitch_parallel", 100.0))
+        gage_perp = float(sizing.get("gage_perp") or _geometry_milling_mm("gage_perp", 60.0))
+        hole_dia = float(sizing.get("bolt_hole_dia") or _geometry_milling_mm("bolt_hole_diameter", 0.0))
         slot_length = float(fabrication.get("slot_length") or sizing.get("plate_length") or 0.0)
         slot_width = float(fabrication.get("slot_width") or sizing.get("plate_thickness") or 0.0)
         slot_depth = float(fabrication.get("slot_depth") or sizing.get("plate_width") or 0.0)
-        hole_depth = max(slot_depth, float(member.get("width") or 0.0), float(member.get("height") or 0.0), 60.0)
+        hole_depth = max(
+            slot_depth,
+            float(_scale_optional_dimension(member.get("width") or 0.0, source_geometry_units, output_units)),
+            float(_scale_optional_dimension(member.get("height") or 0.0, source_geometry_units, output_units)),
+            60.0,
+        )
 
         hole_centers = _hole_grid_centers(
             center=center,
@@ -239,21 +333,32 @@ def build_ct_records(
         _, timber_x, timber_y, timber_z = _member_frame(member, plate)
         start_raw = member.get("start")
         end_raw = member.get("end")
-        start_pt = _to_point3(start_raw) if isinstance(start_raw, Sequence) and len(start_raw) >= 3 else center
-        end_pt = _to_point3(end_raw) if isinstance(end_raw, Sequence) and len(end_raw) >= 3 else center
+        start_source = _to_point3(start_raw) if isinstance(start_raw, Sequence) and len(start_raw) >= 3 else center_source
+        end_source = _to_point3(end_raw) if isinstance(end_raw, Sequence) and len(end_raw) >= 3 else center_source
+        start_pt = _scale_point_units(start_source, source_geometry_units, output_units)
+        end_pt = _scale_point_units(end_source, source_geometry_units, output_units)
         timber_center = _center_of_points([start_pt, end_pt])
-        timber_length = float(member.get("length") or 0.0)
-        timber_width = float(member.get("width") or 0.0)
-        timber_height = float(member.get("height") or 0.0)
+        timber_length = float(_scale_optional_dimension(member.get("length") or 0.0, source_geometry_units, output_units))
+        timber_width = float(_scale_optional_dimension(member.get("width") or 0.0, source_geometry_units, output_units))
+        timber_height = float(_scale_optional_dimension(member.get("height") or 0.0, source_geometry_units, output_units))
 
         record = {
             "member_id": member_id,
             "member_index": int(plate.get("member_index") or 0),
+            "geometry_units": output_units,
+            "source_geometry_units": source_geometry_units,
+            "preview_units": source_geometry_units,
             "group": plate.get("group"),
             "level": member.get("level"),
             "status": "PASS" if passed else "FAIL",
             "bottom_face_mode": bottom_face_mode,
-            "adjustment_along_member": float(plate.get("adjustment_along_member") or 0.0),
+            "adjustment_along_member": float(
+                _scale_optional_dimension(
+                    plate.get("adjustment_along_member") or 0.0,
+                    source_geometry_units,
+                    output_units,
+                )
+            ),
             "timber": {
                 "center": timber_center,
                 "x_axis": timber_x,
@@ -275,9 +380,9 @@ def build_ct_records(
                 "clearance_rule_mm": calc_payload.get("metadata", {}).get("min_allowable_clearance")
                 if isinstance(calc_payload.get("metadata"), dict)
                 else None,
-                "bolt_hole_dia": sizing.get("bolt_hole_dia") if isinstance(sizing, dict) else None,
-                "pitch_parallel": sizing.get("pitch_parallel") if isinstance(sizing, dict) else None,
-                "gage_perp": sizing.get("gage_perp") if isinstance(sizing, dict) else None,
+                "bolt_hole_dia": hole_dia,
+                "pitch_parallel": pitch_parallel,
+                "gage_perp": gage_perp,
                 "end_distance": sizing.get("end_distance") if isinstance(sizing, dict) else None,
                 "edge_distance": sizing.get("edge_distance") if isinstance(sizing, dict) else None,
                 "tolerances": {
@@ -327,6 +432,7 @@ def build_timber_model_schema_block(ct_records: Sequence[Dict[str, object]]) -> 
 
         member_id = str(rec.get("member_id"))
         member_index = int(rec.get("member_index") or 0)
+        geometry_units = _canonical_units(rec.get("geometry_units"), "millimeters")
         group = rec.get("group")
         level = rec.get("level")
         center = timber.get("center")
@@ -343,13 +449,17 @@ def build_timber_model_schema_block(ct_records: Sequence[Dict[str, object]]) -> 
         ):
             continue
 
-        c = (float(center[0]), float(center[1]), float(center[2]))
+        c = _scale_point_units(
+            (float(center[0]), float(center[1]), float(center[2])),
+            geometry_units,
+            "meters",
+        )
         x = _unit((float(x_axis[0]), float(x_axis[1]), float(x_axis[2])), fallback=(1.0, 0.0, 0.0))
         y = _unit((float(y_axis[0]), float(y_axis[1]), float(y_axis[2])), fallback=_safe_y_axis(x))
 
-        width = float(timber.get("width") or 0.0) / 1000.0
-        height = float(timber.get("height") or 0.0) / 1000.0
-        length = float(timber.get("length") or 0.0) / 1000.0
+        width = float(_scale_optional_dimension(timber.get("width") or 0.0, geometry_units, "meters"))
+        height = float(_scale_optional_dimension(timber.get("height") or 0.0, geometry_units, "meters"))
+        length = float(_scale_optional_dimension(timber.get("length") or 0.0, geometry_units, "meters"))
 
         features: List[Dict[str, object]] = []
         for hole in holes if isinstance(holes, list) else []:
@@ -359,11 +469,11 @@ def build_timber_model_schema_block(ct_records: Sequence[Dict[str, object]]) -> 
                 {
                     "dtype": "ct.milling/Hole",
                     "data": {
-                        "center": hole.get("center"),
-                        "axis_start": hole.get("axis_start"),
-                        "axis_end": hole.get("axis_end"),
-                        "diameter": hole.get("diameter"),
-                        "depth": hole.get("depth"),
+                        "center": _scale_optional_point(hole.get("center"), geometry_units, "meters"),
+                        "axis_start": _scale_optional_point(hole.get("axis_start"), geometry_units, "meters"),
+                        "axis_end": _scale_optional_point(hole.get("axis_end"), geometry_units, "meters"),
+                        "diameter": _scale_optional_dimension(hole.get("diameter"), geometry_units, "meters"),
+                        "depth": _scale_optional_dimension(hole.get("depth"), geometry_units, "meters"),
                     },
                 }
             )
@@ -372,13 +482,13 @@ def build_timber_model_schema_block(ct_records: Sequence[Dict[str, object]]) -> 
                 {
                     "dtype": "ct.milling/Slot",
                     "data": {
-                        "center": slot.get("center"),
+                        "center": _scale_optional_point(slot.get("center"), geometry_units, "meters"),
                         "x_axis": slot.get("x_axis"),
                         "y_axis": slot.get("y_axis"),
                         "normal": slot.get("normal"),
-                        "length": slot.get("length"),
-                        "width": slot.get("width"),
-                        "depth": slot.get("depth"),
+                        "length": _scale_optional_dimension(slot.get("length"), geometry_units, "meters"),
+                        "width": _scale_optional_dimension(slot.get("width"), geometry_units, "meters"),
+                        "depth": _scale_optional_dimension(slot.get("depth"), geometry_units, "meters"),
                     },
                 }
             )
@@ -417,7 +527,10 @@ def build_timber_model_schema_block(ct_records: Sequence[Dict[str, object]]) -> 
     }
 
 
-def build_inspection_breps(ct_records: Sequence[Dict[str, object]]) -> List[object]:
+def build_inspection_breps(
+    ct_records: Sequence[Dict[str, object]],
+    target_units: Optional[str] = None,
+) -> List[object]:
     if rg is None:
         return []
 
@@ -428,13 +541,19 @@ def build_inspection_breps(ct_records: Sequence[Dict[str, object]]) -> List[obje
         if not isinstance(timber, dict) or not isinstance(milling_geometry, dict):
             continue
 
-        center = timber.get("center")
+        record_units = _canonical_units(rec.get("geometry_units"), "millimeters")
+        preview_units = _canonical_units(
+            target_units or rec.get("preview_units") or rec.get("source_geometry_units"),
+            record_units,
+        )
+
+        center = _scale_optional_point(timber.get("center"), record_units, preview_units)
         x_axis = timber.get("x_axis")
         y_axis = timber.get("y_axis")
         z_axis = timber.get("z_axis")
-        length = float(timber.get("length") or 0.0)
-        width = float(timber.get("width") or 0.0)
-        height = float(timber.get("height") or 0.0)
+        length = float(_scale_optional_dimension(timber.get("length") or 0.0, record_units, preview_units))
+        width = float(_scale_optional_dimension(timber.get("width") or 0.0, record_units, preview_units))
+        height = float(_scale_optional_dimension(timber.get("height") or 0.0, record_units, preview_units))
 
         if not (
             isinstance(center, Sequence)
@@ -465,9 +584,9 @@ def build_inspection_breps(ct_records: Sequence[Dict[str, object]]) -> List[obje
         for hole in holes:
             if not isinstance(hole, dict):
                 continue
-            hs = hole.get("axis_start")
-            he = hole.get("axis_end")
-            dia = float(hole.get("diameter") or 0.0)
+            hs = _scale_optional_point(hole.get("axis_start"), record_units, preview_units)
+            he = _scale_optional_point(hole.get("axis_end"), record_units, preview_units)
+            dia = float(_scale_optional_dimension(hole.get("diameter") or 0.0, record_units, preview_units))
             if isinstance(hs, Sequence) and isinstance(he, Sequence) and len(hs) >= 3 and len(he) >= 3 and dia > 0.0:
                 hole_brep = _cylinder_brep(_to_point3(hs), _to_point3(he), 0.5 * dia)
                 if hole_brep is not None:
@@ -475,13 +594,13 @@ def build_inspection_breps(ct_records: Sequence[Dict[str, object]]) -> List[obje
 
         slot = milling_geometry.get("slot")
         if isinstance(slot, dict):
-            sc = slot.get("center")
+            sc = _scale_optional_point(slot.get("center"), record_units, preview_units)
             sx = slot.get("x_axis")
             sy = slot.get("y_axis")
             sn = slot.get("normal")
-            sl = float(slot.get("length") or 0.0)
-            sw = float(slot.get("width") or 0.0)
-            sd = float(slot.get("depth") or 0.0)
+            sl = float(_scale_optional_dimension(slot.get("length") or 0.0, record_units, preview_units))
+            sw = float(_scale_optional_dimension(slot.get("width") or 0.0, record_units, preview_units))
+            sd = float(_scale_optional_dimension(slot.get("depth") or 0.0, record_units, preview_units))
             if (
                 isinstance(sc, Sequence)
                 and isinstance(sx, Sequence)
@@ -522,6 +641,16 @@ def build_inspection_breps(ct_records: Sequence[Dict[str, object]]) -> List[obje
     return breps
 
 
+def _effective_geometry_payload(
+    geometry_payload: Dict[str, object],
+    calc_payload: Dict[str, object],
+) -> Tuple[Dict[str, object], bool]:
+    maybe_synced = calc_payload.get("synced_geometry_payload")
+    if isinstance(maybe_synced, dict) and maybe_synced:
+        return maybe_synced, True
+    return geometry_payload, False
+
+
 def export_ct_json(
     geometry_payload: Dict[str, object],
     calc_payload: Dict[str, object],
@@ -529,10 +658,10 @@ def export_ct_json(
     bottom_face_mode: Optional[str] = None,
     process_only_passed: bool = False,
 ) -> Dict[str, object]:
-    effective_geometry_payload = geometry_payload
-    maybe_synced = calc_payload.get("synced_geometry_payload")
-    if isinstance(maybe_synced, dict) and maybe_synced:
-        effective_geometry_payload = maybe_synced
+    effective_geometry_payload, used_synced_geometry_payload = _effective_geometry_payload(
+        geometry_payload,
+        calc_payload,
+    )
 
     mode = bottom_face_mode or str(
         (calc_payload.get("metadata") or {}).get("bottom_face_mode")
@@ -547,6 +676,7 @@ def export_ct_json(
         process_only_passed=process_only_passed,
     )
     timber_model_schema = build_timber_model_schema_block(records)
+    source_geometry_units = _geometry_payload_units(effective_geometry_payload)
 
     package = {
         "metadata": {
@@ -558,16 +688,29 @@ def export_ct_json(
             "geometry_source": (effective_geometry_payload.get("metadata") or {}).get("line_model_path")
             if isinstance(effective_geometry_payload.get("metadata"), dict)
             else None,
-            "used_synced_geometry_payload": effective_geometry_payload is not geometry_payload,
+            "used_synced_geometry_payload": used_synced_geometry_payload,
             "ct_geometry_mode": "timber_columns_with_milling_cuts",
+            "source_geometry_units": source_geometry_units,
+            "record_units": "millimeters",
+            "inspection_units": source_geometry_units,
+            "timber_model_schema_units": "meters",
         },
         "records": records,
         "timber_model_schema": timber_model_schema,
     }
 
-    out_json_path.parent.mkdir(parents=True, exist_ok=True)
-    with out_json_path.open("w", encoding="utf-8") as fp:
-        json.dump(package, fp, indent=2)
+    try:
+        out_json_path.parent.mkdir(parents=True, exist_ok=True)
+        with out_json_path.open("w", encoding="utf-8") as fp:
+            json.dump(package, fp, indent=2)
+        package["metadata"]["json_write_succeeded"] = True
+        package["metadata"]["json_path"] = str(out_json_path)
+    except OSError as exc:
+        # GH users still need the in-memory milling package even when a target
+        # export file is locked or the folder is not writable.
+        package["metadata"]["json_write_succeeded"] = False
+        package["metadata"]["json_path"] = str(out_json_path)
+        package["metadata"]["json_write_error"] = str(exc)
 
     return package
 

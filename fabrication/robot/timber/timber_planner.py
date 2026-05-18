@@ -362,9 +362,9 @@ class TimberProcessPlanner(BaseRobotPlanner):
         if not grasp_frame:
             grasp_frame = element.attributes.get("grasp_frame") 
         e_at_frame = grasp_frame.transformed(self.at_T*element.attributes.get("parent_T"))
-        grasp_frame.transform(element.transformation_to_local())
+        new_grasp_frame = grasp_frame.transformed(element.transformation_to_local())
         element_geometry_at = element.geometry.transformed(element.transformation_to_local())
         # ip_thickness = self.get_inside_plate_thickness(element)
         # e_at_frame.translate(e_at_frame.zaxis * (ip_thickness * 0.001))  # OFFSET FOR INSIDE PLATE THICKNESS
         # e_at_frame.translate(e_at_frame.zaxis * 0.08)  # DEPTH OFFSET FOR GRIPPER 60 WIDTH
-        return grasp_frame, e_at_frame, element_geometry_at
+        return new_grasp_frame, e_at_frame, element_geometry_at
