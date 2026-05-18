@@ -1,7 +1,40 @@
 {
     "data": {
         "elements": {
-            "04ae63e8-8110-4798-a943-70d6b3c0890f": {
+            "0bb06d5d-5941-4886-9411-c15dcb3ffe69": {
+                "data": {
+                    "category": "lower_support",
+                    "features": [],
+                    "frame": {
+                        "data": {
+                            "point": [
+                                -0.20801948908230727,
+                                0.0,
+                                1.214757152984074
+                            ],
+                            "xaxis": [
+                                0.4760125324286473,
+                                0.5499552362956219,
+                                -0.6862662071251161
+                            ],
+                            "yaxis": [
+                                -0.7561076343061036,
+                                0.6544472823261073,
+                                5.551115123125783e-17
+                            ]
+                        },
+                        "dtype": "compas.geometry/Frame",
+                        "guid": "cd5166c8-2b60-4045-a2c9-4ecbc9fe2377"
+                    },
+                    "height": 0.2,
+                    "length": 1.7813488256546743,
+                    "sequence": 7,
+                    "width": 0.08
+                },
+                "dtype": "compas_timber.elements/Beam",
+                "guid": "0bb06d5d-5941-4886-9411-c15dcb3ffe69"
+            },
+            "1f8be04b-86fc-43e7-9ccd-d52930224204": {
                 "data": {
                     "category": "lower_support",
                     "features": [],
@@ -24,7 +57,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "5681aa55-751b-4c61-b8e8-b0abe7411b24"
+                        "guid": "4005128e-9d28-408c-aa90-4a6dc556fc84"
                     },
                     "height": 0.2,
                     "length": 1.7813488256546743,
@@ -32,162 +65,42 @@
                     "width": 0.08
                 },
                 "dtype": "compas_timber.elements/Beam",
-                "guid": "04ae63e8-8110-4798-a943-70d6b3c0890f"
+                "guid": "1f8be04b-86fc-43e7-9ccd-d52930224204"
             },
-            "1c4b6761-ca85-4038-8909-bd7147809649": {
+            "22fc4a48-3412-41da-ba43-3eb13f1c65e7": {
                 "data": {
                     "category": "shoe",
                     "features": [],
                     "frame": {
                         "data": {
                             "point": [
-                                1.0315180226187852,
-                                -1.129205267340378e-16,
-                                1.8999993807258924
+                                0.46345841379114283,
+                                0.7633164394718731,
+                                1.7151931971734338
                             ],
                             "xaxis": [
-                                -0.9961946980917455,
-                                -1.2199866483456202e-16,
-                                -0.08715574274765853
+                                -0.7150635417850613,
+                                -0.6964185897176435,
+                                0.060706499697251975
                             ],
                             "yaxis": [
-                                1.2246467991473535e-16,
-                                -1.0,
-                                0.0
+                                0.6977053959306595,
+                                -0.7163847991751653,
+                                -3.469446951953614e-18
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "0ece9a2c-a50f-4964-9d16-8234841c6994"
-                    },
-                    "grasp_frame": {
-                        "data": {
-                            "point": [
-                                -0.07226087351019828,
-                                0.5112569415725468,
-                                1.8648690328441766
-                            ],
-                            "xaxis": [
-                                -0.9311458851260093,
-                                -0.3642507486652653,
-                                -0.01699213670185577
-                            ],
-                            "yaxis": [
-                                0.3544012814156526,
-                                -0.9149686893493941,
-                                0.19295602929474828
-                            ]
-                        },
-                        "dtype": "compas.geometry/Frame",
-                        "guid": "a9c99b51-6f04-4709-acb6-303d4831ddf8"
+                        "guid": "7bceb4c3-54af-49b4-aee9-2921a2c01fe8"
                     },
                     "height": 0.2,
-                    "length": 2.528973441065746,
-                    "sequence": 0,
+                    "length": 2.364377409621082,
+                    "sequence": 1,
                     "width": 0.12
                 },
                 "dtype": "compas_timber.elements/Beam",
-                "guid": "1c4b6761-ca85-4038-8909-bd7147809649"
+                "guid": "22fc4a48-3412-41da-ba43-3eb13f1c65e7"
             },
-            "273fa807-c6ee-4f70-8da5-fe4ff359ad19": {
-                "data": {
-                    "category": "reciprocal",
-                    "features": [],
-                    "frame": {
-                        "data": {
-                            "point": [
-                                -0.3975426635045416,
-                                0.0,
-                                0.9588966333199562
-                            ],
-                            "xaxis": [
-                                -0.632657805208253,
-                                7.747823561038767e-17,
-                                0.7744314698597135
-                            ],
-                            "yaxis": [
-                                -1.2246467991473532e-16,
-                                -1.0,
-                                1.232595164407831e-32
-                            ]
-                        },
-                        "dtype": "compas.geometry/Frame",
-                        "guid": "9308c55a-ad84-485e-9ef8-3decc452f3f7"
-                    },
-                    "height": 0.24,
-                    "length": 0.9834827458171033,
-                    "sequence": 5,
-                    "width": 0.12
-                },
-                "dtype": "compas_timber.elements/Beam",
-                "guid": "273fa807-c6ee-4f70-8da5-fe4ff359ad19"
-            },
-            "5ebde2a2-23ee-4441-87ea-3320a837b79f": {
-                "data": {
-                    "category": "reciprocal",
-                    "features": [],
-                    "frame": {
-                        "data": {
-                            "point": [
-                                -0.6066846048495371,
-                                0.0,
-                                1.2136192749920913
-                            ],
-                            "xaxis": [
-                                0.8740354284372811,
-                                0.0,
-                                0.4858621922278564
-                            ],
-                            "yaxis": [
-                                0.0,
-                                1.0,
-                                -0.0
-                            ]
-                        },
-                        "dtype": "compas.geometry/Frame",
-                        "guid": "460e65e2-b1a8-4f73-948e-d0bef2c8ca38"
-                    },
-                    "height": 0.24,
-                    "length": 1.326487311287999,
-                    "sequence": 4,
-                    "width": 0.12
-                },
-                "dtype": "compas_timber.elements/Beam",
-                "guid": "5ebde2a2-23ee-4441-87ea-3320a837b79f"
-            },
-            "69d7652b-12f1-4054-98c7-084ae6ae292f": {
-                "data": {
-                    "category": "reciprocal",
-                    "features": [],
-                    "frame": {
-                        "data": {
-                            "point": [
-                                -1.113544875404144,
-                                0.0,
-                                -0.0077223491647391285
-                            ],
-                            "xaxis": [
-                                0.59522119017467,
-                                0.0,
-                                0.8035619047509963
-                            ],
-                            "yaxis": [
-                                0.0,
-                                1.0,
-                                -0.0
-                            ]
-                        },
-                        "dtype": "compas.geometry/Frame",
-                        "guid": "4f6ea438-743f-40b1-876e-9b0d26c832e0"
-                    },
-                    "height": 0.24,
-                    "length": 1.9877510759458716,
-                    "sequence": 6,
-                    "width": 0.12
-                },
-                "dtype": "compas_timber.elements/Beam",
-                "guid": "69d7652b-12f1-4054-98c7-084ae6ae292f"
-            },
-            "8754eb61-3243-4018-910f-25987e7bdacf": {
+            "350dc295-63d3-49c6-ade2-1c6915501d61": {
                 "data": {
                     "features": [],
                     "frame": {
@@ -209,7 +122,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "aa6f01f1-fc67-4a8e-bb09-e4abae50ce3e"
+                        "guid": "344d9df7-7845-4d0b-aac8-6743ac3d3148"
                     },
                     "length": 2.4256528694645576,
                     "local_outline_a": {
@@ -243,7 +156,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Polyline",
-                        "guid": "9d9df199-88f4-4ff2-8ce1-be66aa2b7903"
+                        "guid": "48c7b40d-6ad4-46cf-a263-8505ff2cb321"
                     },
                     "local_outline_b": {
                         "data": {
@@ -276,115 +189,16 @@
                             ]
                         },
                         "dtype": "compas.geometry/Polyline",
-                        "guid": "d97e3edc-a0c1-48bd-bdb0-1f3180c4eae7"
+                        "guid": "38a019eb-6afd-4499-9a7b-4482a6fc7d63"
                     },
                     "openings": [],
                     "thickness": 0.10000000000000209,
                     "width": 0.9353911628388157
                 },
                 "dtype": "compas_timber.elements/Plate",
-                "guid": "8754eb61-3243-4018-910f-25987e7bdacf"
+                "guid": "350dc295-63d3-49c6-ade2-1c6915501d61"
             },
-            "92b4b7b6-3173-495f-b734-256b5f25e8d3": {
-                "data": {
-                    "category": "leaf",
-                    "features": [],
-                    "frame": {
-                        "data": {
-                            "point": [
-                                -0.29406251740827294,
-                                0.025547517187664993,
-                                1.4631741136819247
-                            ],
-                            "xaxis": [
-                                0.6572202971071431,
-                                0.6400835809676129,
-                                0.3979377972071464
-                            ],
-                            "yaxis": [
-                                -0.6977053959306587,
-                                0.7163847991751661,
-                                2.7755575615628914e-17
-                            ]
-                        },
-                        "dtype": "compas.geometry/Frame",
-                        "guid": "4d63f437-c333-45f6-9dcc-39ab3cf3c124"
-                    },
-                    "height": 0.2,
-                    "length": 0.69717136646881,
-                    "sequence": 3,
-                    "width": 0.12
-                },
-                "dtype": "compas_timber.elements/Beam",
-                "guid": "92b4b7b6-3173-495f-b734-256b5f25e8d3"
-            },
-            "b97e6c20-c8d5-4f7d-babc-b2f729c9f5e8": {
-                "data": {
-                    "category": "lower_support",
-                    "features": [],
-                    "frame": {
-                        "data": {
-                            "point": [
-                                -0.20801948908230727,
-                                0.0,
-                                1.214757152984074
-                            ],
-                            "xaxis": [
-                                0.4760125324286473,
-                                0.5499552362956219,
-                                -0.6862662071251161
-                            ],
-                            "yaxis": [
-                                -0.7561076343061036,
-                                0.6544472823261073,
-                                5.551115123125783e-17
-                            ]
-                        },
-                        "dtype": "compas.geometry/Frame",
-                        "guid": "5e324ae2-a965-4dfd-bc49-c267f1939649"
-                    },
-                    "height": 0.2,
-                    "length": 1.7813488256546743,
-                    "sequence": 7,
-                    "width": 0.08
-                },
-                "dtype": "compas_timber.elements/Beam",
-                "guid": "b97e6c20-c8d5-4f7d-babc-b2f729c9f5e8"
-            },
-            "f40e16c3-870f-4be3-851e-3d93694917d9": {
-                "data": {
-                    "category": "shoe",
-                    "features": [],
-                    "frame": {
-                        "data": {
-                            "point": [
-                                0.46345841379114283,
-                                0.7633164394718731,
-                                1.7151931971734338
-                            ],
-                            "xaxis": [
-                                -0.7150635417850613,
-                                -0.6964185897176435,
-                                0.060706499697251975
-                            ],
-                            "yaxis": [
-                                0.6977053959306595,
-                                -0.7163847991751653,
-                                -3.469446951953614e-18
-                            ]
-                        },
-                        "dtype": "compas.geometry/Frame",
-                        "guid": "6d16e21a-4314-4474-9b43-67c681a7decc"
-                    },
-                    "height": 0.2,
-                    "length": 2.364377409621082,
-                    "sequence": 1,
-                    "width": 0.12
-                },
-                "dtype": "compas_timber.elements/Beam",
-                "guid": "f40e16c3-870f-4be3-851e-3d93694917d9"
-            },
-            "ff1946ba-3e74-45c9-8786-77afbd9bb35d": {
+            "3ca982cd-7ddb-4789-bffe-ee116ec44916": {
                 "data": {
                     "category": "leaf",
                     "features": [],
@@ -407,7 +221,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "2b3172ec-873c-449c-80fb-647d9cc00c1b"
+                        "guid": "df6ca4c7-560c-4cbb-a5ad-b546967f799e"
                     },
                     "height": 0.2,
                     "length": 0.9541175005833364,
@@ -415,7 +229,193 @@
                     "width": 0.12
                 },
                 "dtype": "compas_timber.elements/Beam",
-                "guid": "ff1946ba-3e74-45c9-8786-77afbd9bb35d"
+                "guid": "3ca982cd-7ddb-4789-bffe-ee116ec44916"
+            },
+            "6e114a5e-2227-41d4-9593-5c7b77e0e1f3": {
+                "data": {
+                    "category": "reciprocal",
+                    "features": [],
+                    "frame": {
+                        "data": {
+                            "point": [
+                                -0.6066846048495371,
+                                0.0,
+                                1.2136192749920913
+                            ],
+                            "xaxis": [
+                                0.8740354284372811,
+                                0.0,
+                                0.4858621922278564
+                            ],
+                            "yaxis": [
+                                0.0,
+                                1.0,
+                                -0.0
+                            ]
+                        },
+                        "dtype": "compas.geometry/Frame",
+                        "guid": "210cfa15-f2ff-4b79-b93d-c126a0c9c12b"
+                    },
+                    "height": 0.24,
+                    "length": 1.326487311287999,
+                    "sequence": 4,
+                    "width": 0.12
+                },
+                "dtype": "compas_timber.elements/Beam",
+                "guid": "6e114a5e-2227-41d4-9593-5c7b77e0e1f3"
+            },
+            "b2d71fe0-ae78-4faf-b46a-27374f81f9db": {
+                "data": {
+                    "category": "reciprocal",
+                    "features": [],
+                    "frame": {
+                        "data": {
+                            "point": [
+                                -1.113544875404144,
+                                0.0,
+                                -0.0077223491647391285
+                            ],
+                            "xaxis": [
+                                0.59522119017467,
+                                0.0,
+                                0.8035619047509963
+                            ],
+                            "yaxis": [
+                                0.0,
+                                1.0,
+                                -0.0
+                            ]
+                        },
+                        "dtype": "compas.geometry/Frame",
+                        "guid": "fb0ce51a-0932-4e3b-b805-de90a2012cd3"
+                    },
+                    "height": 0.24,
+                    "length": 1.9877510759458716,
+                    "sequence": 6,
+                    "width": 0.12
+                },
+                "dtype": "compas_timber.elements/Beam",
+                "guid": "b2d71fe0-ae78-4faf-b46a-27374f81f9db"
+            },
+            "b4a879c1-5817-49c1-af88-c97eb32f75bf": {
+                "data": {
+                    "category": "leaf",
+                    "features": [],
+                    "frame": {
+                        "data": {
+                            "point": [
+                                -0.29406251740827294,
+                                0.025547517187664993,
+                                1.4631741136819247
+                            ],
+                            "xaxis": [
+                                0.6572202971071431,
+                                0.6400835809676129,
+                                0.3979377972071464
+                            ],
+                            "yaxis": [
+                                -0.6977053959306587,
+                                0.7163847991751661,
+                                2.7755575615628914e-17
+                            ]
+                        },
+                        "dtype": "compas.geometry/Frame",
+                        "guid": "a6f23fce-bafa-465f-a669-d63f63847b79"
+                    },
+                    "height": 0.2,
+                    "length": 0.69717136646881,
+                    "sequence": 3,
+                    "width": 0.12
+                },
+                "dtype": "compas_timber.elements/Beam",
+                "guid": "b4a879c1-5817-49c1-af88-c97eb32f75bf"
+            },
+            "b8898fc0-59fb-4f2b-bc47-e223b1eec292": {
+                "data": {
+                    "category": "shoe",
+                    "features": [],
+                    "frame": {
+                        "data": {
+                            "point": [
+                                1.0315180226187852,
+                                -1.129205267340378e-16,
+                                1.8999993807258924
+                            ],
+                            "xaxis": [
+                                -0.9961946980917455,
+                                -1.2199866483456202e-16,
+                                -0.08715574274765853
+                            ],
+                            "yaxis": [
+                                1.2246467991473535e-16,
+                                -1.0,
+                                0.0
+                            ]
+                        },
+                        "dtype": "compas.geometry/Frame",
+                        "guid": "e97d7b8b-070e-4958-83fa-6000d27eb487"
+                    },
+                    "grasp_frame": {
+                        "data": {
+                            "point": [
+                                -0.07226087351019828,
+                                0.5112569415725468,
+                                1.8648690328441766
+                            ],
+                            "xaxis": [
+                                -0.9311458851260093,
+                                -0.3642507486652653,
+                                -0.01699213670185577
+                            ],
+                            "yaxis": [
+                                0.3544012814156526,
+                                -0.9149686893493941,
+                                0.19295602929474828
+                            ]
+                        },
+                        "dtype": "compas.geometry/Frame",
+                        "guid": "06b617f8-945a-4ba1-bb05-05ac1293797d"
+                    },
+                    "height": 0.2,
+                    "length": 2.528973441065746,
+                    "sequence": 0,
+                    "width": 0.12
+                },
+                "dtype": "compas_timber.elements/Beam",
+                "guid": "b8898fc0-59fb-4f2b-bc47-e223b1eec292"
+            },
+            "c4633ea8-b6f8-41d9-a3e0-a6838537b1e2": {
+                "data": {
+                    "category": "reciprocal",
+                    "features": [],
+                    "frame": {
+                        "data": {
+                            "point": [
+                                -0.3975426635045416,
+                                0.0,
+                                0.9588966333199562
+                            ],
+                            "xaxis": [
+                                -0.632657805208253,
+                                7.747823561038767e-17,
+                                0.7744314698597135
+                            ],
+                            "yaxis": [
+                                -1.2246467991473532e-16,
+                                -1.0,
+                                1.232595164407831e-32
+                            ]
+                        },
+                        "dtype": "compas.geometry/Frame",
+                        "guid": "15cc39aa-2415-4a23-8867-86aaa7ef824c"
+                    },
+                    "height": 0.24,
+                    "length": 0.9834827458171033,
+                    "sequence": 5,
+                    "width": 0.12
+                },
+                "dtype": "compas_timber.elements/Beam",
+                "guid": "c4633ea8-b6f8-41d9-a3e0-a6838537b1e2"
             }
         },
         "graph": {
@@ -440,8 +440,8 @@
                         "candidates": {
                             "data": {
                                 "element_guids": [
-                                    "92b4b7b6-3173-495f-b734-256b5f25e8d3",
-                                    "f40e16c3-870f-4be3-851e-3d93694917d9"
+                                    "b4a879c1-5817-49c1-af88-c97eb32f75bf",
+                                    "22fc4a48-3412-41da-ba43-3eb13f1c65e7"
                                 ],
                                 "location": {
                                     "data": [
@@ -450,22 +450,22 @@
                                         1.7406049515304192
                                     ],
                                     "dtype": "compas.geometry/Point",
-                                    "guid": "45d93c3d-9db0-4826-8c7b-2511203aaff5"
+                                    "guid": "cbd507d5-9281-425c-b03c-adba63c8feab"
                                 },
                                 "name": "JointCandidate",
                                 "topology": 3
                             },
                             "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "accb01bf-df61-4583-9aa2-3849df5020e6"
+                            "guid": "d97c92bf-beca-4a98-8c5e-3e939f20e265"
                         },
-                        "joints": "80ffecf9-9c8f-4d69-a02c-5acceff094a3"
+                        "joints": "e17499c4-5aea-423e-ae9d-db34b41b1e07"
                     },
                     "5": {
                         "candidates": {
                             "data": {
                                 "element_guids": [
-                                    "92b4b7b6-3173-495f-b734-256b5f25e8d3",
-                                    "5ebde2a2-23ee-4441-87ea-3320a837b79f"
+                                    "b4a879c1-5817-49c1-af88-c97eb32f75bf",
+                                    "6e114a5e-2227-41d4-9593-5c7b77e0e1f3"
                                 ],
                                 "location": {
                                     "data": [
@@ -474,15 +474,15 @@
                                         1.4342310782999994
                                     ],
                                     "dtype": "compas.geometry/Point",
-                                    "guid": "91f12e7f-249b-4144-89c1-b7c3009abc22"
+                                    "guid": "95ec3967-8695-4d6c-9225-fc34e1c12eaa"
                                 },
                                 "name": "JointCandidate",
                                 "topology": 3
                             },
                             "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "7bb400d9-b1ba-4888-b348-63d880631646"
+                            "guid": "cf6035ce-c8ab-41c6-a481-70969490dceb"
                         },
-                        "joints": "72ac5895-b20f-430d-ab21-033ce9996ea3"
+                        "joints": "5280b4ff-b9ba-48a3-9282-fd7824006775"
                     }
                 },
                 "1": {
@@ -490,8 +490,8 @@
                         "candidates": {
                             "data": {
                                 "element_guids": [
-                                    "ff1946ba-3e74-45c9-8786-77afbd9bb35d",
-                                    "92b4b7b6-3173-495f-b734-256b5f25e8d3"
+                                    "3ca982cd-7ddb-4789-bffe-ee116ec44916",
+                                    "b4a879c1-5817-49c1-af88-c97eb32f75bf"
                                 ],
                                 "location": {
                                     "data": [
@@ -500,22 +500,22 @@
                                         1.4631741136819243
                                     ],
                                     "dtype": "compas.geometry/Point",
-                                    "guid": "61534b24-0ede-48fc-80ed-de45949eb293"
+                                    "guid": "4ec2696d-1c0a-4c60-b04c-d9dbc5729f58"
                                 },
                                 "name": "JointCandidate",
                                 "topology": 2
                             },
                             "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "98a9572f-72c6-492f-a7ba-a711183f7bc1"
+                            "guid": "94fdea4e-2cb1-4c93-a280-53e19b40b981"
                         },
-                        "joints": "587d73af-d5ed-455a-b785-eef4645e0a9e"
+                        "joints": "71fb4203-67c8-4c94-a7e8-0cd1ceb390b1"
                     },
                     "2": {
                         "candidates": {
                             "data": {
                                 "element_guids": [
-                                    "ff1946ba-3e74-45c9-8786-77afbd9bb35d",
-                                    "f40e16c3-870f-4be3-851e-3d93694917d9"
+                                    "3ca982cd-7ddb-4789-bffe-ee116ec44916",
+                                    "22fc4a48-3412-41da-ba43-3eb13f1c65e7"
                                 ],
                                 "location": {
                                     "data": [
@@ -524,22 +524,22 @@
                                         1.8329959958972648
                                     ],
                                     "dtype": "compas.geometry/Point",
-                                    "guid": "4d8260c3-1eab-4e77-8f94-b4b1b556792d"
+                                    "guid": "08b251b8-bb92-4f6c-b794-6b3f3c53cce8"
                                 },
                                 "name": "JointCandidate",
                                 "topology": 3
                             },
                             "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "897e124c-74e3-4a2b-9bc2-c12ec4f0804b"
+                            "guid": "ad429720-51b1-41ae-8769-27aa4ec1bea8"
                         },
-                        "joints": "fb411598-6937-4ece-b2ad-3f3745e765c4"
+                        "joints": "37ce81fa-35e9-42eb-9919-dc59991f68ed"
                     },
                     "5": {
                         "candidates": {
                             "data": {
                                 "element_guids": [
-                                    "ff1946ba-3e74-45c9-8786-77afbd9bb35d",
-                                    "5ebde2a2-23ee-4441-87ea-3320a837b79f"
+                                    "3ca982cd-7ddb-4789-bffe-ee116ec44916",
+                                    "6e114a5e-2227-41d4-9593-5c7b77e0e1f3"
                                 ],
                                 "location": {
                                     "data": [
@@ -548,25 +548,24 @@
                                         1.434231078299999
                                     ],
                                     "dtype": "compas.geometry/Point",
-                                    "guid": "5b2d8fd3-574b-406e-8d62-b184ae0ff77c"
+                                    "guid": "d698ce8f-8934-4fb3-b907-81fb6db8d25f"
                                 },
                                 "name": "JointCandidate",
                                 "topology": 3
                             },
                             "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "ea1ed6c5-01fa-4084-ac47-3890dcda1b2d"
+                            "guid": "d0bb809f-414c-4a82-ad5c-b1036f658c27"
                         },
-                        "joints": "6be90d0c-9585-442b-ab04-2090d4a54a3a"
+                        "joints": "22a9ffe1-d339-40fd-9e93-35bebc6b048d"
                     }
                 },
-                "2": {},
-                "3": {
-                    "2": {
+                "2": {
+                    "3": {
                         "candidates": {
                             "data": {
                                 "element_guids": [
-                                    "1c4b6761-ca85-4038-8909-bd7147809649",
-                                    "f40e16c3-870f-4be3-851e-3d93694917d9"
+                                    "22fc4a48-3412-41da-ba43-3eb13f1c65e7",
+                                    "b8898fc0-59fb-4f2b-bc47-e223b1eec292"
                                 ],
                                 "location": {
                                     "data": [
@@ -575,24 +574,25 @@
                                         1.7817311527735198
                                     ],
                                     "dtype": "compas.geometry/Point",
-                                    "guid": "3c2794af-c19e-4c51-8730-8a03e1fec1fd"
+                                    "guid": "d719b351-d85a-4d3a-b3b4-f9f25839eefa"
                                 },
                                 "name": "JointCandidate",
                                 "topology": 4
                             },
                             "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "44a1d5e4-f769-4340-9e96-520c998baa01"
+                            "guid": "c23ec4a8-81cf-4a4a-80ae-1f1c4df1c2cb"
                         },
-                        "joints": "17f582a7-8de6-47b1-bd0e-324532a897a0"
+                        "joints": "b7927c9c-85ab-4329-9a32-90a622cd8d0c"
                     }
                 },
+                "3": {},
                 "4": {
                     "3": {
                         "candidates": {
                             "data": {
                                 "element_guids": [
-                                    "273fa807-c6ee-4f70-8da5-fe4ff359ad19",
-                                    "1c4b6761-ca85-4038-8909-bd7147809649"
+                                    "c4633ea8-b6f8-41d9-a3e0-a6838537b1e2",
+                                    "b8898fc0-59fb-4f2b-bc47-e223b1eec292"
                                 ],
                                 "location": {
                                     "data": [
@@ -601,22 +601,22 @@
                                         1.7205366217447624
                                     ],
                                     "dtype": "compas.geometry/Point",
-                                    "guid": "43454f2a-d344-47b4-bffc-92091b32fcfd"
+                                    "guid": "a5e46917-f0ac-41c1-9ece-3c944434ec3f"
                                 },
                                 "name": "JointCandidate",
                                 "topology": 3
                             },
                             "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "6421dc83-ea75-454e-88e4-717245467451"
+                            "guid": "4e51b0fc-e93c-4190-90b7-8f10da210e23"
                         },
-                        "joints": "3e63bffd-5816-49bc-b3c5-c00757485918"
+                        "joints": "670e2820-458a-462e-9322-922a649a4535"
                     },
                     "6": {
                         "candidates": {
                             "data": {
                                 "element_guids": [
-                                    "273fa807-c6ee-4f70-8da5-fe4ff359ad19",
-                                    "69d7652b-12f1-4054-98c7-084ae6ae292f"
+                                    "c4633ea8-b6f8-41d9-a3e0-a6838537b1e2",
+                                    "b2d71fe0-ae78-4faf-b46a-27374f81f9db"
                                 ],
                                 "location": {
                                     "data": [
@@ -625,15 +625,15 @@
                                         0.9588966333199579
                                     ],
                                     "dtype": "compas.geometry/Point",
-                                    "guid": "750b3833-baee-41c3-a057-99ee570527f9"
+                                    "guid": "cc5fa611-4fdd-45c7-bc15-1336e2c06d49"
                                 },
                                 "name": "JointCandidate",
                                 "topology": 3
                             },
                             "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "76365e07-5d76-4a78-a231-f8e952e57cb1"
+                            "guid": "a0a503b2-9ee5-41ad-ac95-9c0736313f3c"
                         },
-                        "joints": "b8338fbe-663d-4a81-98ac-f2436d4aeb70"
+                        "joints": "e0f70f02-9c74-4e78-83c4-586dd3017d7b"
                     }
                 },
                 "5": {
@@ -641,8 +641,8 @@
                         "candidates": {
                             "data": {
                                 "element_guids": [
-                                    "5ebde2a2-23ee-4441-87ea-3320a837b79f",
-                                    "1c4b6761-ca85-4038-8909-bd7147809649"
+                                    "6e114a5e-2227-41d4-9593-5c7b77e0e1f3",
+                                    "b8898fc0-59fb-4f2b-bc47-e223b1eec292"
                                 ],
                                 "location": {
                                     "data": [
@@ -651,22 +651,22 @@
                                         1.858109308016914
                                     ],
                                     "dtype": "compas.geometry/Point",
-                                    "guid": "501228af-ae89-41a9-a1e1-6b0e5cf26194"
+                                    "guid": "0104f447-8e66-448a-b52a-b2f23d9080cf"
                                 },
                                 "name": "JointCandidate",
                                 "topology": 3
                             },
                             "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "4a8f3ac6-fdcd-4b58-a2b7-cc23c8d2633c"
+                            "guid": "df717af8-cdd1-4e21-868c-e7c49829e541"
                         },
-                        "joints": "33bc1e6b-81e6-4e67-bf46-70ae410128e2"
+                        "joints": "433095a7-f60d-46df-8d35-6c63163a5672"
                     },
                     "4": {
                         "candidates": {
                             "data": {
                                 "element_guids": [
-                                    "5ebde2a2-23ee-4441-87ea-3320a837b79f",
-                                    "273fa807-c6ee-4f70-8da5-fe4ff359ad19"
+                                    "6e114a5e-2227-41d4-9593-5c7b77e0e1f3",
+                                    "c4633ea8-b6f8-41d9-a3e0-a6838537b1e2"
                                 ],
                                 "location": {
                                     "data": [
@@ -675,15 +675,15 @@
                                         1.2140210072193094
                                     ],
                                     "dtype": "compas.geometry/Point",
-                                    "guid": "6c8c0bb6-a2bc-41ee-a43f-468e376db447"
+                                    "guid": "6ad4358c-316a-4d21-b369-b5d4907975a5"
                                 },
                                 "name": "JointCandidate",
                                 "topology": 3
                             },
                             "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "8c4a8a3e-d43d-4235-881a-feceeb682dfd"
+                            "guid": "3f3a2f48-f8fc-49ad-bbe6-856ef1562e54"
                         },
-                        "joints": "5e07cbe7-be3e-494b-be46-278ab1e81651"
+                        "joints": "39ac1d22-15a9-4565-91dc-81dc7ea86de2"
                     }
                 },
                 "6": {
@@ -691,8 +691,8 @@
                         "candidates": {
                             "data": {
                                 "element_guids": [
-                                    "69d7652b-12f1-4054-98c7-084ae6ae292f",
-                                    "5ebde2a2-23ee-4441-87ea-3320a837b79f"
+                                    "b2d71fe0-ae78-4faf-b46a-27374f81f9db",
+                                    "6e114a5e-2227-41d4-9593-5c7b77e0e1f3"
                                 ],
                                 "location": {
                                     "data": [
@@ -701,15 +701,15 @@
                                         1.5895586915931657
                                     ],
                                     "dtype": "compas.geometry/Point",
-                                    "guid": "4f94bec1-79f5-4d04-9b00-bb28f3b90e58"
+                                    "guid": "07d9b2c2-115a-4fc9-8ec5-a31edabc651e"
                                 },
                                 "name": "JointCandidate",
                                 "topology": 3
                             },
                             "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "a85ca67d-9f04-46bc-9dd5-0e7ece6df804"
+                            "guid": "764d3c78-a060-404c-9207-eb6f50745d88"
                         },
-                        "joints": "c54da22a-5f81-4f1a-aeea-80f70b5b14b6"
+                        "joints": "bb41fd6a-2d8f-4e09-9996-bb701538f212"
                     }
                 },
                 "7": {
@@ -717,8 +717,8 @@
                         "candidates": {
                             "data": {
                                 "element_guids": [
-                                    "b97e6c20-c8d5-4f7d-babc-b2f729c9f5e8",
-                                    "69d7652b-12f1-4054-98c7-084ae6ae292f"
+                                    "0bb06d5d-5941-4886-9411-c15dcb3ffe69",
+                                    "b2d71fe0-ae78-4faf-b46a-27374f81f9db"
                                 ],
                                 "location": {
                                     "data": [
@@ -727,39 +727,15 @@
                                         1.2147571529840755
                                     ],
                                     "dtype": "compas.geometry/Point",
-                                    "guid": "cae0c472-cb49-4608-8817-0ee76bd9da07"
+                                    "guid": "efeeac94-663c-4ec2-9ee3-4d71db1afb80"
                                 },
                                 "name": "JointCandidate",
                                 "topology": 3
                             },
                             "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "8bb011ce-abae-43f6-b783-b84d62f42804"
+                            "guid": "17d390f4-9561-4d34-81e7-f26861fed3b5"
                         },
-                        "joints": "bc7d41a9-389e-4a91-8349-ffae44433317"
-                    },
-                    "8": {
-                        "candidates": {
-                            "data": {
-                                "element_guids": [
-                                    "b97e6c20-c8d5-4f7d-babc-b2f729c9f5e8",
-                                    "04ae63e8-8110-4798-a943-70d6b3c0890f"
-                                ],
-                                "location": {
-                                    "data": [
-                                        -0.20801948908230727,
-                                        0.0,
-                                        1.214757152984074
-                                    ],
-                                    "dtype": "compas.geometry/Point",
-                                    "guid": "02cb0cc0-594c-4062-a897-9b84b806603e"
-                                },
-                                "name": "JointCandidate",
-                                "topology": 2
-                            },
-                            "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "f3eb4af4-2f5f-44cc-940c-6638d1eccca9"
-                        },
-                        "joints": "ba79891f-1ad5-45fb-ab4a-e0b8963bbe0e"
+                        "joints": "0d8de0aa-75ec-4025-8f0b-d4bb958e32b7"
                     }
                 },
                 "8": {
@@ -767,8 +743,8 @@
                         "candidates": {
                             "data": {
                                 "element_guids": [
-                                    "04ae63e8-8110-4798-a943-70d6b3c0890f",
-                                    "69d7652b-12f1-4054-98c7-084ae6ae292f"
+                                    "1f8be04b-86fc-43e7-9ccd-d52930224204",
+                                    "b2d71fe0-ae78-4faf-b46a-27374f81f9db"
                                 ],
                                 "location": {
                                     "data": [
@@ -777,15 +753,39 @@
                                         1.2147571529840755
                                     ],
                                     "dtype": "compas.geometry/Point",
-                                    "guid": "d37ccfd8-3e34-47d6-80eb-9edad120622b"
+                                    "guid": "d3d38f55-7648-43b3-add0-e00bf4e0b7ad"
                                 },
                                 "name": "JointCandidate",
                                 "topology": 3
                             },
                             "dtype": "compas_timber.connections/JointCandidate",
-                            "guid": "d03feaa9-7452-49c2-9259-33a83e83cc5f"
+                            "guid": "83e6b2dc-2e05-4e59-ba18-c8e2ed6a1fcc"
                         },
-                        "joints": "43f21e83-f1cd-40c0-815f-017db983e275"
+                        "joints": "cc6f7bab-56ae-4f7a-a58d-89e6c5dfa5ce"
+                    },
+                    "7": {
+                        "candidates": {
+                            "data": {
+                                "element_guids": [
+                                    "1f8be04b-86fc-43e7-9ccd-d52930224204",
+                                    "0bb06d5d-5941-4886-9411-c15dcb3ffe69"
+                                ],
+                                "location": {
+                                    "data": [
+                                        -0.20801948908230727,
+                                        0.0,
+                                        1.214757152984074
+                                    ],
+                                    "dtype": "compas.geometry/Point",
+                                    "guid": "c3fac69f-a1f8-4ab0-8526-604f659ca1c3"
+                                },
+                                "name": "JointCandidate",
+                                "topology": 2
+                            },
+                            "dtype": "compas_timber.connections/JointCandidate",
+                            "guid": "67462f63-1dac-4ec1-b1f0-c7f75a497ef0"
+                        },
+                        "joints": "2bdaab13-acf0-4aad-9f5d-93c73ced32bc"
                     }
                 },
                 "9": {}
@@ -793,92 +793,43 @@
             "max_node": 9,
             "node": {
                 "0": {
-                    "element": "92b4b7b6-3173-495f-b734-256b5f25e8d3"
+                    "element": "b4a879c1-5817-49c1-af88-c97eb32f75bf"
                 },
                 "1": {
-                    "element": "ff1946ba-3e74-45c9-8786-77afbd9bb35d"
+                    "element": "3ca982cd-7ddb-4789-bffe-ee116ec44916"
                 },
                 "2": {
-                    "element": "f40e16c3-870f-4be3-851e-3d93694917d9"
+                    "element": "22fc4a48-3412-41da-ba43-3eb13f1c65e7"
                 },
                 "3": {
-                    "element": "1c4b6761-ca85-4038-8909-bd7147809649"
+                    "element": "b8898fc0-59fb-4f2b-bc47-e223b1eec292"
                 },
                 "4": {
-                    "element": "273fa807-c6ee-4f70-8da5-fe4ff359ad19"
+                    "element": "c4633ea8-b6f8-41d9-a3e0-a6838537b1e2"
                 },
                 "5": {
-                    "element": "5ebde2a2-23ee-4441-87ea-3320a837b79f"
+                    "element": "6e114a5e-2227-41d4-9593-5c7b77e0e1f3"
                 },
                 "6": {
-                    "element": "69d7652b-12f1-4054-98c7-084ae6ae292f"
+                    "element": "b2d71fe0-ae78-4faf-b46a-27374f81f9db"
                 },
                 "7": {
-                    "element": "b97e6c20-c8d5-4f7d-babc-b2f729c9f5e8"
+                    "element": "0bb06d5d-5941-4886-9411-c15dcb3ffe69"
                 },
                 "8": {
-                    "element": "04ae63e8-8110-4798-a943-70d6b3c0890f"
+                    "element": "1f8be04b-86fc-43e7-9ccd-d52930224204"
                 },
                 "9": {
-                    "element": "8754eb61-3243-4018-910f-25987e7bdacf"
+                    "element": "350dc295-63d3-49c6-ade2-1c6915501d61"
                 }
             }
         },
         "joints": {
-            "17f582a7-8de6-47b1-bd0e-324532a897a0": {
-                "data": {
-                    "cut_plane_bias": 0.76,
-                    "element_guids": [
-                        "1c4b6761-ca85-4038-8909-bd7147809649",
-                        "f40e16c3-870f-4be3-851e-3d93694917d9"
-                    ],
-                    "flip_lap_side": false,
-                    "location": null,
-                    "name": "XLapJoint",
-                    "topology": 0
-                },
-                "dtype": "compas_timber.connections/XLapJoint",
-                "guid": "17f582a7-8de6-47b1-bd0e-324532a897a0"
-            },
-            "33bc1e6b-81e6-4e67-bf46-70ae410128e2": {
+            "0d8de0aa-75ec-4025-8f0b-d4bb958e32b7": {
                 "data": {
                     "element_guids": [
-                        "5ebde2a2-23ee-4441-87ea-3320a837b79f",
-                        "1c4b6761-ca85-4038-8909-bd7147809649"
-                    ],
-                    "heel_depth": 0.04,
-                    "location": null,
-                    "name": "TStepJoint",
-                    "step_depth": 0.02,
-                    "step_shape": "double",
-                    "tenon_mortise_height": null,
-                    "topology": 0
-                },
-                "dtype": "compas_timber.connections/TStepJoint",
-                "guid": "33bc1e6b-81e6-4e67-bf46-70ae410128e2"
-            },
-            "3e63bffd-5816-49bc-b3c5-c00757485918": {
-                "data": {
-                    "element_guids": [
-                        "273fa807-c6ee-4f70-8da5-fe4ff359ad19",
-                        "1c4b6761-ca85-4038-8909-bd7147809649"
-                    ],
-                    "heel_depth": 0.04,
-                    "location": null,
-                    "name": "TStepJoint",
-                    "step_depth": 0.02,
-                    "step_shape": "double",
-                    "tenon_mortise_height": null,
-                    "topology": 0
-                },
-                "dtype": "compas_timber.connections/TStepJoint",
-                "guid": "3e63bffd-5816-49bc-b3c5-c00757485918"
-            },
-            "43f21e83-f1cd-40c0-815f-017db983e275": {
-                "data": {
-                    "element_guids": [
-                        "04ae63e8-8110-4798-a943-70d6b3c0890f",
-                        "69d7652b-12f1-4054-98c7-084ae6ae292f"
+                        "0bb06d5d-5941-4886-9411-c15dcb3ffe69",
+                        "b2d71fe0-ae78-4faf-b46a-27374f81f9db"
                     ],
                     "location": null,
                     "mill_depth": null,
@@ -886,137 +837,29 @@
                     "topology": 0
                 },
                 "dtype": "compas_timber.connections/TBirdsmouthJoint",
-                "guid": "43f21e83-f1cd-40c0-815f-017db983e275"
+                "guid": "0d8de0aa-75ec-4025-8f0b-d4bb958e32b7"
             },
-            "587d73af-d5ed-455a-b785-eef4645e0a9e": {
+            "22a9ffe1-d339-40fd-9e93-35bebc6b048d": {
+                "data": {
+                    "element_guids": [
+                        "3ca982cd-7ddb-4789-bffe-ee116ec44916",
+                        "6e114a5e-2227-41d4-9593-5c7b77e0e1f3"
+                    ],
+                    "location": null,
+                    "mill_depth": null,
+                    "name": "TBirdsmouthJoint",
+                    "topology": 0
+                },
+                "dtype": "compas_timber.connections/TBirdsmouthJoint",
+                "guid": "22a9ffe1-d339-40fd-9e93-35bebc6b048d"
+            },
+            "2bdaab13-acf0-4aad-9f5d-93c73ced32bc": {
                 "data": {
                     "clean": false,
                     "cutoff": null,
                     "element_guids": [
-                        "ff1946ba-3e74-45c9-8786-77afbd9bb35d",
-                        "92b4b7b6-3173-495f-b734-256b5f25e8d3"
-                    ],
-                    "location": {
-                        "data": [
-                            -0.294062517408274,
-                            0.025547517187664633,
-                            1.4631741136819243
-                        ],
-                        "dtype": "compas.geometry/Point",
-                        "guid": "e7d4cec9-093b-45be-b674-393c4ce71f4d"
-                    },
-                    "miter_plane": null,
-                    "name": "LMiterJoint",
-                    "ref_side_miter": false,
-                    "topology": 0
-                },
-                "dtype": "compas_timber.connections/LMiterJoint",
-                "guid": "587d73af-d5ed-455a-b785-eef4645e0a9e"
-            },
-            "5e07cbe7-be3e-494b-be46-278ab1e81651": {
-                "data": {
-                    "do_refine_cut": false,
-                    "element_guids": [
-                        "5ebde2a2-23ee-4441-87ea-3320a837b79f",
-                        "273fa807-c6ee-4f70-8da5-fe4ff359ad19"
-                    ],
-                    "location": {
-                        "data": [
-                            -0.6059619139199888,
-                            0.0,
-                            1.2140210072193094
-                        ],
-                        "dtype": "compas.geometry/Point",
-                        "guid": "3b06b07f-f460-47f3-abeb-b22c1f8ea55a"
-                    },
-                    "name": "TMultiStepJoint",
-                    "riser_angle": null,
-                    "step_count": 5,
-                    "step_depth": null,
-                    "step_shape": "step",
-                    "topology": 0
-                },
-                "dtype": "compas_timber.connections/TMultiStepJoint",
-                "guid": "5e07cbe7-be3e-494b-be46-278ab1e81651"
-            },
-            "6be90d0c-9585-442b-ab04-2090d4a54a3a": {
-                "data": {
-                    "element_guids": [
-                        "ff1946ba-3e74-45c9-8786-77afbd9bb35d",
-                        "5ebde2a2-23ee-4441-87ea-3320a837b79f"
-                    ],
-                    "location": null,
-                    "mill_depth": null,
-                    "name": "TBirdsmouthJoint",
-                    "topology": 0
-                },
-                "dtype": "compas_timber.connections/TBirdsmouthJoint",
-                "guid": "6be90d0c-9585-442b-ab04-2090d4a54a3a"
-            },
-            "72ac5895-b20f-430d-ab21-033ce9996ea3": {
-                "data": {
-                    "element_guids": [
-                        "92b4b7b6-3173-495f-b734-256b5f25e8d3",
-                        "5ebde2a2-23ee-4441-87ea-3320a837b79f"
-                    ],
-                    "location": null,
-                    "mill_depth": null,
-                    "name": "TBirdsmouthJoint",
-                    "topology": 0
-                },
-                "dtype": "compas_timber.connections/TBirdsmouthJoint",
-                "guid": "72ac5895-b20f-430d-ab21-033ce9996ea3"
-            },
-            "80ffecf9-9c8f-4d69-a02c-5acceff094a3": {
-                "data": {
-                    "element_guids": [
-                        "92b4b7b6-3173-495f-b734-256b5f25e8d3",
-                        "f40e16c3-870f-4be3-851e-3d93694917d9"
-                    ],
-                    "heel_depth": 0.04,
-                    "location": null,
-                    "name": "TStepJoint",
-                    "step_depth": 0.02,
-                    "step_shape": "double",
-                    "tenon_mortise_height": null,
-                    "topology": 0
-                },
-                "dtype": "compas_timber.connections/TStepJoint",
-                "guid": "80ffecf9-9c8f-4d69-a02c-5acceff094a3"
-            },
-            "b8338fbe-663d-4a81-98ac-f2436d4aeb70": {
-                "data": {
-                    "do_refine_cut": false,
-                    "element_guids": [
-                        "273fa807-c6ee-4f70-8da5-fe4ff359ad19",
-                        "69d7652b-12f1-4054-98c7-084ae6ae292f"
-                    ],
-                    "location": {
-                        "data": [
-                            -0.39754266350454304,
-                            0.0,
-                            0.958896633319958
-                        ],
-                        "dtype": "compas.geometry/Point",
-                        "guid": "ab99afe5-d4b4-4caf-9de8-446a08ab2dc3"
-                    },
-                    "name": "TMultiStepJoint",
-                    "riser_angle": null,
-                    "step_count": 5,
-                    "step_depth": null,
-                    "step_shape": "step",
-                    "topology": 0
-                },
-                "dtype": "compas_timber.connections/TMultiStepJoint",
-                "guid": "b8338fbe-663d-4a81-98ac-f2436d4aeb70"
-            },
-            "ba79891f-1ad5-45fb-ab4a-e0b8963bbe0e": {
-                "data": {
-                    "clean": false,
-                    "cutoff": null,
-                    "element_guids": [
-                        "b97e6c20-c8d5-4f7d-babc-b2f729c9f5e8",
-                        "04ae63e8-8110-4798-a943-70d6b3c0890f"
+                        "1f8be04b-86fc-43e7-9ccd-d52930224204",
+                        "0bb06d5d-5941-4886-9411-c15dcb3ffe69"
                     ],
                     "location": {
                         "data": [
@@ -1025,7 +868,7 @@
                             1.214757152984074
                         ],
                         "dtype": "compas.geometry/Point",
-                        "guid": "32d83690-64a6-4c80-be37-be40a2c1fb53"
+                        "guid": "dde5ac42-b2d6-4964-8340-b43bf700cab1"
                     },
                     "miter_plane": null,
                     "name": "LMiterJoint",
@@ -1033,53 +876,13 @@
                     "topology": 0
                 },
                 "dtype": "compas_timber.connections/LMiterJoint",
-                "guid": "ba79891f-1ad5-45fb-ab4a-e0b8963bbe0e"
+                "guid": "2bdaab13-acf0-4aad-9f5d-93c73ced32bc"
             },
-            "bc7d41a9-389e-4a91-8349-ffae44433317": {
+            "37ce81fa-35e9-42eb-9919-dc59991f68ed": {
                 "data": {
                     "element_guids": [
-                        "b97e6c20-c8d5-4f7d-babc-b2f729c9f5e8",
-                        "69d7652b-12f1-4054-98c7-084ae6ae292f"
-                    ],
-                    "location": null,
-                    "mill_depth": null,
-                    "name": "TBirdsmouthJoint",
-                    "topology": 0
-                },
-                "dtype": "compas_timber.connections/TBirdsmouthJoint",
-                "guid": "bc7d41a9-389e-4a91-8349-ffae44433317"
-            },
-            "c54da22a-5f81-4f1a-aeea-80f70b5b14b6": {
-                "data": {
-                    "do_refine_cut": false,
-                    "element_guids": [
-                        "69d7652b-12f1-4054-98c7-084ae6ae292f",
-                        "5ebde2a2-23ee-4441-87ea-3320a837b79f"
-                    ],
-                    "location": {
-                        "data": [
-                            0.06960668579133711,
-                            0.0,
-                            1.5895586915931659
-                        ],
-                        "dtype": "compas.geometry/Point",
-                        "guid": "e61cabd9-3b9e-4f3f-9b06-81ceeb88ba71"
-                    },
-                    "name": "TMultiStepJoint",
-                    "riser_angle": null,
-                    "step_count": 5,
-                    "step_depth": null,
-                    "step_shape": "step",
-                    "topology": 0
-                },
-                "dtype": "compas_timber.connections/TMultiStepJoint",
-                "guid": "c54da22a-5f81-4f1a-aeea-80f70b5b14b6"
-            },
-            "fb411598-6937-4ece-b2ad-3f3745e765c4": {
-                "data": {
-                    "element_guids": [
-                        "ff1946ba-3e74-45c9-8786-77afbd9bb35d",
-                        "f40e16c3-870f-4be3-851e-3d93694917d9"
+                        "3ca982cd-7ddb-4789-bffe-ee116ec44916",
+                        "22fc4a48-3412-41da-ba43-3eb13f1c65e7"
                     ],
                     "heel_depth": 0.04,
                     "location": null,
@@ -1090,7 +893,204 @@
                     "topology": 0
                 },
                 "dtype": "compas_timber.connections/TStepJoint",
-                "guid": "fb411598-6937-4ece-b2ad-3f3745e765c4"
+                "guid": "37ce81fa-35e9-42eb-9919-dc59991f68ed"
+            },
+            "39ac1d22-15a9-4565-91dc-81dc7ea86de2": {
+                "data": {
+                    "do_refine_cut": false,
+                    "element_guids": [
+                        "6e114a5e-2227-41d4-9593-5c7b77e0e1f3",
+                        "c4633ea8-b6f8-41d9-a3e0-a6838537b1e2"
+                    ],
+                    "location": {
+                        "data": [
+                            -0.6059619139199888,
+                            0.0,
+                            1.2140210072193094
+                        ],
+                        "dtype": "compas.geometry/Point",
+                        "guid": "9809ac4f-7149-4021-afd5-6e6b10bdeb97"
+                    },
+                    "name": "TMultiStepJoint",
+                    "riser_angle": null,
+                    "step_count": 5,
+                    "step_depth": null,
+                    "step_shape": "step",
+                    "topology": 0
+                },
+                "dtype": "compas_timber.connections/TMultiStepJoint",
+                "guid": "39ac1d22-15a9-4565-91dc-81dc7ea86de2"
+            },
+            "433095a7-f60d-46df-8d35-6c63163a5672": {
+                "data": {
+                    "element_guids": [
+                        "6e114a5e-2227-41d4-9593-5c7b77e0e1f3",
+                        "b8898fc0-59fb-4f2b-bc47-e223b1eec292"
+                    ],
+                    "heel_depth": 0.04,
+                    "location": null,
+                    "name": "TStepJoint",
+                    "step_depth": 0.02,
+                    "step_shape": "double",
+                    "tenon_mortise_height": null,
+                    "topology": 0
+                },
+                "dtype": "compas_timber.connections/TStepJoint",
+                "guid": "433095a7-f60d-46df-8d35-6c63163a5672"
+            },
+            "5280b4ff-b9ba-48a3-9282-fd7824006775": {
+                "data": {
+                    "element_guids": [
+                        "b4a879c1-5817-49c1-af88-c97eb32f75bf",
+                        "6e114a5e-2227-41d4-9593-5c7b77e0e1f3"
+                    ],
+                    "location": null,
+                    "mill_depth": null,
+                    "name": "TBirdsmouthJoint",
+                    "topology": 0
+                },
+                "dtype": "compas_timber.connections/TBirdsmouthJoint",
+                "guid": "5280b4ff-b9ba-48a3-9282-fd7824006775"
+            },
+            "670e2820-458a-462e-9322-922a649a4535": {
+                "data": {
+                    "element_guids": [
+                        "c4633ea8-b6f8-41d9-a3e0-a6838537b1e2",
+                        "b8898fc0-59fb-4f2b-bc47-e223b1eec292"
+                    ],
+                    "heel_depth": 0.04,
+                    "location": null,
+                    "name": "TStepJoint",
+                    "step_depth": 0.02,
+                    "step_shape": "double",
+                    "tenon_mortise_height": null,
+                    "topology": 0
+                },
+                "dtype": "compas_timber.connections/TStepJoint",
+                "guid": "670e2820-458a-462e-9322-922a649a4535"
+            },
+            "71fb4203-67c8-4c94-a7e8-0cd1ceb390b1": {
+                "data": {
+                    "clean": false,
+                    "cutoff": null,
+                    "element_guids": [
+                        "3ca982cd-7ddb-4789-bffe-ee116ec44916",
+                        "b4a879c1-5817-49c1-af88-c97eb32f75bf"
+                    ],
+                    "location": {
+                        "data": [
+                            -0.294062517408274,
+                            0.025547517187664633,
+                            1.4631741136819243
+                        ],
+                        "dtype": "compas.geometry/Point",
+                        "guid": "936a961e-0d55-4b66-afab-bc0e6b260396"
+                    },
+                    "miter_plane": null,
+                    "name": "LMiterJoint",
+                    "ref_side_miter": false,
+                    "topology": 0
+                },
+                "dtype": "compas_timber.connections/LMiterJoint",
+                "guid": "71fb4203-67c8-4c94-a7e8-0cd1ceb390b1"
+            },
+            "b7927c9c-85ab-4329-9a32-90a622cd8d0c": {
+                "data": {
+                    "cut_plane_bias": 0.76,
+                    "element_guids": [
+                        "22fc4a48-3412-41da-ba43-3eb13f1c65e7",
+                        "b8898fc0-59fb-4f2b-bc47-e223b1eec292"
+                    ],
+                    "flip_lap_side": false,
+                    "location": null,
+                    "name": "XLapJoint",
+                    "topology": 0
+                },
+                "dtype": "compas_timber.connections/XLapJoint",
+                "guid": "b7927c9c-85ab-4329-9a32-90a622cd8d0c"
+            },
+            "bb41fd6a-2d8f-4e09-9996-bb701538f212": {
+                "data": {
+                    "do_refine_cut": false,
+                    "element_guids": [
+                        "b2d71fe0-ae78-4faf-b46a-27374f81f9db",
+                        "6e114a5e-2227-41d4-9593-5c7b77e0e1f3"
+                    ],
+                    "location": {
+                        "data": [
+                            0.06960668579133711,
+                            0.0,
+                            1.5895586915931659
+                        ],
+                        "dtype": "compas.geometry/Point",
+                        "guid": "1279a999-435c-4a83-aea5-1fcc92f07d1b"
+                    },
+                    "name": "TMultiStepJoint",
+                    "riser_angle": null,
+                    "step_count": 5,
+                    "step_depth": null,
+                    "step_shape": "step",
+                    "topology": 0
+                },
+                "dtype": "compas_timber.connections/TMultiStepJoint",
+                "guid": "bb41fd6a-2d8f-4e09-9996-bb701538f212"
+            },
+            "cc6f7bab-56ae-4f7a-a58d-89e6c5dfa5ce": {
+                "data": {
+                    "element_guids": [
+                        "1f8be04b-86fc-43e7-9ccd-d52930224204",
+                        "b2d71fe0-ae78-4faf-b46a-27374f81f9db"
+                    ],
+                    "location": null,
+                    "mill_depth": null,
+                    "name": "TBirdsmouthJoint",
+                    "topology": 0
+                },
+                "dtype": "compas_timber.connections/TBirdsmouthJoint",
+                "guid": "cc6f7bab-56ae-4f7a-a58d-89e6c5dfa5ce"
+            },
+            "e0f70f02-9c74-4e78-83c4-586dd3017d7b": {
+                "data": {
+                    "do_refine_cut": false,
+                    "element_guids": [
+                        "c4633ea8-b6f8-41d9-a3e0-a6838537b1e2",
+                        "b2d71fe0-ae78-4faf-b46a-27374f81f9db"
+                    ],
+                    "location": {
+                        "data": [
+                            -0.39754266350454304,
+                            0.0,
+                            0.958896633319958
+                        ],
+                        "dtype": "compas.geometry/Point",
+                        "guid": "e5714652-0d43-4a8b-ba02-06d33530b1a9"
+                    },
+                    "name": "TMultiStepJoint",
+                    "riser_angle": null,
+                    "step_count": 5,
+                    "step_depth": null,
+                    "step_shape": "step",
+                    "topology": 0
+                },
+                "dtype": "compas_timber.connections/TMultiStepJoint",
+                "guid": "e0f70f02-9c74-4e78-83c4-586dd3017d7b"
+            },
+            "e17499c4-5aea-423e-ae9d-db34b41b1e07": {
+                "data": {
+                    "element_guids": [
+                        "b4a879c1-5817-49c1-af88-c97eb32f75bf",
+                        "22fc4a48-3412-41da-ba43-3eb13f1c65e7"
+                    ],
+                    "heel_depth": 0.04,
+                    "location": null,
+                    "name": "TStepJoint",
+                    "step_depth": 0.02,
+                    "step_shape": "double",
+                    "tenon_mortise_height": null,
+                    "topology": 0
+                },
+                "dtype": "compas_timber.connections/TStepJoint",
+                "guid": "e17499c4-5aea-423e-ae9d-db34b41b1e07"
             }
         },
         "materials": {},
@@ -1100,43 +1100,43 @@
             "root": {
                 "children": [
                     {
-                        "element": "92b4b7b6-3173-495f-b734-256b5f25e8d3",
+                        "element": "b4a879c1-5817-49c1-af88-c97eb32f75bf",
                         "name": "ElementNode"
                     },
                     {
-                        "element": "ff1946ba-3e74-45c9-8786-77afbd9bb35d",
+                        "element": "3ca982cd-7ddb-4789-bffe-ee116ec44916",
                         "name": "ElementNode"
                     },
                     {
-                        "element": "f40e16c3-870f-4be3-851e-3d93694917d9",
+                        "element": "22fc4a48-3412-41da-ba43-3eb13f1c65e7",
                         "name": "ElementNode"
                     },
                     {
-                        "element": "1c4b6761-ca85-4038-8909-bd7147809649",
+                        "element": "b8898fc0-59fb-4f2b-bc47-e223b1eec292",
                         "name": "ElementNode"
                     },
                     {
-                        "element": "273fa807-c6ee-4f70-8da5-fe4ff359ad19",
+                        "element": "c4633ea8-b6f8-41d9-a3e0-a6838537b1e2",
                         "name": "ElementNode"
                     },
                     {
-                        "element": "5ebde2a2-23ee-4441-87ea-3320a837b79f",
+                        "element": "6e114a5e-2227-41d4-9593-5c7b77e0e1f3",
                         "name": "ElementNode"
                     },
                     {
-                        "element": "69d7652b-12f1-4054-98c7-084ae6ae292f",
+                        "element": "b2d71fe0-ae78-4faf-b46a-27374f81f9db",
                         "name": "ElementNode"
                     },
                     {
-                        "element": "b97e6c20-c8d5-4f7d-babc-b2f729c9f5e8",
+                        "element": "0bb06d5d-5941-4886-9411-c15dcb3ffe69",
                         "name": "ElementNode"
                     },
                     {
-                        "element": "04ae63e8-8110-4798-a943-70d6b3c0890f",
+                        "element": "1f8be04b-86fc-43e7-9ccd-d52930224204",
                         "name": "ElementNode"
                     },
                     {
-                        "element": "8754eb61-3243-4018-910f-25987e7bdacf",
+                        "element": "350dc295-63d3-49c6-ade2-1c6915501d61",
                         "name": "ElementNode"
                     }
                 ],
@@ -1145,7 +1145,7 @@
         }
     },
     "dtype": "compas_timber.model/TimberModel",
-    "guid": "c15ece47-aea9-4692-abee-bbd97de7e4a8",
+    "guid": "ad53f62e-e6c7-4baf-9adf-1f95a8ca3916",
     "inheritance": [
         "compas_model.models/Model"
     ]
