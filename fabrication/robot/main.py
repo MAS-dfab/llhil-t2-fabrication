@@ -38,7 +38,7 @@ def main():
     # 1. LOAD DATA
     # ---------------------------------------------------------
     print("Loading models...")
-    filepath_model = "fabrication\\data\\models\\t2_tm_0.json"
+    filepath_model = "fabrication\\data\\models\\tm_test.json"
 
     if not os.path.exists(filepath_model):
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
@@ -65,6 +65,8 @@ def main():
         (obj for obj in timber_model.beams if "sequence" in obj.attributes),
         key=lambda x: x.attributes["sequence"]
     )
+
+
 
     # for p in timber_model.plates:
     #     p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
@@ -187,11 +189,14 @@ def main():
         trajectory_planner.state.robot_configuration = trajectory_planner.safe_configuration
 
         assembled_elements = []
-        assembled_elements.clear()
-        # for p in timber_model.plates:
-        #     p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
-        #     assembled_elements.append(p_mesh)
+        assembled_elements.clear() 
+        for p in timber_model.plates[:1]:
+            parent_T = p.transformation_to_local()
+            p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
+            assembled_elements.append(p_mesh)
+        beam.attributes["parent_T"] = parent_T  
         for b in in_seq_beams[:trajectory_planner.seq_i]:
+            b.attributes["parent_T"] = parent_T
             b_mesh = b.geometry.transformed(trajectory_planner.at_T * b.attributes.get("parent_T")).to_viewmesh()[0]
             assembled_elements.append(b_mesh)
 
