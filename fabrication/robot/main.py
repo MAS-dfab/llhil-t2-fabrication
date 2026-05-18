@@ -30,7 +30,32 @@ MQTT_PORT = 1883
 MQTT_TOPIC = "qr/timba/scan"
 QR_SEQ_OFFSET = 1  # QR labels are 1-indexed (m01-01 -> seq_i=0)
 
-_BG_ERROR = Color(0.8, 0.1, 0.1)       # red: fetch failed
+STATE_FILE = "fabrication\\data\\fabrication_state.json"
+EXPORT_PATH = "fabrication\\data\\fabrication_sequence.json"
+
+# --- Label colours ---
+_COL_WAITING  = "#ef4444"   # red   — waiting for QR / mocap
+_COL_FETCHED  = "#3b82f6"   # blue  — mocap frame ready
+_COL_COMPUTED = "#18181b"   # black — trajectory computed
+
+
+def _load_state():
+    if os.path.exists(STATE_FILE):
+        try:
+            return json_load(STATE_FILE)
+        except Exception:
+            pass
+    return {"last_assembled": -1}
+
+
+def _save_state(last_assembled):
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    json_dump({"last_assembled": last_assembled}, STATE_FILE)
+
+
+def _beam_label(seq_i, total, suffix):
+    """e.g. 'Beam 1/12 — scan QR'"""
+    return "Beam {}/{} — {}".format(seq_i + 1, total, suffix)
 
 
 def main():
@@ -54,32 +79,27 @@ def main():
     trajectory_planner.setup_physical_cell()
 
     # ---------------------------------------------------------
-    # 3. PREPARE SCENE (collision objects only — no trajectory yet)
+    # 3. SEQUENCE — resume from last assembled
     # ---------------------------------------------------------
-    trajectory_planner.seq_i = 0
-    # assembled_elements = []
-
-    
-
     in_seq_beams = sorted(
         (obj for obj in timber_model.beams if "sequence" in obj.attributes),
         key=lambda x: x.attributes["sequence"]
     )
+    total_beams = len(in_seq_beams)
 
+    state = _load_state()
+    last_assembled = state.get("last_assembled", -1)
+    trajectory_planner.seq_i = last_assembled + 1
 
+    if trajectory_planner.seq_i >= total_beams:
+        print("All {} beams already assembled. Nothing to do.".format(total_beams))
+        return
 
-    # for p in timber_model.plates:
-    #     p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
-    #     assembled_elements.append(p_mesh)
-    # for b in in_seq_beams[:seq_i]:
-    #     b_mesh = b.geometry.transformed(trajectory_planner.at_T * b.attributes.get("parent_T")).to_viewmesh()[0]
-    #     assembled_elements.append(b_mesh)
-    # trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
-
-    
+    print("Resuming from beam {}/{} (last assembled: {})".format(
+        trajectory_planner.seq_i + 1, total_beams, last_assembled))
 
     # ---------------------------------------------------------
-    # 4. LAUNCH VIEWER (no trajectory yet)
+    # 4. LAUNCH VIEWER
     # ---------------------------------------------------------
     print("\nLaunching Trajectory Viewer...")
     player = TrajectoryPlayer(
@@ -87,15 +107,21 @@ def main():
         cell_state=trajectory_planner.state,
     )
 
+    last_sequence = {"record": None}
+    highlight_state = {"mesh": None}
 
-    export_path = "fabrication\\data\\fabrication_sequence.json"
-    last_sequence = {"record": None}  # mutable container so closure can write to it
+    # UI: text label tracks the current step state
+    id_label = TextLabel(
+        text=_beam_label(trajectory_planner.seq_i, total_beams, "scan QR"),
+        label="Current Beam",
+    )
 
-    # --- QR / MQTT state ---
-    highlight_state = {"mesh": None}  # tracks the currently highlighted beam mesh
-
-    # UI text label — shows current QR id in the sidebar panel
-    id_label = TextLabel(text="-", label="Current Beam")
+    def _set_label(suffix, color):
+        player.viewer.update_text_label(
+            id_label,
+            _beam_label(trajectory_planner.seq_i, total_beams, suffix),
+            color=color,
+        )
 
     def _on_qr_received(payload):
         """Called from the MQTT thread when a QR scan is published."""
@@ -105,15 +131,15 @@ def main():
             print("QR: unrecognised payload '{}'".format(payload))
             return
 
-        if seq_i < 0 or seq_i >= len(in_seq_beams):
-            print("QR: seq_i {} out of range (0-{})".format(seq_i, len(in_seq_beams) - 1))
-            player.viewer.background_color = _BG_ERROR
+        if seq_i < 0 or seq_i >= total_beams:
+            print("QR: seq_i {} out of range (0-{})".format(seq_i, total_beams - 1))
+            _set_label("out of range", _COL_WAITING)
             return
 
+        # Update to the scanned beam (allows jumping forward if needed)
         trajectory_planner.seq_i = seq_i
         beam = in_seq_beams[seq_i]
         print("QR: {} -> seq_i={} ({})".format(payload, seq_i, beam))
-        player.viewer.update_text_label(id_label, payload)
 
         # --- Highlight: remove previous beam, add new one ---
         if highlight_state["mesh"] is not None:
@@ -132,12 +158,14 @@ def main():
             print("QR: highlight failed - {}".format(e))
 
         # --- Fetch pickup frame (blocking, runs in MQTT thread) ---
+        _set_label("fetching…", _COL_WAITING)
         try:
             trajectory_planner._fetched_pickup_frame = fetch_pickup_frame()
+            _set_label("ready ✓", _COL_FETCHED)
             print("QR: pickup frame ready for seq_i={}. Press Compute.".format(seq_i))
         except RuntimeError as e:
-            player.viewer.background_color = _BG_ERROR
             trajectory_planner._fetched_pickup_frame = None
+            _set_label("retry — fetch failed", _COL_WAITING)
             print("QR: fetch FAILED - {}".format(e))
 
     def _mqtt_setup():
@@ -173,12 +201,10 @@ def main():
 
     # --- Button: Compute Trajectories ---
     def _on_compute():
-
-        # trajectory_planner.seq_i +=1
         beam = in_seq_beams[trajectory_planner.seq_i]
         player._cleanup_previous_run()
 
-        # clear the QR highlight now that we're computing
+        # clear the QR highlight
         if highlight_state["mesh"] is not None:
             try:
                 player.viewer.remove_object(highlight_state["mesh"])
@@ -202,7 +228,7 @@ def main():
 
         trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
         player._draw_assembled_elements(assembled_elements)
-        
+
         if hasattr(trajectory_planner, 'workpiece_manager'):
             wm = trajectory_planner.workpiece_manager
             wm.rules.clear()
@@ -212,19 +238,20 @@ def main():
 
         if hasattr(trajectory_planner, 'trajectory_list'):
             trajectory_planner.trajectory_list = []
-            
+
         if hasattr(trajectory_planner, 'current_time'):
             trajectory_planner.current_time = 0.0
-            
+
         if hasattr(trajectory_planner, 'planned_time'):
             trajectory_planner.planned_time = 0.0
 
         if trajectory_planner._fetched_pickup_frame is None:
             print("ERROR: Fetch pickup frame first before computing.")
             return
+
         print("\n{}".format("X" * 40))
         print("PLANNING element {} of {}: {}".format(
-            beam.attributes.get("sequence"), len(in_seq_beams), beam))
+            beam.attributes.get("sequence"), total_beams, beam))
         print("{}".format("X" * 40))
         try:
             element_trajectories = trajectory_planner.pick_and_place_element(
@@ -244,7 +271,6 @@ def main():
         if failed:
             print("WARNING: step(s) {} failed, combining {} of {} steps.".format(
                 failed, len(valid), len(element_trajectories)))
-            # partial result — do not store for export
             last_sequence["record"] = None
         else:
             _approach = getattr(trajectory_planner, "_last_approach_frame", None)
@@ -267,7 +293,6 @@ def main():
 
         merged_trajectory = combine_trajectories(valid)
 
-        # Wire trajectory into the player and activate playback
         player.trajectory = merged_trajectory
         player.add_dynamic_workpieces(
             pnp_data=trajectory_planner.workpiece_manager.rules,
@@ -277,6 +302,8 @@ def main():
         player._setup_scrubber()
         if hasattr(player, "_scrub_callback"):
             player._scrub_callback([0])
+
+        _set_label("computed ✓", _COL_COMPUTED)
         print("Done. Use the timeline to preview the trajectory.")
 
     # --- Button: Export Trajectory ---
@@ -284,8 +311,22 @@ def main():
         if last_sequence["record"] is None:
             print("ERROR: No fully computed sequence to export. Compute all steps successfully first.")
             return
-        json_dump(last_sequence["record"], export_path)
-        print("Exported sequence {} to: {}".format(last_sequence["record"]["index"], export_path))
+        json_dump(last_sequence["record"], EXPORT_PATH)
+        exported_seq_i = last_sequence["record"]["index"]
+        print("Exported sequence {} to: {}".format(exported_seq_i, EXPORT_PATH))
+
+        # Advance to next beam and persist state
+        _save_state(exported_seq_i)
+        next_seq_i = exported_seq_i + 1
+        if next_seq_i < total_beams:
+            trajectory_planner.seq_i = next_seq_i
+            trajectory_planner._fetched_pickup_frame = None
+            last_sequence["record"] = None
+            _set_label("scan QR", _COL_WAITING)
+            print("Ready for beam {}/{}.".format(next_seq_i + 1, total_beams))
+        else:
+            _set_label("all done!", _COL_COMPUTED)
+            print("All {} beams assembled!".format(total_beams))
 
     player.viewer.picker = True
     player.viewer.set_view(CameraView.FRONT_RIGHT)
