@@ -238,7 +238,8 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 1. Approach pickpoint
         print("getting element approach trajectory to pickpoint")
-        approach_frame = self.get_approach_frame(element_pickup_frame, approach_distance=0.5)
+        # approach_frame = self.get_approach_frame(element_pickup_frame, approach_distance=0.5)
+        approach_frame = self.get_approach_frame_insertion_vector(element_pickup_frame, element.attributes.get("insertion_vector"), approach_distance=0.5)
         trajectories.append(self.get_motion_to_frame(approach_frame))
 
         # 2. Pick Element at pickpoint
@@ -361,7 +362,8 @@ class TimberProcessPlanner(BaseRobotPlanner):
     def calculate_element_at_frame(self, element, grasp_frame=None):
         if not grasp_frame:
             grasp_frame = element.attributes.get("grasp_frame") 
-        e_at_frame = grasp_frame.transformed(self.at_T*element.attributes.get("parent_T"))
+        # e_at_frame = grasp_frame.transformed(self.at_T*element.attributes.get("parent_T"))
+        e_at_frame = grasp_frame.copy()
         new_grasp_frame = grasp_frame.transformed(element.transformation_to_local())
         element_geometry_at = element.geometry.transformed(element.transformation_to_local())
         # ip_thickness = self.get_inside_plate_thickness(element)

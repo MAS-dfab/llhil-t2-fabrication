@@ -38,26 +38,30 @@ def main():
     trajectories = []
     assembled_elements = []
 
-    for p in timber_model.plates:
-        p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
+    # plate_T = None
+    for p in timber_model.plates[:1]:
+        # plate_T = p.transformation_to_local()
+        # p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
+        p_mesh = p.geometry.to_viewmesh()[0]
         assembled_elements.append(p_mesh)
 
     # Sort beams by sequence attribute to ensure correct assembly order
     in_seq_beams = sorted(
-    (obj for obj in timber_model.beams if "sequence" in obj.attributes), 
-    key=lambda x: x.attributes["sequence"]
+    (obj for obj in timber_model.beams if "sequence_id" in obj.attributes), 
+    key=lambda x: x.attributes["sequence_id"]
     )
 
     # Add already assembled beams to the cell for collision checking
     for b in in_seq_beams[:seq_i]:
-        b_mesh = b.geometry.transformed(trajectory_planner.at_T*b.attributes.get("parent_T")).to_viewmesh()[0]
+        # b_mesh = b.geometry.transformed(trajectory_planner.at_T*b.attributes.get("parent_T")).to_viewmesh()[0]
+        b_mesh = b.geometry.to_viewmesh()[0]
         assembled_elements.append(b_mesh)
     trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
 
     # Compute trajectory for current beam
     beam = in_seq_beams[seq_i]
     print(f"\n{'X'*40}")
-    print(f"PLANNING element {beam.attributes.get('sequence')} of {len(in_seq_beams)}: {beam}")
+    print(f"PLANNING element {beam.attributes.get('sequence_id')} of {len(in_seq_beams)}: {beam}")
     print(f"{'X'*40}")
     
     element_trajectories = trajectory_planner.pick_and_place_element(
