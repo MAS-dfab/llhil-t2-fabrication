@@ -41,16 +41,16 @@ class TimberProcessPlanner(BaseRobotPlanner):
         print("Setting up physical cell geometry...")
         
         # # 1. Add Tool
-        # tool_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperMedium_viz.stl")
+        tool_mesh = Mesh.from_stl("fabrication\\data\\gripper\\schunk_viz.stl")
         # # tool_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
-        # col_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperMedium_col.stl")
+        col_mesh = Mesh.from_stl("fabrication\\data\\gripper\\schunk_col.stl")
         # # col_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
-        tool_frame = Frame([0.000, 0.000, 0.0],  [1.0, 0.0, 0.0], [0.0, 1.0, 0.0])
+        tool_frame = Frame([0.000, 0.000, 0.057],  [1.0, 0.0, 0.0], [0.0, 1.0, 0.0])
         self.add_tool_to_robot(
-            viz_mesh=Mesh.from_points([[0,0,0], [0.001,0,0.0], [0.00,0.001,0]]),  # Placeholder tool geometry (a simple box)
-            col_mesh=None,  # Placeholder collision geometry
+            viz_mesh=tool_mesh,  # Placeholder visualization geometry
+            col_mesh=col_mesh,  # Placeholder collision geometry
             tool_frame=tool_frame,
-            tool_name="base_tool",
+            tool_name="schunk",
             connected_to="robot12_tool0"
         )
         
@@ -239,7 +239,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         print("Picking and placing element:", element.guid)
         trajectories = []
 
-        grasp_frame, element_at_frame, element_geometry_at = self.calculate_element_at_frame(element)
+        grasp_frame, element_at_frame, element_geometry = self.calculate_element_at_frame(element)
         self._last_place_frame = element_at_frame
 
         element_pickup_frame = self.calculate_element_pickup_frame()
@@ -255,10 +255,10 @@ class TimberProcessPlanner(BaseRobotPlanner):
         trajectories.append(self.get_cartesian_trajectory([element_pickup_frame]))
 
         # Prepare mesh for attachment
-        element_mesh_at = element_geometry_at.to_viewmesh()[0]
+        element_mesh_at = element_geometry.to_viewmesh()[0]
         # adjusted_grasp_frame = element_grasp_frame.copy()
         # adjusted_grasp_frame.point.z -= 0.08  # Account for gripper offset
-        self.attach_workpiece(str(element.guid), element_mesh_at, grasp_frame, element_at_frame, attached_to_tool="base_tool")
+        self.attach_workpiece(str(element.guid), element_mesh_at, grasp_frame, attached_to_tool="schunk")
 
         # 3. Retract from pickpoint
         print("getting element retract trajectory at pickpoint")
@@ -384,9 +384,10 @@ class TimberProcessPlanner(BaseRobotPlanner):
             grasp_frame = element.attributes.get("grasp_frame") 
             grasp_frame = grasp_frame.rotated(math.radians(90), grasp_frame.zaxis, grasp_frame.point)
         e_at_frame = grasp_frame.transformed(self.at_T*element.attributes.get("parent_T"))
+        e_at_frame_offset = e_at_frame.translated(e_at_frame.zaxis * -0.1)  # DEPTH OFFSET FOR GRIPPER 80mm LENGTH
         new_grasp_frame = grasp_frame.transformed(element.transformation_to_local())
-        element_geometry_at = element.geometry.transformed(element.transformation_to_local())
+        element_geometry = element.geometry.transformed(element.transformation_to_local())
         # ip_thickness = self.get_inside_plate_thickness(element)
         # e_at_frame.translate(e_at_frame.zaxis * (ip_thickness * 0.001))  # OFFSET FOR INSIDE PLATE THICKNESS
         # e_at_frame.translate(e_at_frame.zaxis * 0.08)  # DEPTH OFFSET FOR GRIPPER 60 WIDTH
-        return new_grasp_frame, e_at_frame, element_geometry_at
+        return new_grasp_frame, e_at_frame_offset, element_geometry
