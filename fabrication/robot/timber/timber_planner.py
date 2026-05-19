@@ -40,19 +40,19 @@ class TimberProcessPlanner(BaseRobotPlanner):
         """Loads the project-specific tool and static scene geometry into the robot cell."""
         print("Setting up physical cell geometry...")
         
-        # 1. Add Tool
-        tool_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperMedium_viz.stl")
-        # tool_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
-        col_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperMedium_col.stl")
-        # col_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
-        tool_frame = Frame([0.000, 0.000, 0.157],  [1.0, 0.0, 0.0], [0.0, 1.0, 0.0])
-        self.add_tool_to_robot(
-            viz_mesh=tool_mesh,
-            col_mesh=col_mesh,
-            tool_frame=tool_frame,
-            tool_name="GripperMedium",
-            connected_to="robot12_tool0"
-        )
+        # # 1. Add Tool
+        # tool_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperMedium_viz.stl")
+        # # tool_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
+        # col_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperMedium_col.stl")
+        # # col_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
+        # tool_frame = Frame([0.000, 0.000, 0.157],  [1.0, 0.0, 0.0], [0.0, 1.0, 0.0])
+        # self.add_tool_to_robot(
+        #     viz_mesh=tool_mesh,
+        #     col_mesh=col_mesh,
+        #     tool_frame=tool_frame,
+        #     tool_name="GripperMedium",
+        #     connected_to="robot12_tool0"
+        # )
         
         # 2. Add Static Scene Objects (CNC/PUS/AT geometry)
         try:
@@ -258,7 +258,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         element_mesh_at = element_geometry_at.to_viewmesh()[0]
         # adjusted_grasp_frame = element_grasp_frame.copy()
         # adjusted_grasp_frame.point.z -= 0.08  # Account for gripper offset
-        self.attach_workpiece(str(element.guid), element_mesh_at, grasp_frame, attached_to_tool="GripperMedium")
+        self.attach_workpiece(str(element.guid), element_mesh_at, grasp_frame, element_at_frame, attached_to_tool="robot12_tool0")
 
         # 3. Retract from pickpoint
         print("getting element retract trajectory at pickpoint")
