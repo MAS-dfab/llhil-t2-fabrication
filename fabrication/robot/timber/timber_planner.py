@@ -224,8 +224,8 @@ class TimberProcessPlanner(BaseRobotPlanner):
         # constraints.append(JointConstraint('robot12_joint_5', math.radians(90), math.radians(25), math.radians(180), 0.5))
         # constraints.append(JointConstraint('robot12_joint_6', 0.0, math.radians(360), math.radians(360), 0.5))
         # constraints.append(JointConstraint('bridge1_joint_EA_X', 13, 2, 4, 1.0))
-        constraints.append(JointConstraint('robot12_joint_EA_Y', -7, 4.5, 5, 1.0))
-        constraints.append(JointConstraint('robot12_joint_EA_Z', -3.5, 2, 2, 0.7))
+        # constraints.append(JointConstraint('robot12_joint_EA_Y', -7, 4.5, 5, 1.0))
+        # constraints.append(JointConstraint('robot12_joint_EA_Z', -3.5, 2, 2, 0.7))
         # BV = BoundingVolume.from_mesh(Mesh.from_stl(compas.get("C:\\Users\\paulj\\github\\fall_demo_2025\\data\\models\\bounding_volume.stl")))
         # constraints.append(PositionConstraint('robot12_link_6', BV, 1.0))
         return constraints
