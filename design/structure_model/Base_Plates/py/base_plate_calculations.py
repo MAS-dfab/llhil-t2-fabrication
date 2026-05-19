@@ -32,6 +32,51 @@ SUPPORTED_GEOMETRY_UNITS = {"meters", "millimeters"}
 ANALYSIS_UNITS = "millimeters"
 
 
+def _canonical_bottom_face_mode(value: object) -> str:
+    text = str(value or "Perpendicular_to_grain").strip().lower().replace(" ", "_")
+    aliases = {
+        "perpendicular_to_grain": "Perpendicular_to_grain",
+        "perpendicular": "Perpendicular_to_grain",
+        "perp": "Perpendicular_to_grain",
+        "parallel_to_ground": "Parallel_to_ground",
+        "parallel": "Parallel_to_ground",
+        "ground": "Parallel_to_ground",
+    }
+    return aliases.get(text, "Perpendicular_to_grain")
+
+
+def _canonical_hole_pattern(value: object, rows: int) -> str:
+    try:
+        numeric = float(value)
+        text = str(int(numeric)) if numeric.is_integer() else str(value or "").strip().lower()
+    except Exception:
+        text = str(value or "").strip().lower()
+    text = text.replace(" ", "_")
+    aliases = {
+        "1": "single_row_centerline",
+        "single": "single_row_centerline",
+        "single_row": "single_row_centerline",
+        "single_row_centerline": "single_row_centerline",
+        "2": "double_row",
+        "double": "double_row",
+        "double_row": "double_row",
+        "rectangular": "double_row",
+        "3": "staggered_double_row",
+        "stagger": "staggered_double_row",
+        "staggered": "staggered_double_row",
+        "staggered_double_row": "staggered_double_row",
+    }
+    return aliases.get(text, "single_row_centerline" if int(rows) == 1 else "double_row")
+
+
+def _first_truthy_override(overrides: Dict[str, object], names: Sequence[str]):
+    for name in names:
+        value = overrides.get(name)
+        if _truthy_override(value):
+            return value
+    return None
+
+
 @dataclass
 class ValidationConfig:
     min_allowable_clearance: float = 80.0
@@ -379,6 +424,139 @@ def _build_synced_geometry_payload(
     return synced
 
 
+def _scale_metric_map(
+    values: Dict[str, object],
+    from_units: str,
+    to_units: str,
+) -> Dict[str, object]:
+    factor = _unit_scale_factor(from_units, to_units)
+    dimensionless_keys = {
+        "actual_total_bolt_count",
+        "recommended_holes_per_row",
+        "recommended_total_bolt_count",
+        "requested_total_bolt_count",
+        "required_total_bolt_count",
+    }
+    scaled: Dict[str, object] = {}
+    for key, value in values.items():
+        if value is None or isinstance(value, bool):
+            scaled[key] = value
+            continue
+        if key in dimensionless_keys:
+            scaled[key] = value
+            continue
+        if isinstance(value, (int, float)):
+            scaled[key] = float(value) * factor
+            continue
+        scaled[key] = value
+    return scaled
+
+
+def _build_downstream_dimension_payloads(
+    geometry_payload: Dict[str, object],
+    engineering: Dict[str, object],
+    payload_units: str,
+) -> Tuple[Dict[str, object], Dict[str, object], Dict[str, object]]:
+    handoff = _active_handoff(geometry_payload)
+    annotation = dict(handoff.get("annotation") or {}) if isinstance(handoff, dict) else {}
+    layout = dict(handoff.get("layout") or {}) if isinstance(handoff, dict) else {}
+    input_dimensions = dict(annotation.get("dimensions") or {})
+
+    fabrication = engineering.get("fabrication_parameters")
+    if not isinstance(fabrication, dict):
+        fabrication = {}
+    sizing = engineering.get("sizing_recommendations")
+    if not isinstance(sizing, dict):
+        sizing = {}
+    steel_values = engineering.get("steel_node_values")
+    if not isinstance(steel_values, dict):
+        steel_values = {}
+
+    calculated_mm = {
+        "slot_width": fabrication.get("slot_width"),
+        "slot_length": fabrication.get("slot_length"),
+        "slot_depth": fabrication.get("slot_depth"),
+        "slot_clearance_each_side": fabrication.get("slot_clearance_each_side"),
+        "slot_extra_length": fabrication.get("slot_extra_length"),
+        "slot_extra_depth": fabrication.get("slot_extra_depth"),
+        "washer_face_diameter": fabrication.get("washer_face_dia"),
+        "washer_recess_depth": fabrication.get("washer_recess_depth"),
+        "hole_clearance": fabrication.get("hole_clearance"),
+        "min_bolt_hole_diameter": fabrication.get("min_bolt_hole_dia"),
+        "recommended_plate_length": sizing.get("plate_length"),
+        "recommended_plate_width": sizing.get("plate_width"),
+        "recommended_plate_thickness": sizing.get("plate_thickness"),
+        "recommended_hole_pattern": sizing.get("hole_pattern"),
+        "recommended_total_bolt_count": sizing.get("total_bolt_count"),
+        "recommended_bottom_end_distance": sizing.get("bottom_end_distance"),
+        "recommended_top_end_distance": sizing.get("top_end_distance"),
+        "recommended_stagger_offset": sizing.get("stagger_offset"),
+        "recommended_corner_radius": sizing.get("corner_radius"),
+        "corner_radius_min": steel_values.get("corner_radius_min"),
+        "corner_radius_code_min": steel_values.get("corner_radius_code_min"),
+        "corner_radius_project_min": steel_values.get("corner_radius_project_min"),
+        "corner_radius_governing_min": steel_values.get("corner_radius_governing_min"),
+        "corner_radius_preferred": steel_values.get("corner_radius_preferred"),
+    }
+    calculated_dimensions = _scale_metric_map(
+        calculated_mm,
+        from_units=ANALYSIS_UNITS,
+        to_units=payload_units,
+    )
+    resolved_dimensions = dict(input_dimensions)
+    resolved_dimensions.update(
+        {
+            key: value
+            for key, value in calculated_dimensions.items()
+            if value is not None
+        }
+    )
+    critical_dimensions = {
+        "units": payload_units,
+        "input": input_dimensions,
+        "calculated": calculated_dimensions,
+        "resolved": resolved_dimensions,
+    }
+
+    checks = {
+        "pass_fail_summary": engineering.get("pass_fail_summary") or {},
+        "utilization_values": engineering.get("utilization_values") or {},
+        "steel_node_checks": engineering.get("steel_node_checks") or {},
+        "steel_node_recommendations": engineering.get("steel_node_recommendations") or {},
+    }
+
+    annotation["dimensions"] = resolved_dimensions
+    annotation["critical_dimensions"] = critical_dimensions
+    annotation["checks"] = checks
+
+    layout["dimension_summary"] = resolved_dimensions
+    layout["critical_dimensions"] = critical_dimensions
+    layout["checks"] = checks
+    return annotation, layout, critical_dimensions
+
+
+def _attach_downstream_dimension_payloads(
+    geometry_payload: Dict[str, object],
+    engineering: Dict[str, object],
+    payload_units: str,
+) -> Tuple[Dict[str, object], Dict[str, object], Dict[str, object], Dict[str, object]]:
+    synced = _safe_payload_copy(geometry_payload)
+    annotation_payload, layout_payload, critical_dimensions = _build_downstream_dimension_payloads(
+        geometry_payload=synced,
+        engineering=engineering,
+        payload_units=payload_units,
+    )
+
+    handoff = dict(synced.get("handoff") or {})
+    handoff["annotation"] = annotation_payload
+    handoff["layout"] = layout_payload
+    synced["handoff"] = handoff
+    synced["annotation_metadata"] = handoff
+    synced["annotation_payload"] = annotation_payload
+    synced["layout_payload"] = layout_payload
+    return synced, annotation_payload, layout_payload, critical_dimensions
+
+
 def _safe_payload_copy(payload: Dict[str, object]) -> Dict[str, object]:
     """Copy analytical payload data without forcing RhinoCommon geometry through deepcopy."""
     copied: Dict[str, object] = {}
@@ -431,10 +609,13 @@ def _engineering_overrides_from_geometry_payload(
 
     mapping = {
         "plate_thickness": ("geometry", "plate_thickness"),
+        "bolt_dia": ("milling", "bolt_dia"),
+        "hole_clearance": ("milling", "hole_clearance"),
         "bolt_hole_dia": ("milling", "bolt_hole_diameter"),
         "pitch_parallel": ("milling", "pitch_parallel"),
         "gage_perp": ("milling", "gage_perp"),
         "end_distance": ("milling", "end_distance"),
+        "stagger_offset": ("milling", "plate_hole_stagger_offset"),
         "edge_distance": ("milling", "edge_distance"),
     }
     for target_key, (section_name, source_key) in mapping.items():
@@ -447,6 +628,27 @@ def _engineering_overrides_from_geometry_payload(
         overrides["rows"] = int(milling["plate_hole_rows"])
     if milling.get("plate_holes_per_row") is not None:
         overrides["holes_per_row"] = int(milling["plate_holes_per_row"])
+    for count_key in ("actual_total_bolt_count", "plate_total_hole_count", "requested_total_bolt_count"):
+        if milling.get(count_key) is not None:
+            overrides["total_bolt_count"] = int(milling[count_key])
+            break
+    if milling.get("plate_hole_row_mode") is not None:
+        overrides["hole_pattern"] = milling["plate_hole_row_mode"]
+    if geometry.get("bottom_face_mode") is not None:
+        overrides["bottom_face_mode"] = geometry["bottom_face_mode"]
+    plate_specs = geometry.get("plate_specs") if isinstance(geometry.get("plate_specs"), list) else []
+    collision_axis_distances = []
+    for plate_spec in plate_specs:
+        if not isinstance(plate_spec, dict):
+            continue
+        value = _metric_to_analysis_units(
+            plate_spec.get("collision_axis_distance"),
+            source_units,
+        )
+        if value is not None:
+            collision_axis_distances.append(value)
+    if collision_axis_distances:
+        overrides["collision_axis_distance"] = max(collision_axis_distances)
 
     base_thickness = _metric_to_analysis_units(geometry.get("base_thickness"), source_units)
     base_diameter = _metric_to_analysis_units(geometry.get("base_diameter"), source_units)
@@ -594,8 +796,7 @@ def _make_cylinder_between(p0: Point3, p1: Point3, radius: float):
     length = axis.Length
     if length <= 0:
         return None
-    mid = p0p + axis * 0.5
-    plane = rg.Plane(mid, axis)
+    plane = rg.Plane(p0p, axis)
     cyl = rg.Cylinder(rg.Circle(plane, radius), length)
     return cyl.ToBrep(True, True)
 
@@ -941,15 +1142,21 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     bolt_Fub = float(g("bolt_Fub", 400.0))
     hole_clearance = float(g("hole_clearance", 1.0))
     code_min_bolt_hole_dia = bolt_dia + hole_clearance
-    project_min_bolt_hole_dia = float(g("project_min_bolt_hole_dia", 20.0))
+    project_min_bolt_hole_dia = float(g("project_min_bolt_hole_dia", code_min_bolt_hole_dia))
     min_bolt_hole_dia = max(code_min_bolt_hole_dia, project_min_bolt_hole_dia)
-    bolt_hole_dia = float(g("bolt_hole_dia", 20.0))
+    bolt_hole_dia = float(g("bolt_hole_dia", code_min_bolt_hole_dia))
     bolt_hole_dia_code_min_ok = bolt_hole_dia >= code_min_bolt_hole_dia
     bolt_hole_dia_project_min_ok = bolt_hole_dia >= project_min_bolt_hole_dia
     bolt_hole_dia_min_ok = bolt_hole_dia >= min_bolt_hole_dia
 
-    rows = int(g("rows", 2))
-    holes_per_row = int(g("holes_per_row", 2))
+    rows = int(g("rows", 3))
+    holes_per_row = int(g("holes_per_row", 4))
+    bottom_face_mode = _canonical_bottom_face_mode(g("bottom_face_mode", "Perpendicular_to_grain"))
+    hole_pattern = _canonical_hole_pattern(g("hole_pattern", None), rows)
+    requested_total_bolt_count_input = _first_truthy_override(
+        o,
+        ("total_bolt_count", "bolt_count", "n_bolts"),
+    )
 
     N_comp_Ed = float(g("N_comp_Ed", 27.6))
     N_tens_Ed = float(g("N_tens_Ed", 7.9))
@@ -961,15 +1168,26 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     pitch_parallel_in = g("pitch_parallel", 0.0)
     gage_perp_in = g("gage_perp", 0.0)
     end_distance_in = g("end_distance", 0.0)
+    stagger_offset_in = g("stagger_offset", 0.0)
     edge_distance_in = g("edge_distance", 0.0)
     plate_depth_in = g("plate_depth", 0.0)
     plate_length_in = g("plate_length", 0.0)
+    collision_axis_distance = float(g("collision_axis_distance", 0.0))
 
-    washer_face_dia = float(g("washer_face_dia", 45.0))
+    washer_face_dia_factor = float(g("washer_face_dia_factor", 1.625))
+    washer_face_dia_input = g("washer_face_dia", 0.0)
+    washer_face_dia_auto = washer_face_dia_factor * bolt_dia
+    washer_face_dia = (
+        float(washer_face_dia_input)
+        if _truthy_override(washer_face_dia_input)
+        else washer_face_dia_auto
+    )
     washer_recess_depth = float(g("washer_recess_depth", 25.0))
     plug_depth = float(g("plug_depth", 10.0))
     slot_clearance_each_side = float(g("slot_clearance_each_side", 1.5))
-    slot_extra_length = float(g("slot_extra_length", 20.0))
+    # The timber slot should clear the seated webplate by the same fabrication
+    # allowance used at its sides: 1.5 mm past the plate tip by default.
+    slot_extra_length = float(g("slot_extra_length", 1.5))
     slot_extra_depth = float(g("slot_extra_depth", 2.0))
 
     clearance_between_converging_timbers = float(g("clearance_between_converging_timbers", 80.0))
@@ -1024,17 +1242,77 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     t_plate_auto = max(15.0, _round_up_stock(0.8 * bolt_dia))
     t_plate = float(plate_thickness_in) if _truthy_override(plate_thickness_in) else t_plate_auto
 
-    p_auto = max(7.0 * bolt_dia, 100.0)
-    g_auto = max(5.0 * bolt_dia, 60.0)
-    e1_auto = max(7.0 * bolt_dia, 110.0)
-    e2_auto = max(3.5 * bolt_dia, 40.0)
+    pitch_parallel_code_min = 5.0 * bolt_dia
+    pitch_parallel_project_min = 100.0
+    gage_perp_code_min = 4.0 * bolt_dia
+    gage_perp_project_min = 60.0
+    end_distance_code_min = max(7.0 * bolt_dia, 80.0)
+    end_distance_project_min = 110.0
+    edge_distance_code_min = 3.0 * bolt_dia
+    edge_distance_project_min = 40.0
+
+    p_auto = max(pitch_parallel_code_min, pitch_parallel_project_min)
+    g_auto = max(gage_perp_code_min, gage_perp_project_min)
+    e1_auto = max(end_distance_code_min, end_distance_project_min)
+    e2_auto = max(edge_distance_code_min, edge_distance_project_min)
 
     pitch_parallel = float(pitch_parallel_in) if _truthy_override(pitch_parallel_in) else p_auto
     gage_perp = float(gage_perp_in) if _truthy_override(gage_perp_in) else g_auto
     end_distance = float(end_distance_in) if _truthy_override(end_distance_in) else e1_auto
     edge_distance = float(edge_distance_in) if _truthy_override(edge_distance_in) else e2_auto
+    if hole_pattern == "single_row_centerline":
+        rows = 1
+    elif hole_pattern in ("double_row", "staggered_double_row"):
+        rows = 3
+    requested_total_bolt_count = None
+    if requested_total_bolt_count_input is not None:
+        requested_total_bolt_count = max(
+            1,
+            int(math.ceil(float(requested_total_bolt_count_input))),
+        )
+        holes_per_row = max(
+            1,
+            int(math.ceil(float(requested_total_bolt_count) / float(max(rows, 1)))),
+        )
+    actual_total_bolt_count = rows * holes_per_row
+    bolt_count_alignment_ok = (
+        requested_total_bolt_count is None
+        or actual_total_bolt_count == requested_total_bolt_count
+    )
+    stagger_offset = (
+        float(stagger_offset_in)
+        if _truthy_override(stagger_offset_in)
+        else (0.5 * pitch_parallel if hole_pattern == "staggered_double_row" else 0.0)
+    )
+    if hole_pattern != "staggered_double_row":
+        stagger_offset = 0.0
+    stagger_diagonal_spacing_min_auto = max(pitch_parallel_code_min, gage_perp_code_min)
+    stagger_diag_required_gage = 0.0
+    if hole_pattern == "staggered_double_row":
+        stagger_diag_required_gage = math.sqrt(
+            max(0.0, stagger_diagonal_spacing_min_auto ** 2 - stagger_offset ** 2)
+        )
+        if (
+            not _truthy_override(gage_perp_in)
+            and gage_perp < stagger_diag_required_gage
+        ):
+            gage_perp = stagger_diag_required_gage
+    requested_bottom_end_distance_multiplier = float(g("bottom_end_distance_multiplier", 1.05))
+    bottom_end_distance_multiplier = (
+        requested_bottom_end_distance_multiplier
+        if bottom_face_mode == "Parallel_to_ground"
+        else 1.0
+    )
+    bottom_end_distance = bottom_end_distance_multiplier * end_distance
+    top_end_distance = end_distance
+    pattern_span = max(0, holes_per_row - 1) * pitch_parallel + stagger_offset
 
-    plate_length = float(plate_length_in) if _truthy_override(plate_length_in) else (2.0 * end_distance + (holes_per_row - 1) * pitch_parallel)
+    code_pattern_length = bottom_end_distance + pattern_span + top_end_distance
+    plate_length = (
+        float(plate_length_in)
+        if _truthy_override(plate_length_in)
+        else collision_axis_distance + code_pattern_length
+    )
     plate_depth = float(plate_depth_in) if _truthy_override(plate_depth_in) else (2.0 * edge_distance + (rows - 1) * gage_perp)
     unsupported_plate_width = (
         float(unsupported_plate_width_in)
@@ -1047,7 +1325,7 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     slot_depth = min(h_timber, plate_depth + slot_extra_depth)
 
     t_side = (b_timber - t_plate) / 2.0
-    n_bolts = rows * holes_per_row
+    n_bolts = actual_total_bolt_count
 
     F_axial_Ed = max(abs(N_comp_Ed), abs(N_tens_Ed))
     F_combined_Ed = math.sqrt(F_axial_Ed ** 2 + V_lat_Ed ** 2)
@@ -1100,6 +1378,84 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     washer_capacity_group = 2.0 * washer_capacity_per_face * n_bolts
     util_washer_bearing = _utilization(F_Ed_part1, washer_capacity_group)
 
+    def _required_count_for_demand(demand: float, unit_capacity: float) -> int:
+        if unit_capacity <= 0.0:
+            return 999999
+        return max(1, int(math.ceil(max(float(demand), 0.0) / float(unit_capacity))))
+
+    embedment_unit_for_count = Rd_embed_per_bolt * group_factor
+    washer_unit_for_count = 2.0 * washer_capacity_per_face
+    required_bolts_embedment = _required_count_for_demand(F_Ed_part1, embedment_unit_for_count)
+    required_bolts_shear = _required_count_for_demand(F_Ed_part1, Fv_Rd_double_shear_per_bolt)
+    required_bolts_plate_bearing = _required_count_for_demand(F_Ed_part1, bearing_capacity_per_bolt)
+    required_bolts_washer_bearing = _required_count_for_demand(F_Ed_part1, washer_unit_for_count)
+    code_required_total_bolt_count = max(
+        required_bolts_embedment,
+        required_bolts_shear,
+        required_bolts_plate_bearing,
+        required_bolts_washer_bearing,
+    )
+    bolt_count_ok = n_bolts >= code_required_total_bolt_count
+    bolt_count_fidelity_ok = bolt_count_ok and bolt_count_alignment_ok
+    recommended_total_bolt_count = max(n_bolts, code_required_total_bolt_count)
+    recommended_holes_per_row = max(
+        1,
+        int(math.ceil(float(recommended_total_bolt_count) / float(max(rows, 1)))),
+    )
+    recommended_total_bolt_count_aligned = recommended_holes_per_row * max(rows, 1)
+    bolt_size_capacity_ok = (
+        util_embed <= 1.0
+        and util_bolt_shear <= 1.0
+        and util_plate_bearing <= 1.0
+        and util_plate_net <= 1.0
+        and util_washer_bearing <= 1.0
+    )
+    bolt_sizing_fidelity = {
+        "bolt_dia": bolt_dia,
+        "bolt_hole_dia": bolt_hole_dia,
+        "code_min_bolt_hole_dia": code_min_bolt_hole_dia,
+        "project_min_bolt_hole_dia": project_min_bolt_hole_dia,
+        "bolt_hole_dia_ok": bolt_hole_dia_min_ok,
+        "washer_face_dia": washer_face_dia,
+        "washer_face_dia_auto": washer_face_dia_auto,
+        "washer_face_dia_factor": washer_face_dia_factor,
+        "capacity_ok_for_bolt_dia": bolt_size_capacity_ok,
+        "utilization": {
+            "timber_embedment": util_embed,
+            "bolt_shear": util_bolt_shear,
+            "plate_bearing": util_plate_bearing,
+            "plate_net_section": util_plate_net,
+            "washer_bearing": util_washer_bearing,
+        },
+        "unit_capacities_kN": {
+            "embedment_with_group_factor": embedment_unit_for_count,
+            "bolt_double_shear": Fv_Rd_double_shear_per_bolt,
+            "plate_bearing": bearing_capacity_per_bolt,
+            "washer_two_faces": washer_unit_for_count,
+        },
+        "ok": bolt_size_capacity_ok and bolt_hole_dia_min_ok,
+    }
+    bolt_count_fidelity = {
+        "provided_total_bolt_count": n_bolts,
+        "requested_total_bolt_count": requested_total_bolt_count,
+        "actual_total_bolt_count": actual_total_bolt_count,
+        "bolt_count_alignment_ok": bolt_count_alignment_ok,
+        "provided_rows": rows,
+        "provided_holes_per_row": holes_per_row,
+        "mode": hole_pattern,
+        "required_total_bolt_count": code_required_total_bolt_count,
+        "recommended_total_bolt_count": recommended_total_bolt_count_aligned,
+        "recommended_holes_per_row": recommended_holes_per_row,
+        "required_by_check": {
+            "timber_embedment": required_bolts_embedment,
+            "bolt_shear": required_bolts_shear,
+            "plate_bearing": required_bolts_plate_bearing,
+            "washer_bearing": required_bolts_washer_bearing,
+        },
+        "demand_kN": F_Ed_part1,
+        "ok": bolt_count_fidelity_ok,
+    }
+
     remaining_timber_after_recess = (b_timber / 2.0) - washer_recess_depth
     recess_geometry_ok = remaining_timber_after_recess >= 25.0 and washer_face_dia <= max(45.0, h_timber - 2.0 * edge_distance + 10.0)
 
@@ -1118,6 +1474,72 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     geometry_plate_fits_depth = plate_depth <= h_timber
     geometry_side_thickness_ok = t_side >= 3.0 * bolt_dia
     geometry_slot_ok = slot_width <= b_timber and slot_depth <= h_timber
+    stagger_diagonal_spacing = math.sqrt(stagger_offset ** 2 + gage_perp ** 2)
+    stagger_diagonal_spacing_min = stagger_diagonal_spacing_min_auto
+    stagger_diagonal_spacing_ok = (
+        hole_pattern != "staggered_double_row"
+        or stagger_diagonal_spacing >= stagger_diagonal_spacing_min
+    )
+    spacing_pitch_ok = pitch_parallel >= pitch_parallel_code_min
+    spacing_gage_required = rows > 1
+    spacing_gage_ok = (not spacing_gage_required) or gage_perp >= gage_perp_code_min
+    spacing_end_ok = end_distance >= end_distance_code_min
+    spacing_bottom_end_ok = bottom_end_distance >= end_distance_code_min
+    spacing_top_end_ok = top_end_distance >= end_distance_code_min
+    spacing_edge_ok = edge_distance >= edge_distance_code_min
+    spacing_gage_status = (
+        "N/A" if not spacing_gage_required else "OK" if spacing_gage_ok else "NG"
+    )
+    spacing_fidelity_ok = (
+        spacing_pitch_ok
+        and spacing_gage_ok
+        and spacing_end_ok
+        and spacing_bottom_end_ok
+        and spacing_top_end_ok
+        and spacing_edge_ok
+        and stagger_diagonal_spacing_ok
+    )
+    spacing_fidelity = {
+        "mode": hole_pattern,
+        "bolt_dia": bolt_dia,
+        "row_count": rows,
+        "holes_per_row": holes_per_row,
+        "total_bolt_count": n_bolts,
+        "pitch_parallel": pitch_parallel,
+        "pitch_parallel_code_min": pitch_parallel_code_min,
+        "pitch_parallel_project_min": pitch_parallel_project_min,
+        "pitch_parallel_ok": spacing_pitch_ok,
+        "gage_perp": gage_perp,
+        "gage_perp_code_min": gage_perp_code_min,
+        "gage_perp_project_min": gage_perp_project_min,
+        "gage_perp_required": spacing_gage_required,
+        "gage_perp_ok": spacing_gage_ok,
+        "gage_perp_status": spacing_gage_status,
+        "end_distance": end_distance,
+        "bottom_end_distance": bottom_end_distance,
+        "top_end_distance": top_end_distance,
+        "end_distance_code_min": end_distance_code_min,
+        "end_distance_project_min": end_distance_project_min,
+        "end_distance_ok": spacing_end_ok,
+        "bottom_end_distance_ok": spacing_bottom_end_ok,
+        "top_end_distance_ok": spacing_top_end_ok,
+        "edge_distance": edge_distance,
+        "edge_distance_code_min": edge_distance_code_min,
+        "edge_distance_project_min": edge_distance_project_min,
+        "edge_distance_ok": spacing_edge_ok,
+        "stagger_offset": stagger_offset,
+        "stagger_diagonal_spacing": stagger_diagonal_spacing,
+        "stagger_diagonal_spacing_min": stagger_diagonal_spacing_min,
+        "stagger_diag_required_gage": stagger_diag_required_gage,
+        "stagger_gage_auto_adjusted": (
+            hole_pattern == "staggered_double_row"
+            and not _truthy_override(gage_perp_in)
+            and gage_perp >= stagger_diag_required_gage
+            and stagger_diag_required_gage > g_auto
+        ),
+        "stagger_diagonal_spacing_ok": stagger_diagonal_spacing_ok,
+        "ok": spacing_fidelity_ok,
+    }
     geometry_ok = (
         geometry_plate_fits_depth
         and geometry_side_thickness_ok
@@ -1125,6 +1547,10 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
         and recess_geometry_ok
         and installation_absolute_ok
         and bolt_hole_dia_min_ok
+        and bolt_count_fidelity_ok
+        and bolt_size_capacity_ok
+        and spacing_fidelity_ok
+        and stagger_diagonal_spacing_ok
     )
 
     part1_utils = {
@@ -1151,12 +1577,13 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
         plate_brep = _make_box((0.0, 0.0, 0.0), plate_length, t_plate, plate_depth)
         slot_cut_brep = _make_box((0.0, 0.0, 0.0), slot_length, slot_width, slot_depth)
 
-        x0 = -((holes_per_row - 1) * pitch_parallel) / 2.0
+        x0 = -pattern_span / 2.0
         z0 = -((rows - 1) * gage_perp) / 2.0
 
         for i in range(holes_per_row):
             for j in range(rows):
-                x = x0 + i * pitch_parallel
+                row_shift = stagger_offset if hole_pattern == "staggered_double_row" and j == 1 else 0.0
+                x = x0 + i * pitch_parallel + row_shift
                 z = z0 + j * gage_perp
                 pt = rg.Point3d(x, 0.0, z)
                 bolt_points.append(pt)
@@ -1206,13 +1633,82 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
             bolt_hole_dia,
         )
     )
-    part1_report_lines.append("Layout: {0} rows x {1} holes/row".format(rows, holes_per_row))
+    part1_report_lines.append(
+        "Layout: {0} ({1} rows x {2} holes/row, {3} total bolts)".format(
+            hole_pattern,
+            rows,
+            holes_per_row,
+            n_bolts,
+        )
+    )
     part1_report_lines.append("Pitch along member p = {0:.0f} mm; gage across depth g = {1:.0f} mm".format(pitch_parallel, gage_perp))
-    part1_report_lines.append("End distance e1 = {0:.0f} mm; edge distance e2 = {1:.0f} mm".format(end_distance, edge_distance))
+    part1_report_lines.append(
+        "End distances: lower = {0:.0f} mm, upper = {1:.0f} mm; edge distance e2 = {2:.0f} mm".format(
+            bottom_end_distance,
+            top_end_distance,
+            edge_distance,
+        )
+    )
+    part1_report_lines.append(
+        "Spacing fidelity: p >= {0:.0f} mm [{1}], g >= {2:.0f} mm [{3}], end >= {4:.0f} mm [{5}], edge >= {6:.0f} mm [{7}]".format(
+            pitch_parallel_code_min,
+            "OK" if spacing_pitch_ok else "NG",
+            gage_perp_code_min,
+            spacing_gage_status,
+            end_distance_code_min,
+            "OK" if (spacing_bottom_end_ok and spacing_top_end_ok) else "NG",
+            edge_distance_code_min,
+            "OK" if spacing_edge_ok else "NG",
+        )
+    )
+    part1_report_lines.append(
+        "Webplate length basis = collision-axis gap {0:.1f} + bolt-pattern length {1:.1f} = {2:.1f} mm".format(
+            collision_axis_distance,
+            code_pattern_length,
+            plate_length,
+        )
+    )
+    if hole_pattern == "staggered_double_row":
+        part1_report_lines.append(
+            "Stagger offset s = {0:.0f} mm; longitudinal pattern span = {1:.0f} mm".format(
+                stagger_offset,
+                pattern_span,
+            )
+        )
+        part1_report_lines.append(
+            "Diagonal spacing = {0:.1f} mm; minimum preliminary check = {1:.1f} mm [{2}]".format(
+                stagger_diagonal_spacing,
+                stagger_diagonal_spacing_min,
+                "OK" if stagger_diagonal_spacing_ok else "NG",
+            )
+        )
     part1_report_lines.append("Plate length = {0:.0f} mm; plate depth = {1:.0f} mm".format(plate_length, plate_depth))
     part1_report_lines.append("Side timber thickness each side of plate = {0:.1f} mm".format(t_side))
     part1_report_lines.append("Design force used F_Ed = {0:.2f} kN".format(F_Ed_part1))
     part1_report_lines.append("Demand per bolt = {0:.2f} kN".format(V_Ed_per_bolt))
+    part1_report_lines.append(
+        "Bolt count fidelity: provided = {0}; required by governing code check = {1} [{2}]".format(
+            n_bolts,
+            code_required_total_bolt_count,
+            "OK" if bolt_count_fidelity_ok else "NG",
+        )
+    )
+    if requested_total_bolt_count is not None:
+        part1_report_lines.append(
+            "Designer bolt count input = {0}; aligned count used by active row mode = {1} [{2}]".format(
+                requested_total_bolt_count,
+                actual_total_bolt_count,
+                "OK" if bolt_count_alignment_ok else "ROUNDED UP",
+            )
+        )
+    part1_report_lines.append(
+        "Bolt sizing fidelity: M{0:.0f}, hole O{1:.1f} mm, washer face O{2:.1f} mm; capacity OK = {3}".format(
+            bolt_dia,
+            bolt_hole_dia,
+            washer_face_dia,
+            bolt_size_capacity_ok,
+        )
+    )
 
     part1_report_lines.append("\nTimber/bolt/plate checks:")
     part1_report_lines.append("Embedment strength fh,k ~= {0:.1f} N/mm2".format(fhk))
@@ -1241,7 +1737,13 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
             bolt_hole_dia_project_min_ok,
         )
     )
-    part1_report_lines.append("Washer/nut counterbore face diameter = O{0:.1f} mm".format(washer_face_dia))
+    part1_report_lines.append(
+        "Washer/nut counterbore face diameter = O{0:.1f} mm ({1:.2f} x bolt dia; auto = O{2:.1f} mm)".format(
+            washer_face_dia,
+            washer_face_dia_factor,
+            washer_face_dia_auto,
+        )
+    )
     part1_report_lines.append("Washer/nut counterbore depth = {0:.1f} mm".format(washer_recess_depth))
     part1_report_lines.append("Timber plug depth allowance = {0:.1f} mm".format(plug_depth))
     part1_report_lines.append("Remaining timber after recess = {0:.1f} mm".format(remaining_timber_after_recess))
@@ -1262,6 +1764,10 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
     part1_report_lines.append("Recess geometry acceptable: {0}".format(recess_geometry_ok))
     part1_report_lines.append("Installation absolute clearance acceptable: {0}".format(installation_absolute_ok))
     part1_report_lines.append("Provided through-hole diameter >= governing minimum diameter: {0}".format(bolt_hole_dia_min_ok))
+    part1_report_lines.append("Provided bolt count >= demand-derived required count: {0}".format(bolt_count_ok))
+    part1_report_lines.append("Designer bolt count aligns with active row mode: {0}".format(bolt_count_alignment_ok))
+    part1_report_lines.append("Provided bolt size passes active capacity checks: {0}".format(bolt_size_capacity_ok))
+    part1_report_lines.append("Bolt spacing fidelity acceptable for active row mode: {0}".format(spacing_fidelity_ok))
     part1_report_lines.append("Part 1 result: {0}".format("OK PRELIMINARY" if (part1_strength_ok and geometry_ok) else "NG - REVISE GEOMETRY/SIZE/INSTALLATION ACCESS"))
 
     part1_report = "\n".join(part1_report_lines)
@@ -1352,6 +1858,20 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
         "part1_bolt_hole_diameter_code_min_ok": bolt_hole_dia_code_min_ok,
         "part1_bolt_hole_diameter_project_min_ok": bolt_hole_dia_project_min_ok,
         "part1_bolt_hole_diameter_min_ok": bolt_hole_dia_min_ok,
+        "part1_bolt_count_fidelity_ok": bolt_count_fidelity_ok,
+        "part1_bolt_count_capacity_ok": bolt_count_ok,
+        "part1_bolt_count_alignment_ok": bolt_count_alignment_ok,
+        "part1_bolt_sizing_fidelity_ok": bolt_sizing_fidelity["ok"],
+        "part1_required_total_bolt_count": code_required_total_bolt_count,
+        "part1_provided_total_bolt_count": n_bolts,
+        "part1_spacing_fidelity_ok": spacing_fidelity_ok,
+        "part1_spacing_pitch_ok": spacing_pitch_ok,
+        "part1_spacing_gage_ok": spacing_gage_ok,
+        "part1_spacing_end_ok": spacing_end_ok,
+        "part1_spacing_bottom_end_ok": spacing_bottom_end_ok,
+        "part1_spacing_top_end_ok": spacing_top_end_ok,
+        "part1_spacing_edge_ok": spacing_edge_ok,
+        "part1_stagger_diagonal_spacing_ok": stagger_diagonal_spacing_ok,
         "part1_installation_preferred_ok": installation_preferred_ok,
         "part1_installation_absolute_ok": installation_absolute_ok,
         "part1_installation_clearance_status": installation_clearance_status,
@@ -1379,10 +1899,42 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
         "bolt_dia": bolt_dia,
         "rows": rows,
         "holes_per_row": holes_per_row,
+        "requested_total_bolt_count": requested_total_bolt_count,
+        "actual_total_bolt_count": actual_total_bolt_count,
+        "bolt_count_alignment_ok": bolt_count_alignment_ok,
+        "total_bolt_count": n_bolts,
+        "required_total_bolt_count": code_required_total_bolt_count,
+        "recommended_total_bolt_count": recommended_total_bolt_count_aligned,
+        "recommended_holes_per_row": recommended_holes_per_row,
+        "bolt_count_fidelity": bolt_count_fidelity,
+        "bolt_sizing_fidelity": bolt_sizing_fidelity,
+        "hole_pattern": hole_pattern,
+        "stagger_offset": stagger_offset,
+        "spacing_fidelity": spacing_fidelity,
+        "pitch_parallel_code_min": pitch_parallel_code_min,
+        "pitch_parallel_project_min": pitch_parallel_project_min,
         "pitch_parallel": pitch_parallel,
+        "gage_perp_code_min": gage_perp_code_min,
+        "gage_perp_project_min": gage_perp_project_min,
         "gage_perp": gage_perp,
+        "end_distance_code_min": end_distance_code_min,
+        "end_distance_project_min": end_distance_project_min,
         "end_distance": end_distance,
+        "bottom_end_distance": bottom_end_distance,
+        "top_end_distance": top_end_distance,
+        "bottom_end_distance_multiplier": bottom_end_distance_multiplier,
+        "collision_axis_distance": collision_axis_distance,
+        "code_pattern_length": code_pattern_length,
+        "effective_plate_length": plate_length,
+        "edge_distance_code_min": edge_distance_code_min,
+        "edge_distance_project_min": edge_distance_project_min,
         "edge_distance": edge_distance,
+        "stagger_diagonal_spacing": stagger_diagonal_spacing,
+        "stagger_diagonal_spacing_min": stagger_diagonal_spacing_min,
+        "stagger_diag_required_gage": stagger_diag_required_gage,
+        "washer_face_dia": washer_face_dia,
+        "washer_face_dia_auto": washer_face_dia_auto,
+        "washer_face_dia_factor": washer_face_dia_factor,
         "plate_length": plate_length,
         "plate_width": plate_depth,
         "plate_thickness": t_plate,
@@ -1410,8 +1962,38 @@ def run_engineering_checks(overrides: Optional[Dict[str, object]] = None) -> Dic
         "slot_width": slot_width,
         "slot_length": slot_length,
         "slot_depth": slot_depth,
+        "hole_pattern": hole_pattern,
+        "requested_total_bolt_count": requested_total_bolt_count,
+        "actual_total_bolt_count": actual_total_bolt_count,
+        "bolt_count_alignment_ok": bolt_count_alignment_ok,
+        "required_total_bolt_count": code_required_total_bolt_count,
+        "recommended_total_bolt_count": recommended_total_bolt_count_aligned,
+        "recommended_holes_per_row": recommended_holes_per_row,
+        "bolt_count_fidelity": bolt_count_fidelity,
+        "bolt_sizing_fidelity": bolt_sizing_fidelity,
+        "stagger_offset": stagger_offset,
+        "spacing_fidelity": spacing_fidelity,
+        "pitch_parallel_code_min": pitch_parallel_code_min,
+        "pitch_parallel_project_min": pitch_parallel_project_min,
+        "gage_perp_code_min": gage_perp_code_min,
+        "gage_perp_project_min": gage_perp_project_min,
+        "end_distance_code_min": end_distance_code_min,
+        "end_distance_project_min": end_distance_project_min,
+        "edge_distance_code_min": edge_distance_code_min,
+        "edge_distance_project_min": edge_distance_project_min,
+        "bottom_end_distance": bottom_end_distance,
+        "top_end_distance": top_end_distance,
+        "bottom_end_distance_multiplier": bottom_end_distance_multiplier,
+        "collision_axis_distance": collision_axis_distance,
+        "code_pattern_length": code_pattern_length,
+        "effective_plate_length": plate_length,
+        "stagger_diagonal_spacing": stagger_diagonal_spacing,
+        "stagger_diagonal_spacing_min": stagger_diagonal_spacing_min,
+        "stagger_diag_required_gage": stagger_diag_required_gage,
         "washer_recess_depth": washer_recess_depth,
         "washer_face_dia": washer_face_dia,
+        "washer_face_dia_auto": washer_face_dia_auto,
+        "washer_face_dia_factor": washer_face_dia_factor,
         "plug_depth": plug_depth,
         "min_tool_clearance_preferred": min_tool_clearance_preferred,
         "min_tool_clearance_absolute": min_tool_clearance_absolute,
@@ -1487,6 +2069,7 @@ def run_validation(
     merged_engineering_overrides = dict(geometry_engineering_overrides)
     if engineering_overrides:
         merged_engineering_overrides.update(engineering_overrides)
+    merged_engineering_overrides.setdefault("bottom_face_mode", bottom_face_mode)
     engineering = run_engineering_checks(overrides=merged_engineering_overrides)
 
     sync_iters = max(1, int(sync_iterations or 1))
@@ -1516,6 +2099,16 @@ def run_validation(
         synced_geometry_payload_mm,
         from_units=ANALYSIS_UNITS,
         to_units=source_geometry_units,
+    )
+    (
+        synced_geometry_payload,
+        annotation_payload,
+        layout_payload,
+        critical_dimensions,
+    ) = _attach_downstream_dimension_payloads(
+        geometry_payload=synced_geometry_payload,
+        engineering=engineering,
+        payload_units=source_geometry_units,
     )
     adjusted_plates_output = _scale_plate_records(
         adjusted_plates,
@@ -1582,6 +2175,9 @@ def run_validation(
         ],
         "adjusted_base_plates": adjusted_plates_output,
         "synced_geometry_payload": synced_geometry_payload,
+        "annotation_payload": annotation_payload,
+        "layout_payload": layout_payload,
+        "critical_dimensions": critical_dimensions,
         "engineering": engineering,
         "a": engineering["a"],
         "b": engineering["b"],

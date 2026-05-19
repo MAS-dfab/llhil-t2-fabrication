@@ -106,6 +106,10 @@ class BaseRobotPlanner():
     def get_approach_frame(self, target_frame, approach_distance=1.5):
         """Generates an approach frame backed off along the Z-axis of the target frame."""
         return target_frame.translated(target_frame.zaxis * -approach_distance)
+    
+    def get_approach_frame_insertion_vector(self, target_frame, insertion_vector, approach_distance=1.5):
+        """Generates an approach frame backed off along the Z-axis of the target frame."""
+        return target_frame.translated(insertion_vector * -approach_distance)
 
     def get_cartesian_trajectory(self, frames_list, avoid_collisions=True):
         """Plans a Cartesian trajectory through a list of frames."""

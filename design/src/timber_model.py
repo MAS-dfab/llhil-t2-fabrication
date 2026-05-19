@@ -2,9 +2,15 @@
 Construct compas timber models based on the input graph.
 
 Usage in grasshopper:
-    from timber_model import graph_to_timber_models, apply_joints 
+    from timber_model import graph_to_timber_models, apply_joints
+
     models = graph_to_timber_models(graph, align_shoe=False)
-    models = [apply_joints(model) for model in models]
+    
+    for model in models:
+        apply_joints(model, k_miter_type="VERTICAL", k_miter_flag=True, debug=True)
+
+        if process:
+            apply_processings(model)
 """
 from compas.geometry import (
     Vector, Frame, Plane, Line, Point, Translation,
@@ -20,7 +26,7 @@ from compas_timber.analyzers import TripletAnalyzer
 
 from compas_timber.connections import (
     JointTopology, TMultiStepJoint, TStepJoint, LMiterJoint,
-    XLapJoint, KBirdsmouthJoint, TButtJoint, TLapJoint
+    XLapJoint, KBirdsmouthJoint, TBirdsmouthJoint, TLapJoint
 )
 
 from compas_timber.fabrication import JackRafterCut, LongitudinalCut
@@ -163,6 +169,60 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
 # --------------------------------------
 # Joinery helpers
 # --------------------------------------
+def is_planar_t_joint(candidate, tol=1e-3):
+    """
+    Check if a T joint candidate is planar.
+    """
+    if candidate.topology != JointTopology.TOPO_T:
+        return False
+
+    def _is_coplanar(points):
+        # Remove duplicates
+        pts = []
+        for p in points:
+            if not pts or (p - pts[-1]).length > tol:
+                pts.append(p)
+
+        if len(pts) < 4:
+            return True
+
+        # Find first non-colinear triple
+        p0 = pts[0]
+        n = None
+        for i in range(1, len(pts) - 1):
+            v1 = pts[i] - p0
+            for j in range(i + 1, len(pts)):
+                v2 = pts[j] - p0
+                n = v1.cross(v2)
+                if n.length > tol:
+                    break
+            if n and n.length > tol:
+                break
+
+        # All points colinear -> treat as planar
+        if not n or n.length <= tol:
+            return True
+
+        # Check remaining points
+        for p in pts:
+            v = p - p0
+            if abs(n.dot(v)) > tol:
+                return False
+        return True
+
+    ca, cb = candidate.elements
+    pts = [*ca.centerline, *cb.centerline]
+
+    # 1. Check coplanarity
+    if not _is_coplanar(pts):
+        return False
+
+    # 2. Check cross-section alignment (width direction)
+    ya = ca.frame.yaxis.unitized()
+    yb = cb.frame.yaxis.unitized()
+
+    return abs(ya.dot(yb)) >= 1 - tol
+
 def _is_planar(element_a, element_b):
     """Check if two beams are planar.
 
@@ -183,6 +243,7 @@ def _is_planar(element_a, element_b):
     frame_a = element_a.frame
     frame_b = element_b.frame
 
+    # NOTE: don't change axis in place
     # Match orientation of the frames
     frame_a.xaxis = Vector(0, 0, 1)
     frame_b.xaxis = Vector(0, 0, 1)
@@ -277,7 +338,7 @@ def _k_birdsmouth_solver(model, mill_depth, miter_type=None, miter_flag=False):
     max_offset = max(candidate.distance for candidate in model.joint_candidates)
 
     # handle non-pair joints (in this case a 3-way connection using TripletAnalyzer)
-    analyzer = TripletAnalyzer(model, max_offset/2)
+    analyzer = TripletAnalyzer(model, max_offset/2)  # NOTE: don't hardcode the threshold
     clusters = analyzer.find()
 
     for cluster in clusters:
@@ -288,10 +349,10 @@ def _k_birdsmouth_solver(model, mill_depth, miter_type=None, miter_flag=False):
                 continue
 
             # define the order of the elements to be passed to the joint
-            order = {"main_primary": 0, "primary": 1, "secondary": 2}
+            order = {"main_primary": 0, "primary": 1, "secondary": 2, "tertiary": 3}
             if counts["main_primary"] == 2 and counts["primary"] == 1:
-                order = {"primary": 0, "main_primary": 1, "secondary": 2} #override the order just for this condition
-            reordered_elements =  sorted(cluster.elements, key=lambda e: order.get(e.attributes["hierarchy"], 99))
+                order = {"primary": 0, "main_primary": 1, "secondary": 2, "tertiary": 3} #override the order just for this condition
+            reordered_elements = sorted(cluster.elements, key=lambda e: order.get(e.attributes["hierarchy"], float('inf')))
 
             if len(reordered_elements) != 3:
                 raise ValueError(f"Something went wrong with the analyzer. There should be always 3 elements, got: {len(reordered_elements)}")
@@ -305,6 +366,7 @@ def _k_birdsmouth_solver(model, mill_depth, miter_type=None, miter_flag=False):
                 miter_pln = None
 
             kwargs = {"mill_depth": mill_depth, "miter_plane": miter_pln}
+            # kwargs = {"mill_depth": mill_depth}
             KBirdsmouthJoint.promote_cluster(model, cluster, reordered_elements=reordered_elements, **kwargs)
     return
 
@@ -356,50 +418,48 @@ def apply_joints(
     for candidate in model.joint_candidates:
         if candidate.is_promoted:  # all joints that are not k-topology
             continue
-
+        
         topo = candidate.topology
         ca, cb = candidate.elements
 
-        is_planar = _is_planar(ca, cb)
+        if topo == JointTopology.TOPO_T:
+            # Planar T joints
+            if is_planar_t_joint(candidate):
+                if cb.attributes["hierarchy"] == 'shoe' and ca.attributes["level"] == 0:
+                    TStepJoint.create(model, ca, cb, step_shape="double")
 
-        ### Planar T joints
-        if topo == JointTopology.TOPO_T and is_planar:
-            # CLT shoe to middle beam
-            if cb.attributes["hierarchy"] == 'shoe' and ca.attributes["has_middle_joint"]:
-                TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
+                # Middle T Joint
+                elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
+                    # TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
+                    # TLapJoint.create(model, ca, cb)
+                    TStepJoint.create(model, ca, cb)
 
-            # CLT shoe to Top Beam
-            elif cb.attributes["hierarchy"] == 'shoe':
-                TStepJoint.create(model, ca, cb, step_shape="double")
-            
-            # Middle T Lap Joint
-            elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-                # TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
-                TLapJoint.create(model, ca, cb)
-
-            else:
-                if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < heel_threshold:
-                    step_shape = "heel"
                 else:
-                    step_shape = "step"
+                    if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < heel_threshold:
+                        step_shape = "heel"
+                    else:
+                        step_shape = "step"
 
-                TMultiStepJoint.create(
-                    model, ca, cb,
-                    step_shape=step_shape,
-                    step_depth=step_depth,
-                    riser_angle=riser_angle
-                )
-
-        ### Non-planar T joints
-        elif topo == JointTopology.TOPO_T and not is_planar:
-            TButtJoint.create(model, ca, cb)
-
+                    TMultiStepJoint.create(
+                        model, ca, cb,
+                        step_shape=step_shape,
+                        step_depth=step_depth,
+                        riser_angle=riser_angle
+                    )
+            else:
+                # Non-planar T joints
+                TBirdsmouthJoint.create(model, ca, cb)
+        
         ### L Miter Joint at the middle of the structure
         elif topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
             LMiterJoint.create(model, ca, cb, cutoff=False)
 
         ### X Lap Joint
         elif topo == JointTopology.TOPO_X:
+        #     if ca.attributes['direction_id'] == 'A':
+        #         flip = False
+        #     else:
+        #         flip = True
             XLapJoint.create(model, ca, cb)
 
         else:
