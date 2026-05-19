@@ -30,25 +30,44 @@ Point3 = Tuple[float, float, float]
 SUPPORTED_GEOMETRY_UNITS = {"meters", "millimeters"}
 FOOTING_SOURCE_UNITS = "millimeters"
 FOOTING_MODEL_UNITS = "meters"
+DEFAULT_BOLT_DIA = 0.008
+DEFAULT_HOLE_CLEARANCE = 0.001
+DEFAULT_CODE_MIN_BOLT_HOLE_DIA = DEFAULT_BOLT_DIA + DEFAULT_HOLE_CLEARANCE
 CODE_BASELINE_PLATE_HOLES = {
-    "row_count": 2,
-    "holes_per_row": 2,
-    "diameter": 0.020,
+    "row_count": 3,
+    "holes_per_row": 4,
+    "diameter": DEFAULT_CODE_MIN_BOLT_HOLE_DIA,
     "row_spacing": 0.060,
     "pitch": 0.100,
+    "end_distance": 0.110,
+    "row_mode": "double_row",
+    "stagger_offset": 0.0,
 }
 PROJECT_MIN_HEEL_FILLET_RADIUS = 0.020
 PROJECT_DEFAULT_HEEL_FILLET_RADIUS = 0.020
 SIZING_RECOMMENDATION_KEYS = {
+    "bolt_dia",
+    "hole_clearance",
     "bolt_hole_dia",
     "code_min_bolt_hole_dia",
     "project_min_bolt_hole_dia",
     "min_bolt_hole_dia",
     "rows",
     "holes_per_row",
+    "hole_pattern",
+    "stagger_offset",
     "pitch_parallel",
     "gage_perp",
     "end_distance",
+    "bottom_end_distance",
+    "top_end_distance",
+    "bottom_end_distance_multiplier",
+    "total_bolt_count",
+    "requested_total_bolt_count",
+    "actual_total_bolt_count",
+    "recommended_total_bolt_count",
+    "recommended_holes_per_row",
+    "required_total_bolt_count",
     "edge_distance",
     "plate_length",
     "plate_width",
@@ -93,6 +112,32 @@ def _canonical_bottom_face_mode(value: object) -> str:
         "ground": "Parallel_to_ground",
     }
     return aliases.get(text, "Perpendicular_to_grain")
+
+
+def _canonical_plate_hole_pattern(value: object) -> str:
+    try:
+        numeric = float(value)
+        text = str(int(numeric)) if numeric.is_integer() else str(value or "").strip().lower()
+    except Exception:
+        text = str(value or "").strip().lower()
+    text = text.replace(" ", "_")
+    aliases = {
+        "1": "single_row_centerline",
+        "single": "single_row_centerline",
+        "single_row": "single_row_centerline",
+        "single_row_centerline": "single_row_centerline",
+        "centerline": "single_row_centerline",
+        "2": "double_row",
+        "double": "double_row",
+        "double_row": "double_row",
+        "rectangular": "double_row",
+        "rectangular_double_row": "double_row",
+        "3": "staggered_double_row",
+        "stagger": "staggered_double_row",
+        "staggered": "staggered_double_row",
+        "staggered_double_row": "staggered_double_row",
+    }
+    return aliases.get(text, "")
 
 
 def _median_scalar_values(values: Sequence[float], default: float = 0.0) -> float:
@@ -189,6 +234,8 @@ def _scale_sizing_recommendations(
     factor = _unit_scale_factor(from_units, to_units)
     scaled = dict(sizing)
     for key in (
+        "bolt_dia",
+        "hole_clearance",
         "bolt_hole_dia",
         "code_min_bolt_hole_dia",
         "project_min_bolt_hole_dia",
@@ -196,6 +243,9 @@ def _scale_sizing_recommendations(
         "pitch_parallel",
         "gage_perp",
         "end_distance",
+        "bottom_end_distance",
+        "top_end_distance",
+        "stagger_offset",
         "edge_distance",
         "plate_length",
         "plate_width",
@@ -410,7 +460,7 @@ def _line_points_from_compas_obj(value: Dict[str, object]) -> Optional[Tuple[Poi
 def _candidate_line_export_paths(root: Path) -> List[Path]:
     data_dir = root / "design" / "line_model" / "data"
     preferred = [
-        data_dir / "260516_v1_line_model.json",
+        data_dir / "260518_v3_line_model.json",
         data_dir / "meters_shifted_lines.json",
         data_dir / "0806_shifted_lines.json",
         data_dir / "shifted_lines.json",
@@ -501,7 +551,7 @@ def _extract_members_from_compas_graph(raw: Dict[str, object]) -> List[MemberRec
 
             azimuth, inclination = _line_angles(direction)
             width = float(attrs.get("width") or 100.0)
-            height = float(attrs.get("height") or 100.0)
+            height = float(attrs.get("height") or 140.0)
             group_raw = attrs.get("group")
             group = int(group_raw) if group_raw is not None else None
             level_raw = attrs.get("level")
@@ -823,11 +873,17 @@ def _build_footing_breps_for_members(
     heel_fillet_radius: Optional[float] = None,
     timber_bottom_gap: Optional[float] = None,
     min_timber_gap: Optional[float] = None,
+    bottom_end_distance_multiplier: Optional[float] = None,
     webplate_thickness: Optional[float] = None,
     webplate_hole_diameter: Optional[float] = None,
     webplate_hole_pitch: Optional[float] = None,
     webplate_hole_transverse_spacing: Optional[float] = None,
     webplate_hole_rows: Optional[int] = None,
+    webplate_hole_pattern: Optional[object] = None,
+    webplate_hole_stagger_offset: Optional[float] = None,
+    bolt_dia: Optional[float] = None,
+    hole_clearance: Optional[float] = None,
+    total_bolt_count: Optional[int] = None,
     stiffener_pair_axis_shift: Optional[float] = None,
     stiffener_pair_from_point: Optional[object] = None,
     stiffener_pair_to_point: Optional[object] = None,
@@ -888,17 +944,45 @@ def _build_footing_breps_for_members(
                 heel_fillet_radius=heel_fillet_radius,
                 timber_bottom_gap=timber_bottom_gap,
                 min_timber_gap=min_timber_gap,
+                bottom_end_distance_multiplier=bottom_end_distance_multiplier,
                 plate_thicknesses=webplate_thickness,
                 plate_hole_diameters=webplate_hole_diameter,
                 plate_hole_pitches=webplate_hole_pitch,
                 plate_hole_row_spacings=webplate_hole_transverse_spacing,
                 plate_hole_rows=webplate_hole_rows,
+                plate_hole_patterns=webplate_hole_pattern,
+                plate_hole_stagger_offsets=webplate_hole_stagger_offset,
+                plate_bolt_diameters=bolt_dia,
+                plate_hole_clearances=hole_clearance,
+                plate_total_hole_counts=total_bolt_count,
                 stiffener_pair_axis_shift=stiffener_pair_axis_shift,
                 stiffener_pair_from_point=stiffener_pair_from_point,
                 stiffener_pair_to_point=stiffener_pair_to_point,
                 enabled=True,
             )
-        except Exception:
+        except Exception as exc:
+            debug_records.append(
+                {
+                    "member_id": member.member_id,
+                    "member_index": member.index,
+                    "incident_member_ids": [
+                        incident_member.member_id
+                        for incident_member in ordered_incident_members
+                    ],
+                    "incident_member_indices": [
+                        incident_member.index
+                        for incident_member in ordered_incident_members
+                    ],
+                    "error": "base_footing_run failed: {0}".format(exc),
+                    "exception_type": type(exc).__name__,
+                    "plate_azimuths": list(plate_azimuths),
+                    "plate_altitudes": list(plate_altitudes),
+                    "webplate_hole_rows": webplate_hole_rows,
+                    "webplate_hole_pattern": webplate_hole_pattern,
+                    "bolt_dia": bolt_dia,
+                    "total_bolt_count": total_bolt_count,
+                }
+            )
             continue
 
         if not isinstance(result, dict):
@@ -912,6 +996,7 @@ def _build_footing_breps_for_members(
                 "member_index": member.index,
                 "incident_member_ids": [incident_member.member_id for incident_member in ordered_incident_members],
                 "incident_member_indices": [incident_member.index for incident_member in ordered_incident_members],
+                "incident_members": [asdict(incident_member) for incident_member in ordered_incident_members],
                 "metadata": handoff_metadata,
             }
         )
@@ -952,11 +1037,22 @@ def _build_footing_breps_for_members(
                         "webplate_intersection_target": _debug_xyz(spec.get("webplate_intersection_target")),
                         "unsnapped_pair_interface_tip": _debug_xyz(spec.get("unsnapped_pair_interface_tip")),
                         "unsnapped_pair_shared_edge_midpoint": _debug_xyz(spec.get("unsnapped_pair_shared_edge_midpoint")),
+                        "snapped_pair_shared_edge_midpoint": _debug_xyz(spec.get("snapped_pair_shared_edge_midpoint")),
+                        "stiffener_snap_residual": spec.get("stiffener_snap_residual"),
+                        "stiffener_snap_residual_ok": spec.get("stiffener_snap_residual_ok"),
+                        "bottom_face_unflipped_center": _debug_xyz(spec.get("bottom_face_unflipped_center")),
+                        "bottom_face_flip_about_intersection_edge": spec.get("bottom_face_flip_about_intersection_edge"),
                         "heel_edge_centerline_point": _debug_xyz(spec.get("heel_edge_centerline_point")),
                         "timber_bottom_face_heel_intersection_point": _debug_xyz(spec.get("timber_bottom_face_heel_intersection_point")),
                         "pair_snap_vector": _debug_xyz(spec.get("pair_snap_vector")),
                         "timber_face_anchor": _debug_xyz(spec.get("timber_face_anchor")),
                         "timber_face_anchor_source": spec.get("timber_face_anchor_source"),
+                        "bottom_face_pivot_point": _debug_xyz(spec.get("bottom_face_pivot_point")),
+                        "bottom_face_pivot_edge_name": spec.get("bottom_face_pivot_edge_name"),
+                        "bottom_face_pivot_edge_start": _debug_xyz(spec.get("bottom_face_pivot_edge_start")),
+                        "bottom_face_pivot_edge_end": _debug_xyz(spec.get("bottom_face_pivot_edge_end")),
+                        "bottom_face_pivot_edge_parameter": spec.get("bottom_face_pivot_edge_parameter"),
+                        "bottom_face_pivot_source": spec.get("bottom_face_pivot_source"),
                         "timber_face_dividing_plane_origin": _debug_xyz(spec.get("timber_face_dividing_plane_origin")),
                         "side_mount_sign": spec.get("side_mount_sign"),
                         "side_mount_span": spec.get("side_mount_span"),
@@ -993,6 +1089,11 @@ def _build_footing_breps_for_members(
                         "required_heel_to_tip_distance": spec.get("required_heel_to_tip_distance"),
                         "first_hole_axis_offset": spec.get("first_hole_axis_offset"),
                         "last_hole_axis_offset": spec.get("last_hole_axis_offset"),
+                        "bottom_hole_end_distance": spec.get("bottom_hole_end_distance"),
+                        "top_hole_end_distance": spec.get("top_hole_end_distance"),
+                        "bottom_end_distance_multiplier": spec.get("bottom_end_distance_multiplier"),
+                        "hole_pattern_span": spec.get("hole_pattern_span"),
+                        "hole_stagger_offset": spec.get("hole_stagger_offset"),
                         "top_end_distance_from_last_hole": spec.get("top_end_distance_from_last_hole"),
                         "heel_fillet_radius": spec.get("heel_fillet_radius"),
                         "plate_build_mode": spec.get("plate_build_mode"),
@@ -1095,16 +1196,30 @@ def build_geometry_payload(
     heel_fillet_radius: Optional[float] = None,
     timber_bottom_gap: Optional[float] = None,
     min_timber_gap: Optional[float] = None,
+    bottom_end_distance_multiplier: Optional[float] = None,
     webplate_thickness: Optional[float] = None,
     webplate_hole_diameter: Optional[float] = None,
     webplate_hole_pitch: Optional[float] = None,
     webplate_hole_transverse_spacing: Optional[float] = None,
     webplate_hole_rows: Optional[int] = None,
+    webplate_hole_pattern: Optional[object] = None,
+    webplate_hole_stagger_offset: Optional[float] = None,
+    bolt_dia: Optional[float] = None,
+    hole_clearance: Optional[float] = None,
+    total_bolt_count: Optional[int] = None,
     stiffener_pair_axis_shift: Optional[float] = None,
     stiffener_pair_from_point: Optional[object] = None,
     stiffener_pair_to_point: Optional[object] = None,
 ) -> Dict[str, object]:
     bottom_face_mode = _canonical_bottom_face_mode(bottom_face_mode)
+    requested_webplate_hole_mode = _coerce_int(webplate_hole_rows, None)
+    if requested_webplate_hole_mode == 3 and webplate_hole_pattern is None:
+        webplate_hole_pattern = "staggered_double_row"
+        webplate_hole_rows = 2
+    elif requested_webplate_hole_mode == 2 and webplate_hole_pattern is None:
+        webplate_hole_pattern = "double_row"
+    elif requested_webplate_hole_mode == 1 and webplate_hole_pattern is None:
+        webplate_hole_pattern = "single_row_centerline"
     path = line_model_path or resolve_latest_line_model_path()
     members = load_member_records(path)
     source_member_count = len(members)
@@ -1203,11 +1318,17 @@ def build_geometry_payload(
             heel_fillet_radius=heel_fillet_radius,
             timber_bottom_gap=timber_bottom_gap,
             min_timber_gap=min_timber_gap,
+            bottom_end_distance_multiplier=bottom_end_distance_multiplier,
             webplate_thickness=webplate_thickness,
             webplate_hole_diameter=webplate_hole_diameter,
             webplate_hole_pitch=webplate_hole_pitch,
             webplate_hole_transverse_spacing=webplate_hole_transverse_spacing,
             webplate_hole_rows=webplate_hole_rows,
+            webplate_hole_pattern=webplate_hole_pattern,
+            webplate_hole_stagger_offset=webplate_hole_stagger_offset,
+            bolt_dia=bolt_dia,
+            hole_clearance=hole_clearance,
+            total_bolt_count=total_bolt_count,
             stiffener_pair_axis_shift=stiffener_pair_axis_shift,
             stiffener_pair_from_point=stiffener_pair_from_point,
             stiffener_pair_to_point=stiffener_pair_to_point,
@@ -1871,7 +1992,13 @@ def _spacing_pair(value):
 
 def _row_count_at(values, index, default=1):
     value = _int_at(values, index, default)
-    return 2 if value == 2 else 1
+    return 2 if value in (2, 3) else 1
+
+
+def _plate_hole_pattern_at(values, index, default=""):
+    value = _list_at(_flatten_values(values), index, None)
+    pattern = _canonical_plate_hole_pattern(value)
+    return pattern or _canonical_plate_hole_pattern(default)
 
 
 def _unique_lengths(lengths, tolerance=0.5):
@@ -2272,6 +2399,9 @@ def _stiffener_specs_from_plate_targets(
             )
             if not face_axis.Unitize():
                 face_axis = rg.Vector3d.XAxis
+            # Keep the same width-edge hinge, but swing the horizontal face to
+            # the opposite side of that hinge from the first implementation.
+            face_axis.Reverse()
         else:
             face_axis = rg.Vector3d(plate_plane.YAxis)
             if not face_axis.Unitize():
@@ -2314,19 +2444,19 @@ def _stiffener_specs_from_plate_targets(
         projected_collision_point = plate_spec.get("projected_collision_point")
 
         bottom_face_center_shift = 0.0
-        if mode == "Parallel_to_ground":
-            bottom_face_anchor = (
-                plate_spec.get("collision_point_at_effective_z")
-                or collision_centerline_point
-            )
-            bottom_face_anchor_source = "vertical_collision_point_at_effective_z"
-        else:
-            # A perpendicular-to-grain cut plane must slide along the inclined
-            # timber axis when the effective collision height is raised. Merely
-            # replacing the original collision point's Z leaves the plane behind.
-            bottom_face_anchor = collision_centerline_point
-            bottom_face_anchor_source = "axis_shifted_collision_centerline"
+        pivot_data = _bottom_face_pivot_data(
+            plate_spec,
+            plate_plane,
+            collision_centerline_point,
+            effective_timber_bottom_z,
+        )
+        bottom_face_anchor = pivot_data.get("point") or collision_centerline_point
+        bottom_face_anchor_source = pivot_data.get("source") or "collision_centerline_fallback"
+        # The bottom-face plane pivots about the timber-width edge, not through
+        # the center of the timber end face. Keep the stiffener rectangle
+        # centered by backing the local origin off from that edge anchor.
         bottom_face_center = rg.Point3d(bottom_face_anchor)
+        bottom_face_center -= face_axis * heel_y
         timber_face_dividing_plane = rg.Plane(bottom_face_center, width_axis, face_axis)
         heel_face_midline_start, heel_face_midline_end = _plate_selected_face_midline_segment(
             plate_spec,
@@ -2377,13 +2507,33 @@ def _stiffener_specs_from_plate_targets(
         )
         shifted_webplate_intersection_target = rg.Point3d(webplate_intersection_target)
         shifted_webplate_intersection_target += pair_axis_translation
-        bottom_face_center_outboard = rg.Point3d(snapped_timber_face_dividing_plane.Origin)
-        bottom_face_center_outboard += snapped_timber_face_dividing_plane.ZAxis * (0.5 * thickness)
+        snapped_pair_shared_edge_midpoint = rg.Point3d(unsnapped_pair_shared_edge_midpoint)
+        snapped_pair_shared_edge_midpoint += pair_snap_vector
+        snapped_pair_shared_edge_midpoint += pair_axis_translation
+        stiffener_snap_residual = shifted_webplate_intersection_target.DistanceTo(
+            snapped_pair_shared_edge_midpoint
+        )
+        stiffener_snap_residual_ok = stiffener_snap_residual <= 1e-6
+        bottom_face_unflipped_center = rg.Point3d(snapped_timber_face_dividing_plane.Origin)
+        bottom_face_unflipped_center += (
+            snapped_timber_face_dividing_plane.ZAxis * (0.5 * thickness)
+        )
+        bottom_face_flip_about_intersection_edge = mode == "Parallel_to_ground"
+        bottom_face_y_axis = rg.Vector3d(snapped_timber_face_dividing_plane.YAxis)
+        bottom_face_center_outboard = rg.Point3d(bottom_face_unflipped_center)
+        if bottom_face_flip_about_intersection_edge:
+            edge_to_unflipped_center = (
+                bottom_face_unflipped_center
+                - snapped_pair_shared_edge_midpoint
+            )
+            bottom_face_center_outboard = rg.Point3d(snapped_pair_shared_edge_midpoint)
+            bottom_face_center_outboard -= edge_to_unflipped_center
+            bottom_face_y_axis.Reverse()
         snapped_bottom_face_center_outboard = rg.Point3d(bottom_face_center_outboard)
         snapped_bottom_face_plane = rg.Plane(
             snapped_bottom_face_center_outboard,
             snapped_timber_face_dividing_plane.XAxis,
-            snapped_timber_face_dividing_plane.YAxis,
+            bottom_face_y_axis,
         )
         bottom_face_spec = {
             "center": snapped_bottom_face_center_outboard,
@@ -2407,6 +2557,11 @@ def _stiffener_specs_from_plate_targets(
             "webplate_intersection_source": webplate_intersection_source,
             "unsnapped_pair_interface_tip": unsnapped_pair_interface_tip,
             "unsnapped_pair_shared_edge_midpoint": unsnapped_pair_shared_edge_midpoint,
+            "snapped_pair_shared_edge_midpoint": snapped_pair_shared_edge_midpoint,
+            "stiffener_snap_residual": stiffener_snap_residual,
+            "stiffener_snap_residual_ok": stiffener_snap_residual_ok,
+            "bottom_face_unflipped_center": bottom_face_unflipped_center,
+            "bottom_face_flip_about_intersection_edge": bottom_face_flip_about_intersection_edge,
             "heel_edge_centerline_point": heel_edge_centerline_point,
             "timber_bottom_face_heel_intersection_point": timber_bottom_face_heel_intersection_point,
             "pair_snap_vector": pair_snap_vector,
@@ -2427,16 +2582,19 @@ def _stiffener_specs_from_plate_targets(
             "heel_face_intersection_param": heel_face_intersection_param,
             "timber_face_anchor": bottom_face_anchor,
             "timber_face_anchor_source": bottom_face_anchor_source,
+            "bottom_face_pivot_point": bottom_face_anchor,
+            "bottom_face_pivot_edge_name": pivot_data.get("edge_name"),
+            "bottom_face_pivot_edge_start": pivot_data.get("edge_start"),
+            "bottom_face_pivot_edge_end": pivot_data.get("edge_end"),
+            "bottom_face_pivot_edge_parameter": pivot_data.get("edge_parameter"),
+            "bottom_face_pivot_source": bottom_face_anchor_source,
             "timber_face_dividing_plane_origin": snapped_timber_face_dividing_plane.Origin,
             "stiffener_pair_shift_from_point": pair_shift_from_point,
             "stiffener_pair_shift_to_point": pair_shift_to_point,
         }
         specs.append(bottom_face_spec)
 
-        face_intersection_tip = _point_on_plane(
-            snapped_bottom_face_plane,
-            (0.0, heel_y, 0.0),
-        )
+        face_intersection_tip = rg.Point3d(snapped_pair_shared_edge_midpoint)
         vertical_height = max(float(face_intersection_tip.Z) - baseplate_top_z, thickness)
         vertical_center = rg.Point3d(
             face_intersection_tip.X,
@@ -2466,6 +2624,11 @@ def _stiffener_specs_from_plate_targets(
             "webplate_intersection_source": webplate_intersection_source,
             "unsnapped_pair_interface_tip": unsnapped_pair_interface_tip,
             "unsnapped_pair_shared_edge_midpoint": unsnapped_pair_shared_edge_midpoint,
+            "snapped_pair_shared_edge_midpoint": snapped_pair_shared_edge_midpoint,
+            "stiffener_snap_residual": stiffener_snap_residual,
+            "stiffener_snap_residual_ok": stiffener_snap_residual_ok,
+            "bottom_face_unflipped_center": bottom_face_unflipped_center,
+            "bottom_face_flip_about_intersection_edge": bottom_face_flip_about_intersection_edge,
             "heel_edge_centerline_point": heel_edge_centerline_point,
             "timber_bottom_face_heel_intersection_point": timber_bottom_face_heel_intersection_point,
             "pair_snap_vector": pair_snap_vector,
@@ -2485,6 +2648,12 @@ def _stiffener_specs_from_plate_targets(
             "heel_face_intersection_param": heel_face_intersection_param,
             "timber_face_anchor": bottom_face_anchor,
             "timber_face_anchor_source": bottom_face_anchor_source,
+            "bottom_face_pivot_point": bottom_face_anchor,
+            "bottom_face_pivot_edge_name": pivot_data.get("edge_name"),
+            "bottom_face_pivot_edge_start": pivot_data.get("edge_start"),
+            "bottom_face_pivot_edge_end": pivot_data.get("edge_end"),
+            "bottom_face_pivot_edge_parameter": pivot_data.get("edge_parameter"),
+            "bottom_face_pivot_source": bottom_face_anchor_source,
             "timber_face_dividing_plane_origin": snapped_timber_face_dividing_plane.Origin,
             "stiffener_pair_shift_from_point": pair_shift_from_point,
             "stiffener_pair_shift_to_point": pair_shift_to_point,
@@ -2586,6 +2755,62 @@ def _plate_selected_face_midline_segment(plate_spec, plate_plane, edge_name):
     if edge_name not in ("depth_neg", "depth_pos"):
         return None, None
     return _plate_edge_segment(plate_spec, plate_plane, edge_name)
+
+
+def _point_on_line_at_world_z(line_start, line_end, target_z):
+    if rg is None or line_start is None or line_end is None or target_z is None:
+        return None, None
+    dz = float(line_end.Z) - float(line_start.Z)
+    if abs(dz) <= 1e-9:
+        return None, None
+    parameter = (float(target_z) - float(line_start.Z)) / dz
+    direction = line_end - line_start
+    point = rg.Point3d(line_start)
+    point += direction * parameter
+    return point, parameter
+
+
+def _bottom_face_pivot_data(
+    plate_spec,
+    plate_plane,
+    collision_centerline_point,
+    effective_timber_bottom_z,
+):
+    """Resolve the width-edge hinge used by both timber bottom-face modes."""
+    edge_name = plate_spec.get("edge_projected_collision_name")
+    if edge_name not in ("depth_neg", "depth_pos"):
+        projected = plate_spec.get("projected_collision_point")
+        if projected is not None:
+            projected_local = _point_local_in_plane(projected, plate_plane)
+            edge_name = "depth_neg" if float(projected_local[1]) <= 0.0 else "depth_pos"
+        else:
+            edge_name = "depth_neg"
+
+    edge_start, edge_end = _plate_selected_face_midline_segment(
+        plate_spec,
+        plate_plane,
+        edge_name,
+    )
+    pivot_point, pivot_param = _point_on_line_at_world_z(
+        edge_start,
+        edge_end,
+        effective_timber_bottom_z,
+    )
+    pivot_source = "selected_depth_edge_at_effective_z"
+    if pivot_point is None:
+        pivot_point = plate_spec.get("edge_projected_collision_point")
+        pivot_source = "edge_projection_fallback"
+    if pivot_point is None:
+        pivot_point = collision_centerline_point
+        pivot_source = "collision_centerline_fallback"
+    return {
+        "point": rg.Point3d(pivot_point) if rg is not None and pivot_point is not None else pivot_point,
+        "edge_name": edge_name,
+        "edge_start": edge_start,
+        "edge_end": edge_end,
+        "edge_parameter": pivot_param,
+        "source": pivot_source,
+    }
 
 
 def _line_plane_intersection_point(line_start, line_end, plane):
@@ -3293,11 +3518,20 @@ def _active_plate_hole_specs_for_web_plates(
             )
             holes_per_row = max(1, int(next_spec.get("holes_per_row", 1)))
             pitch = float(next_spec.get("pitch") or 0.0)
+            stagger_offset = (
+                float(next_spec.get("stagger_offset") or 0.0)
+                if next_spec.get("row_mode") == "staggered_double_row"
+                else 0.0
+            )
+            pattern_span = max(0, holes_per_row - 1) * pitch + stagger_offset
             if heel is not None and plate_plane is not None:
                 center_offset = (
                     float(plate_spec["collision_axis_distance"])
-                    + float(plate_spec["hole_end_distance"])
-                    + 0.5 * (holes_per_row - 1) * pitch
+                    + float(
+                        plate_spec.get("bottom_hole_end_distance")
+                        or plate_spec["hole_end_distance"]
+                    )
+                    + 0.5 * pattern_span
                 )
                 heel_local = _point_local_in_plane(heel, plate_plane)
                 # Longitudinal distances are measured from the heel, but the
@@ -3341,7 +3575,7 @@ def _plate_hole_pattern_changed(source_hole_specs, target_hole_specs, tolerance=
     count = min(len(source_hole_specs or []), len(target_hole_specs or []))
     if count == 0:
         return bool(source_hole_specs or target_hole_specs)
-    keys = ("row_count", "holes_per_row", "diameter", "row_spacing", "pitch")
+    keys = ("row_count", "holes_per_row", "diameter", "row_spacing", "pitch", "stagger_offset", "row_mode")
     for index in range(count):
         source = source_hole_specs[index]
         target = target_hole_specs[index]
@@ -3350,6 +3584,9 @@ def _plate_hole_pattern_changed(source_hole_specs, target_hole_specs, tolerance=
             target_value = target.get(key)
             if key in ("row_count", "holes_per_row"):
                 if int(source_value or 0) != int(target_value or 0):
+                    return True
+            elif key == "row_mode":
+                if str(source_value or "") != str(target_value or ""):
                     return True
             elif abs(float(source_value or 0.0) - float(target_value or 0.0)) > tolerance:
                 return True
@@ -3363,10 +3600,15 @@ def _plate_hole_specs_from_inputs(
     target_full_plate_specs,
     plate_hole_centers=None,
     plate_hole_rows=None,
+    plate_hole_patterns=None,
     plate_holes_per_row=None,
     plate_hole_diameters=None,
+    plate_bolt_diameters=None,
+    plate_hole_clearances=None,
+    plate_total_hole_counts=None,
     plate_hole_row_spacings=None,
     plate_hole_pitches=None,
+    plate_hole_stagger_offsets=None,
     collapse_single_row_from_pairs=True,
 ):
     specs = list(source_hole_specs or _default_plate_hole_specs(plane))
@@ -3390,10 +3632,15 @@ def _plate_hole_specs_from_inputs(
         len(specs),
         len(input_centers),
         len(_flatten_values(plate_hole_rows)),
+        len(_flatten_values(plate_hole_patterns)),
         len(_flatten_values(plate_holes_per_row)),
         len(_flatten_values(plate_hole_diameters)),
+        len(_flatten_values(plate_bolt_diameters)),
+        len(_flatten_values(plate_hole_clearances)),
+        len(_flatten_values(plate_total_hole_counts)),
         len(_flatten_values(plate_hole_row_spacings)),
         len(_flatten_values(plate_hole_pitches)),
+        len(_flatten_values(plate_hole_stagger_offsets)),
     )
     if count <= 0:
         return []
@@ -3415,6 +3662,23 @@ def _plate_hole_specs_from_inputs(
             index,
             base.get("row_count", CODE_BASELINE_PLATE_HOLES["row_count"]),
         )
+        requested_mode_value = _int_at(plate_hole_rows, index, None)
+        requested_pattern = _plate_hole_pattern_at(
+            plate_hole_patterns,
+            index,
+            base.get("row_mode")
+            or ("single_row_centerline" if requested_row_count == 1 else "double_row"),
+        )
+        if requested_mode_value == 3 and not _has_values(plate_hole_patterns):
+            requested_pattern = "staggered_double_row"
+        elif requested_mode_value == 2 and not _has_values(plate_hole_patterns):
+            requested_pattern = "double_row"
+        elif requested_mode_value == 1 and not _has_values(plate_hole_patterns):
+            requested_pattern = "single_row_centerline"
+        if requested_pattern == "single_row_centerline":
+            requested_row_count = 1
+        elif requested_pattern in ("double_row", "staggered_double_row"):
+            requested_row_count = 2
         base["center"] = _point_from_value(_list_at(input_centers, index), base.get("center"))
         base["row_count"] = requested_row_count
         requested_holes_per_row = max(
@@ -3425,13 +3689,22 @@ def _plate_hole_specs_from_inputs(
                 source_holes_per_row,
             ),
         )
+        requested_total_bolt_count = _int_at(plate_total_hole_counts, index, None)
+        if requested_total_bolt_count is not None:
+            requested_total_bolt_count = max(1, int(requested_total_bolt_count))
+            requested_holes_per_row = max(
+                1,
+                int(math.ceil(float(requested_total_bolt_count) / float(max(requested_row_count, 1)))),
+            )
         base["source_row_count"] = source_row_count
         base["source_holes_per_row"] = source_holes_per_row
         base["source_total_hole_count"] = source_row_count * source_holes_per_row
         base["holes_per_row_input"] = requested_holes_per_row
         if requested_row_count == 1:
             explicit_holes_input = _has_values(plate_holes_per_row)
-            if collapse_single_row_from_pairs:
+            if requested_total_bolt_count is not None:
+                total_holes = requested_total_bolt_count
+            elif collapse_single_row_from_pairs:
                 pair_group_count = requested_holes_per_row if explicit_holes_input else source_holes_per_row
                 total_holes = (
                     pair_group_count * source_row_count
@@ -3445,8 +3718,36 @@ def _plate_hole_specs_from_inputs(
             base["row_mode"] = "single_row_centerline"
         else:
             base["holes_per_row"] = requested_holes_per_row
-            base["row_mode"] = "double_row"
-        base["diameter"] = _float_at(plate_hole_diameters, index, base.get("diameter", CODE_BASELINE_PLATE_HOLES["diameter"]))
+            base["row_mode"] = (
+                "staggered_double_row"
+                if requested_pattern == "staggered_double_row"
+                else "double_row"
+            )
+        bolt_dia = _float_at(plate_bolt_diameters, index, None)
+        hole_clearance = _float_at(plate_hole_clearances, index, DEFAULT_HOLE_CLEARANCE)
+        if bolt_dia is not None:
+            base["bolt_dia"] = bolt_dia
+            base["hole_clearance"] = hole_clearance
+        if _has_values(plate_hole_diameters):
+            base["diameter"] = _float_at(
+                plate_hole_diameters,
+                index,
+                base.get("diameter", CODE_BASELINE_PLATE_HOLES["diameter"]),
+            )
+        elif bolt_dia is not None:
+            base["diameter"] = bolt_dia + (hole_clearance or 0.0)
+            base["diameter_source"] = "bolt_dia_plus_clearance"
+        else:
+            base["diameter"] = _float_at(
+                plate_hole_diameters,
+                index,
+                base.get("diameter", CODE_BASELINE_PLATE_HOLES["diameter"]),
+            )
+        if requested_total_bolt_count is not None:
+            actual_total = int(base["row_count"]) * int(base["holes_per_row"])
+            base["requested_total_bolt_count"] = requested_total_bolt_count
+            base["actual_total_bolt_count"] = actual_total
+            base["bolt_count_alignment_ok"] = actual_total == requested_total_bolt_count
         if requested_row_count != 1:
             base["row_spacing"] = _float_at(
                 plate_hole_row_spacings,
@@ -3458,14 +3759,27 @@ def _plate_hole_specs_from_inputs(
             index,
             base.get("pitch", CODE_BASELINE_PLATE_HOLES["pitch"]),
         )
+        if base["row_mode"] == "staggered_double_row":
+            base["stagger_offset"] = _float_at(
+                plate_hole_stagger_offsets,
+                index,
+                0.5 * float(base.get("pitch") or 0.0),
+            )
+        else:
+            base["stagger_offset"] = 0.0
         if any(
             _has_values(value)
             for value in (
                 plate_hole_rows,
+                plate_hole_patterns,
                 plate_holes_per_row,
                 plate_hole_diameters,
+                plate_bolt_diameters,
+                plate_hole_clearances,
+                plate_total_hole_counts,
                 plate_hole_row_spacings,
                 plate_hole_pitches,
+                plate_hole_stagger_offsets,
             )
         ):
             base["dimension_source"] = "override"
@@ -3658,6 +3972,11 @@ def _plate_hole_centers_for_spec(hole_spec, plate_spec):
     holes_per_row = max(1, int(hole_spec.get("holes_per_row", 1)))
     pitch = hole_spec.get("pitch") or 0.0
     row_spacing = hole_spec.get("row_spacing") or 0.0
+    stagger_offset = (
+        hole_spec.get("stagger_offset") or 0.0
+        if hole_spec.get("row_mode") == "staggered_double_row"
+        else 0.0
+    )
     center = hole_spec.get("center")
     if rg is None or center is None:
         return []
@@ -3668,13 +3987,12 @@ def _plate_hole_centers_for_spec(hole_spec, plate_spec):
         plate_spec["inclination_deg"],
     )
     row_offsets = [0.0] if row_count == 1 else [-0.5 * row_spacing, 0.5 * row_spacing]
-    long_offsets = [
-        (index - 0.5 * (holes_per_row - 1)) * pitch
-        for index in range(holes_per_row)
-    ]
+    pattern_span = max(0, holes_per_row - 1) * pitch + stagger_offset
     centers = []
-    for row_offset in row_offsets:
-        for long_offset in long_offsets:
+    for row_index, row_offset in enumerate(row_offsets):
+        row_shift = stagger_offset if row_count == 2 and row_index == 1 else 0.0
+        for index in range(holes_per_row):
+            long_offset = index * pitch + row_shift - 0.5 * pattern_span
             point = rg.Point3d(center)
             point += plate_plane.XAxis * long_offset
             point += plate_plane.YAxis * row_offset
@@ -3782,14 +4100,143 @@ def _plate_hole_pattern_diagnostics(hole_specs, plate_specs, per_plate_centers):
                 "generated_count": generated_count,
                 "inside_plate_count": inside_count,
                 "diameter": hole_spec.get("diameter"),
+                "bolt_dia": hole_spec.get("bolt_dia"),
+                "hole_clearance": hole_spec.get("hole_clearance"),
                 "row_spacing": hole_spec.get("row_spacing"),
                 "pitch": hole_spec.get("pitch"),
+                "row_mode": hole_spec.get("row_mode"),
+                "stagger_offset": hole_spec.get("stagger_offset"),
+                "requested_total_bolt_count": hole_spec.get("requested_total_bolt_count"),
+                "actual_total_bolt_count": hole_spec.get("actual_total_bolt_count"),
+                "bolt_count_alignment_ok": hole_spec.get("bolt_count_alignment_ok"),
                 "active_center_source": hole_spec.get("active_center_source"),
                 "status": status,
                 "local_centers": local_centers,
             }
         )
     return diagnostics
+
+
+def _plane_payload(plane):
+    if plane is None:
+        return {}
+    return {
+        "origin": _debug_xyz(plane.Origin),
+        "x_axis": _debug_xyz(plane.XAxis),
+        "y_axis": _debug_xyz(plane.YAxis),
+        "normal": _debug_xyz(plane.ZAxis),
+    }
+
+
+def _plate_frame_payloads(plate_specs):
+    frames = []
+    for spec in plate_specs or []:
+        plane = _plate_plane(
+            spec.get("center"),
+            spec.get("azimuth_deg"),
+            spec.get("inclination_deg"),
+        )
+        frame = {
+            "member_id": spec.get("member_id"),
+            "member_index": spec.get("member_index"),
+        }
+        frame.update(_plane_payload(plane))
+        frames.append(frame)
+    return frames
+
+
+def _timber_bottom_face_refs_from_plate_specs(
+    plate_specs,
+    bottom_face_mode="Perpendicular_to_grain",
+):
+    """Expose resolved timber cut planes so downstream consumers can reuse them."""
+    if rg is None:
+        return []
+
+    mode = _canonical_bottom_face_mode(bottom_face_mode)
+    refs = []
+    for spec in plate_specs or []:
+        plate_plane = _plate_plane(
+            spec.get("center"),
+            spec.get("azimuth_deg"),
+            spec.get("inclination_deg"),
+        )
+        heel = _plate_support_heel_point(spec)
+        if plate_plane is None or heel is None:
+            refs.append(
+                {
+                    "member_id": spec.get("member_id"),
+                    "member_index": spec.get("member_index"),
+                    "origin_source": "unresolved",
+                }
+            )
+            continue
+
+        heel_local = _point_local_in_plane(heel, plate_plane)
+        collision_axis_distance = _coerce_float(
+            spec.get("collision_axis_distance"),
+            0.0,
+        ) or 0.0
+        collision_centerline_point = _point_on_plane(
+            plate_plane,
+            (
+                heel_local[0] + collision_axis_distance,
+                0.0,
+                0.0,
+            ),
+        )
+        effective_timber_bottom_z = _coerce_float(
+            spec.get("effective_timber_bottom_z"),
+            collision_centerline_point.Z,
+        )
+        if effective_timber_bottom_z is not None:
+            collision_centerline_point.Z = float(effective_timber_bottom_z)
+
+        width_axis = rg.Vector3d(plate_plane.ZAxis)
+        if not width_axis.Unitize():
+            width_axis = rg.Vector3d.YAxis
+        if mode == "Parallel_to_ground":
+            face_axis = rg.Vector3d(
+                plate_plane.XAxis.X,
+                plate_plane.XAxis.Y,
+                0.0,
+            )
+            if not face_axis.Unitize():
+                face_axis = rg.Vector3d.XAxis
+            # Match the stiffener construction frame so downstream timber cuts
+            # pivot to the same opposite side around the shared edge hinge.
+            face_axis.Reverse()
+        else:
+            face_axis = rg.Vector3d(plate_plane.YAxis)
+            if not face_axis.Unitize():
+                face_axis = rg.Vector3d.ZAxis
+
+        pivot_data = _bottom_face_pivot_data(
+            spec,
+            plate_plane,
+            collision_centerline_point,
+            effective_timber_bottom_z,
+        )
+        origin = pivot_data.get("point") or collision_centerline_point
+        origin_source = pivot_data.get("source") or "collision_centerline_fallback"
+
+        bottom_face_plane = rg.Plane(rg.Point3d(origin), width_axis, face_axis)
+        ref = {
+            "member_id": spec.get("member_id"),
+            "member_index": spec.get("member_index"),
+            "bottom_face_mode": mode,
+            "origin_source": origin_source,
+            "collision_centerline_point": _debug_xyz(collision_centerline_point),
+            "effective_timber_bottom_z": spec.get("effective_timber_bottom_z"),
+            "bottom_face_pivot_point": _debug_xyz(origin),
+            "bottom_face_pivot_edge_name": pivot_data.get("edge_name"),
+            "bottom_face_pivot_edge_start": _debug_xyz(pivot_data.get("edge_start")),
+            "bottom_face_pivot_edge_end": _debug_xyz(pivot_data.get("edge_end")),
+            "bottom_face_pivot_edge_parameter": pivot_data.get("edge_parameter"),
+        }
+        ref.update(_plane_payload(bottom_face_plane))
+        refs.append(ref)
+    return refs
 
 
 def _largest_brep(breps):
@@ -4601,10 +5048,12 @@ def _build_metadata_handoff(
     plate_specs,
     full_plate_specs,
     plate_hole_specs,
+    plate_hole_centers,
     plate_hole_center_counts,
     plate_hole_pattern_diagnostics,
     stiffener_specs,
     verification,
+    bottom_face_mode="Perpendicular_to_grain",
     baseplate_top_z=None,
     baseplate_top_source=None,
     baseplate_bottom_offset_z=0.0,
@@ -4622,6 +5071,11 @@ def _build_metadata_handoff(
     first_plate_holes = plate_hole_specs[0] if plate_hole_specs else {}
     plate_hole_rows = first_plate_holes.get("row_count")
     plate_hole_row_spacing = first_plate_holes.get("row_spacing")
+    plate_holes_per_row = int(first_plate_holes.get("holes_per_row") or 0)
+    plate_total_hole_count = (
+        int(plate_hole_rows or 0)
+        * plate_holes_per_row
+    )
     plate_depth = first_plate.get("width")
     edge_distance = None
     if plate_depth is not None and plate_hole_rows is not None and plate_hole_row_spacing is not None:
@@ -4638,14 +5092,28 @@ def _build_metadata_handoff(
         "plate_length": first_plate.get("length"),
         "plate_depth": first_plate.get("width"),
         "plate_thickness": first_plate.get("thickness"),
+        "plate_hole_rows": first_plate_holes.get("row_count"),
+        "plate_holes_per_row": first_plate_holes.get("holes_per_row"),
+        "plate_hole_row_mode": first_plate_holes.get("row_mode"),
+        "plate_hole_stagger_offset": first_plate_holes.get("stagger_offset"),
+        "bolt_diameter": first_plate_holes.get("bolt_dia"),
+        "bolt_hole_clearance": first_plate_holes.get("hole_clearance"),
         "bolt_hole_diameter": first_plate_holes.get("diameter"),
+        "requested_total_bolt_count": first_plate_holes.get("requested_total_bolt_count"),
+        "actual_total_bolt_count": plate_total_hole_count,
         "pitch_parallel": first_plate_holes.get("pitch"),
         "gage_perp": first_plate_holes.get("row_spacing"),
         "end_distance": first_plate.get("hole_end_distance"),
+        "bottom_end_distance": first_plate.get("bottom_hole_end_distance"),
+        "top_end_distance": first_plate.get("top_hole_end_distance"),
+        "bottom_end_distance_multiplier": first_plate.get("bottom_end_distance_multiplier"),
         "edge_distance": edge_distance,
         "heel_fillet_radius": heel_fillet_radius,
         "base_diameter": base_diameter,
         "base_thickness": base_thickness,
+        "baseplate_hole_diameter": hole_diameter,
+        "timber_bottom_gap": timber_bottom_gap,
+        "min_timber_gap": min_timber_gap,
     }
     layout_extents = {
         "base_shape": base_shape,
@@ -4656,6 +5124,11 @@ def _build_metadata_handoff(
         "plate_count": len(plate_specs or []),
         "stiffener_count": len(stiffener_specs or []),
     }
+    plate_frames = _plate_frame_payloads(plate_specs)
+    timber_bottom_face_refs = _timber_bottom_face_refs_from_plate_specs(
+        plate_specs,
+        bottom_face_mode,
+    )
     return {
         "geometry": {
             "base_length": base_length,
@@ -4667,8 +5140,11 @@ def _build_metadata_handoff(
             "plate_depth": first_plate.get("width"),
             "plate_thickness": first_plate.get("thickness"),
             "plate_specs": plate_specs,
+            "plate_frames": plate_frames,
             "full_plate_specs": full_plate_specs,
             "stiffener_specs": stiffener_specs,
+            "timber_bottom_face_refs": timber_bottom_face_refs,
+            "bottom_face_mode": bottom_face_mode,
             "baseplate_top_z": baseplate_top_z,
             "baseplate_top_source": baseplate_top_source,
             "baseplate_bottom_offset_z": baseplate_bottom_offset_z,
@@ -4683,20 +5159,30 @@ def _build_metadata_handoff(
         "milling": {
             "baseplate_hole_diameter": hole_diameter,
             "baseplate_hole_specs": hole_specs,
+            "bolt_dia": first_plate_holes.get("bolt_dia"),
+            "hole_clearance": first_plate_holes.get("hole_clearance"),
             "bolt_hole_diameter": first_plate_holes.get("diameter"),
             "plate_hole_rows": first_plate_holes.get("row_count"),
             "plate_holes_per_row": first_plate_holes.get("holes_per_row"),
             "plate_hole_row_mode": first_plate_holes.get("row_mode"),
-            "plate_total_hole_count": (
-                int(first_plate_holes.get("row_count") or 0)
-                * int(first_plate_holes.get("holes_per_row") or 0)
-            ),
+            "plate_hole_stagger_offset": first_plate_holes.get("stagger_offset"),
+            "plate_total_hole_count": plate_total_hole_count,
+            "requested_total_bolt_count": first_plate_holes.get("requested_total_bolt_count"),
+            "actual_total_bolt_count": plate_total_hole_count,
+            "bolt_count_alignment_ok": first_plate_holes.get("bolt_count_alignment_ok"),
             "plate_hole_specs": plate_hole_specs,
+            "plate_hole_centers": [
+                [_debug_xyz(point) for point in centers]
+                for centers in (plate_hole_centers or [])
+            ],
             "plate_hole_center_counts": list(plate_hole_center_counts or []),
             "plate_hole_pattern_diagnostics": list(plate_hole_pattern_diagnostics or []),
             "pitch_parallel": first_plate_holes.get("pitch"),
             "gage_perp": first_plate_holes.get("row_spacing"),
             "end_distance": first_plate.get("hole_end_distance"),
+            "bottom_end_distance": first_plate.get("bottom_hole_end_distance"),
+            "top_end_distance": first_plate.get("top_hole_end_distance"),
+            "bottom_end_distance_multiplier": first_plate.get("bottom_end_distance_multiplier"),
             "edge_distance": edge_distance,
             "bolt_hole_dimension_source": first_plate_holes.get("dimension_source"),
         },
@@ -4712,11 +5198,24 @@ def _build_metadata_handoff(
         },
         "annotation": {
             "dimensions": annotation_dimensions,
+            "critical_dimensions": {
+                "units": SOURCE_UNITS,
+                "input": dict(annotation_dimensions),
+                "calculated": {},
+                "resolved": dict(annotation_dimensions),
+            },
             "checks": {},
             "labels": {},
         },
         "layout": {
             "extents": layout_extents,
+            "dimension_summary": dict(annotation_dimensions),
+            "critical_dimensions": {
+                "units": SOURCE_UNITS,
+                "input": dict(annotation_dimensions),
+                "calculated": {},
+                "resolved": dict(annotation_dimensions),
+            },
             "named_views": ["NODE_TOP", "NODE_FRONT", "NODE_SECTION", "NODE_ISO"],
             "drawing_groups": ["top", "front", "section", "iso", "report", "title_block"],
             "report_sections": [
@@ -4820,10 +5319,15 @@ def base_footing_run(
     plate_full_centers=None,
     plate_hole_centers=None,
     plate_hole_rows=None,
+    plate_hole_patterns=None,
     plate_holes_per_row=None,
     plate_hole_diameters=None,
+    plate_bolt_diameters=None,
+    plate_hole_clearances=None,
+    plate_total_hole_counts=None,
     plate_hole_row_spacings=None,
     plate_hole_pitches=None,
+    plate_hole_stagger_offsets=None,
     stiffener_centers=None,
     stiffener_azimuths=None,
     stiffener_lengths=None,
@@ -4847,6 +5351,7 @@ def base_footing_run(
     heel_fillet_radius=None,
     timber_bottom_gap=None,
     min_timber_gap=0.1,
+    bottom_end_distance_multiplier=None,
     bottom_face_mode="Perpendicular_to_grain",
     include_stiffeners=None,
     omit_center_hole=True,
@@ -4890,10 +5395,15 @@ def base_footing_run(
     }
     explicit_plate_hole_inputs = {
         "plate_hole_rows": _has_values(plate_hole_rows),
+        "plate_hole_patterns": _has_values(plate_hole_patterns),
         "plate_holes_per_row": _has_values(plate_holes_per_row),
         "plate_hole_diameters": _has_values(plate_hole_diameters),
+        "plate_bolt_diameters": _has_values(plate_bolt_diameters),
+        "plate_hole_clearances": _has_values(plate_hole_clearances),
+        "plate_total_hole_counts": _has_values(plate_total_hole_counts),
         "plate_hole_row_spacings": _has_values(plate_hole_row_spacings),
         "plate_hole_pitches": _has_values(plate_hole_pitches),
+        "plate_hole_stagger_offsets": _has_values(plate_hole_stagger_offsets),
     }
     normalized_sizing_recommendations = _scale_sizing_recommendations(sizing_recommendations)
     applied_sizing_recommendations = {}
@@ -4913,6 +5423,23 @@ def base_footing_run(
         if normalized_sizing_recommendations.get("holes_per_row") is not None and not explicit_plate_hole_inputs["plate_holes_per_row"]:
             plate_holes_per_row = normalized_sizing_recommendations["holes_per_row"]
             applied_sizing_recommendations["holes_per_row"] = plate_holes_per_row
+        sizing_total_bolt_count = (
+            normalized_sizing_recommendations.get("total_bolt_count")
+            or normalized_sizing_recommendations.get("actual_total_bolt_count")
+            or normalized_sizing_recommendations.get("recommended_total_bolt_count")
+        )
+        if sizing_total_bolt_count is not None and not explicit_plate_hole_inputs["plate_total_hole_counts"]:
+            plate_total_hole_counts = sizing_total_bolt_count
+            applied_sizing_recommendations["total_bolt_count"] = plate_total_hole_counts
+        if normalized_sizing_recommendations.get("bolt_dia") is not None and not explicit_plate_hole_inputs["plate_bolt_diameters"]:
+            plate_bolt_diameters = normalized_sizing_recommendations["bolt_dia"]
+            applied_sizing_recommendations["bolt_dia"] = plate_bolt_diameters
+        if normalized_sizing_recommendations.get("hole_clearance") is not None and not explicit_plate_hole_inputs["plate_hole_clearances"]:
+            plate_hole_clearances = normalized_sizing_recommendations["hole_clearance"]
+            applied_sizing_recommendations["hole_clearance"] = plate_hole_clearances
+        if normalized_sizing_recommendations.get("hole_pattern") is not None and not explicit_plate_hole_inputs["plate_hole_patterns"]:
+            plate_hole_patterns = normalized_sizing_recommendations["hole_pattern"]
+            applied_sizing_recommendations["hole_pattern"] = plate_hole_patterns
         if normalized_sizing_recommendations.get("bolt_hole_dia") is not None and not explicit_plate_hole_inputs["plate_hole_diameters"]:
             plate_hole_diameters = normalized_sizing_recommendations["bolt_hole_dia"]
             applied_sizing_recommendations["bolt_hole_dia"] = plate_hole_diameters
@@ -4922,6 +5449,9 @@ def base_footing_run(
         if normalized_sizing_recommendations.get("pitch_parallel") is not None and not explicit_plate_hole_inputs["plate_hole_pitches"]:
             plate_hole_pitches = normalized_sizing_recommendations["pitch_parallel"]
             applied_sizing_recommendations["pitch_parallel"] = plate_hole_pitches
+        if normalized_sizing_recommendations.get("stagger_offset") is not None and not explicit_plate_hole_inputs["plate_hole_stagger_offsets"]:
+            plate_hole_stagger_offsets = normalized_sizing_recommendations["stagger_offset"]
+            applied_sizing_recommendations["stagger_offset"] = plate_hole_stagger_offsets
     explicit_heel_fillet_radius = _coerce_float(heel_fillet_radius, None)
     governing_heel_fillet_radius = PROJECT_MIN_HEEL_FILLET_RADIUS
     if normalized_sizing_recommendations:
@@ -5140,10 +5670,15 @@ def base_footing_run(
         full_plate_specs,
         plate_hole_centers=plate_hole_centers,
         plate_hole_rows=plate_hole_rows,
+        plate_hole_patterns=plate_hole_patterns,
         plate_holes_per_row=plate_holes_per_row,
         plate_hole_diameters=plate_hole_diameters,
+        plate_bolt_diameters=plate_bolt_diameters,
+        plate_hole_clearances=plate_hole_clearances,
+        plate_total_hole_counts=plate_total_hole_counts,
         plate_hole_row_spacings=plate_hole_row_spacings,
         plate_hole_pitches=plate_hole_pitches,
+        plate_hole_stagger_offsets=plate_hole_stagger_offsets,
         collapse_single_row_from_pairs=collapse_single_row_from_pairs,
     )
     collision_z_values = [_coerce_float(value, None) for value in _flatten_values(plate_collision_zs)]
@@ -5185,28 +5720,60 @@ def base_footing_run(
                     else None,
                     None,
                 )
-                if end_distance_value is None:
-                    baseline_hole_count = max(
-                        1,
-                        int(active_hole_spec.get("source_holes_per_row") or CODE_BASELINE_PLATE_HOLES["holes_per_row"]),
-                    )
-                    end_distance_value = max(
-                        0.0,
-                        0.5 * (
-                            baseline_pattern_length
-                            - max(0, baseline_hole_count - 1) * float(pitch_value or 0.0)
-                        ),
-                    )
+                if end_distance_value is None or end_distance_value <= 0.0:
+                    end_distance_value = float(CODE_BASELINE_PLATE_HOLES["end_distance"])
+                requested_bottom_end_distance_multiplier = _coerce_float(
+                    normalized_sizing_recommendations.get("bottom_end_distance_multiplier")
+                    if normalized_sizing_recommendations
+                    else bottom_end_distance_multiplier,
+                    1.05,
+                )
+                bottom_end_distance_multiplier = (
+                    requested_bottom_end_distance_multiplier
+                    if bottom_face_mode == "Parallel_to_ground"
+                    else 1.0
+                )
+                bottom_end_distance = _coerce_float(
+                    normalized_sizing_recommendations.get("bottom_end_distance")
+                    if normalized_sizing_recommendations
+                    else None,
+                    None,
+                )
+                if bottom_end_distance is None or bottom_end_distance <= 0.0:
+                    bottom_end_distance = end_distance_value * bottom_end_distance_multiplier
+                top_end_distance = _coerce_float(
+                    normalized_sizing_recommendations.get("top_end_distance")
+                    if normalized_sizing_recommendations
+                    else None,
+                    None,
+                )
+                if top_end_distance is None or top_end_distance <= 0.0:
+                    top_end_distance = end_distance_value
+                stagger_offset = (
+                    float(active_hole_spec.get("stagger_offset") or 0.0)
+                    if active_hole_spec.get("row_mode") == "staggered_double_row"
+                    else 0.0
+                )
+                pattern_span = (
+                    max(0, hole_count - 1) * float(pitch_value or 0.0)
+                    + stagger_offset
+                )
                 code_pattern_length = (
-                    2.0 * end_distance_value
-                    + max(0, hole_count - 1) * float(pitch_value or 0.0)
+                    bottom_end_distance
+                    + pattern_span
+                    + top_end_distance
                 )
                 effective_plate_length = collision_axis_distance + code_pattern_length
-                first_hole_axis_offset = collision_axis_distance + end_distance_value
-                last_hole_axis_offset = first_hole_axis_offset + max(0, hole_count - 1) * float(pitch_value or 0.0)
+                first_hole_axis_offset = collision_axis_distance + bottom_end_distance
+                last_hole_axis_offset = first_hole_axis_offset + pattern_span
                 spec["collision_axis_distance"] = collision_axis_distance
                 spec["code_pattern_length"] = code_pattern_length
                 spec["hole_end_distance"] = end_distance_value
+                spec["bottom_hole_end_distance"] = bottom_end_distance
+                spec["top_hole_end_distance"] = top_end_distance
+                spec["bottom_end_distance_multiplier"] = bottom_end_distance_multiplier
+                spec["hole_pattern_span"] = pattern_span
+                spec["hole_stagger_offset"] = stagger_offset
                 spec["effective_plate_length"] = effective_plate_length
                 spec["required_heel_to_tip_distance"] = effective_plate_length
                 spec["first_hole_axis_offset"] = first_hole_axis_offset
@@ -5524,10 +6091,12 @@ def base_footing_run(
         plate_specs,
         full_plate_specs,
         active_plate_hole_specs,
+        _per_plate_hole_centers,
         plate_hole_center_counts,
         plate_hole_pattern_diagnostics,
         stiffener_specs,
         verification,
+        bottom_face_mode=bottom_face_mode,
         baseplate_top_z=resolved_baseplate_top_z,
         baseplate_top_source=baseplate_top_source,
         baseplate_bottom_offset_z=baseplate_bottom_offset_z,
