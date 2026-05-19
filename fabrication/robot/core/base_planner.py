@@ -248,34 +248,46 @@ class BaseRobotPlanner():
         print(f"Tool '{tool_name}' attached to '{connected_to}'.")
         return tool_model
 
-    def attach_workpiece(self, name, mesh, grasp_frame, element_place_frame, attached_to_tool="gripper"):
+    def attach_workpiece(self, name, mesh, grasp_frame, element_place_frame, attached_to_tool="base_tool"):
         """
         Generic method to attach a mesh to the robot's tool for pick and place.
         """
         print(f"Attaching workpiece: {name}")
 
         tool_viz_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperMedium_viz.stl")
-        tool_viz_mesh_at = tool_viz_mesh.transformed(Transformation.from_frame(element_place_frame))
+        # tool_viz_mesh_at = tool_viz_mesh.transformed(Transformation.from_frame(element_place_frame))
         tool_col_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperMedium_col.stl")
-        tool_col_mesh_at = tool_col_mesh.transformed(Transformation.from_frame(element_place_frame))
+        # tool_col_mesh_at = tool_col_mesh.transformed(Transformation.from_frame(element_place_frame))
 
-        beam_tool_viz_mesh = mesh.join(tool_viz_mesh_at)
-        beam_tool_col_mesh = mesh.join(tool_col_mesh_at)
+        
+        beam_tool_viz_mesh = mesh.copy()
+        beam_tool_col_mesh = mesh.copy()
 
+        beam_tool_viz_mesh.join(tool_viz_mesh)
+        beam_tool_col_mesh.join(tool_col_mesh)
+        # from compas.geometry import boolean_union_mesh_mesh
+        
+        # v,f = boolean_union_mesh_mesh(mesh.to_vertices_and_faces(), tool_viz_mesh.to_vertices_and_faces())
+        # beam_tool_viz_mesh = Mesh.from_vertices_and_faces(v.tolist(), f.tolist())
+        # v,f = boolean_union_mesh_mesh(mesh.to_vertices_and_faces(), tool_col_mesh.to_vertices_and_faces())
+        # beam_tool_col_mesh = Mesh.from_vertices_and_faces(v.tolist(), f.tolist())
 
-        rigid_body = RigidBody.from_mesh(beam_tool_viz_mesh, beam_tool_col_mesh)
+        # beam_tool_viz_mesh = [mesh, tool_viz_mesh]
+        print(f"Combined workpiece and tool meshes for visualization and collision.")
+        print(beam_tool_viz_mesh, beam_tool_col_mesh)
+        rigid_body = RigidBody(beam_tool_viz_mesh, beam_tool_col_mesh)
         self.robot_cell.rigid_body_models[name] = rigid_body
         
         # Calculate attachment frame relative to the tool
         T_object_relative_to_tool = Transformation.from_frame(grasp_frame).inverse()
         moveit_attachment_frame = Frame.from_transformation(T_object_relative_to_tool)
-        moveit_attachment_frame.translate(moveit_attachment_frame.zaxis * -0.157)
+        moveit_attachment_frame.translate(moveit_attachment_frame.zaxis * 0.257)
         
         self.state.rigid_body_states[name] = RigidBodyState(
             frame=None, 
-            attached_to_tool=attached_to_tool, 
+            attached_to_tool="base_tool", 
             attachment_frame=moveit_attachment_frame,
-            touch_links=["robot12_link_6"]
+            touch_links=["robot12_link_6", "robot12_link_5"]
         )
         self.planner.set_robot_cell(self.robot_cell)
         self.planner.set_robot_cell_state(self.state)

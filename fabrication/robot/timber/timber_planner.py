@@ -45,14 +45,14 @@ class TimberProcessPlanner(BaseRobotPlanner):
         # # tool_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
         # col_mesh = Mesh.from_stl("fabrication\\data\\gripper\\GripperMedium_col.stl")
         # # col_mesh.rotate(math.radians(90), Vector.Zaxis(), Point(0,0,0))
-        # tool_frame = Frame([0.000, 0.000, 0.157],  [1.0, 0.0, 0.0], [0.0, 1.0, 0.0])
-        # self.add_tool_to_robot(
-        #     viz_mesh=tool_mesh,
-        #     col_mesh=col_mesh,
-        #     tool_frame=tool_frame,
-        #     tool_name="GripperMedium",
-        #     connected_to="robot12_tool0"
-        # )
+        tool_frame = Frame([0.000, 0.000, 0.0],  [1.0, 0.0, 0.0], [0.0, 1.0, 0.0])
+        self.add_tool_to_robot(
+            viz_mesh=Mesh.from_points([[0,0,0], [0.001,0,0.0], [0.00,0.001,0]]),  # Placeholder tool geometry (a simple box)
+            col_mesh=None,  # Placeholder collision geometry
+            tool_frame=tool_frame,
+            tool_name="base_tool",
+            connected_to="robot12_tool0"
+        )
         
         # 2. Add Static Scene Objects (CNC/PUS/AT geometry)
         try:
@@ -218,14 +218,14 @@ class TimberProcessPlanner(BaseRobotPlanner):
     def global_constraints(self):
         constraints = []
         # constraints.append(JointConstraint('robot12_joint_1', math.radians(90), math.radians(85), math.radians(90), 1.0))
-        constraints.append(JointConstraint('robot12_joint_2', math.radians(-55), math.radians(10), math.radians(10), 10.0))
-        constraints.append(JointConstraint('robot12_joint_3', math.radians(55), math.radians(10), math.radians(50), 1.0))
+        # constraints.append(JointConstraint('robot12_joint_2', math.radians(-55), math.radians(10), math.radians(10), 10.0))
+        # constraints.append(JointConstraint('robot12_joint_3', math.radians(55), math.radians(10), math.radians(50), 1.0))
         # constraints.append(JointConstraint('robot12_joint_4', math.radians(180), math.radians(270), math.radians(270), 0.5))
         # constraints.append(JointConstraint('robot12_joint_5', math.radians(90), math.radians(25), math.radians(180), 0.5))
         # constraints.append(JointConstraint('robot12_joint_6', 0.0, math.radians(360), math.radians(360), 0.5))
         # constraints.append(JointConstraint('bridge1_joint_EA_X', 13, 2, 4, 1.0))
         constraints.append(JointConstraint('robot12_joint_EA_Y', -7, 4.5, 5, 1.0))
-        constraints.append(JointConstraint('robot12_joint_EA_Z', -2.5, 2, 2, 0.7))
+        constraints.append(JointConstraint('robot12_joint_EA_Z', -3.5, 2, 2, 0.7))
         # BV = BoundingVolume.from_mesh(Mesh.from_stl(compas.get("C:\\Users\\paulj\\github\\fall_demo_2025\\data\\models\\bounding_volume.stl")))
         # constraints.append(PositionConstraint('robot12_link_6', BV, 1.0))
         return constraints
@@ -258,7 +258,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         element_mesh_at = element_geometry_at.to_viewmesh()[0]
         # adjusted_grasp_frame = element_grasp_frame.copy()
         # adjusted_grasp_frame.point.z -= 0.08  # Account for gripper offset
-        self.attach_workpiece(str(element.guid), element_mesh_at, grasp_frame, element_at_frame, attached_to_tool="robot12_tool0")
+        self.attach_workpiece(str(element.guid), element_mesh_at, grasp_frame, element_at_frame, attached_to_tool="base_tool")
 
         # 3. Retract from pickpoint
         print("getting element retract trajectory at pickpoint")

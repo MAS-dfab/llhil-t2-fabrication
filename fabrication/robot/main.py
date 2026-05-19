@@ -1,4 +1,5 @@
 import os
+import traceback
 import threading
 
 import paho.mqtt.client as mqtt
@@ -63,7 +64,7 @@ def main():
     # 1. LOAD DATA
     # ---------------------------------------------------------
     print("Loading models...")
-    filepath_model = "fabrication\\data\\models\\tm_test.json"
+    filepath_model = "fabrication\\data\\models\\t2_tm_0.json"
 
     if not os.path.exists(filepath_model):
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
@@ -167,6 +168,7 @@ def main():
             highlight_state["mesh"] = highlight_mesh
         except Exception as e:
             print("QR: highlight failed - {}".format(e))
+            traceback.print_exc()
 
         # --- Fetch pickup frame (blocking, runs in MQTT thread) ---
         _set_label("fetching…", _COL_WAITING)
@@ -175,7 +177,8 @@ def main():
             _set_label("ready ✓", _COL_FETCHED)
             print("QR: pickup frame ready for seq_i={}. Press Compute.".format(seq_i))
         except RuntimeError as e:
-            trajectory_planner._fetched_pickup_frame = None
+            from compas.geometry import Frame, Point, Vector
+            trajectory_planner._fetched_pickup_frame = Frame(point=Point(x=16040, y=7076, z=1009), xaxis=Vector(x=-1.000, y=-0.000, z=-0.000), yaxis=Vector(x=0.000, y=1.000, z=0.000))
             _set_label("retry — fetch failed", _COL_WAITING)
             print("QR: fetch FAILED - {}".format(e))
 
@@ -270,6 +273,7 @@ def main():
             )
         except Exception as e:
             print("ERROR during planning: {}".format(e))
+            traceback.print_exc()
             return
 
         failed = [i for i, t in enumerate(element_trajectories) if t is None]
