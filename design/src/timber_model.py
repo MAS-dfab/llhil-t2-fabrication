@@ -154,6 +154,7 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
             model.add_element(plate)
 
             model.attributes['clt_plate'] = plate
+            model.attributes['clt_plate_polyline'] = data['clt_plate']
         
         if data['cut_plane']:
             model.attributes['cut_plane'] = data['cut_plane']
@@ -449,7 +450,7 @@ def apply_joints(
             else:
                 # Non-planar T joints
                 TBirdsmouthJoint.create(model, ca, cb)
-        
+
         ### L Miter Joint at the middle of the structure
         elif topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
             LMiterJoint.create(model, ca, cb, cutoff=False)
@@ -543,6 +544,7 @@ def apply_joints_middle_prototype(
     )
     miter_beams = []
     planes = []
+
     # 2. Handle all pair joints, T, L, X
     for candidate in model.joint_candidates:
         if candidate.is_promoted:  # all joints that are not k-topology
@@ -556,17 +558,17 @@ def apply_joints_middle_prototype(
         ### Planar T joints
         if topo == JointTopology.TOPO_T and is_planar:
             # CLT shoe to middle beam
-            if cb.attributes["hierarchy"] == 'shoe' and ca.attributes["has_middle_joint"]:
-                TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
+            # if cb.attributes["hierarchy"] == 'shoe' and ca.attributes["has_middle_joint"]:
+            #     # TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
 
             # CLT shoe to Top Beam
-            elif cb.attributes["hierarchy"] == 'shoe':
+            if cb.attributes["hierarchy"] == 'shoe':
                 TStepJoint.create(model, ca, cb, step_shape="double")
             
-            # Middle T Lap Joint
-            elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-                # TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
-                TLapJoint.create(model, ca, cb)
+            # # Middle T Lap Joint
+            # elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
+            #     # TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
+            #     TLapJoint.create(model, ca, cb)
 
             else:
                 if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < heel_threshold:
@@ -583,13 +585,13 @@ def apply_joints_middle_prototype(
 
         ### Non-planar T joints
         elif topo == JointTopology.TOPO_T and not is_planar:
-            TButtJoint.create(model, ca, cb)
+            TBirdsmouthJoint.create(model, ca, cb)
 
         ### L Miter Joint at the middle of the structure
         elif topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-            miter_plane = _get_vertical_miter_plane_l(ca, cb, location=candidate.location, flip=False)
-            a = LMiterJoint.create(model, ca, cb, cutoff=False, miter_plane=miter_plane)
-            # a = LMiterJoint.create(model, ca, cb, cutoff=False)
+            # miter_plane = _get_vertical_miter_plane_l(ca, cb, location=candidate.location, flip=False)
+            # a = LMiterJoint.create(model, ca, cb, cutoff=False, miter_plane=miter_plane)
+            a = LMiterJoint.create(model, ca, cb, cutoff=False)
             planes.extend(a.cutting_planes)
             miter_beams.extend([ca, cb])
 
@@ -602,7 +604,7 @@ def apply_joints_middle_prototype(
                 print(f"Unhandled joint candidate with topology {topo}. edges: {ca.attributes['edge']}, {cb.attributes['edge']}")
             continue
 
-    return model, planes, miter_beams
+    return model
 
 def apply_processings_middle_prototype(model):
     """Process joinery and finalize cuts which need to be done after."""
@@ -628,11 +630,11 @@ def apply_processings_middle_prototype(model):
                         beam.add_feature(jrc)
 
             # LongitudinalCut
-        elif beam.attributes["hierarchy"] == "shoe":
-            if clt_plate:
-                cutting_frame = clt_plate.frame
-                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam)
-                beam.add_feature(lc)
+        # elif beam.attributes["hierarchy"] == "shoe":
+        #     if clt_plate:
+        #         cutting_frame = clt_plate.frame
+        #         lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam)
+        #         beam.add_feature(lc)
 
         else:
             continue
