@@ -171,7 +171,7 @@ def classify_directions(graph, edge_groups, parallel_tol=1e-3, with_data=False):
         return A_lines, B_lines, other_lines
     return None, None, None
 
-def dispatch_edges_by_lowest_node(graph, group, edges, digits=3, flip_sign=False):
+def dispatch_edges_by_lowest_node(graph, group, edges, cyclic_sign, digits=3):
     """
     Dispatch collinear edges into two groups based on a cyclic order of each group.
     
@@ -201,10 +201,8 @@ def dispatch_edges_by_lowest_node(graph, group, edges, digits=3, flip_sign=False
     lowest_node, lowest_pt = min(zip(nodes, pts), key=lambda x: x[1].z)
 
     # 2. Get support-to-lowest and edge midpoint-to-lowest vectors to compute cross product
-    c_sign = get_cyclic_signs(graph, flip=flip_sign)[group]
-
     sup_node = next(graph.nodes_where({"support_id": group, "reached": True}), None)
-
+    
     if sup_node is None:
         raise ValueError(f"No support node found for group {group}")
 
@@ -221,9 +219,9 @@ def dispatch_edges_by_lowest_node(graph, group, edges, digits=3, flip_sign=False
         cross = vec_xy.cross(edge_vec_xy)
         # 3. Get sign based on cross product direction and cyclic sign
         if cross.z > 0:
-            sign_groups[c_sign].append(edge)
+            sign_groups[cyclic_sign].append(edge)
         else:
-            sign_groups[-c_sign].append(edge)
+            sign_groups[-cyclic_sign].append(edge)
     return sign_groups
 
 def edges_by_hierarchy(graph, hierarchy):
@@ -265,9 +263,15 @@ def classify_edges(graph, parallel_tol=1e-3, digits=3, flip_sign=False, with_dat
     ), optional line geometries.
     """
     e_groups = group_edges(graph)
+    c_signs = get_cyclic_signs(graph, flip=flip_sign)
+
     A_lines, B_lines, other_lines = classify_directions(graph, e_groups, parallel_tol, with_data)
 
     for g, edges in e_groups.items():
+        c_sign = c_signs[g]
+        for edge in edges:
+            graph.edge_attribute(edge, "cyclic_sign", c_sign)
+
         # 1. Exclude shoe edges
         ex_edges = [e for e in edges if graph.edge_attribute(e, "hierarchy") != "shoe"]
         
@@ -294,8 +298,8 @@ def classify_edges(graph, parallel_tol=1e-3, digits=3, flip_sign=False, with_dat
                     graph,
                     g,
                     edges,
+                    cyclic_sign=c_sign,
                     digits=digits,
-                    flip_sign=flip_sign
                 )
                 
                 for sign, edges in sign_group.items():

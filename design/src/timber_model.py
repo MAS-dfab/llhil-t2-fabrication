@@ -99,6 +99,7 @@ def create_beam(graph, edge, group_id, plate_vec=None):
     reached = graph.get_edge_attribute(edge, 'reached', else_value=False)
     has_mid = graph.get_edge_attribute(edge, 'has_middle_joint', else_value=False)
     dir_id = graph.get_edge_attribute(edge, 'direction_id')
+    c_sign = graph.get_edge_attribute(edge, 'cyclic_sign')
 
     if hie == 'shoe' and plate_vec is not None:
         beam = Beam.from_centerline(ln, w, h, plate_vec)
@@ -112,7 +113,8 @@ def create_beam(graph, edge, group_id, plate_vec=None):
         'level': lvl,
         'reached': reached,
         'has_middle_joint': has_mid,
-        'direction_id': dir_id
+        'direction_id': dir_id,
+        'cyclic_sign': c_sign
     }
     return beam
 
@@ -128,6 +130,8 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
         plate_thickness = PLATE_THICKNESS
     if plate_z_offset is None:
         plate_z_offset = PLATE_Z_OFFSET
+
+    _fix_x_lap_side_for_shoes(graph) # NOTE: this is a temporary fix. Find more information in the function.
 
     groups = {}
     for edge in graph.edges():
@@ -255,26 +259,6 @@ def _is_planar(element_a, element_b):
     # If the angle is close to 0 or 180 degrees, the beams are planar
     return angle < 1e-6 or angle - 180 < 1e-6
 
-def _determine_lap_flip(candidate_a, candidate_b, lap_flip):
-    """Align the lap side by finding"""
-    start = candidate_b.centerline.start
-    end = candidate_b.centerline.end
-    mid = candidate_b.centerline.midpoint  # Cross beam midpoint
-
-    # Pointing downwards
-    aligned = start - end if start.z > end.z else end - start
-    ori = start if start.z > end.z else end
-    
-    ln = Line(mid, mid + candidate_b.centerline.direction.cross(candidate_a.centerline.direction))
-    meet = intersection_line_line_xy(ln, Line(ori, ori + Vector(0, 1, 0)))
-
-    if meet:
-        pt = Point(*meet)
-        vec = pt - mid
-        cross = vec.cross(aligned)
-        return lap_flip ^ (cross.z <= 0)
-    return
-
 def _get_vertical_miter_plane_l(ca, cb, location, flip=False):
     """Get a vertical miter plane for candidate pair for L Miter Joint."""
     #project vectors to global XY plane and get their cross product for the miter plane normal
@@ -312,6 +296,21 @@ def _get_average_miter_plane_k(reordered_elements, flip=False):
         return Plane.from_frame(Frame(ori, cross, -y))
     return Plane.from_frame(Frame(ori, cross, y))
 
+def _fix_x_lap_side_for_shoes(graph, offset_tol=1e-6):
+    """
+    Move one of the pair shoes slightly up in Z to avoid finding incorrect ref_side for the X Lap Joint.
+    This is a temporary fix and should be handled better in the future.
+    See: compas_timber -> l_lap_joint.py -> _get_beam_ref_side_index -> offset_vector, line 101.
+    """
+    # TODO: this is a temporary fix and should be handled better in the future. See: compas_timber -> l_lap_joint.py -> _get_beam_ref_side_index -> offset_vector, line 101.
+    off_vec = Vector(0, 0, offset_tol)
+    for edge in graph.edges_where({"hierarchy": "shoe", "direction_id": "A"}):
+        ln = graph.get_edge_attribute(edge, 'shifted_line', else_value=graph.edge_line(edge))
+        new_ln = Line(ln.start + off_vec, ln.end + off_vec)
+
+        graph.edge_attribute(edge, 'shifted_line', new_ln)
+    return
+    
 # --------------------------------------
 # Joinery planning
 # --------------------------------------
@@ -384,7 +383,7 @@ def apply_joints(
         heel_threshold=None,
         step_depth=None,
         riser_angle=None,
-        mid_lap_flip=False,
+        x_lap_flip=False,
         debug=False
     ):
 
@@ -393,8 +392,8 @@ def apply_joints(
         max_distance = MAX_JOINT_DIST
     if k_mill_depth is None:
         k_mill_depth = KBIRD_MILL_DEPTH
-    if k_miter_type is None:
-        k_miter_type = KBIRD_MITER_TYPE
+    # if k_miter_type is None:
+    #     k_miter_type = KBIRD_MITER_TYPE
     if heel_threshold is None:
         heel_threshold = TMULTI_HEEL_THRESHOLD
     if step_depth is None:
@@ -431,9 +430,7 @@ def apply_joints(
 
                 # Middle T Joint
                 elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-                    # TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
-                    # TLapJoint.create(model, ca, cb)
-                    TStepJoint.create(model, ca, cb)
+                    TStepJoint.create(model, ca, cb) # NOTE: step_shape?
 
                 else:
                     if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < heel_threshold:
@@ -457,11 +454,13 @@ def apply_joints(
 
         ### X Lap Joint
         elif topo == JointTopology.TOPO_X:
-        #     if ca.attributes['direction_id'] == 'A':
-        #         flip = False
-        #     else:
-        #         flip = True
-            XLapJoint.create(model, ca, cb)
+            # Fix the order of main and cross beams based on direction_id
+            if ca.attributes['direction_id'] == 'A':
+                XLapJoint.create(model, ca, cb, flip_lap_side=x_lap_flip)
+            elif ca.attributes['direction_id'] == 'B':
+                XLapJoint.create(model, cb, ca, flip_lap_side=x_lap_flip)
+            else:
+                raise ValueError("Unclassified direction_id found. Please check edge classification.")
 
         else:
             if debug:
