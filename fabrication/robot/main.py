@@ -1,6 +1,7 @@
 import os
 import traceback
 import threading
+import math
 
 import paho.mqtt.client as mqtt
 from compas.colors import Color
@@ -64,7 +65,7 @@ def main():
     # 1. LOAD DATA
     # ---------------------------------------------------------
     print("Loading models...")
-    filepath_model = "fabrication\\data\\models\\t2_tm_0.json"
+    filepath_model = "fabrication\\data\\models\\tm_test.json"
 
     if not os.path.exists(filepath_model):
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
@@ -81,6 +82,9 @@ def main():
     # timber_model = scale_model(timber_model)
 
     timber_model.process_joinery()
+    plate_T = timber_model.plates[0].transformation_to_local()
+    for b in timber_model.beams:
+        b.attributes["parent_T"] = plate_T
 
 
     # ---------------------------------------------------------
@@ -98,6 +102,7 @@ def main():
         key=lambda x: x.attributes["sequence"]
     )
     total_beams = len(in_seq_beams)
+    robot_beams = [b for b in in_seq_beams if b.attributes.get("robot")]
 
     state = _load_state()
     last_assembled = state.get("last_assembled", -1)
@@ -178,7 +183,7 @@ def main():
             print("QR: pickup frame ready for seq_i={}. Press Compute.".format(seq_i))
         except RuntimeError as e:
             from compas.geometry import Frame, Point, Vector
-            trajectory_planner._fetched_pickup_frame = Frame(point=Point(x=16040, y=7076, z=1009), xaxis=Vector(x=-1.000, y=-0.000, z=-0.000), yaxis=Vector(x=0.000, y=1.000, z=0.000))
+            trajectory_planner._fetched_pickup_frame = Frame(point=Point(x=16040, y=7076, z=1009), xaxis=Vector(x=-1.000, y=-0.000, z=-0.000), yaxis=Vector(x=0.000, y=1.000, z=0.000)).rotated(math.radians(90), Vector(0,0,1), Point(x=16040, y=7076, z=1009))
             _set_label("retry — fetch failed", _COL_WAITING)
             print("QR: fetch FAILED - {}".format(e))
 
@@ -215,7 +220,8 @@ def main():
 
     # --- Button: Compute Trajectories ---
     def _on_compute():
-        beam = in_seq_beams[trajectory_planner.seq_i]
+        beam = robot_beams[trajectory_planner.seq_i]
+        all_seq_i = beam.attributes.get("sequence")
         player._cleanup_previous_run()
 
         # clear the QR highlight
@@ -231,12 +237,12 @@ def main():
         assembled_elements = []
         assembled_elements.clear() 
         for p in timber_model.plates[:1]:
-            parent_T = p.transformation_to_local()
+            # parent_T = p.transformation_to_local()
             p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
             assembled_elements.append(p_mesh)
-        beam.attributes["parent_T"] = parent_T  
-        for b in in_seq_beams[:trajectory_planner.seq_i]:
-            b.attributes["parent_T"] = parent_T
+        # beam.attributes["parent_T"] = parent_T  
+        for b in in_seq_beams[:all_seq_i]:
+            # b.attributes["parent_T"] = parent_T
             b_mesh = b.geometry.transformed(trajectory_planner.at_T * b.attributes.get("parent_T")).to_viewmesh()[0]
             assembled_elements.append(b_mesh)
 
