@@ -265,21 +265,16 @@ class BaseRobotPlanner():
 
         beam_tool_viz_mesh.join(tool_viz_mesh)
         beam_tool_col_mesh.join(tool_col_mesh)
-        # from compas.geometry import boolean_union_mesh_mesh
-        
-        # v,f = boolean_union_mesh_mesh(mesh.to_vertices_and_faces(), tool_viz_mesh.to_vertices_and_faces())
-        # beam_tool_viz_mesh = Mesh.from_vertices_and_faces(v.tolist(), f.tolist())
-        # v,f = boolean_union_mesh_mesh(mesh.to_vertices_and_faces(), tool_col_mesh.to_vertices_and_faces())
-        # beam_tool_col_mesh = Mesh.from_vertices_and_faces(v.tolist(), f.tolist())
 
         # beam_tool_viz_mesh = [mesh, tool_viz_mesh]
         rigid_body = RigidBody(beam_tool_viz_mesh, beam_tool_col_mesh)
         self.robot_cell.rigid_body_models[name] = rigid_body
         
         # Calculate attachment frame relative to the tool
+        grasp_frame = grasp_frame.translated(grasp_frame.zaxis * -0.1)  # Offset to account for gripper length
         T_object_relative_to_tool = Transformation.from_frame(grasp_frame).inverse()
         moveit_attachment_frame = Frame.from_transformation(T_object_relative_to_tool)
-        moveit_attachment_frame.translate(moveit_attachment_frame.zaxis * 0.1)
+        # moveit_attachment_frame = moveit_attachment_frame.translated(moveit_attachment_frame.zaxis * 0.1)
         
         self.state.rigid_body_states[name] = RigidBodyState(
             frame=None, 

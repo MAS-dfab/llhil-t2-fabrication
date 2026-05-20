@@ -71,15 +71,6 @@ def main():
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
 
     timber_model = json_load(filepath_model)
-    # def scale_model(model):
-    #     for beams in model.beams:
-    #         beams.geometry.scale(0.001)  # scale from mm to m
-    #         beams.frame.scale(0.001)
-    #     for plates in model.plates:
-    #         plates.elementgeometry.scale(0.001)  # scale from mm to m
-    #         plates.frame.scale(0.001)
-    #     return timber_model
-    # timber_model = scale_model(timber_model)
 
     timber_model.process_joinery()
     plate_T = timber_model.plates[0].transformation_to_local()
@@ -155,7 +146,7 @@ def main():
 
         # Update to the scanned beam (allows jumping forward if needed)
         trajectory_planner.seq_i = seq_i
-        beam = in_seq_beams[seq_i]
+        beam = robot_beams[seq_i]
         print("QR: {} -> seq_i={} ({})".format(payload, seq_i, beam))
 
         # --- Highlight: remove previous beam, add new one ---
@@ -222,6 +213,7 @@ def main():
     def _on_compute():
         beam = robot_beams[trajectory_planner.seq_i]
         all_seq_i = beam.attributes.get("sequence")
+        print(all_seq_i)
         player._cleanup_previous_run()
 
         # clear the QR highlight

@@ -99,8 +99,8 @@ class TimberProcessPlanner(BaseRobotPlanner):
         configuration["robot12_joint_1"] = math.radians(0)
         configuration["robot12_joint_2"] = math.radians(-55)
         configuration["robot12_joint_3"] = math.radians(55)
-        configuration["robot12_joint_4"] = math.radians(180)
-        configuration["robot12_joint_5"] = math.radians(90)
+        configuration["robot12_joint_4"] = math.radians(0)
+        configuration["robot12_joint_5"] = math.radians(-90)
         configuration["robot12_joint_6"] = math.radians(-90)
 
         configuration["bridge2_joint_EA_X"] = 30
@@ -218,8 +218,8 @@ class TimberProcessPlanner(BaseRobotPlanner):
     def global_constraints(self):
         constraints = []
         # constraints.append(JointConstraint('robot12_joint_1', math.radians(90), math.radians(85), math.radians(90), 1.0))
-        # constraints.append(JointConstraint('robot12_joint_2', math.radians(-55), math.radians(10), math.radians(10), 10.0))
-        # constraints.append(JointConstraint('robot12_joint_3', math.radians(55), math.radians(10), math.radians(50), 1.0))
+        # constraints.append(JointConstraint('robot12_joint_2', math.radians(-55), math.radians(10), math.radians(10), 1.0))
+        # constraints.append(JointConstraint('robot12_joint_3', math.radians(55), math.radians(10), math.radians(10), 0.9))
         # constraints.append(JointConstraint('robot12_joint_4', math.radians(180), math.radians(270), math.radians(270), 0.5))
         # constraints.append(JointConstraint('robot12_joint_5', math.radians(90), math.radians(25), math.radians(180), 0.5))
         # constraints.append(JointConstraint('robot12_joint_6', 0.0, math.radians(360), math.radians(360), 0.5))
@@ -248,6 +248,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         print("getting element approach trajectory to pickpoint")
         approach_frame = self.get_approach_frame(element_pickup_frame, approach_distance=0.2)
         self._last_approach_frame = approach_frame
+        
         trajectories.append(self.get_motion_to_frame(approach_frame))
 
         # 2. Pick Element at pickpoint
@@ -382,10 +383,12 @@ class TimberProcessPlanner(BaseRobotPlanner):
     def calculate_element_at_frame(self, element, grasp_frame=None):
         if not grasp_frame:
             grasp_frame = element.attributes.get("grasp_frame") 
+            print("GRASP_FRAME", grasp_frame)
             grasp_frame = grasp_frame.rotated(math.radians(90), grasp_frame.zaxis, grasp_frame.point)
-        e_at_frame = element.attributes.get("design_grasp_frame").transformed(self.at_T*element.attributes.get("parent_T"))
+        e_at_frame = grasp_frame.transformed(self.at_T*element.attributes.get("parent_T")*element.transformation_to_local().inverse())
+        # e_at_frame = element.attributes.get("design_grasp_frame").transformed(self.at_T*element.attributes.get("parent_T"))
         e_at_frame_offset = e_at_frame.translated(e_at_frame.zaxis * -0.1)  # DEPTH OFFSET FOR GRIPPER 80mm LENGTH
-        e_at_frame_offset = e_at_frame_offset.rotated(math.radians(90), e_at_frame.zaxis, e_at_frame.point)  # Rotate to align gripper with element
+        # e_at_frame_offset = e_at_frame_offset.rotated(math.radians(90), e_at_frame.zaxis, e_at_frame.point)  # Rotate to align gripper with element
         # new_grasp_frame = grasp_frame.transformed(element.transformation_to_local())
         element_geometry = element.geometry.transformed(element.transformation_to_local())
         # ip_thickness = self.get_inside_plate_thickness(element)
