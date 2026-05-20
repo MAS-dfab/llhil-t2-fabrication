@@ -314,7 +314,7 @@ def _fix_x_lap_side_for_shoes(graph, offset_tol=1e-6):
 # --------------------------------------
 # Joinery planning
 # --------------------------------------
-def _k_birdsmouth_solver(model, mill_depth, miter_type=None, miter_flag=False):
+def _k_birdsmouth_solver(model, mill_depth, max_distance=None, miter_type=None, miter_flag=False):
     """
     Handle K birdsmouth joints with three beams.
 
@@ -339,6 +339,7 @@ def _k_birdsmouth_solver(model, mill_depth, miter_type=None, miter_flag=False):
 
     # handle non-pair joints (in this case a 3-way connection using TripletAnalyzer)
     analyzer = TripletAnalyzer(model, max_offset/2)  # NOTE: don't hardcode the threshold
+    analyzer = TripletAnalyzer(model, max_distance=max_distance)
     clusters = analyzer.find()
 
     for cluster in clusters:
@@ -409,6 +410,7 @@ def apply_joints(
     # 1. Handle K joints with three beams first
     _k_birdsmouth_solver(
         model,
+        max_distance=max_distance,
         mill_depth=k_mill_depth,
         miter_type=k_miter_type,
         miter_flag=k_miter_flag
