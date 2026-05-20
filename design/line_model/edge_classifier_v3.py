@@ -59,7 +59,7 @@ def get_cyclic_signs(graph, flip=False):
     for g, (dir1, dir2) in directions.items():
         cross = dir1.cross(dir2)
 
-        sign = 1 if cross.z > 0 else -1
+        sign = +1 if cross.z > 0 else -1
 
         if flip:
             sign = -sign
@@ -70,82 +70,10 @@ def group_edges(graph):
     """Group edges by their group id."""
     groups = {}
     for edge in graph.edges():
-        g = graph.edge_attribute(edge, "group")
+        # default to -1 if no group attribute found
+        g = graph.get_edge_attribute(edge, "group", else_value=-1)
         groups.setdefault(g, []).append(edge)
     return groups
-
-def dispatch_edges_by_lowest_node(graph, edges, digits=3, flip_sign=False):
-    """
-    Dispatch collinear edges into two groups based on a cyclic order of each group.
-    
-    Parameters:
-    -----------
-    graph: NodeGraph
-        Compas graph extension.
-    edges: list of (u, v)
-        Edges to dispatch, should be collinear in XY plane.
-    digits: int
-        Number of digits to round for collinearity check.
-    flip_sign: bool
-        Whether to flip the cyclic sign for dispatching.
-
-    Returns:
-    --------
-    dict: {-1: [edges], 1: [edges]}
-        Dispatched edge groups based on cyclic sign.
-    """
-    if not are_edges_collinear_xy(graph, edges, digits=digits):
-        raise ValueError("Edges are not collinear in XY plane, cannot dispatch by lowest node.")
-    
-    # 1. Find lowest node among all edges
-    nodes = list(set(end for edge in edges for end in edge))
-    pts = [graph.node_point(n) for n in nodes]
-    
-    lowest_node, lowest_pt = min(zip(nodes, pts), key=lambda x: x[1].z)
-
-    # 2. Get support-to-lowest and edge midpoint-to-lowest vectors to compute cross product
-    g = graph.node_attribute(lowest_node, "group")
-    c_sign = get_cyclic_signs(graph, flip=flip_sign)[g]
-
-    sup_node = next(graph.nodes_where({"support_id": g, "reached": True}), None)
-
-    if sup_node is None:
-        raise ValueError(f"No support node found for group {g}")
-
-    vec = lowest_pt - graph.node_point(sup_node)
-    vec_xy = Vector(vec.x, vec.y, 0).unitized()
-
-    sign_groups = {-1: [], 1: []}
-    for edge in edges:
-        mid_pt = graph.edge_line(edge).midpoint
-
-        edge_vec = mid_pt - lowest_pt
-        edge_vec_xy = Vector(edge_vec.x, edge_vec.y, 0).unitized()
-
-        cross = vec_xy.cross(edge_vec_xy)
-        # 3. Get sign based on cross product direction and cyclic sign
-        if cross.z > 0:
-            sign_groups[c_sign].append(edge)
-        else:
-            sign_groups[-c_sign].append(edge)
-    return sign_groups
-
-def edges_by_hierarchy(graph, hierarchy):
-    """Get edges by hierarchy."""
-    return list(graph.edges_where({"hierarchy": hierarchy}))
-
-def lines_by_hierarchy(graph, hierarchy):
-    """Get lines by hierarchy."""
-    edges = edges_by_hierarchy(graph, hierarchy)
-    lines = [graph.get_edge_attribute(e, "shifted_line", else_value=graph.edge_line(e)) for e in edges]
-    return lines
-
-
-# ---------------------------------------
-# Math utilities
-# ---------------------------------------
-def _parallel_check(dot, parallel_tol=1e-3):
-    return (1 - parallel_tol) <= dot <= (1 + parallel_tol)
 
 
 # --------------------------------
@@ -191,7 +119,7 @@ def are_edges_collinear_xy(graph, edges, digits=3):
 # ---------------------------------------
 def classify_directions(graph, edge_groups, parallel_tol=1e-3, with_data=False):
     """
-    Classify edge directions based on dominant diagonal directions in XY plane.
+    Classify edge directions based on default diagonal directions in XY plane.
     
     Parameters:
     -----------
@@ -200,7 +128,7 @@ def classify_directions(graph, edge_groups, parallel_tol=1e-3, with_data=False):
     edge_groups: dict
         Dictionary of edge groups {group_id: [edges], ...}.
     parallel_tol: float
-        Tolerance for checking parallelism to dominant directions.
+        Tolerance for checking parallelism to default directions.
     with_data: bool
         Whether to return classified line geometries.
     
@@ -217,12 +145,12 @@ def classify_directions(graph, edge_groups, parallel_tol=1e-3, with_data=False):
             dire_xy = Vector(dire.x, dire.y, 0).unitized()
             dir1, dir2 = directions[g]
 
-            dot1 = abs(dire_xy.dot(dir1))
-            dot2 = abs(dire_xy.dot(dir2))
+            dot1 = dire_xy.dot(dir1)
+            dot2 = dire_xy.dot(dir2)
 
-            if _parallel_check(dot1, parallel_tol):
+            if abs(dot1) >= 1 - parallel_tol:
                 graph.edge_attribute(edge, "direction_id", "A")
-            elif _parallel_check(dot2, parallel_tol):
+            elif abs(dot2) >= 1 - parallel_tol:
                 graph.edge_attribute(edge, "direction_id", "B")
             else:
                 graph.edge_attribute(edge, "direction_id", "UNCLASSIFIED")
@@ -242,6 +170,69 @@ def classify_directions(graph, edge_groups, parallel_tol=1e-3, with_data=False):
 
         return A_lines, B_lines, other_lines
     return None, None, None
+
+def dispatch_edges_by_lowest_node(graph, group, edges, cyclic_sign, digits=3):
+    """
+    Dispatch collinear edges into two groups based on a cyclic order of each group.
+    
+    Parameters:
+    -----------
+    graph: NodeGraph
+        Compas graph extension.
+    edges: list of (u, v)
+        Edges to dispatch, should be collinear in XY plane.
+    digits: int
+        Number of digits to round for collinearity check.
+    flip_sign: bool
+        Whether to flip the cyclic sign for dispatching.
+
+    Returns:
+    --------
+    dict: {-1: [edges], 1: [edges]}
+        Dispatched edge groups based on cyclic sign.
+    """
+    if not are_edges_collinear_xy(graph, edges, digits=digits):
+        raise ValueError("Edges are not collinear in XY plane, cannot dispatch by lowest node.")
+    
+    # 1. Find lowest node among all edges
+    nodes = list(set(end for edge in edges for end in edge))
+    pts = [graph.node_point(n) for n in nodes]
+    
+    lowest_node, lowest_pt = min(zip(nodes, pts), key=lambda x: x[1].z)
+
+    # 2. Get support-to-lowest and edge midpoint-to-lowest vectors to compute cross product
+    sup_node = next(graph.nodes_where({"support_id": group, "reached": True}), None)
+    
+    if sup_node is None:
+        raise ValueError(f"No support node found for group {group}")
+
+    vec = lowest_pt - graph.node_point(sup_node)
+    vec_xy = Vector(vec.x, vec.y, 0).unitized()
+
+    sign_groups = {-1: [], +1: []}
+    for edge in edges:
+        mid_pt = graph.edge_line(edge).midpoint
+
+        edge_vec = mid_pt - lowest_pt
+        edge_vec_xy = Vector(edge_vec.x, edge_vec.y, 0).unitized()
+
+        cross = vec_xy.cross(edge_vec_xy)
+        # 3. Get sign based on cross product direction and cyclic sign
+        if cross.z > 0:
+            sign_groups[cyclic_sign].append(edge)
+        else:
+            sign_groups[-cyclic_sign].append(edge)
+    return sign_groups
+
+def edges_by_hierarchy(graph, hierarchy):
+    """Get edges by hierarchy."""
+    return list(graph.edges_where({"hierarchy": hierarchy}))
+
+def lines_by_hierarchy(graph, hierarchy):
+    """Get lines by hierarchy."""
+    edges = edges_by_hierarchy(graph, hierarchy)
+    lines = [graph.get_edge_attribute(e, "shifted_line", else_value=graph.edge_line(e)) for e in edges]
+    return lines
 
 
 # ---------------------------------------
@@ -268,13 +259,19 @@ def classify_edges(graph, parallel_tol=1e-3, digits=3, flip_sign=False, with_dat
     --------
     dict with keys(
         "A_lines", "B_lines", "other_lines", 
-        "main_primary", "primary", "secondary", "tertiary", "shoe"
+        "main_primary_lines", "primary_lines", "secondary_lines", "tertiary_lines", "shoe_lines"
     ), optional line geometries.
     """
     e_groups = group_edges(graph)
+    c_signs = get_cyclic_signs(graph, flip=flip_sign)
+
     A_lines, B_lines, other_lines = classify_directions(graph, e_groups, parallel_tol, with_data)
 
     for g, edges in e_groups.items():
+        c_sign = c_signs[g]
+        for edge in edges:
+            graph.edge_attribute(edge, "cyclic_sign", c_sign)
+
         # 1. Exclude shoe edges
         ex_edges = [e for e in edges if graph.edge_attribute(e, "hierarchy") != "shoe"]
         
@@ -299,16 +296,17 @@ def classify_edges(graph, parallel_tol=1e-3, digits=3, flip_sign=False, with_dat
             elif len(edges) == len_set[1]:  # Second biggest groups
                 sign_group = dispatch_edges_by_lowest_node(
                     graph,
+                    g,
                     edges,
+                    cyclic_sign=c_sign,
                     digits=digits,
-                    flip_sign=flip_sign
                 )
                 
                 for sign, edges in sign_group.items():
                     if sign == -1:
                         for e in edges:
                             graph.edge_attribute(e, "hierarchy", "secondary")
-                    elif sign == 1:
+                    elif sign == +1:
                         for e in edges:
                             graph.edge_attribute(e, "hierarchy", "tertiary")
                     else:
@@ -323,11 +321,11 @@ def classify_edges(graph, parallel_tol=1e-3, digits=3, flip_sign=False, with_dat
             "A_lines": A_lines,
             "B_lines": B_lines,
             "other_lines": other_lines,
-            "main_primary": lines_by_hierarchy(graph, "main_primary"),
-            "primary": lines_by_hierarchy(graph, "primary"),
-            "secondary": lines_by_hierarchy(graph, "secondary"),
-            "tertiary": lines_by_hierarchy(graph, "tertiary"),
-            "shoe": lines_by_hierarchy(graph, "shoe"),
+            "main_primary_lines": lines_by_hierarchy(graph, "main_primary"),
+            "primary_lines": lines_by_hierarchy(graph, "primary"),
+            "secondary_lines": lines_by_hierarchy(graph, "secondary"),
+            "tertiary_lines": lines_by_hierarchy(graph, "tertiary"),
+            "shoe_lines": lines_by_hierarchy(graph, "shoe"),
         }
     return {}
 
@@ -335,24 +333,34 @@ def classify_edges(graph, parallel_tol=1e-3, digits=3, flip_sign=False, with_dat
 # -------------------------------------
 # Edge dimension assignment
 # -------------------------------------
-def assign_edges_dimensions(graph, scale="m"):
+def assign_edges_dimensions(graph, scale="m", exceptions=None):
     """
     Assign width and height attributes to edges based on their hierarchy and level.
     Widths are defined by hierarchies, and height are defined by levels.
+
+    Parameters:
+    -----------
+    graph : NodeGraph
+        Compas Graph extension.
+    scale : str, optional
+        The scale to use for dimensions ("m", "cm", "mm"). Default is "m".
+    exceptions : dict, optional
+        {(width, height): [edge1, edge2, ...], ...} for specific edges.
     """
     widths = [0.10, 0.10, 0.10]  # hierarchy
     heights = [0.10, 0.12, 0.14]  # level
 
     if scale == "mm":
-        widths = [w * 1000 for w in widths]
-        heights = [h * 1000 for h in heights]
+        factor = 1000
     elif scale == "cm":
-        widths = [w * 100 for w in widths]
-        heights = [h * 100 for h in heights]
+        factor = 100
     elif scale == "m":
-        pass
+        factor = 1
     else:
         raise ValueError("Unsupported scale, use 'm', 'cm' or 'mm'.")
+    
+    widths = [w * factor for w in widths]
+    heights = [h * factor for h in heights]
 
     for edge in graph.edges():
         hie = graph.edge_attribute(edge, 'hierarchy')
@@ -370,4 +378,9 @@ def assign_edges_dimensions(graph, scale="m"):
         graph.edge_attribute(edge, 'width', widths[hie_key])
         graph.edge_attribute(edge, 'height', heights[lvl])
     
+    if exceptions:
+        for (w, h), edges in exceptions.items():
+            for edge in edges:
+                graph.edge_attribute(edge, 'width', w)
+                graph.edge_attribute(edge, 'height', h)
     return

@@ -12,7 +12,7 @@ PLATE_THICKNESS = 0.10
 PLATE_Z_OFFSET = 0.02
 
 # Global parameter for finding joint candidates
-MAX_JOINT_DIST = 0.055
+MAX_JOINT_DIST = 0.065  # Based on the maximum shifted distance in the line model
 
 # T-MultiStep specific
 TMULTI_HEEL_THRESHOLD = 50
@@ -21,4 +21,4 @@ TMULTI_RISER_ANGLE = 90
 
 # K-Birdsmouth specific
 KBIRD_MILL_DEPTH = 0.01
-KBIRD_MITER_TYPE = "AVERAGE"  # 'AVERAGE', 'VERTICAL'
+KBIRD_MITER_TYPE = "AVERAGE"  # 'AVERAGE', 'VERTICAL', None
