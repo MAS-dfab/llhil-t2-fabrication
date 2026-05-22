@@ -225,6 +225,12 @@ def main():
             highlight_state["mesh"] = None
 
         trajectory_planner.state.robot_configuration = trajectory_planner.safe_configuration
+        
+        rb_names = trajectory_planner.robot_cell.rigid_body_models.keys()
+        for rb_name in list(rb_names):
+            if rb_name != "t2_rfl_colmesh":
+                trajectory_planner.robot_cell.rigid_body_models.pop(rb_name)
+                trajectory_planner.state.rigid_body_states.pop(rb_name)
 
         assembled_elements = []
         assembled_elements.clear() 
