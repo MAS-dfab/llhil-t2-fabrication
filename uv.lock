@@ -453,6 +453,14 @@ wheels = [
 ]
 
 [[package]]
+name = "easyhops"
+version = "0.1.0"
+source = { git = "https://github.com/MAS-dfab/easyhops.git#814cdaae638977e66c03af70672d395a222eb159" }
+dependencies = [
+    { name = "compas" },
+]
+
+[[package]]
 name = "ecdsa"
 version = "0.19.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1291,6 +1299,7 @@ dependencies = [
     { name = "compas-robots" },
     { name = "compas-rrc" },
     { name = "compas-timber" },
+    { name = "easyhops" },
     { name = "immudb-py" },
     { name = "roslibpy" },
 ]
@@ -1304,6 +1313,7 @@ requires-dist = [
     { name = "compas-robots", git = "https://github.com/compas-dev/compas_robots.git?rev=main" },
     { name = "compas-rrc" },
     { name = "compas-timber", git = "https://github.com/MAS-dfab/compas_timber.git?rev=t2-2526" },
+    { name = "easyhops", git = "https://github.com/MAS-dfab/easyhops.git" },
     { name = "immudb-py" },
     { name = "roslibpy", specifier = "<2" },
 ]
