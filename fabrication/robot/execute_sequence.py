@@ -7,6 +7,7 @@ from compas.data import json_load
 # ── Configuration ───────────────────────────────────────────────────────────────
 SEQUENCE_FILE = "fabrication\\data\\fabrication_sequence.json"
 TOOL          = "t_dummy"
+WORKOBJECT    = "wobj0"
 
 # R11 stays at its home joint config; only X external axis tracks the trajectory
 HOME_JOINTS_R11 = [-2.04, 90.27, -2.45, -0.05, -49.14, 0.0]
@@ -150,10 +151,12 @@ def execute_sequence(abb11, abb12, record):
     print("  Corrective move to approach frame...")
     approach_frame = record.get("approach_frame")
     if approach_frame is not None:
-        app_ext_r12 = _ext_r12_from_last_point(steps["approach_to_pick"])
+        # app_ext_r12 = _ext_r12_from_last_point(steps["approach_to_pick"])
         app_ext_r11 = _ext_r11_from_last_point(steps["approach_to_pick"])
-        abb11.send_and_wait(rrc.MoveToJoints(HOME_JOINTS_R11, app_ext_r11, SPEED_HOLD, rrc.Zone.FINE), timeout=30.0)
-        abb12.send_and_wait(rrc.MoveToJoints(abb12.send_and_wait(rrc.GetJoints())[0], app_ext_r12, SPEED_HOLD, rrc.Zone.FINE), timeout=60.0)
+        if abb11.send_and_wait(rrc.GetJoints())[1][0] - app_ext_r11[0] > 2:  # sanity check to avoid large unexpected moves
+            abb11.send_and_wait(rrc.MoveToJoints(HOME_JOINTS_R11, app_ext_r11, SPEED_HOLD, rrc.Zone.FINE), timeout=30.0)
+        
+        # abb12.send_and_wait(rrc.MoveToJoints(abb12.send_and_wait(rrc.GetJoints())[0], app_ext_r12, SPEED_HOLD, rrc.Zone.FINE), timeout=60.0)
         time.sleep(1.5)  # small pause to ensure we're settled before the next move
         print("  Moving linearly to approach frame...", approach_frame)
         abb12.send_and_wait(rrc.MoveToFrame(approach_frame, SPEED_HOLD, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=30.0)
@@ -226,6 +229,7 @@ def main():
     ros, abb11, abb12 = connect_ros()
     try:
         abb12.send_and_wait(rrc.SetTool(TOOL), timeout=5.0)
+        abb12.send_and_wait(rrc.SetWorkObject(WORKOBJECT), timeout=5.0)
         abb11.send_and_wait(rrc.SetAcceleration(100, 100), timeout=5.0)
         abb12.send_and_wait(rrc.SetAcceleration(100, 100), timeout=5.0)
         abb11.send_and_wait(rrc.SetMaxSpeed(100, 250.0), timeout=5.0)
