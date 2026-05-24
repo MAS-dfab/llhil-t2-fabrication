@@ -338,7 +338,6 @@ def _k_birdsmouth_solver(model, mill_depth, max_distance=None, miter_type=None, 
     max_offset = max(candidate.distance for candidate in model.joint_candidates)
 
     # handle non-pair joints (in this case a 3-way connection using TripletAnalyzer)
-    analyzer = TripletAnalyzer(model, max_offset/2)  # NOTE: don't hardcode the threshold
     analyzer = TripletAnalyzer(model, max_distance=max_distance)
     clusters = analyzer.find()
 
@@ -405,6 +404,7 @@ def apply_joints(
     for beam in model.beams:
         beam.reset_computed_properties()
 
+    
     model.connect_adjacent_beams(max_distance)
 
     # 1. Handle K joints with three beams first
@@ -425,6 +425,8 @@ def apply_joints(
         ca, cb = candidate.elements
 
         if topo == JointTopology.TOPO_T:
+            if ca.attributes["level"] >= 1 and cb.attributes["hierarchy"] == 'shoe':
+                continue
             # Planar T joints
             if is_planar_t_joint(candidate):
                 if cb.attributes["hierarchy"] == 'shoe' and ca.attributes["level"] == 0:
@@ -432,7 +434,7 @@ def apply_joints(
 
                 # Middle T Joint
                 elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-                    TStepJoint.create(model, ca, cb) # NOTE: step_shape?
+                    TStepJoint.create(model, ca, cb, step_shape="double") # NOTE: step_shape?
 
                 else:
                     if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < heel_threshold:
