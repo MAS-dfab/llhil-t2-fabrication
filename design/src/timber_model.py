@@ -158,7 +158,7 @@ def create_beam(graph, edge, group_id, idx, plate_vec=None):
     }
     
     # Assign a name to a beam
-    beam.name = f"M{group_id}_L{lvl}_{idx}"
+    beam.name = f"M{group_id}L{lvl}_{idx}"
     return beam
 
 
@@ -179,7 +179,7 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
     groups = {}
     for edge in graph.edges():
         g = graph.get_edge_attribute(edge, 'group')
-        groups.setdefault(g, {'edges': [], 'clt_plate': None, 'cut_plane': None})['edges'].append(edge)
+        groups.setdefault(g, {'edges': [], 'clt_plate': None, 'cut_plane': None, 'reached': None})['edges'].append(edge)
 
     for node in graph.nodes():
         for name in ('clt_plate', 'cut_plane'):
@@ -187,6 +187,11 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
             if val:
                 g = graph.get_node_attribute(node, 'group')
                 groups[g][name] = val
+        if graph.get_node_attribute(node, "reached"):
+            g = graph.get_node_attribute(node, 'group')
+            point = graph.get_node_attribute(node, "point")
+            groups[g]["reached"] = point
+
     
 
     models = []
@@ -205,6 +210,9 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
         
         if data['cut_plane']:
             model.attributes['cut_plane'] = data['cut_plane']
+        
+        if data['reached']:
+            model.attributes['reached'] = data['reached']
 
         for idx, edge in enumerate(data['edges']):
             beam = create_beam(graph, edge, g, idx, plate_vec=plate_vec if align_shoe else None)
