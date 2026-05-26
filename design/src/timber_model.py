@@ -49,8 +49,6 @@ def _average_points(points):
     z = sum(p.z for p in points) / len(points)
     return Point(x, y, z)
 
-# def _main
-
 def _angled_end_plane(beam, at_start, angle_deg, tilt_axis="width", offset=0.0):
     """Cutting plane through one end of a beam, tilted `angle_deg` from a square cut.
 
@@ -160,7 +158,7 @@ def create_beam(graph, edge, group_id, idx, plate_vec=None):
     }
     
     # Assign a name to a beam
-    beam.name = f"{lvl}_{group_id}_{idx}"
+    beam.name = f"M{group_id}_L{lvl}_{idx}"
     return beam
 
 
@@ -410,7 +408,10 @@ def _k_birdsmouth_solver(model, mill_depth, max_distance=None, miter_type=None, 
             else:
                 miter_pln = None
 
-            kwargs = {"mill_depth": mill_depth, "miter_plane": miter_pln}
+            if reordered_elements[-1].attributes["level"] == 0:
+                kwargs = {"mill_depth": mill_depth, "miter_plane": miter_pln}
+            else:
+                kwargs = {"mill_depth": mill_depth/2, "miter_plane": miter_pln}
             # kwargs = {"mill_depth": mill_depth}
             KBirdsmouthJoint.promote_cluster(model, cluster, reordered_elements=reordered_elements, **kwargs)
     return
@@ -556,7 +557,7 @@ def apply_processings(model):
             if clt_plate:
                 if intersection_line_plane(beam.centerline, Plane.from_frame(clt_plate.frame)):
                     cutting_frame = clt_plate.frame
-                    jrc = JackRafterCut.from_plane_and_beam(cutting_frame, beam)
+                    jrc = JackRafterCut.from_plane_and_beam(cutting_frame, beam, is_joinery=True)
                     beam.add_feature(jrc)
         
         
@@ -577,14 +578,14 @@ def apply_processings(model):
                 sign = 1.0 if at_start else -1.0   # +/- gives a symmetric trapezoid; flip both signs to swap top/bottom
                 # offset=X moves the cut plane out to the newly extended blank tip
                 plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE, offset=X)
-                jrc = JackRafterCut.from_plane_and_beam(plane, beam)
+                jrc = JackRafterCut.from_plane_and_beam(plane, beam, is_joinery=True)
                 beam.add_feature(jrc)
 
             # End cut for reached beams
         elif beam.attributes['reached']:
                 cutting_plane = model.attributes.get("cut_plane")
                 if intersection_line_plane(beam.centerline, cutting_plane):
-                    jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam)
+                    jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam, is_joinery=True)
                     beam.add_feature(jrc)
 
         else:
