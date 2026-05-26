@@ -424,9 +424,10 @@ def apply_joints(
         topo = candidate.topology
         ca, cb = candidate.elements
 
+        if ca.attributes["level"] >= 1 and cb.attributes["hierarchy"] == 'shoe':
+            continue # avoid creating joint between shoe and lower beam
+
         if topo == JointTopology.TOPO_T:
-            if ca.attributes["level"] >= 1 and cb.attributes["hierarchy"] == 'shoe':
-                continue
             # Planar T joints
             if is_planar_t_joint(candidate):
                 if cb.attributes["hierarchy"] == 'shoe' and ca.attributes["level"] == 0:
@@ -434,7 +435,7 @@ def apply_joints(
 
                 # Middle T Joint
                 elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-                    TStepJoint.create(model, ca, cb, step_shape="double") # NOTE: step_shape?
+                    TStepJoint.create(model, ca, cb) # NOTE: step_shape?
 
                 else:
                     if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < heel_threshold:
@@ -443,7 +444,9 @@ def apply_joints(
                         step_shape = "step"
 
                     TMultiStepJoint.create(
-                        model, ca, cb,
+                        model,
+                        ca,
+                        cb,
                         step_shape=step_shape,
                         step_depth=step_depth,
                         riser_angle=riser_angle
