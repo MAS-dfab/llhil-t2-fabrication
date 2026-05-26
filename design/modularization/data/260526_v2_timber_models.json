@@ -23,7 +23,7 @@
                             ]
                         },
                         "dtype": "compas.geometry/Frame",
-                        "guid": "ef1b34ce-a81c-47cf-a8dd-a537ac93aff6"
+                        "guid": "1689f82c-d29f-4164-971e-c74508689f0a"
                     },
                     "group": 0,
                     "length": 2.958658072315351,
@@ -219,7 +219,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "51e6758d-f810-44d3-8767-b762a2931b67"
+                                "guid": "0ca2d3be-d5d7-4720-b0d1-a5f3bb3b1350"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -240,7 +240,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "e6672f5a-4ca9-4d15-b173-f25fd28522e3"
+                                "guid": "f1e60e67-c9fd-4a70-96bb-f7d76184b08c"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -253,7 +253,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "c3d2c565-249a-436c-b13c-273302bdec24"
+                                "guid": "9531a4b4-699d-4e2c-a5e1-8933aa9a1c25"
                             },
                             "length": 0.9610591655498397,
                             "level": 0,
@@ -301,7 +301,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "02d5d162-f97e-4418-ac3c-902685ecbd0f"
+                                "guid": "32d06bbd-d7a0-4024-b2cb-3b2dc4aee60b"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -322,7 +322,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "cc227699-2303-4c15-9b54-223b215ebc27"
+                                "guid": "d6813c81-236c-4d1c-868f-6ea46b690dc5"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -335,7 +335,7 @@
                                     -0.9944326661526599
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "5bdcda09-9830-4e3d-ad2f-448c476bca78"
+                                "guid": "20d2e935-c0f6-49d7-a327-11f127cd478c"
                             },
                             "length": 1.875129992534543,
                             "level": 0,
@@ -384,7 +384,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "97c0853d-a5b1-4096-b58a-a57833cc729e"
+                                "guid": "5138aaf9-e898-4f18-b548-ebfcbef5e8a4"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -405,7 +405,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "4ef34a42-9520-4295-b451-1b5a688226b0"
+                                "guid": "d8d41508-8ef7-4387-88df-85d0c3cca11d"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -418,7 +418,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "420f4585-b91a-476c-a44d-6ad9f4e5c8ca"
+                                "guid": "76b14f49-7da4-4c4b-b3f4-aeccb8767c0e"
                             },
                             "length": 0.8422244911623605,
                             "level": 0,
@@ -466,7 +466,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "ad702b9c-d4a1-4951-94f0-f509e30d5429"
+                                "guid": "bf8b0c65-6c62-4fa5-bdaf-49b80d08fcbb"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -487,7 +487,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "aab50bfe-d55a-4580-877f-f2fb4e0541bd"
+                                "guid": "384454b6-6b99-43e2-a36c-52d1c35d06b4"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -500,7 +500,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "482bf0bb-2027-404e-b70f-8af832acd35e"
+                                "guid": "0014db2a-e334-447f-8dda-a4f63db07d21"
                             },
                             "length": 0.8279665242635185,
                             "level": 0,
@@ -548,7 +548,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "2b59d4cd-32ef-4db2-a0f1-482fc809721a"
+                                "guid": "b48e7386-eaec-4a56-8657-daa56da5c289"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -569,7 +569,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "d86d3765-1227-4e37-a78e-84159e161607"
+                                "guid": "e98f7d72-5f0f-45e1-82bc-e20177b7b616"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -582,7 +582,7 @@
                                     -0.9944326661526599
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "47434374-53d1-4fa4-aa62-da9331cc0368"
+                                "guid": "2c7545e5-f385-40d6-a696-ece0ca40d596"
                             },
                             "length": 1.8751299925345437,
                             "level": 0,
@@ -631,7 +631,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "745b8787-9a01-426f-9595-a0c3cedca738"
+                                "guid": "3ad62f2d-8ae0-48a2-b695-2687bb279cc7"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -652,7 +652,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "e44cf879-5de7-4883-9738-6c0ca8b50a92"
+                                "guid": "95fd3482-17fb-42f6-b2cb-ded7ed4c7fa4"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -665,7 +665,7 @@
                                     -0.9944326661526599
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "d91ab3c7-9aa3-48d1-b759-be018729aa66"
+                                "guid": "c2ecb690-d43c-4a08-b1be-8818af370a13"
                             },
                             "length": 1.8751299925345453,
                             "level": 0,
@@ -714,7 +714,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "4e2665a6-2ae7-4dcc-852f-99d33fac6958"
+                                "guid": "8d5b768d-d0b1-44ee-8833-2bf11d777512"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -735,7 +735,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "d831817f-0f4b-4183-bba0-6a08574faafc"
+                                "guid": "f601108d-7b28-4916-876e-94147bc00a50"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -748,7 +748,7 @@
                                     -0.9866600774159728
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "198256a6-d2f1-4be5-80bd-2ab7ae48e7af"
+                                "guid": "db3f6015-83dd-448a-a27f-c1c98f91df64"
                             },
                             "length": 1.862818613337641,
                             "level": 0,
@@ -797,7 +797,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "f1394478-a9b2-4f80-8c42-a7cd274c9f08"
+                                "guid": "363c1590-dd19-4c44-bc0f-3d3c864f6c78"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -818,7 +818,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "afab7883-a7f9-409e-96d2-475ac909c392"
+                                "guid": "60e4996a-8fc1-438d-9e94-92b587bc642a"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -831,7 +831,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "d2aaacbe-6916-4f85-b0c0-e48e1be2e71c"
+                                "guid": "70f769af-d4b1-469d-a23b-79b4dd949549"
                             },
                             "length": 0.8795519554094947,
                             "level": 0,
@@ -879,7 +879,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "572008df-e878-4504-9a26-677086e2342b"
+                                "guid": "16db46a8-ffd9-471a-98a2-ae9af47becd0"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -900,7 +900,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "6e94099c-9a3b-4d5b-b93b-1d83b4784292"
+                                "guid": "72dab149-e281-4857-b277-4f4b9b04d4c9"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -913,7 +913,7 @@
                                     -0.8889402249834745
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "1d290ecc-f60f-43b3-8b3f-ef40de0265e2"
+                                "guid": "edfcecf8-0a48-41e3-9187-0434fedc86b3"
                             },
                             "length": 2.7444168093424715,
                             "level": 2,
@@ -961,7 +961,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "8058c661-831c-4383-9b80-107e557afe9b"
+                                "guid": "be74a6cf-e47a-4f06-9545-b20a1839f7eb"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -982,7 +982,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "e144f2d0-bbd9-4076-9705-e44496516bd6"
+                                "guid": "1d2aaabd-10f0-4542-8e1f-032a280f7f34"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -995,7 +995,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "2de301e1-1103-4d71-aa4a-64e4caaaff41"
+                                "guid": "bc12bfa9-8a92-4086-a662-462c6be1d8df"
                             },
                             "length": 0.8340537981342816,
                             "level": 0,
@@ -1043,7 +1043,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "831dcd28-bdd3-44ed-a0b1-289d16861208"
+                                "guid": "b37c5946-e3d4-405c-a05b-8c9f3b095d40"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -1064,7 +1064,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "82f9ad74-67a3-48e0-ae23-fb96d382916c"
+                                "guid": "71010360-9484-4ea4-9fdc-b438fdb0b748"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -1077,7 +1077,7 @@
                                     -0.9944326661526599
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "e6d7d88b-fb79-4555-ab85-d56e972ffd9d"
+                                "guid": "06572cf7-b96c-474d-8284-405993fd98ef"
                             },
                             "length": 1.8751299925345428,
                             "level": 0,
@@ -1126,7 +1126,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "cd2d7d1c-1359-4c8b-8f86-a32aba2bcb83"
+                                "guid": "b5424144-a846-4fc1-a4b1-5f794be72279"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -1147,7 +1147,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "f3594a35-bb02-4dc4-b275-82dda8be8cf6"
+                                "guid": "822656e1-7d93-4395-8762-ef33fe91e2c3"
                             },
                             "group": 0,
                             "has_middle_joint": true,
@@ -1155,12 +1155,12 @@
                             "hierarchy": "primary",
                             "insertion_vector": {
                                 "data": [
-                                    0.6432451863809961,
-                                    -0.37343260736284517,
-                                    -0.6684188192711698
+                                    -0.0,
+                                    -0.0,
+                                    -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "e45ecf9a-9bca-48ac-bfdd-7273a02a29ac"
+                                "guid": "8944ffcc-bfe0-44be-83fa-0011f3b6e49c"
                             },
                             "length": 1.4817010408412714,
                             "level": 1,
@@ -1208,7 +1208,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "f21b7bf7-b7c2-404b-b6be-559edc89191c"
+                                "guid": "b0b59126-6522-4808-be3c-f325994f12b6"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -1229,7 +1229,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "53716614-0ba1-46b3-8dd3-1ea6a7db0168"
+                                "guid": "f1be03b1-0c0c-477f-bffb-8f7a296b02b1"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -1242,7 +1242,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "3e963b8a-7e51-4ee0-8488-ed2f3a3f1a6d"
+                                "guid": "7786806a-37f4-4ed1-adab-23a0373e4825"
                             },
                             "length": 0.9635586616630607,
                             "level": 0,
@@ -1290,7 +1290,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "d9948f3a-8c79-4402-b715-a83258aa618a"
+                                "guid": "eb3601dd-7b72-4cfd-b137-caea0fee909c"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -1311,7 +1311,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "17b3f029-746f-402b-a341-43a5078731f0"
+                                "guid": "5046894c-447d-4365-b45b-1e9c8bd43c16"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -1324,7 +1324,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "638c6e56-4ff9-4a39-a3cb-caf0bc95ad78"
+                                "guid": "08c77857-2703-4ae5-832e-820461fc3ee0"
                             },
                             "length": 0.9535673867787681,
                             "level": 0,
@@ -1372,7 +1372,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "6e91944e-cfa3-49bb-99e8-09287cb188b7"
+                                "guid": "7c877ac3-f503-4ded-a391-e47db120da46"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -1393,7 +1393,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "13a66d4e-799b-423f-8a05-7c65a306aefb"
+                                "guid": "986f9bbc-8b28-4a88-8de0-28f828c418bd"
                             },
                             "group": 0,
                             "has_middle_joint": true,
@@ -1401,12 +1401,12 @@
                             "hierarchy": "main_primary",
                             "insertion_vector": {
                                 "data": [
-                                    -0.5690851757486928,
-                                    -0.3950804859494069,
-                                    -0.7211473305539307
+                                    -0.0,
+                                    -0.0,
+                                    -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "ae9a89a4-ce83-417e-955e-502530046087"
+                                "guid": "ee2bec28-608e-431f-878d-e3a96a1b3d44"
                             },
                             "length": 1.5369898170897487,
                             "level": 1,
@@ -1454,7 +1454,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "6905437b-6e4e-4d7a-84e1-ca93dc458221"
+                                "guid": "aafd5ceb-aa40-49f1-a737-39c6f933f832"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -1475,7 +1475,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "b2cbfa8c-4cae-43de-af32-c0c86617be62"
+                                "guid": "69a6f18c-10e0-4b15-bdd8-9f4447ab9dba"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -1488,7 +1488,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "650fb9a8-f624-4f61-8cae-6a39fac0ced6"
+                                "guid": "1f4700d4-496d-49a6-b28f-09a9132d5543"
                             },
                             "length": 0.8286897738095121,
                             "level": 0,
@@ -1536,7 +1536,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "cca68b06-6268-465e-a940-72b15305363e"
+                                "guid": "653ed41b-08dc-4608-bb6b-fe0fb15a4114"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -1557,7 +1557,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "4e14e5a4-fc6d-44f9-a8ba-0c44ad3870ca"
+                                "guid": "454d94f7-64c0-4f90-bb93-24fc57944d3e"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -1570,7 +1570,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "bb9adc5c-d9f3-4bd4-9377-001c3c0750f1"
+                                "guid": "21d7e34c-a65d-4a74-bc34-99b7b0c9c363"
                             },
                             "length": 0.8854753787386429,
                             "level": 0,
@@ -1618,7 +1618,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "878b8694-99c0-4727-9468-dd26dac92731"
+                                "guid": "1c647527-89f8-4b3e-92c5-9e103b2d7f85"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -1639,7 +1639,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "ab5e4c26-6b8a-4baf-a9a5-ab8cf94442d5"
+                                "guid": "95ba585d-ee3f-42ab-af20-415ff57a5a72"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -1652,7 +1652,7 @@
                                     -0.806239179244315
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "48188f81-d3a9-49af-a163-a56a38cc29ed"
+                                "guid": "a4c8f918-2687-4bf7-9e3d-c537486f099f"
                             },
                             "length": 1.2324207940528222,
                             "level": 1,
@@ -1687,7 +1687,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "e261fd40-0127-41cd-ab53-d24b74d2b432"
+                                "guid": "a7e04d47-f85d-4f38-8909-55cf22e29530"
                             },
                             "group": 0,
                             "length": 2.958658072315351,
@@ -1829,7 +1829,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "25b0bd05-23ce-4903-b69f-626673e72ed1"
+                                "guid": "87a6c4cc-ccd8-4743-a15a-f142d586f7ae"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -1850,7 +1850,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "4562b795-1d5d-4b5d-874b-606344f4909f"
+                                "guid": "6acb2c41-f2d7-4b37-8460-f62041a2b03b"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -1863,7 +1863,7 @@
                                     -0.8075449241361996
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "02c25834-f2cb-4cdc-996c-6c8492c894c8"
+                                "guid": "8560b57b-75f7-4d81-a1a8-4bd2b9f13e1e"
                             },
                             "length": 1.3225635486951917,
                             "level": 1,
@@ -1911,7 +1911,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "693cff0c-c71b-4b73-a1fc-7be9c7053065"
+                                "guid": "3b0ca0c5-ff80-4f73-b468-0f04bd5af05d"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -1932,7 +1932,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "8202bfcd-320c-44f4-be58-2098f254fbde"
+                                "guid": "8006805e-025b-4c59-bd2c-5ad3f50f324a"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -1945,7 +1945,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "6826bbb4-dd22-4396-a098-28b9a90fa5a1"
+                                "guid": "16cd3238-f62d-4487-8031-1fb02dfc0363"
                             },
                             "length": 0.9137658691222719,
                             "level": 0,
@@ -1993,7 +1993,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "657c37ed-f2f3-4c60-a861-1912848461d9"
+                                "guid": "3b1dd066-cd22-416a-a0f0-55bab7c9f59e"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -2014,7 +2014,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "81668e5e-c9c4-4c2b-9820-dd0b639625ee"
+                                "guid": "e18b7c13-068d-4dd3-b47f-06d5d72a5665"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -2027,7 +2027,7 @@
                                     -0.9592339392494567
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "40391c42-55ce-4504-96f5-43dc0cf51253"
+                                "guid": "803a8f11-7fbb-4e28-bb61-2a0c06841d76"
                             },
                             "length": 2.1601923182848393,
                             "level": 1,
@@ -2075,7 +2075,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "f76ab664-3a3f-4414-84b9-876f9fd53bd9"
+                                "guid": "9c1d59dc-66a6-475d-b9be-c5bd8d478f1c"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -2096,7 +2096,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "6c37d7be-3ecf-412a-9540-a750348d98ba"
+                                "guid": "4dcdfe8c-9594-4935-a8bc-898401e5e9e2"
                             },
                             "group": 0,
                             "has_middle_joint": true,
@@ -2109,7 +2109,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "d9aa7a04-1bfc-4b83-962b-3c1cc703be14"
+                                "guid": "a6d25c71-2c9e-409b-8ed3-71bf4c228779"
                             },
                             "length": 0.8279073240132474,
                             "level": 0,
@@ -2157,7 +2157,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "03372bc8-c0ca-4362-9da4-e07d9ccfc8cc"
+                                "guid": "08660c6b-9efa-42ff-b64c-3ced9fbfc35e"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -2178,7 +2178,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "0a20c1cb-3f1e-4042-8a1b-5df36391f954"
+                                "guid": "1e59e3c7-a5d5-4ba3-9d62-64a16ebbcc1e"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -2191,7 +2191,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "fbb216c2-6f2e-47c6-b90a-66c5ee0daf46"
+                                "guid": "67f85abd-4b47-49bb-9f27-cab906ff3b0e"
                             },
                             "length": 0.9269823281278445,
                             "level": 0,
@@ -2239,7 +2239,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "1669359c-fe0f-4714-b95d-2a469c227e85"
+                                "guid": "8bc23418-c823-4a97-bb5e-f5aa391174e7"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -2260,7 +2260,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "b98eb727-003b-40fb-83b8-8dd7ed169a77"
+                                "guid": "496e0b38-11e9-471c-8ca2-62e6993344f4"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -2273,7 +2273,7 @@
                                     -0.9484254535090977
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "73ceb6f4-8b14-46dd-ade0-1d073ad4c324"
+                                "guid": "24405738-3102-47fc-a8a0-2f828d2ffeab"
                             },
                             "length": 2.154573429401063,
                             "level": 1,
@@ -2321,7 +2321,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "832938f9-d9f1-46ac-ba30-891c71576337"
+                                "guid": "32f076e5-b78f-418b-90b5-dc347ff3ec19"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -2342,7 +2342,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "139e22ff-4f40-4457-b461-dc6f6d6882bb"
+                                "guid": "e227832d-e5fc-48eb-8da2-7b51c9bee805"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -2355,7 +2355,7 @@
                                     -0.9944326661526599
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "6d6c5ebc-edcc-40c1-9f8f-6461f718844d"
+                                "guid": "1fcbb279-63b5-4e94-adc5-2e0e1873cc91"
                             },
                             "length": 1.8751299925345457,
                             "level": 0,
@@ -2404,7 +2404,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "5c19d7b7-d314-4b7b-8163-36b24964a9c3"
+                                "guid": "bf05aea8-5c1c-4e60-9092-0adc56a9c738"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -2425,7 +2425,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "67c1100a-db74-43fb-800f-74d084dd3a72"
+                                "guid": "b814307b-bc19-4634-a4d1-1a7ba8c169fb"
                             },
                             "group": 0,
                             "has_middle_joint": true,
@@ -2438,7 +2438,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "fdfb9b9b-5f6d-4d46-8507-ea67a48d52fa"
+                                "guid": "135e5e46-36a7-40f4-aa03-9347d407eeae"
                             },
                             "length": 0.8841367693426662,
                             "level": 0,
@@ -2486,7 +2486,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "147b4faa-20f6-47f6-b6e2-864ad287ec92"
+                                "guid": "e8334097-b5fa-45d0-b8df-c5aead0e6456"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -2507,7 +2507,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "09b666ef-ebd5-46c5-b982-bed5592d8ed7"
+                                "guid": "e74fe938-7dc3-4e20-a530-44a3c27a88a5"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -2520,7 +2520,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "1a06c2d4-1367-47a4-8260-a3bd8f8e04f6"
+                                "guid": "03845311-1d08-49ea-b648-3fa22326a02e"
                             },
                             "length": 0.9292837435295076,
                             "level": 0,
@@ -2568,7 +2568,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "ff209511-be1b-4202-acda-9a8149721962"
+                                "guid": "876a198e-afb2-4409-80e7-4a3047763583"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -2589,7 +2589,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "89564958-9f43-4848-9bce-0506e2b5a764"
+                                "guid": "aa8ff961-e8c9-4113-a2e8-dd9889fc46d6"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -2602,7 +2602,7 @@
                                     -0.9866600774159733
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "025b8472-8222-49c5-ae03-d2e75d066ea0"
+                                "guid": "ce5eb52d-a5d6-4bd7-977a-405ade0efd08"
                             },
                             "length": 1.8628186133376428,
                             "level": 0,
@@ -2651,7 +2651,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "56a85577-f0a6-4d1d-959a-b2824b1bca45"
+                                "guid": "1c5d5d3e-b040-4b83-b932-a99ebffcffc4"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -2672,7 +2672,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "5dd56980-86e2-4dc1-a184-b438a969e93f"
+                                "guid": "123f8320-beda-4527-aa15-2644115487d7"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -2685,7 +2685,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "95e202e2-d83e-4b97-8edc-ab225bf1a567"
+                                "guid": "1f4753d0-40ba-4644-af66-ab84cb9c8360"
                             },
                             "length": 0.871926425536635,
                             "level": 0,
@@ -2733,7 +2733,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "2b9a63cf-ff10-4e09-a181-3c2280836dda"
+                                "guid": "abd6351b-1b0a-4c1e-b72c-4cd90b808188"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -2754,7 +2754,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "8b6a6b08-e440-4530-b859-dbe3a51239d8"
+                                "guid": "4d974615-15c2-418c-9e7c-dda248bd3d15"
                             },
                             "group": 0,
                             "has_middle_joint": true,
@@ -2767,7 +2767,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "6713972e-48c6-4cdb-bd71-3baa0857e91f"
+                                "guid": "c3072ead-18c4-47b0-ad9a-78acbad61a7f"
                             },
                             "length": 0.8290968951188212,
                             "level": 0,
@@ -2815,7 +2815,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "53e48276-fbc3-4700-b8ad-6b2fd456ee11"
+                                "guid": "42b5e74f-0f44-4be4-8a1f-234e21d664b6"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -2836,7 +2836,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "10959a35-c65f-4440-905f-a480550e2588"
+                                "guid": "becb3046-7e2f-4c8c-9180-d92197111cfe"
                             },
                             "group": 0,
                             "has_middle_joint": true,
@@ -2849,7 +2849,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "514aebfa-c24d-4953-867e-92edb7895079"
+                                "guid": "72ee9619-f8b2-42ac-9524-0e243b1eaff0"
                             },
                             "length": 0.7792656696324125,
                             "level": 0,
@@ -2897,7 +2897,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "c0bfadff-1bc9-443b-9c2b-75d71d730efb"
+                                "guid": "f3d5f4ec-7b87-4af8-99ea-5d8e14447854"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -2918,7 +2918,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "b076f3bb-02b1-4749-8890-9f88602ac826"
+                                "guid": "9b5f71d1-a8f2-4495-96c7-acabe33561d9"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -2931,7 +2931,7 @@
                                     -0.8520125463506973
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "eda78956-b0f1-415b-bd3b-6b4e16b913a8"
+                                "guid": "48f1054c-a044-4cd6-a34c-7408604dd622"
                             },
                             "length": 1.3763061331978534,
                             "level": 1,
@@ -2979,7 +2979,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "3b39c3e1-9fca-48e3-b759-de0298eca20c"
+                                "guid": "a35225e1-c949-4189-9312-2760fe853f7d"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -3000,7 +3000,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "a6ea767f-7d79-409e-aa1c-e6ccfac095ff"
+                                "guid": "63b52187-e8eb-4e11-9686-450207dc291c"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -3013,7 +3013,7 @@
                                     -0.9307645271392008
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "63305a12-f398-45c3-9259-f330592f6fa5"
+                                "guid": "563ac24b-135c-4f32-b702-17f15376e813"
                             },
                             "length": 1.7959432407243734,
                             "level": 1,
@@ -3061,7 +3061,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "05f40536-f4be-4e99-8f8b-2d95a4c91f5f"
+                                "guid": "c2ea6fe1-e273-4bde-9e81-5ecf134a2cbd"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -3082,7 +3082,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "586f67e2-3cf4-4c8c-bb50-281d1ff27caf"
+                                "guid": "4ceff74c-f91f-4b63-9946-f669a2fc9339"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -3095,7 +3095,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "3326232e-4c29-4099-bd0f-7f92724c72fc"
+                                "guid": "9a865c85-be56-4c28-abe3-30b5f1dff43b"
                             },
                             "length": 0.9632717314843379,
                             "level": 0,
@@ -3143,7 +3143,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "d25d790d-0ee7-474e-aa94-fe40f91af225"
+                                "guid": "609ba218-5ba8-4eab-abaa-1454d7b954e2"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -3164,7 +3164,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "853cd748-c397-4673-a446-ea4ec91c2909"
+                                "guid": "8e9e2cee-62ed-4cf6-bd0d-0d736efec2df"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -3177,7 +3177,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "e14decc4-65b6-4a3f-8e13-d5ee67ceaba2"
+                                "guid": "f45e73ff-67bf-432d-a6d2-723e295a4a2c"
                             },
                             "length": 0.8414135974235193,
                             "level": 0,
@@ -3225,7 +3225,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "3b17ab83-8d66-4902-8a90-b279b97ef269"
+                                "guid": "eae0f96f-da8b-4e6c-b204-397418c7fe4c"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -3246,7 +3246,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "916fe5c8-f7da-482b-814b-dffaca3e8ae5"
+                                "guid": "d5cc9d52-158c-4143-bcf2-89bffdc1a687"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -3259,7 +3259,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "e0e8aacd-8715-4d65-8aa1-aa837b3835a1"
+                                "guid": "86c88bc3-819d-4177-8d27-2f80a207fdb1"
                             },
                             "length": 0.87637413058954,
                             "level": 0,
@@ -3307,7 +3307,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "61ac2fd7-c01d-457d-b31c-b5c86708a3d0"
+                                "guid": "b73ae774-fb77-4ee2-8645-fb21297d97aa"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -3328,7 +3328,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "23f1a948-d276-4909-8e8d-07eb8672ab08"
+                                "guid": "612f5e1f-1d1b-4672-9108-7e4a335a87d0"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -3341,7 +3341,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "74be71b4-6121-4a54-8fe5-9d97039c671e"
+                                "guid": "97c04880-2540-4a37-81fb-0b6dc3fcac4c"
                             },
                             "length": 0.8493546057763377,
                             "level": 0,
@@ -3389,7 +3389,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "73cd229a-d49f-44a1-9e15-af058961cff9"
+                                "guid": "f5f435b4-f4ae-4793-82e6-4893142f048e"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -3410,7 +3410,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "85f90c59-c314-4e3f-aef3-f64716a665ea"
+                                "guid": "fa7b26d8-26b4-4b8d-95ea-b23edf5dadea"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -3423,7 +3423,7 @@
                                     -0.9866600774159731
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "17df4186-265a-4b46-b7b1-dc039dfd5eaf"
+                                "guid": "90e11404-6eaa-4300-8f49-b3d197116600"
                             },
                             "length": 1.8628186133376405,
                             "level": 0,
@@ -3472,7 +3472,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "749d2ee9-0aab-4358-81a3-1db8a682a06a"
+                                "guid": "6ffd3ec9-34fe-48de-add5-6e59e02aa22f"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -3493,7 +3493,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "858caec1-9481-456c-a432-17180205e63f"
+                                "guid": "23aed524-e941-4c0c-9328-d2905d284603"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -3506,7 +3506,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "3bb07574-66a8-439f-b466-a59a93d1b288"
+                                "guid": "7585085f-e74a-4813-9235-0430b03dd4f4"
                             },
                             "length": 0.9587394579010828,
                             "level": 0,
@@ -3554,7 +3554,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "7cbf7c23-ab3a-4d3b-8bde-50cadf4bf5fb"
+                                "guid": "5010cf1b-5514-405d-9c38-b30fdb512ac0"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -3575,7 +3575,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "48e5d420-15be-4fdc-a684-4647cea3c24c"
+                                "guid": "c912d87f-c0d1-427e-a2b3-83265ecaf4bf"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -3588,7 +3588,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "b83449ac-9964-42ef-8b79-a3ac853b0b9c"
+                                "guid": "a674db09-abb2-4418-bc05-326db41f334e"
                             },
                             "length": 0.9693637803847978,
                             "level": 0,
@@ -3636,7 +3636,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "f36b9469-5b3d-48e6-ba17-9bc9811b4e6b"
+                                "guid": "f231b29a-d613-446d-9ac5-c2d9239c4a1c"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -3657,7 +3657,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "b63b8799-5744-49fe-acbf-4b9db7215f73"
+                                "guid": "ae3367cc-fa4e-46a9-a48a-17a64264f4bc"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -3670,7 +3670,7 @@
                                     -0.9299500001741813
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "a271a25a-2512-4116-b7df-38aff28afdd2"
+                                "guid": "4721aed9-d903-498e-87d2-82bf5e85c61a"
                             },
                             "length": 1.9231267780686843,
                             "level": 1,
@@ -3718,7 +3718,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "2fd245e2-2502-47a9-a8ae-fdb841d2a9bf"
+                                "guid": "b2d04b77-a805-4e9f-a690-08c36fa2484d"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -3739,7 +3739,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "5dfdf92e-441c-4c7b-bdca-143ba1a49f0b"
+                                "guid": "f47871f5-0e5c-4ea6-bc09-c67f8d0c14c5"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -3752,7 +3752,7 @@
                                     -0.986660077415973
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "b72e6f0e-57ab-49fe-8cd1-42450d071063"
+                                "guid": "b983dbb0-ad89-432f-9bdb-123e75658e38"
                             },
                             "length": 1.862818613337642,
                             "level": 0,
@@ -3801,7 +3801,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "0d25d32a-68dd-4594-a4b3-370a4aa8628a"
+                                "guid": "0a3dc870-b0cf-4dd4-a3e1-2aa023e09873"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -3822,7 +3822,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "b235a0e0-243d-40ff-bd84-4c047c376081"
+                                "guid": "4c00e900-1548-466c-8004-00ab7127a970"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -3835,7 +3835,7 @@
                                     -0.986660077415973
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "155f2557-5087-4660-94e4-f85e83439f12"
+                                "guid": "c8be02ec-7003-4a34-8c80-d8d61479f673"
                             },
                             "length": 1.862818613337644,
                             "level": 0,
@@ -3884,7 +3884,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "829de694-a74d-43aa-8f3d-0ac1f0bbecaa"
+                                "guid": "b58d3b07-fb7a-4b58-837e-03dc20de5022"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -3905,7 +3905,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "434f923f-af26-4bf3-b779-40e1b91fb1df"
+                                "guid": "2f6ee6bf-a032-47d5-9a1f-ace0b0ce584b"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -3918,7 +3918,7 @@
                                     -0.9944326661526599
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "c71fe917-3e54-4a3b-ad16-f33ce49c1e07"
+                                "guid": "b8b892e9-a759-49f4-9f58-9587175ff8a2"
                             },
                             "length": 1.8751299925345444,
                             "level": 0,
@@ -3967,7 +3967,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "9f9a7992-7132-44a4-be5e-035fb4868bee"
+                                "guid": "2ba6096a-dd0d-453c-9a21-7e570cd48571"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -3988,7 +3988,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "a02afdf9-d999-4f1d-87fb-6083edaf7c46"
+                                "guid": "3290ca89-99de-4f6b-8389-4b1181829e0b"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -4001,7 +4001,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "7cfe6c57-40e0-4cff-a031-5ff47bb53ba3"
+                                "guid": "eb00ed67-eb4b-4f71-8c02-cb2b54b052d1"
                             },
                             "length": 0.8042449563222126,
                             "level": 0,
@@ -4049,7 +4049,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "636dcda8-937b-4a8c-91ad-a66b32e1201c"
+                                "guid": "455d9ec5-1a69-4420-a129-9fa8bd549d0f"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -4070,7 +4070,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "7b931644-76fd-4c33-945f-2aaac4dc8f16"
+                                "guid": "09c2872e-917a-46ed-8986-2cac7dbbbfff"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -4083,7 +4083,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "3664e4c3-e3d4-47a2-ac34-2ed397bb0aab"
+                                "guid": "69b7405d-1f14-41a2-878b-b1c482ef74c4"
                             },
                             "length": 0.8066504210679599,
                             "level": 0,
@@ -4131,7 +4131,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "e6e511e8-fe7a-4e5e-aaf0-f353c35b4218"
+                                "guid": "6947f592-c8bc-4de9-8f66-b574fa261109"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -4152,7 +4152,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "5c95eb57-8722-4432-97f9-c7ffaa3df092"
+                                "guid": "7879f7f8-deac-4b66-954c-6cc0dff5a8f9"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -4165,7 +4165,7 @@
                                     -0.9257410464277359
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "3a7b6e21-7602-47b7-aad2-e3e228f3252e"
+                                "guid": "c78b535a-454c-4512-bf0e-3ff23dac0f9b"
                             },
                             "length": 1.8433338045020577,
                             "level": 1,
@@ -4213,7 +4213,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "61ef2bf1-b21f-42a5-842d-410897e85146"
+                                "guid": "4dcc7a2c-9aa2-4691-9f4f-f34f66b1f4ba"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -4234,7 +4234,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "256369cb-fddb-41ef-819b-eba709f80f54"
+                                "guid": "f20fbb2f-9449-48b4-9d5a-96df4baca150"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -4247,7 +4247,7 @@
                                     -0.83837682920446
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "47811895-6b5b-49a0-9004-d3058f66beab"
+                                "guid": "9cedd321-80df-4b10-b3ab-785b093cc6ac"
                             },
                             "length": 1.2715773523523464,
                             "level": 1,
@@ -4295,7 +4295,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "0619d0ad-84be-4b90-973e-6dba0fd6450d"
+                                "guid": "d0bfb78e-5125-4746-9f8a-6d48a28eb38e"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -4316,7 +4316,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "cbe51717-0005-4a6f-bc12-80d94ba7d8ad"
+                                "guid": "00d2d542-fd37-4dfe-8c73-a63d6c5c3e4d"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -4329,7 +4329,7 @@
                                     -0.7832397302941849
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "babbeef1-7327-4aee-b4be-202cb16ef64b"
+                                "guid": "5be08307-01f5-4fb0-945c-ef932027ace8"
                             },
                             "length": 2.454665214286923,
                             "level": 2,
@@ -4377,7 +4377,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "8aeeea3f-04fd-4814-ac18-446b48d895c8"
+                                "guid": "46b76d39-7313-420b-8f29-ed1f7064c2d3"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -4398,7 +4398,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "3d6a6aaf-6d03-46ee-bbee-448e373a80b4"
+                                "guid": "f05c1cbf-808a-4442-b799-6a54cc916b38"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -4411,7 +4411,7 @@
                                     -0.9301855948033771
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "642810fd-7cc0-4fb5-a53f-3c264c0f6344"
+                                "guid": "f9f673e1-f9ab-43fb-9aaa-a62d9832b466"
                             },
                             "length": 2.0103765955600483,
                             "level": 1,
@@ -4459,7 +4459,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "314de9af-5bc2-4019-801b-9db753f96ef2"
+                                "guid": "ce7f5ea7-bca7-415f-94a3-8e4f533e2ec0"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -4480,7 +4480,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "37bb90a4-146d-47a0-a22c-0d71f3bfac4f"
+                                "guid": "060323dd-4c06-4130-b1af-99d56fd21532"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -4493,7 +4493,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "05f98df4-f2fa-4fb1-b113-bd6fcefcaeb7"
+                                "guid": "e546f245-3e24-48ab-8d58-0ad90afca915"
                             },
                             "length": 0.8824468706827715,
                             "level": 0,
@@ -4541,7 +4541,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "edb228a0-e21b-41b2-8b8b-b1c810e846f0"
+                                "guid": "99a01513-217d-4571-bf4c-5edaa407dbc3"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -4562,7 +4562,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "bf15910c-c3cb-4dca-84f2-751f44c0fa0e"
+                                "guid": "bc5515dd-6e81-4c9b-bd1c-1eb20b349e14"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -4575,7 +4575,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "b03a0239-ecb9-47dc-b5a7-8ed726461809"
+                                "guid": "eab25eeb-1b53-4a5d-a0fe-4204f08a7b88"
                             },
                             "length": 1.0202677909963869,
                             "level": 0,
@@ -4623,7 +4623,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "2841bc4b-ec05-4b72-9ca8-485028651b7c"
+                                "guid": "6a0f711b-1f74-4e25-aa36-73e675013790"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -4644,7 +4644,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "154b4a6c-ed91-402c-8e25-366e945f6cb2"
+                                "guid": "75636eeb-fe13-4d64-b507-18e400fd015e"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -4657,7 +4657,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "0404bfe4-c644-4b37-86af-e86a421a1db4"
+                                "guid": "11c588cc-e8a0-48ea-8a6b-e59f9fd3dc76"
                             },
                             "length": 0.9183936478803302,
                             "level": 0,
@@ -4705,7 +4705,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "6822da55-367d-47d9-8016-b2ba81458a48"
+                                "guid": "4fbe4203-7762-4b13-98a5-02b7b8f595bb"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -4726,7 +4726,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "75e2fcc2-e655-4205-b77c-726d2a62e9c4"
+                                "guid": "0d153836-467e-4c02-90bb-1920d5c4d4c6"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -4739,7 +4739,7 @@
                                     -0.9944326661526599
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "484ecf00-f00f-4601-ada1-8ca2991f728c"
+                                "guid": "627ab8cd-a190-4c6e-965c-dac92adbb3ac"
                             },
                             "length": 1.8751299925345422,
                             "level": 0,
@@ -4788,7 +4788,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "303c9f08-953a-4d35-9f6c-0cafec0abbec"
+                                "guid": "f28af029-5f00-44f9-906d-eb397a45ed9c"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -4809,7 +4809,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "7b559968-a2a4-493e-b721-4de9d0f82565"
+                                "guid": "d48f78c1-5900-41d5-8a5f-912f2d4d7250"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -4822,7 +4822,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "a5804b92-84b7-4e73-9f38-d890fabea533"
+                                "guid": "5de6844b-c9e0-40d8-9578-dcab8808ae92"
                             },
                             "length": 0.8792512680319917,
                             "level": 0,
@@ -4870,7 +4870,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "6733b3f7-0933-463d-9667-dfe7f9b1d7be"
+                                "guid": "e7dc0ccf-49d7-4feb-9360-f992007abf2d"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -4891,7 +4891,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "74b85b8d-6e8d-470f-a3a2-80561dff6958"
+                                "guid": "1b5ed0d4-dff1-48b6-9c2c-7c7898b6fd55"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -4904,7 +4904,7 @@
                                     -0.9866600774159728
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "1fc4625e-0fbd-4e97-8efc-2ba21efc1342"
+                                "guid": "439a731d-7c68-4c33-af78-eabfb2caaf13"
                             },
                             "length": 1.862818613337642,
                             "level": 0,
@@ -4953,7 +4953,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "e0bccfca-45a8-4782-8a0b-7011523346f5"
+                                "guid": "7703b0f0-373a-4327-a2ba-6fb745b7b89b"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -4974,7 +4974,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "5963368b-470f-48eb-ade0-dcd682617515"
+                                "guid": "7238970c-05e7-4394-8b23-029b63fce4a5"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -4987,7 +4987,7 @@
                                     -0.986660077415973
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "992d36cd-c555-43bb-91fe-5a1be7d08f73"
+                                "guid": "9b4bb4c9-d425-4d41-bee6-ed7556f56df2"
                             },
                             "length": 1.862818613337643,
                             "level": 0,
@@ -5036,7 +5036,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "b0d0db03-1026-4e0f-ab1e-a58147aa8ed6"
+                                "guid": "21a51e9d-59bf-43a3-8f68-bb04c40e0c78"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -5057,7 +5057,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "41987998-7a49-4379-bb60-7a2e4df28583"
+                                "guid": "29071732-6131-4578-80b5-0e42c56c5840"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -5070,7 +5070,7 @@
                                     -0.9944326661526599
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "24145879-b7fd-4585-8564-7d7b88a3ad9c"
+                                "guid": "61de9f87-56da-4f51-9d6f-30f3f36cfe5c"
                             },
                             "length": 1.8751299925345457,
                             "level": 0,
@@ -5119,7 +5119,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "52c6d48f-62d7-42a4-9404-59ae4c7a3923"
+                                "guid": "6baba78a-6355-4695-a278-d02c83446ad4"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -5140,7 +5140,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "6cfeca67-0cb1-459d-9728-ec10cf1360ba"
+                                "guid": "d9dc40ed-c5e6-4fe0-876c-0336cd9ef6af"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -5153,7 +5153,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "86e399e9-3851-442b-8d93-5e953c3a947c"
+                                "guid": "4099b383-101b-4c56-af77-079a3a403149"
                             },
                             "length": 0.9163765057963217,
                             "level": 0,
@@ -5201,7 +5201,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "c010d684-4a27-4f3b-b35e-048dc516d097"
+                                "guid": "749a3cd6-b81b-4d7c-a4e3-79e16059f506"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -5222,7 +5222,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "96025ba3-4392-4141-9c33-6d8bfe821669"
+                                "guid": "ba8cf5c2-b3b7-472a-8a2e-75460dcd52a9"
                             },
                             "group": 0,
                             "has_middle_joint": true,
@@ -5230,12 +5230,12 @@
                             "hierarchy": "main_primary",
                             "insertion_vector": {
                                 "data": [
-                                    0.6703507788919739,
-                                    0.17995472398499238,
-                                    -0.7198931382881832
+                                    -0.0,
+                                    -0.0,
+                                    -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "a0eadf3e-d9ff-4052-bcfc-52e7cd96692b"
+                                "guid": "26ce9fab-9506-4483-841c-a9008c6a6c4a"
                             },
                             "length": 1.534599862277985,
                             "level": 1,
@@ -5283,7 +5283,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "5cf027f6-edc0-4c18-9dbf-3da1bafd038c"
+                                "guid": "a77cc42c-e9d8-4a30-bc4b-be1da950bb92"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -5304,7 +5304,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "6f83b1df-f957-4f1a-93b6-0997e75635c7"
+                                "guid": "86a01991-c39c-4c0a-9f7a-f5f168b506a4"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -5317,7 +5317,7 @@
                                     -0.9274078810683367
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "5923590f-267f-46ab-897a-5690491dbdba"
+                                "guid": "1d1c269a-1beb-431f-8c51-d19a949d0b4e"
                             },
                             "length": 1.965125469776117,
                             "level": 1,
@@ -5365,7 +5365,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "c018beb4-322a-4534-b41b-ac4b5c3b968f"
+                                "guid": "2c87313d-4243-4329-8d39-2e7786cb67b8"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -5386,7 +5386,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "30b11b3f-ffac-46a3-9f03-6a9560deea14"
+                                "guid": "d6dcc4f5-e8b6-4b18-b193-324883e91e52"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -5399,7 +5399,7 @@
                                     -0.9866600774159731
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "21748686-3976-47c9-b172-d078c994d02d"
+                                "guid": "67fff285-fdd0-49f9-ac1a-b7228615d12b"
                             },
                             "length": 1.8628186133376425,
                             "level": 0,
@@ -5448,7 +5448,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "d9d3a033-9f90-4fe1-8578-8cac60365ef4"
+                                "guid": "73c6ee4c-91f5-4bdd-a7f5-7ef9ee6c31a1"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -5469,7 +5469,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "c26e9eef-a381-4392-96ca-a0557f06ef85"
+                                "guid": "257c680a-1de1-43dd-8b41-04be4915dc5d"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -5482,7 +5482,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "e3b4add8-7564-4c03-8559-e02b5e471113"
+                                "guid": "569bc36e-787d-48f3-b018-711bbd3d4147"
                             },
                             "length": 0.8502113049358643,
                             "level": 0,
@@ -5530,7 +5530,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "13e2cf6a-7cb1-487a-86f9-9e9ce2e38502"
+                                "guid": "c10e75bb-a721-4936-9840-58e7f4f2f576"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -5551,7 +5551,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "df59647a-27ad-4ec3-904c-0b7dfe8944ac"
+                                "guid": "43145f39-d854-4096-8e3e-f0ba7d60e8bd"
                             },
                             "group": 0,
                             "has_middle_joint": true,
@@ -5559,12 +5559,12 @@
                             "hierarchy": "primary",
                             "insertion_vector": {
                                 "data": [
-                                    -0.5969071180746167,
-                                    0.18311450304759014,
-                                    -0.7811344129952859
+                                    -0.0,
+                                    -0.0,
+                                    -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "8e12db73-6e71-4562-a88d-5fb6d8879704"
+                                "guid": "f242533c-bc5d-4511-b9ed-0c217fa1b205"
                             },
                             "length": 1.59130947551647,
                             "level": 1,
@@ -5612,7 +5612,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "c9cef0c2-dd5a-45d2-ba99-06adf93757af"
+                                "guid": "413c7999-8c7e-4627-97d9-cb08c17635e6"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -5633,7 +5633,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "1c2a4069-d6e8-4f43-bbb0-21dc346ef8ee"
+                                "guid": "f36f10f6-e035-4bef-b902-390f85846a41"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -5646,7 +5646,7 @@
                                     -0.9428829047020839
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "a846ac5e-79c9-43db-a531-e55f276dc661"
+                                "guid": "3b696857-df10-468e-92ae-3c08d650d781"
                             },
                             "length": 1.9628033596904213,
                             "level": 1,
@@ -5694,7 +5694,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "b8e9c2e5-aeaf-4363-9d25-0945be1803f2"
+                                "guid": "f7f6211f-aa2c-4efc-8a95-cdc640a27114"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -5715,7 +5715,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "a744f2de-0af0-4225-9284-8a4ad160d3f2"
+                                "guid": "9c1b9a59-82e4-4f8a-ae56-93d25dfc260f"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -5728,7 +5728,7 @@
                                     -0.8332493357552224
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "853abdb0-bab7-45de-b9fa-2f8026ac26ab"
+                                "guid": "3f817fd1-6899-4f3b-b67a-49ffc6a5e75d"
                             },
                             "length": 2.584477297153987,
                             "level": 2,
@@ -5776,7 +5776,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "20526304-b0dd-43a2-9f9b-0d32caa50594"
+                                "guid": "e3e7c732-42fa-4fb2-af67-679c7dd6d3cb"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -5797,7 +5797,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "f000d80d-e716-4f94-ae24-43a260fdf5f9"
+                                "guid": "1eeadbba-1747-4fb2-a21c-756717fb6eda"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -5810,7 +5810,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "be164144-d95d-480f-a4a4-a1b5d4127041"
+                                "guid": "1883ba9a-dd26-4a95-87a3-1e953f5da118"
                             },
                             "length": 0.9252513116035171,
                             "level": 0,
@@ -5858,7 +5858,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "92631904-904e-4897-87c3-dc16b2c93bdb"
+                                "guid": "6256c05e-b0e4-4218-becf-8d0a2ad6e5c4"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -5879,7 +5879,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "0e32f862-003e-42f2-ba90-7484b5664606"
+                                "guid": "2a98f392-1516-4f68-8d25-36ef3bb6193a"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -5892,7 +5892,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "ab4d73c1-a955-4330-988b-05b71686bee2"
+                                "guid": "78c49f39-761b-4a45-aad9-399be69d0a08"
                             },
                             "length": 0.8082409794416604,
                             "level": 0,
@@ -5940,7 +5940,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "a4328b0a-7817-4b03-af6b-4990e671e605"
+                                "guid": "9fbc880b-6f75-469e-9d07-43820460287f"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -5961,7 +5961,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "0ffd1e8f-79e3-4b26-a3b6-05544dae7f95"
+                                "guid": "f91a8112-07a0-488b-bc5b-80c28245dc01"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -5974,7 +5974,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "f560761c-9f8d-41ed-ab87-0f84ec0c8896"
+                                "guid": "542320d1-404b-409c-9c93-705ef4a18156"
                             },
                             "length": 1.0116186245520045,
                             "level": 0,
@@ -6022,7 +6022,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "caccc640-7757-4bb8-b45c-50955924f9db"
+                                "guid": "a4fce3f6-65b1-4b6c-803c-4a781ca88073"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -6043,7 +6043,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "1db0d45e-fd64-4d99-b357-a1d6d315024f"
+                                "guid": "6979e429-fc74-405c-aae6-809ff5311eae"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -6056,7 +6056,7 @@
                                     -0.8342036720321583
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "7a7fae85-f2ec-4f8c-8e3a-361e9258fde5"
+                                "guid": "0fb51eba-97fa-450c-9cd5-bd8cd21cb1b1"
                             },
                             "length": 2.5992106009376013,
                             "level": 2,
@@ -6104,7 +6104,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "9d756413-075e-4285-bca4-1531d4a02f11"
+                                "guid": "36943cd0-52df-4d82-a7df-5612796abd7b"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -6125,7 +6125,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "17e5a304-cb50-46e9-a49b-4ffcb141d268"
+                                "guid": "820371c8-d54e-4fdf-b305-a211108eee56"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -6138,7 +6138,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "0954995f-dac9-4696-9bd9-081be8da876b"
+                                "guid": "e706e164-0c79-4a8a-b19c-dd55891680e3"
                             },
                             "length": 0.8332940937674318,
                             "level": 0,
@@ -6186,7 +6186,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "41df886e-7b97-450e-bfb8-bf8cd98ee423"
+                                "guid": "eb12f278-ca2b-41e4-94e1-9681cbb2523f"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -6207,7 +6207,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "9b238932-13b7-43b5-9347-e3d67892d220"
+                                "guid": "6701f62a-f228-4ece-ac94-391447c4ca8e"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -6220,7 +6220,7 @@
                                     -1.0
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "7fe3ee30-a3d1-4c09-bd7e-7cb2c1e7b13a"
+                                "guid": "0e1e4c1b-ebc3-4e4b-bc0f-18f842dfe3c4"
                             },
                             "length": 0.8084087162213971,
                             "level": 0,
@@ -6268,7 +6268,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "5b450b5a-0dd5-4796-a278-a4519819a305"
+                                "guid": "30a5fec2-7609-4fb8-ae2d-d830109f3285"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -6289,7 +6289,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "62079a37-2bb7-4aa7-b6fb-f37381bbcc74"
+                                "guid": "1796b373-7d29-4229-818c-1ab7e3fa4512"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -6302,7 +6302,7 @@
                                     -0.9944326661526601
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "5d7b3b3c-5608-4297-9be5-f60dc467b179"
+                                "guid": "182c2f76-24a0-487e-b2d3-4ae7916096e8"
                             },
                             "length": 1.8751299925345437,
                             "level": 0,
@@ -6351,7 +6351,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "d5f59f75-7c11-4990-aa94-44a010fdc792"
+                                "guid": "2f01f7d2-1bac-4443-a950-e1a871a21b8c"
                             },
                             "grasp_frame": {
                                 "data": {
@@ -6372,7 +6372,7 @@
                                     ]
                                 },
                                 "dtype": "compas.geometry/Frame",
-                                "guid": "18667cda-7c66-4ec5-bc09-19fdc235ef65"
+                                "guid": "18405882-738c-4bfe-afbf-b17e9f6fb01d"
                             },
                             "group": 0,
                             "has_middle_joint": false,
@@ -6385,7 +6385,7 @@
                                     -0.986660077415973
                                 ],
                                 "dtype": "compas.geometry/Vector",
-                                "guid": "97c7213b-4462-4856-b4bb-5e1fbeaa2afd"
+                                "guid": "fa151c2a-5841-4c5f-a431-0b72f15cccba"
                             },
                             "length": 1.8628186133376439,
                             "level": 0,
