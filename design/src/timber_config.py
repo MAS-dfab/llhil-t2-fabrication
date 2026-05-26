@@ -16,9 +16,9 @@ MAX_JOINT_DIST = 0.065  # Based on the maximum shifted distance in the line mode
 
 # T-MultiStep specific
 TMULTI_HEEL_THRESHOLD = 50
-TMULTI_STEP_DEPTH = 0.02
+TMULTI_STEP_DEPTH = 0.015
 TMULTI_RISER_ANGLE = 90
 
 # K-Birdsmouth specific
-KBIRD_MILL_DEPTH = 0.01
+KBIRD_MILL_DEPTH = 0.005
 KBIRD_MITER_TYPE = "AVERAGE"  # 'AVERAGE', 'VERTICAL', None

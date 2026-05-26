@@ -431,11 +431,11 @@ def apply_joints(
             # Planar T joints
             if is_planar_t_joint(candidate):
                 if cb.attributes["hierarchy"] == 'shoe' and ca.attributes["level"] == 0:
-                    TStepJoint.create(model, ca, cb, step_shape="double")
+                    TStepJoint.create(model, ca, cb, step_shape="double", step_depth=step_depth)
 
                 # Middle T Joint
                 elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-                    TStepJoint.create(model, ca, cb) # NOTE: step_shape?
+                    TStepJoint.create(model, ca, cb, step_depth=step_depth) # NOTE: step_shape?
 
                 else:
                     if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < heel_threshold:
@@ -490,12 +490,13 @@ def apply_processings(model):
                     cutting_frame = clt_plate.frame
                     jrc = JackRafterCut.from_plane_and_beam(cutting_frame, beam)
                     beam.add_feature(jrc)
-
+        
+        
             # LongitudinalCut
         elif beam.attributes["hierarchy"] == "shoe":
             if clt_plate:
                 cutting_frame = clt_plate.frame
-                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam)
+                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam, is_joinery=True) 
                 beam.add_feature(lc)
         
             # End cut for reached beams
