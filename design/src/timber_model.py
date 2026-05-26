@@ -28,7 +28,7 @@ from compas_timber.analyzers import TripletAnalyzer
 
 from compas_timber.connections import (
     JointTopology, TMultiStepJoint, TStepJoint, LMiterJoint,
-    XLapJoint, KBirdsmouthJoint, TBirdsmouthJoint, TLapJoint
+    XLapJoint, KBirdsmouthJoint, TBirdsmouthJoint, TLapJoint, TButtJoint
 )
 
 from compas_timber.fabrication import JackRafterCut, LongitudinalCut
@@ -37,7 +37,7 @@ from collections import Counter
 from timber_config import (
     TIMBER_MODEL_TOL, PLATE_THICKNESS, PLATE_Z_OFFSET, MAX_JOINT_DIST,
     TMULTI_HEEL_THRESHOLD, TMULTI_STEP_DEPTH, TMULTI_RISER_ANGLE,
-    KBIRD_MILL_DEPTH, KBIRD_MITER_TYPE
+    KBIRD_MILL_DEPTH, KBIRD_MITER_TYPE, TBUTT_ANGLE_THRESHOLD
 )
 
 # --------------------------------------
@@ -420,7 +420,8 @@ def apply_joints(
         step_depth=None,
         riser_angle=None,
         x_lap_flip=False,
-        debug=False
+        debug=False,
+        tbutt_angle_threshold=None
     ):
 
     # Default config
@@ -436,6 +437,8 @@ def apply_joints(
         step_depth = TMULTI_STEP_DEPTH
     if riser_angle is None:
         riser_angle = TMULTI_RISER_ANGLE
+    if tbutt_angle_threshold is None:
+        tbutt_angle_threshold = TBUTT_ANGLE_THRESHOLD
 
     for beam in model.beams:
         beam.reset_computed_properties()
@@ -488,8 +491,11 @@ def apply_joints(
                         riser_angle=riser_angle
                     )
             else:
-                # Non-planar T joints
-                TBirdsmouthJoint.create(model, ca, cb)
+                if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < tbutt_angle_threshold:
+                    TButtJoint.create(model, ca, cb)
+                else:
+                    # Non-planar T joints
+                    TBirdsmouthJoint.create(model, ca, cb)
 
         ### L Miter Joint at the middle of the structure
         elif topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
