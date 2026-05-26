@@ -4,7 +4,7 @@ import time
 from compas.geometry import Frame
 from compas.geometry import Transformation
 from compas_fab.backends import MoveItPlanner
-from compas_fab.robots import ConfigurationTarget
+from compas_fab.robots import ConfigurationTarget, JointConstraint
 from compas_fab.robots import FrameTarget
 from compas_fab.robots import FrameWaypoints
 from compas_fab.robots import RigidBody
@@ -53,7 +53,6 @@ class BaseRobotPlanner():
         robot_model = self.robot_cell.robot_model
         for joint in robot_model.joints:
             if joint is not None and joint.type == 0:  # Only apply to revolute joints
-                print(f"Enforcing limits on joint '{joint.name}': [{math.degrees(joint.limit.lower):.1f}, {math.degrees(joint.limit.upper):.1f}] degrees")
                 joint.limit.lower += math.radians(2)  # Add small buffer to avoid exact limits
                 joint.limit.upper -= math.radians(2)
                 
@@ -93,17 +92,26 @@ class BaseRobotPlanner():
     def get_ik_from_frame(self, target_frame):
         """Calculates the inverse kinematics configuration for a given target frame."""
         frame_target = FrameTarget(target_frame, target_mode=TargetMode.TOOL)
-        temp_state = self.state.copy()
         options = {
             "return_full_configuration": True,
             "allow_collisions": False
         }
-        ik_config = self.planner.inverse_kinematics(frame_target, temp_state, self.group, options=options)
+        ik_config = self.planner.inverse_kinematics(frame_target, self.state, self.group, options=options)
         try:
             # ik_config = next(ik_iterator)
             return ik_config
         except StopIteration:
             print("No IK solution found for the given frame.")
+
+    def get_constrained_ik_from_frame(self, target_frame):
+        frame_target = FrameTarget(target_frame, target_mode=TargetMode.TOOL)
+        j_constraints = [
+            JointConstraint('robot12_joint_2', math.radians(-55), math.radians(1), math.radians(1), 0.9),
+            JointConstraint('robot12_joint_3', math.radians(55), math.radians(1), math.radians(1), 1.0),
+        ]
+        ik_options = {"constraint": j_constraints}
+        approach_config = self.planner.inverse_kinematics(frame_target, self.state, self.group, options=ik_options)
+        return approach_config
 
     def update_state_from_trajectory(self, trajectory):
         """Updates the internal robot state to match the end of a trajectory."""
