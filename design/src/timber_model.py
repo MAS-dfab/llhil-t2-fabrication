@@ -12,8 +12,10 @@ Usage in grasshopper:
         if process:
             apply_processings(model)
 """
+import math
+
 from compas.geometry import (
-    Vector, Frame, Plane, Line, Point, Translation,
+    Vector, Frame, Plane, Line, Point, Translation, Rotation,
     angle_vectors, intersection_line_plane, intersection_line_line_xy,
     cross_vectors, normalize_vector
 )
@@ -26,7 +28,7 @@ from compas_timber.analyzers import TripletAnalyzer
 
 from compas_timber.connections import (
     JointTopology, TMultiStepJoint, TStepJoint, LMiterJoint,
-    XLapJoint, KBirdsmouthJoint, TBirdsmouthJoint, TLapJoint
+    XLapJoint, KBirdsmouthJoint, TBirdsmouthJoint, TLapJoint, TButtJoint
 )
 
 from compas_timber.fabrication import JackRafterCut, LongitudinalCut
@@ -35,7 +37,7 @@ from collections import Counter
 from timber_config import (
     TIMBER_MODEL_TOL, PLATE_THICKNESS, PLATE_Z_OFFSET, MAX_JOINT_DIST,
     TMULTI_HEEL_THRESHOLD, TMULTI_STEP_DEPTH, TMULTI_RISER_ANGLE,
-    KBIRD_MILL_DEPTH, KBIRD_MITER_TYPE
+    KBIRD_MILL_DEPTH, KBIRD_MITER_TYPE, TBUTT_ANGLE_THRESHOLD
 )
 
 # --------------------------------------
@@ -46,6 +48,43 @@ def _average_points(points):
     y = sum(p.y for p in points) / len(points)
     z = sum(p.z for p in points) / len(points)
     return Point(x, y, z)
+
+def _angled_end_plane(beam, at_start, angle_deg, tilt_axis="width", offset=0.0):
+    """Cutting plane through one end of a beam, tilted `angle_deg` from a square cut.
+
+    Parameters
+    ----------
+    beam : :class:`compas_timber.elements.Beam`
+    at_start : bool
+        True for the start end, False for the end end.
+    angle_deg : float
+        Tilt of the cut measured from a square (perpendicular) cut.
+    tilt_axis : str
+        "height" tilts the cut in the beam's height plane (like a rafter),
+        "width" tilts it sideways.
+    offset : float
+        Shift the plane outward along the beam axis by this distance. Use this
+        to push the cut onto a blank that has been extended by `add_blank_extension`.
+
+    Returns
+    -------
+    :class:`compas.geometry.Plane`
+    """
+    cl = beam.centerline
+    axial = beam.frame.xaxis.unitized()          # x = along the centerline
+    point = cl.start if at_start else cl.end
+
+    # shift outward by `offset` to reach an extended (blank) tip
+    if offset:
+        point = point - axial * offset if at_start else point + axial * offset
+
+    # square-cut normal points OUT of the beam at that end
+    normal = -axial if at_start else axial
+
+    rot_axis = beam.frame.zaxis if tilt_axis == "height" else beam.frame.yaxis
+    R = Rotation.from_axis_and_angle(rot_axis, math.radians(angle_deg))
+    return Plane(point, normal.transformed(R))
+
 
 def _polyline_aligned_frame(polyline, thickness):
     """
@@ -86,7 +125,7 @@ def create_plate(polyline, group_id, thickness, z_offset):
     }
     return plate
 
-def create_beam(graph, edge, group_id, plate_vec=None):
+def create_beam(graph, edge, group_id, idx, plate_vec=None):
     """
     Create a beam aligned with global Z.
     If plate_vec is provided, align the SHOE beam with the plate normal.
@@ -114,8 +153,12 @@ def create_beam(graph, edge, group_id, plate_vec=None):
         'reached': reached,
         'has_middle_joint': has_mid,
         'direction_id': dir_id,
-        'cyclic_sign': c_sign
+        'cyclic_sign': c_sign,
+        "idx": idx
     }
+    
+    # Assign a name to a beam
+    beam.name = f"M{group_id}_L{lvl}_{idx}"
     return beam
 
 
@@ -163,8 +206,8 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
         if data['cut_plane']:
             model.attributes['cut_plane'] = data['cut_plane']
 
-        for edge in data['edges']:
-            beam = create_beam(graph, edge, g, plate_vec=plate_vec if align_shoe else None)
+        for idx, edge in enumerate(data['edges']):
+            beam = create_beam(graph, edge, g, idx, plate_vec=plate_vec if align_shoe else None)
             model.add_element(beam)
 
         models.append(model)
@@ -338,7 +381,6 @@ def _k_birdsmouth_solver(model, mill_depth, max_distance=None, miter_type=None, 
     max_offset = max(candidate.distance for candidate in model.joint_candidates)
 
     # handle non-pair joints (in this case a 3-way connection using TripletAnalyzer)
-    analyzer = TripletAnalyzer(model, max_offset/2)  # NOTE: don't hardcode the threshold
     analyzer = TripletAnalyzer(model, max_distance=max_distance)
     clusters = analyzer.find()
 
@@ -366,7 +408,10 @@ def _k_birdsmouth_solver(model, mill_depth, max_distance=None, miter_type=None, 
             else:
                 miter_pln = None
 
-            kwargs = {"mill_depth": mill_depth, "miter_plane": miter_pln}
+            if reordered_elements[-1].attributes["level"] == 0:
+                kwargs = {"mill_depth": mill_depth, "miter_plane": miter_pln}
+            else:
+                kwargs = {"mill_depth": mill_depth/2, "miter_plane": miter_pln}
             # kwargs = {"mill_depth": mill_depth}
             KBirdsmouthJoint.promote_cluster(model, cluster, reordered_elements=reordered_elements, **kwargs)
     return
@@ -385,7 +430,8 @@ def apply_joints(
         step_depth=None,
         riser_angle=None,
         x_lap_flip=False,
-        debug=False
+        debug=False,
+        tbutt_angle_threshold=None
     ):
 
     # Default config
@@ -401,10 +447,13 @@ def apply_joints(
         step_depth = TMULTI_STEP_DEPTH
     if riser_angle is None:
         riser_angle = TMULTI_RISER_ANGLE
+    if tbutt_angle_threshold is None:
+        tbutt_angle_threshold = TBUTT_ANGLE_THRESHOLD
 
     for beam in model.beams:
         beam.reset_computed_properties()
 
+    
     model.connect_adjacent_beams(max_distance)
 
     # 1. Handle K joints with three beams first
@@ -424,15 +473,18 @@ def apply_joints(
         topo = candidate.topology
         ca, cb = candidate.elements
 
+        if ca.attributes["level"] >= 1 and cb.attributes["hierarchy"] == 'shoe':
+            continue # avoid creating joint between shoe and lower beam
+
         if topo == JointTopology.TOPO_T:
             # Planar T joints
             if is_planar_t_joint(candidate):
                 if cb.attributes["hierarchy"] == 'shoe' and ca.attributes["level"] == 0:
-                    TStepJoint.create(model, ca, cb, step_shape="double")
+                    TStepJoint.create(model, ca, cb, step_shape="double", step_depth=step_depth)
 
                 # Middle T Joint
                 elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-                    TStepJoint.create(model, ca, cb) # NOTE: step_shape?
+                    TMultiStepJoint.create(model, ca, cb, step_depth=step_depth) # NOTE: step_shape?
 
                 else:
                     if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < heel_threshold:
@@ -441,14 +493,19 @@ def apply_joints(
                         step_shape = "step"
 
                     TMultiStepJoint.create(
-                        model, ca, cb,
+                        model,
+                        ca,
+                        cb,
                         step_shape=step_shape,
                         step_depth=step_depth,
                         riser_angle=riser_angle
                     )
             else:
-                # Non-planar T joints
-                TBirdsmouthJoint.create(model, ca, cb)
+                if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < tbutt_angle_threshold:
+                    TButtJoint.create(model, ca, cb)
+                else:
+                    # Non-planar T joints
+                    TBirdsmouthJoint.create(model, ca, cb)
 
         ### L Miter Joint at the middle of the structure
         elif topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
@@ -472,8 +529,25 @@ def apply_joints(
 
 def apply_processings(model):
     """Process joinery and finalize cuts which need to be done after."""
+    # Shoe bevel knob: set the extension you want per end, in METERS. The bevel
+    # angle is derived from it later (angle = atan(2*X / height)).
+    SHOE_EXTENSION = 0.03  # per end, in meters (0.03 = 3 cm)
+    # False -> trapezoid: bevel + a flat tip face, length preserved.
+    # True  -> full cut: the plane slices the whole beam, leaving one face.
+    SHOE_FULL_CUT = True
+
+    # Extend shoe blanks on BOTH ends BEFORE joinery, so the joint cuts are
+    # computed against the final (extended) blank and don't shift afterwards.
+    # The full cut needs 2*X of stock so the plane exits through the far face;
+    # the trapezoid needs only X. The plane position (offset=X) is the same either way.
+    for beam in model.beams:
+        if beam.attributes.get("hierarchy") == "shoe":
+            ext = 2.0 * SHOE_EXTENSION if SHOE_FULL_CUT else SHOE_EXTENSION
+            beam.attributes["shoe_ext"] = SHOE_EXTENSION
+            beam.add_blank_extension(ext, ext)
+
     model.process_joinery()
-    
+
     clt_plate = model.attributes.get("clt_plate")
     for beam in model.beams:
         beam.reset_computed_properties()
@@ -483,21 +557,35 @@ def apply_processings(model):
             if clt_plate:
                 if intersection_line_plane(beam.centerline, Plane.from_frame(clt_plate.frame)):
                     cutting_frame = clt_plate.frame
-                    jrc = JackRafterCut.from_plane_and_beam(cutting_frame, beam)
+                    jrc = JackRafterCut.from_plane_and_beam(cutting_frame, beam, is_joinery=True)
                     beam.add_feature(jrc)
-
+        
+        
             # LongitudinalCut
         elif beam.attributes["hierarchy"] == "shoe":
+            # Blank already extended by X on both ends BEFORE joinery (see top of
+            # this function), so existing joints don't shift. Reuse the same X and
+            # derive the bevel angle from it.
+            X = beam.attributes.get("shoe_ext", 0.0)
+            theta = math.degrees(math.atan(2.0 * X / beam.height))   # angle derived from X
+            SHOE_END_ANGLE = -theta                                  # negative keeps bevel on the Bottom
             if clt_plate:
                 cutting_frame = clt_plate.frame
-                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam)
+                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam, is_joinery=True)
                 beam.add_feature(lc)
-        
+
+            for at_start in (True, False):
+                sign = 1.0 if at_start else -1.0   # +/- gives a symmetric trapezoid; flip both signs to swap top/bottom
+                # offset=X moves the cut plane out to the newly extended blank tip
+                plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE, offset=X)
+                jrc = JackRafterCut.from_plane_and_beam(plane, beam, is_joinery=True)
+                beam.add_feature(jrc)
+
             # End cut for reached beams
         elif beam.attributes['reached']:
                 cutting_plane = model.attributes.get("cut_plane")
                 if intersection_line_plane(beam.centerline, cutting_plane):
-                    jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam)
+                    jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam, is_joinery=True)
                     beam.add_feature(jrc)
 
         else:
