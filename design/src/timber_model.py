@@ -12,8 +12,10 @@ Usage in grasshopper:
         if process:
             apply_processings(model)
 """
+import math
+
 from compas.geometry import (
-    Vector, Frame, Plane, Line, Point, Translation,
+    Vector, Frame, Plane, Line, Point, Translation, Rotation,
     angle_vectors, intersection_line_plane, intersection_line_line_xy,
     cross_vectors, normalize_vector
 )
@@ -46,6 +48,36 @@ def _average_points(points):
     y = sum(p.y for p in points) / len(points)
     z = sum(p.z for p in points) / len(points)
     return Point(x, y, z)
+
+def _angled_end_plane(beam, at_start, angle_deg, tilt_axis="width"):
+    """Cutting plane through one end of a beam, tilted `angle_deg` from a square cut.
+
+    Parameters
+    ----------
+    beam : :class:`compas_timber.elements.Beam`
+    at_start : bool
+        True for the start end, False for the end end.
+    angle_deg : float
+        Tilt of the cut measured from a square (perpendicular) cut.
+    tilt_axis : str
+        "height" tilts the cut in the beam's height plane (like a rafter),
+        "width" tilts it sideways.
+
+    Returns
+    -------
+    :class:`compas.geometry.Plane`
+    """
+    cl = beam.centerline
+    point = cl.start if at_start else cl.end
+
+    # square-cut normal points OUT of the beam at that end
+    axial = beam.frame.xaxis.unitized()          # x = along the centerline
+    normal = -axial if at_start else axial
+
+    rot_axis = beam.frame.zaxis if tilt_axis == "height" else beam.frame.yaxis
+    R = Rotation.from_axis_and_angle(rot_axis, math.radians(angle_deg))
+    return Plane(point, normal.transformed(R))
+
 
 def _polyline_aligned_frame(polyline, thickness):
     """
@@ -86,7 +118,7 @@ def create_plate(polyline, group_id, thickness, z_offset):
     }
     return plate
 
-def create_beam(graph, edge, group_id, plate_vec=None):
+def create_beam(graph, edge, group_id, idx, plate_vec=None):
     """
     Create a beam aligned with global Z.
     If plate_vec is provided, align the SHOE beam with the plate normal.
@@ -114,8 +146,12 @@ def create_beam(graph, edge, group_id, plate_vec=None):
         'reached': reached,
         'has_middle_joint': has_mid,
         'direction_id': dir_id,
-        'cyclic_sign': c_sign
+        'cyclic_sign': c_sign,
+        "idx": idx
     }
+    
+    # Assign a name to a beam
+    beam.name = f"{lvl}_{group_id}_{idx}"
     return beam
 
 
@@ -163,8 +199,8 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
         if data['cut_plane']:
             model.attributes['cut_plane'] = data['cut_plane']
 
-        for edge in data['edges']:
-            beam = create_beam(graph, edge, g, plate_vec=plate_vec if align_shoe else None)
+        for idx, edge in enumerate(data['edges']):
+            beam = create_beam(graph, edge, g, idx, plate_vec=plate_vec if align_shoe else None)
             model.add_element(beam)
 
         models.append(model)
@@ -498,7 +534,15 @@ def apply_processings(model):
                 cutting_frame = clt_plate.frame
                 lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam, is_joinery=True) 
                 beam.add_feature(lc)
-        
+
+            # 15 deg symmetric (trapezoid) end cuts on both ends of the shoe
+            SHOE_END_ANGLE = -30.0  # change this to retune the cut angle
+            for at_start in (True, False):
+                sign = 1.0 if at_start else -1.0   # +/- gives a symmetric trapezoid; flip both signs to swap top/bottom
+                plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE)
+                jrc = JackRafterCut.from_plane_and_beam(plane, beam)
+                beam.add_feature(jrc)
+
             # End cut for reached beams
         elif beam.attributes['reached']:
                 cutting_plane = model.attributes.get("cut_plane")
