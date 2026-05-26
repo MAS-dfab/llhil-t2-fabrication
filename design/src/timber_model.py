@@ -86,7 +86,7 @@ def create_plate(polyline, group_id, thickness, z_offset):
     }
     return plate
 
-def create_beam(graph, edge, group_id, plate_vec=None):
+def create_beam(graph, edge, group_id, idx, plate_vec=None):
     """
     Create a beam aligned with global Z.
     If plate_vec is provided, align the SHOE beam with the plate normal.
@@ -114,8 +114,12 @@ def create_beam(graph, edge, group_id, plate_vec=None):
         'reached': reached,
         'has_middle_joint': has_mid,
         'direction_id': dir_id,
-        'cyclic_sign': c_sign
+        'cyclic_sign': c_sign,
+        "idx": idx
     }
+    
+    # Assign a name to a beam
+    beam.name = f"{lvl}_{group_id}_{idx}"
     return beam
 
 
@@ -163,8 +167,8 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
         if data['cut_plane']:
             model.attributes['cut_plane'] = data['cut_plane']
 
-        for edge in data['edges']:
-            beam = create_beam(graph, edge, g, plate_vec=plate_vec if align_shoe else None)
+        for idx, edge in enumerate(data['edges']):
+            beam = create_beam(graph, edge, g, idx, plate_vec=plate_vec if align_shoe else None)
             model.add_element(beam)
 
         models.append(model)
