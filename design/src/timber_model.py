@@ -49,6 +49,8 @@ def _average_points(points):
     z = sum(p.z for p in points) / len(points)
     return Point(x, y, z)
 
+# def _main
+
 def _angled_end_plane(beam, at_start, angle_deg, tilt_axis="width", offset=0.0):
     """Cutting plane through one end of a beam, tilted `angle_deg` from a square cut.
 
@@ -481,7 +483,7 @@ def apply_joints(
 
                 # Middle T Joint
                 elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-                    TStepJoint.create(model, ca, cb, step_depth=step_depth) # NOTE: step_shape?
+                    TMultiStepJoint.create(model, ca, cb, step_depth=step_depth) # NOTE: step_shape?
 
                 else:
                     if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < heel_threshold:
