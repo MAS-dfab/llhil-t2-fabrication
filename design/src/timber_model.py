@@ -544,17 +544,22 @@ def apply_processings(model):
 
     clt_plate = model.attributes.get("clt_plate")
     anchor_point = model.attributes.get("reached")
+    
 
     # Prepare vertical cut planes for middle joints and reached beams.
     if anchor_point:
         vertical_cut_plane_x = Plane(anchor_point, Vector(0, 1, 0))
         vertical_cut_plane_y = Plane(anchor_point, Vector(1, 0, 0))
+    else:
+        raise ValueError("Anchor point is required for vertical cut planes. Please check if it's provided in the graph node attributes.")
+    
+
 
     for beam in model.beams:
         beam.reset_computed_properties()
 
         """JackRafterCut representing the middle joint condition, similar to LMiterJoint."""
-        if beam.attributes["has_middle_joint"] and beam.attributes['level'] >= 1:
+        if beam.attributes["has_middle_joint"] and beam.attributes['level'] >= 1 and anchor_point:
             # Copy cut planes
             cut_plane_x = vertical_cut_plane_x.copy()
             cut_plane_y = vertical_cut_plane_y.copy()
@@ -571,10 +576,10 @@ def apply_processings(model):
 
             # Check intersection and add cuts
             if intersection_line_plane(beam.centerline, cut_plane_x):
-                jrc_x = JackRafterCut.from_plane_and_beam(cut_plane_x, beam, is_joinery=True)
+                jrc_x = JackRafterCut.from_plane_and_beam(cut_plane_x, beam, is_joinery=False)
                 beam.add_feature(jrc_x)
             if intersection_line_plane(beam.centerline, cut_plane_y):
-                jrc_y = JackRafterCut.from_plane_and_beam(cut_plane_y, beam, is_joinery=True)
+                jrc_y = JackRafterCut.from_plane_and_beam(cut_plane_y, beam, is_joinery=False)
                 beam.add_feature(jrc_y)
         
             """LongitudinalCut for shoes"""
@@ -587,14 +592,14 @@ def apply_processings(model):
             SHOE_END_ANGLE = -theta                                  # negative keeps bevel on the Bottom
             if clt_plate:
                 cutting_frame = clt_plate.frame
-                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam, is_joinery=True)
+                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam, is_joinery=False)
                 beam.add_feature(lc)
 
             for at_start in (True, False):
                 sign = 1.0 if at_start else -1.0   # +/- gives a symmetric trapezoid; flip both signs to swap top/bottom
                 # offset=X moves the cut plane out to the newly extended blank tip
                 plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE, offset=X)
-                jrc = JackRafterCut.from_plane_and_beam(plane, beam, is_joinery=True)
+                jrc = JackRafterCut.from_plane_and_beam(plane, beam, is_joinery=False)
                 beam.add_feature(jrc)
 
             """End cuts for reached beams"""
@@ -602,7 +607,7 @@ def apply_processings(model):
                 # Get the horizontal cutting plane for the beam
                 cutting_plane = model.attributes.get("cut_plane")
 
-                # Get the vertical cutting planes for the beam
+                print(anchor_point, beam.name)
                 cut_plane = vertical_cut_plane_y.copy()
 
                 # Orient the cut plane normal to point towards the beam centerline midpoint
@@ -612,9 +617,9 @@ def apply_processings(model):
 
                 # Check intersection and add cuts
                 if intersection_line_plane(beam.centerline, cutting_plane):
-                    jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam, is_joinery=True)
+                    jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam, is_joinery=False)
                     beam.add_feature(jrc)
-                    vjrc_y = JackRafterCut.from_plane_and_beam(cut_plane, beam, is_joinery=True)
+                    vjrc_y = JackRafterCut.from_plane_and_beam(cut_plane, beam, is_joinery=False)
                     beam.add_feature(vjrc_y)
 
         else:
