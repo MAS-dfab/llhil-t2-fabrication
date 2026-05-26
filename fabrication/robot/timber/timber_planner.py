@@ -276,19 +276,12 @@ class TimberProcessPlanner(BaseRobotPlanner):
             self._last_pick_retract_frame = element_pickup_frame.translated(element_pickup_frame.zaxis * -0.3)
         trajectories.append(pick_retract_traj)
 
-        # # # 4. Safe AT 
-        # print("getting element safe trajectory to AT")
-        # safe_at_configuration = self.AT_configuration.copy()
-        # # safe_at_configuration["robot12_joint_EA_Z"] += 1.0
-        # trajectories.append(self.get_motion_to_configuration(safe_at_configuration))
-
         # 5. Approach AT
         print("getting element approach trajectory to AT")
         design_insertion_vector = element.attributes.get("design_insertion_vector", None)
         at_insertion_vector = design_insertion_vector.transformed(self.at_T * element.attributes.get("parent_T")) if design_insertion_vector else None
         element_at_approach_frame = self.get_approach_frame(element_at_frame, approach_distance=0.3, vector=at_insertion_vector)
         approach_config = self.get_constrained_ik_from_frame(element_at_approach_frame)
-        print("Approach config:", approach_config)
         trajectories.append(self.get_motion_to_configuration(approach_config))
         # trajectories.append(self.get_motion_to_frame(element_at_approach_frame))
 

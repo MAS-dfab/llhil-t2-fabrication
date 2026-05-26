@@ -106,8 +106,8 @@ class BaseRobotPlanner():
     def get_constrained_ik_from_frame(self, target_frame):
         frame_target = FrameTarget(target_frame, target_mode=TargetMode.TOOL)
         j_constraints = [
-            JointConstraint('robot12_joint_2', math.radians(-55), math.radians(1), math.radians(1), 0.9),
-            JointConstraint('robot12_joint_3', math.radians(55), math.radians(1), math.radians(1), 1.0),
+            JointConstraint('robot12_joint_2', math.radians(-55), math.radians(1), math.radians(1)),
+            JointConstraint('robot12_joint_3', math.radians(55), math.radians(1), math.radians(1)),
         ]
         ik_options = {"constraint": j_constraints}
         approach_config = self.planner.inverse_kinematics(frame_target, self.state, self.group, options=ik_options)
