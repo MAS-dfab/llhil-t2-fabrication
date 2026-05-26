@@ -25,6 +25,8 @@ class TimberProcessPlanner(BaseRobotPlanner):
         
         # Base Frames (TODO: Move to config.json later)
         self.at_frame = Frame(point=Point(x=5.96989, y=10.56825, z=0.36166), xaxis=Vector(x=1.000, y=0.000, z=0.000), yaxis=Vector(x=-0.000, y=-1.000, z=0.000))
+        self.at_frame.translate(Vector(12.2, 0, -0.17))
+        self.at_frame.rotate(math.radians(90), self.at_frame.zaxis, self.at_frame.point)
         self.at_T = Transformation.from_frame(self.at_frame)
         
         ps1_frame = Frame(point=Point(x=16.040, y=7.076, z=0.449), xaxis=Vector(x=-1.000, y=-0.000, z=-0.000), yaxis=Vector(x=0.000, y=-1.000, z=0.000))
@@ -93,9 +95,9 @@ class TimberProcessPlanner(BaseRobotPlanner):
         configuration = self.robot_cell.zero_configuration(group=self.group)
         self.robot_cell.configuration_to_full_configuration(configuration)
         configuration = self.state.robot_configuration.copy()
-        configuration["bridge1_joint_EA_X"] = 10
-        configuration["robot12_joint_EA_Y"] = -6
-        configuration["robot12_joint_EA_Z"] = -4.5
+        configuration["bridge1_joint_EA_X"] = 17
+        configuration["robot12_joint_EA_Y"] = -7
+        configuration["robot12_joint_EA_Z"] = -4
         configuration["robot12_joint_1"] = math.radians(0)
         configuration["robot12_joint_2"] = math.radians(-55)
         configuration["robot12_joint_3"] = math.radians(55)
@@ -106,7 +108,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         configuration["bridge2_joint_EA_X"] = 30
 
         """ get robot_11 out of the way """
-        configuration["robot11_joint_EA_Y"] = -0.5
+        configuration["robot11_joint_EA_Y"] = -2
         configuration["robot11_joint_EA_Z"] = -4.5
         configuration["robot11_joint_1"] = math.radians(0)
         configuration["robot11_joint_2"] = math.radians(90)
@@ -203,9 +205,9 @@ class TimberProcessPlanner(BaseRobotPlanner):
     @property
     def AT_configuration(self):
         AT_full_configuration = self.current_configuration.copy()
-        AT_full_configuration["bridge1_joint_EA_X"] = 10
-        AT_full_configuration["robot12_joint_EA_Y"] = -6
-        AT_full_configuration["robot12_joint_EA_Z"] = -6
+        AT_full_configuration["bridge1_joint_EA_X"] = 17.650
+        AT_full_configuration["robot12_joint_EA_Y"] = -9
+        AT_full_configuration["robot12_joint_EA_Z"] = -4.5
         AT_full_configuration["robot12_joint_1"] = math.radians(-90) #might need to be -90, this was the original value
         AT_full_configuration["robot12_joint_2"] = math.radians(-30)
         AT_full_configuration["robot12_joint_3"] = math.radians(-35)
@@ -236,6 +238,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
     
     def pick_and_place_element(self, element_guid, timber_model):
         element = timber_model.element_by_guid(element_guid)
+
         print("Picking and placing element:", element.guid)
         trajectories = []
 
@@ -263,22 +266,24 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 3. Retract from pickpoint
         print("getting element retract trajectory at pickpoint")
-        pick_retract_traj = self.get_retract_trajectory(retract_distance=0.5)
+        pick_retract_traj = self.get_retract_trajectory(retract_distance=0.3)
         if pick_retract_traj is not None:
             self._last_pick_retract_frame = pick_retract_traj.points[-1]  # stored as last joint point
             # compute the actual retract frame from the pickup frame
-            self._last_pick_retract_frame = element_pickup_frame.translated(element_pickup_frame.zaxis * -0.5)
+            self._last_pick_retract_frame = element_pickup_frame.translated(element_pickup_frame.zaxis * -0.3)
         trajectories.append(pick_retract_traj)
 
         # # 4. Safe AT 
-        # print("getting element safe trajectory to AT")
-        # safe_at_configuration = self.AT_configuration.copy()
+        print("getting element safe trajectory to AT")
+        safe_at_configuration = self.AT_configuration.copy()
         # safe_at_configuration["robot12_joint_EA_Z"] += 1.0
-        # trajectories.append(self.get_motion_to_configuration(safe_at_configuration))
+        trajectories.append(self.get_motion_to_configuration(safe_at_configuration))
 
         # 5. Approach AT
         print("getting element approach trajectory to AT")
-        element_at_approach_frame = self.get_approach_frame(element_at_frame, approach_distance=0.5)
+        design_insertion_vector = element.attributes.get("design_insertion_vector", None)
+        at_insertion_vector = design_insertion_vector.transformed(self.at_T * element.attributes.get("parent_T")) if design_insertion_vector else None
+        element_at_approach_frame = self.get_approach_frame(element_at_frame, approach_distance=0.5, vector=at_insertion_vector)
         trajectories.append(self.get_motion_to_frame(element_at_approach_frame))
 
         # 6. Place at AT
@@ -286,13 +291,14 @@ class TimberProcessPlanner(BaseRobotPlanner):
         # Overriding default options to disable collision avoidance for the final placement
         trajectories.append(self.get_cartesian_trajectory([element_at_frame], avoid_collisions=False))
         
-        self.detach_workpiece(str(element.guid))
+        self.detach_workpiece(str(element.guid), element_at_frame)
 
         # 7. Retract from AT
         print("getting element retract trajectory at AT")
-        place_retract_traj = self.get_retract_trajectory(retract_distance=0.5, avoid_collisions=False)
+        place_retract_traj = self.get_retract_trajectory(retract_distance=0.3, avoid_collisions=False)
+        # place_retract_traj = self.get_cartesian_trajectory([element_at_approach_frame], avoid_collisions=False)
         if place_retract_traj is not None:
-            self._last_place_retract_frame = element_at_frame.translated(element_at_frame.zaxis * -0.5)
+            self._last_place_retract_frame = element_at_frame.translated(element_at_frame.zaxis * -0.3)
         trajectories.append(place_retract_traj)
 
         # 8. Return to safe configuration

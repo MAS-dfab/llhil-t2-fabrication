@@ -1,4 +1,4 @@
-name: fall_demo_2025
+name: t2_2526
 services:
   moveit-demo:
     image: gramaziokohler/ros-noetic-dfab
@@ -75,8 +75,8 @@ services:
       - --wait
       - compas_rrc_driver
       - bringup.launch
-      # - robot_ip:=192.168.0.11
-      - robot_ip:=host.docker.internal
+      - robot_ip:=192.168.0.11
+      # - robot_ip:=host.docker.internal
       - robot_streaming_port:=30101
       - robot_state_port:=30201
       - namespace:=r11
@@ -94,8 +94,8 @@ services:
       - --wait
       - compas_rrc_driver
       - bringup.launch
-      # - robot_ip:=192.168.0.11
-      - robot_ip:=host.docker.internal
+      - robot_ip:=192.168.0.11
+      # - robot_ip:=host.docker.internal
       - robot_streaming_port:=30102
       - robot_state_port:=30202
       - namespace:=r12

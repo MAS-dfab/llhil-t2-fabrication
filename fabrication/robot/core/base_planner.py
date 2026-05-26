@@ -30,6 +30,8 @@ class BaseRobotPlanner():
 
         self.planner = MoveItPlanner(self.client)
         self.robot_cell = self.client.load_robot_cell(load_geometry=True)
+
+        
         print(self.robot_cell.robot_model)
         self.state = self.robot_cell.default_cell_state()
         
@@ -41,9 +43,22 @@ class BaseRobotPlanner():
         # Default Options (Can be overridden by child classes)
         self.default_options = {
             "max_step": 0.1,
-            "path_constraints": []
+            "path_constraints": self.global_constraints
         }
+        self.enforce_joint_limits()
+        
 
+    def enforce_joint_limits(self):
+        """Utility to enforce joint limits on a given configuration."""
+        robot_model = self.robot_cell.robot_model
+        for joint in robot_model.joints:
+            if joint is not None and joint.type == 0:  # Only apply to revolute joints
+                print(f"Enforcing limits on joint '{joint.name}': [{math.degrees(joint.limit.lower):.1f}, {math.degrees(joint.limit.upper):.1f}] degrees")
+                joint.limit.lower += math.radians(2)  # Add small buffer to avoid exact limits
+                joint.limit.upper -= math.radians(2)
+                
+              
+            
     @property
     def current_configuration(self):
         """Returns the current full configuration of the robot state."""
@@ -117,9 +132,12 @@ class BaseRobotPlanner():
 
     # --- TRAJECTORY PLANNING ---
 
-    def get_approach_frame(self, target_frame, approach_distance=1.5):
+    def get_approach_frame(self, target_frame, approach_distance=1.5, vector=None):
         """Generates an approach frame backed off along the Z-axis of the target frame."""
-        return target_frame.translated(target_frame.zaxis * -approach_distance)
+        if vector:
+            return target_frame.translated(vector.unitized() * -approach_distance)
+        else:
+            return target_frame.translated(target_frame.zaxis * -approach_distance)
 
     def get_cartesian_trajectory(self, frames_list, avoid_collisions=True, planning_group=None):
         """Plans a Cartesian trajectory through a list of frames."""
@@ -152,7 +170,7 @@ class BaseRobotPlanner():
             "allowed_planning_time": 10, 
             "num_planning_attempts": 50,
             "max_steps": 0.1,
-            "path_constraints": []
+            "path_constraints": self.global_constraints
             }
 
         trajectory = None
@@ -178,7 +196,7 @@ class BaseRobotPlanner():
             "allowed_planning_time": 10, 
             "num_planning_attempts": 100,
             "max_steps": 0.1,
-            "path_constraints": []
+            "path_constraints": self.global_constraints
             }
 
         trajectory = None
@@ -294,11 +312,24 @@ class BaseRobotPlanner():
         )
         print(f"Workpiece '{name}' attached to tool '{attached_to_tool}'")
 
-    def detach_workpiece(self, name):
+    def detach_workpiece(self, name, frame):
         """Detaches a workpiece from the robot."""
         if name in self.robot_cell.rigid_body_models:
-            self.robot_cell.rigid_body_models.pop(name)
-            self.state.rigid_body_states.pop(name)
+            rbs = self.state.rigid_body_states.get(name)
+
+            # Compute the rigid body's world frame by composing the tool placement frame
+            # with the stored attachment offset: T_world_body = T_world_tool * T_tool_body
+            if frame is not None and rbs.attachment_frame is not None:
+                T_world_tool = Transformation.from_frame(frame)
+                T_tool_body = Transformation.from_frame(rbs.attachment_frame)
+                place_body_frame = Frame.from_transformation(T_world_tool * T_tool_body)
+            else:
+                place_body_frame = frame
+
+            rbs.frame = place_body_frame
+            rbs.attached_to_tool = None
+            rbs.attachment_frame = None
+            rbs.touch_links = []
             self.planner.set_robot_cell(self.robot_cell)
             self.planner.set_robot_cell_state(self.state)
             

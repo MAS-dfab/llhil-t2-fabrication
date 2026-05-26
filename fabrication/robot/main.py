@@ -174,7 +174,7 @@ def main():
             print("QR: pickup frame ready for seq_i={}. Press Compute.".format(seq_i))
         except RuntimeError as e:
             from compas.geometry import Frame, Point, Vector
-            trajectory_planner._fetched_pickup_frame = Frame(point=Point(x=16040, y=7076, z=1009), xaxis=Vector(x=-1.000, y=-0.000, z=-0.000), yaxis=Vector(x=0.000, y=1.000, z=0.000)).rotated(math.radians(90), Vector(0,0,1), Point(x=16040, y=7076, z=1009))
+            trajectory_planner._fetched_pickup_frame = Frame(point=Point(x=16040, y=5076, z=1009), xaxis=Vector(x=-1.000, y=-0.000, z=-0.000), yaxis=Vector(x=0.000, y=1.000, z=0.000)).rotated(math.radians(90), Vector(0,0,1), Point(x=16040, y=7076, z=1009))
             _set_label("retry — fetch failed", _COL_WAITING)
             print("QR: fetch FAILED - {}".format(e))
 
