@@ -12,8 +12,10 @@ Usage in grasshopper:
         if process:
             apply_processings(model)
 """
+import math
+
 from compas.geometry import (
-    Vector, Frame, Plane, Line, Point, Translation,
+    Vector, Frame, Plane, Line, Point, Translation, Rotation,
     angle_vectors, intersection_line_plane, intersection_line_line_xy,
     cross_vectors, normalize_vector
 )
@@ -46,6 +48,36 @@ def _average_points(points):
     y = sum(p.y for p in points) / len(points)
     z = sum(p.z for p in points) / len(points)
     return Point(x, y, z)
+
+def _angled_end_plane(beam, at_start, angle_deg, tilt_axis="width"):
+    """Cutting plane through one end of a beam, tilted `angle_deg` from a square cut.
+
+    Parameters
+    ----------
+    beam : :class:`compas_timber.elements.Beam`
+    at_start : bool
+        True for the start end, False for the end end.
+    angle_deg : float
+        Tilt of the cut measured from a square (perpendicular) cut.
+    tilt_axis : str
+        "height" tilts the cut in the beam's height plane (like a rafter),
+        "width" tilts it sideways.
+
+    Returns
+    -------
+    :class:`compas.geometry.Plane`
+    """
+    cl = beam.centerline
+    point = cl.start if at_start else cl.end
+
+    # square-cut normal points OUT of the beam at that end
+    axial = beam.frame.xaxis.unitized()          # x = along the centerline
+    normal = -axial if at_start else axial
+
+    rot_axis = beam.frame.zaxis if tilt_axis == "height" else beam.frame.yaxis
+    R = Rotation.from_axis_and_angle(rot_axis, math.radians(angle_deg))
+    return Plane(point, normal.transformed(R))
+
 
 def _polyline_aligned_frame(polyline, thickness):
     """
@@ -86,7 +118,7 @@ def create_plate(polyline, group_id, thickness, z_offset):
     }
     return plate
 
-def create_beam(graph, edge, group_id, plate_vec=None):
+def create_beam(graph, edge, group_id, idx, plate_vec=None):
     """
     Create a beam aligned with global Z.
     If plate_vec is provided, align the SHOE beam with the plate normal.
@@ -99,6 +131,7 @@ def create_beam(graph, edge, group_id, plate_vec=None):
     reached = graph.get_edge_attribute(edge, 'reached', else_value=False)
     has_mid = graph.get_edge_attribute(edge, 'has_middle_joint', else_value=False)
     dir_id = graph.get_edge_attribute(edge, 'direction_id')
+    c_sign = graph.get_edge_attribute(edge, 'cyclic_sign')
 
     if hie == 'shoe' and plate_vec is not None:
         beam = Beam.from_centerline(ln, w, h, plate_vec)
@@ -112,8 +145,13 @@ def create_beam(graph, edge, group_id, plate_vec=None):
         'level': lvl,
         'reached': reached,
         'has_middle_joint': has_mid,
-        'direction_id': dir_id
+        'direction_id': dir_id,
+        'cyclic_sign': c_sign,
+        "idx": idx
     }
+    
+    # Assign a name to a beam
+    beam.name = f"{lvl}_{group_id}_{idx}"
     return beam
 
 
@@ -128,6 +166,8 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
         plate_thickness = PLATE_THICKNESS
     if plate_z_offset is None:
         plate_z_offset = PLATE_Z_OFFSET
+
+    _fix_x_lap_side_for_shoes(graph) # NOTE: this is a temporary fix. Find more information in the function.
 
     groups = {}
     for edge in graph.edges():
@@ -159,8 +199,8 @@ def graph_to_timber_models(graph, model_tol=None, plate_thickness=None, plate_z_
         if data['cut_plane']:
             model.attributes['cut_plane'] = data['cut_plane']
 
-        for edge in data['edges']:
-            beam = create_beam(graph, edge, g, plate_vec=plate_vec if align_shoe else None)
+        for idx, edge in enumerate(data['edges']):
+            beam = create_beam(graph, edge, g, idx, plate_vec=plate_vec if align_shoe else None)
             model.add_element(beam)
 
         models.append(model)
@@ -255,26 +295,6 @@ def _is_planar(element_a, element_b):
     # If the angle is close to 0 or 180 degrees, the beams are planar
     return angle < 1e-6 or angle - 180 < 1e-6
 
-def _determine_lap_flip(candidate_a, candidate_b, lap_flip):
-    """Align the lap side by finding"""
-    start = candidate_b.centerline.start
-    end = candidate_b.centerline.end
-    mid = candidate_b.centerline.midpoint  # Cross beam midpoint
-
-    # Pointing downwards
-    aligned = start - end if start.z > end.z else end - start
-    ori = start if start.z > end.z else end
-    
-    ln = Line(mid, mid + candidate_b.centerline.direction.cross(candidate_a.centerline.direction))
-    meet = intersection_line_line_xy(ln, Line(ori, ori + Vector(0, 1, 0)))
-
-    if meet:
-        pt = Point(*meet)
-        vec = pt - mid
-        cross = vec.cross(aligned)
-        return lap_flip ^ (cross.z <= 0)
-    return
-
 def _get_vertical_miter_plane_l(ca, cb, location, flip=False):
     """Get a vertical miter plane for candidate pair for L Miter Joint."""
     #project vectors to global XY plane and get their cross product for the miter plane normal
@@ -312,10 +332,25 @@ def _get_average_miter_plane_k(reordered_elements, flip=False):
         return Plane.from_frame(Frame(ori, cross, -y))
     return Plane.from_frame(Frame(ori, cross, y))
 
+def _fix_x_lap_side_for_shoes(graph, offset_tol=1e-6):
+    """
+    Move one of the pair shoes slightly up in Z to avoid finding incorrect ref_side for the X Lap Joint.
+    This is a temporary fix and should be handled better in the future.
+    See: compas_timber -> l_lap_joint.py -> _get_beam_ref_side_index -> offset_vector, line 101.
+    """
+    # TODO: this is a temporary fix and should be handled better in the future. See: compas_timber -> l_lap_joint.py -> _get_beam_ref_side_index -> offset_vector, line 101.
+    off_vec = Vector(0, 0, offset_tol)
+    for edge in graph.edges_where({"hierarchy": "shoe", "direction_id": "A"}):
+        ln = graph.get_edge_attribute(edge, 'shifted_line', else_value=graph.edge_line(edge))
+        new_ln = Line(ln.start + off_vec, ln.end + off_vec)
+
+        graph.edge_attribute(edge, 'shifted_line', new_ln)
+    return
+    
 # --------------------------------------
 # Joinery planning
 # --------------------------------------
-def _k_birdsmouth_solver(model, mill_depth, miter_type=None, miter_flag=False):
+def _k_birdsmouth_solver(model, mill_depth, max_distance=None, miter_type=None, miter_flag=False):
     """
     Handle K birdsmouth joints with three beams.
 
@@ -339,7 +374,7 @@ def _k_birdsmouth_solver(model, mill_depth, miter_type=None, miter_flag=False):
     max_offset = max(candidate.distance for candidate in model.joint_candidates)
 
     # handle non-pair joints (in this case a 3-way connection using TripletAnalyzer)
-    analyzer = TripletAnalyzer(model, max_offset/2)  # NOTE: don't hardcode the threshold
+    analyzer = TripletAnalyzer(model, max_distance=max_distance)
     clusters = analyzer.find()
 
     for cluster in clusters:
@@ -384,7 +419,7 @@ def apply_joints(
         heel_threshold=None,
         step_depth=None,
         riser_angle=None,
-        mid_lap_flip=False,
+        x_lap_flip=False,
         debug=False
     ):
 
@@ -393,8 +428,8 @@ def apply_joints(
         max_distance = MAX_JOINT_DIST
     if k_mill_depth is None:
         k_mill_depth = KBIRD_MILL_DEPTH
-    if k_miter_type is None:
-        k_miter_type = KBIRD_MITER_TYPE
+    # if k_miter_type is None:
+    #     k_miter_type = KBIRD_MITER_TYPE
     if heel_threshold is None:
         heel_threshold = TMULTI_HEEL_THRESHOLD
     if step_depth is None:
@@ -405,11 +440,13 @@ def apply_joints(
     for beam in model.beams:
         beam.reset_computed_properties()
 
+    
     model.connect_adjacent_beams(max_distance)
 
     # 1. Handle K joints with three beams first
     _k_birdsmouth_solver(
         model,
+        max_distance=max_distance,
         mill_depth=k_mill_depth,
         miter_type=k_miter_type,
         miter_flag=k_miter_flag
@@ -423,17 +460,18 @@ def apply_joints(
         topo = candidate.topology
         ca, cb = candidate.elements
 
+        if ca.attributes["level"] >= 1 and cb.attributes["hierarchy"] == 'shoe':
+            continue # avoid creating joint between shoe and lower beam
+
         if topo == JointTopology.TOPO_T:
             # Planar T joints
             if is_planar_t_joint(candidate):
                 if cb.attributes["hierarchy"] == 'shoe' and ca.attributes["level"] == 0:
-                    TStepJoint.create(model, ca, cb, step_shape="double")
+                    TStepJoint.create(model, ca, cb, step_shape="double", step_depth=step_depth)
 
                 # Middle T Joint
                 elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-                    # TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
-                    # TLapJoint.create(model, ca, cb)
-                    TStepJoint.create(model, ca, cb)
+                    TStepJoint.create(model, ca, cb, step_depth=step_depth) # NOTE: step_shape?
 
                 else:
                     if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < heel_threshold:
@@ -442,7 +480,9 @@ def apply_joints(
                         step_shape = "step"
 
                     TMultiStepJoint.create(
-                        model, ca, cb,
+                        model,
+                        ca,
+                        cb,
                         step_shape=step_shape,
                         step_depth=step_depth,
                         riser_angle=riser_angle
@@ -457,11 +497,13 @@ def apply_joints(
 
         ### X Lap Joint
         elif topo == JointTopology.TOPO_X:
-        #     if ca.attributes['direction_id'] == 'A':
-        #         flip = False
-        #     else:
-        #         flip = True
-            XLapJoint.create(model, ca, cb)
+            # Fix the order of main and cross beams based on direction_id
+            if ca.attributes['direction_id'] == 'A':
+                XLapJoint.create(model, ca, cb, flip_lap_side=x_lap_flip)
+            elif ca.attributes['direction_id'] == 'B':
+                XLapJoint.create(model, cb, ca, flip_lap_side=x_lap_flip)
+            else:
+                raise ValueError("Unclassified direction_id found. Please check edge classification.")
 
         else:
             if debug:
@@ -484,14 +526,23 @@ def apply_processings(model):
                     cutting_frame = clt_plate.frame
                     jrc = JackRafterCut.from_plane_and_beam(cutting_frame, beam)
                     beam.add_feature(jrc)
-
+        
+        
             # LongitudinalCut
         elif beam.attributes["hierarchy"] == "shoe":
             if clt_plate:
                 cutting_frame = clt_plate.frame
-                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam)
+                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam, is_joinery=True) 
                 beam.add_feature(lc)
-        
+
+            # 15 deg symmetric (trapezoid) end cuts on both ends of the shoe
+            SHOE_END_ANGLE = -30.0  # change this to retune the cut angle
+            for at_start in (True, False):
+                sign = 1.0 if at_start else -1.0   # +/- gives a symmetric trapezoid; flip both signs to swap top/bottom
+                plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE)
+                jrc = JackRafterCut.from_plane_and_beam(plane, beam)
+                beam.add_feature(jrc)
+
             # End cut for reached beams
         elif beam.attributes['reached']:
                 cutting_plane = model.attributes.get("cut_plane")
