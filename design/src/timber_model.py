@@ -28,7 +28,7 @@ from compas_timber.analyzers import TripletAnalyzer
 
 from compas_timber.connections import (
     JointTopology, TMultiStepJoint, TStepJoint, LMiterJoint,
-    XLapJoint, KBirdsmouthJoint, TBirdsmouthJoint, TLapJoint
+    XLapJoint, KBirdsmouthJoint, TBirdsmouthJoint, TLapJoint, TButtJoint
 )
 
 from compas_timber.fabrication import JackRafterCut, LongitudinalCut
@@ -37,7 +37,7 @@ from collections import Counter
 from timber_config import (
     TIMBER_MODEL_TOL, PLATE_THICKNESS, PLATE_Z_OFFSET, MAX_JOINT_DIST,
     TMULTI_HEEL_THRESHOLD, TMULTI_STEP_DEPTH, TMULTI_RISER_ANGLE,
-    KBIRD_MILL_DEPTH, KBIRD_MITER_TYPE
+    KBIRD_MILL_DEPTH, KBIRD_MITER_TYPE, TBUTT_ANGLE_THRESHOLD
 )
 
 # --------------------------------------
@@ -49,7 +49,7 @@ def _average_points(points):
     z = sum(p.z for p in points) / len(points)
     return Point(x, y, z)
 
-def _angled_end_plane(beam, at_start, angle_deg, tilt_axis="width"):
+def _angled_end_plane(beam, at_start, angle_deg, tilt_axis="width", offset=0.0):
     """Cutting plane through one end of a beam, tilted `angle_deg` from a square cut.
 
     Parameters
@@ -62,16 +62,23 @@ def _angled_end_plane(beam, at_start, angle_deg, tilt_axis="width"):
     tilt_axis : str
         "height" tilts the cut in the beam's height plane (like a rafter),
         "width" tilts it sideways.
+    offset : float
+        Shift the plane outward along the beam axis by this distance. Use this
+        to push the cut onto a blank that has been extended by `add_blank_extension`.
 
     Returns
     -------
     :class:`compas.geometry.Plane`
     """
     cl = beam.centerline
+    axial = beam.frame.xaxis.unitized()          # x = along the centerline
     point = cl.start if at_start else cl.end
 
+    # shift outward by `offset` to reach an extended (blank) tip
+    if offset:
+        point = point - axial * offset if at_start else point + axial * offset
+
     # square-cut normal points OUT of the beam at that end
-    axial = beam.frame.xaxis.unitized()          # x = along the centerline
     normal = -axial if at_start else axial
 
     rot_axis = beam.frame.zaxis if tilt_axis == "height" else beam.frame.yaxis
@@ -420,7 +427,8 @@ def apply_joints(
         step_depth=None,
         riser_angle=None,
         x_lap_flip=False,
-        debug=False
+        debug=False,
+        tbutt_angle_threshold=None
     ):
 
     # Default config
@@ -436,6 +444,8 @@ def apply_joints(
         step_depth = TMULTI_STEP_DEPTH
     if riser_angle is None:
         riser_angle = TMULTI_RISER_ANGLE
+    if tbutt_angle_threshold is None:
+        tbutt_angle_threshold = TBUTT_ANGLE_THRESHOLD
 
     for beam in model.beams:
         beam.reset_computed_properties()
@@ -488,8 +498,11 @@ def apply_joints(
                         riser_angle=riser_angle
                     )
             else:
-                # Non-planar T joints
-                TBirdsmouthJoint.create(model, ca, cb)
+                if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < tbutt_angle_threshold:
+                    TButtJoint.create(model, ca, cb)
+                else:
+                    # Non-planar T joints
+                    TBirdsmouthJoint.create(model, ca, cb)
 
         ### L Miter Joint at the middle of the structure
         elif topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
@@ -513,8 +526,25 @@ def apply_joints(
 
 def apply_processings(model):
     """Process joinery and finalize cuts which need to be done after."""
+    # Shoe bevel knob: set the extension you want per end, in METERS. The bevel
+    # angle is derived from it later (angle = atan(2*X / height)).
+    SHOE_EXTENSION = 0.03  # per end, in meters (0.03 = 3 cm)
+    # False -> trapezoid: bevel + a flat tip face, length preserved.
+    # True  -> full cut: the plane slices the whole beam, leaving one face.
+    SHOE_FULL_CUT = True
+
+    # Extend shoe blanks on BOTH ends BEFORE joinery, so the joint cuts are
+    # computed against the final (extended) blank and don't shift afterwards.
+    # The full cut needs 2*X of stock so the plane exits through the far face;
+    # the trapezoid needs only X. The plane position (offset=X) is the same either way.
+    for beam in model.beams:
+        if beam.attributes.get("hierarchy") == "shoe":
+            ext = 2.0 * SHOE_EXTENSION if SHOE_FULL_CUT else SHOE_EXTENSION
+            beam.attributes["shoe_ext"] = SHOE_EXTENSION
+            beam.add_blank_extension(ext, ext)
+
     model.process_joinery()
-    
+
     clt_plate = model.attributes.get("clt_plate")
     for beam in model.beams:
         beam.reset_computed_properties()
@@ -530,16 +560,21 @@ def apply_processings(model):
         
             # LongitudinalCut
         elif beam.attributes["hierarchy"] == "shoe":
+            # Blank already extended by X on both ends BEFORE joinery (see top of
+            # this function), so existing joints don't shift. Reuse the same X and
+            # derive the bevel angle from it.
+            X = beam.attributes.get("shoe_ext", 0.0)
+            theta = math.degrees(math.atan(2.0 * X / beam.height))   # angle derived from X
+            SHOE_END_ANGLE = -theta                                  # negative keeps bevel on the Bottom
             if clt_plate:
                 cutting_frame = clt_plate.frame
-                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam, is_joinery=True) 
+                lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam, is_joinery=True)
                 beam.add_feature(lc)
 
-            # 15 deg symmetric (trapezoid) end cuts on both ends of the shoe
-            SHOE_END_ANGLE = -30.0  # change this to retune the cut angle
             for at_start in (True, False):
                 sign = 1.0 if at_start else -1.0   # +/- gives a symmetric trapezoid; flip both signs to swap top/bottom
-                plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE)
+                # offset=X moves the cut plane out to the newly extended blank tip
+                plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE, offset=X)
                 jrc = JackRafterCut.from_plane_and_beam(plane, beam)
                 beam.add_feature(jrc)
 
