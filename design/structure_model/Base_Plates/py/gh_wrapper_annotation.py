@@ -1,7 +1,7 @@
 """
 Grasshopper Py3 wrapper: base_footing_annotation_component
 
-GH Inputs expected (all optional — component still runs with no connections):
+GH Inputs expected (all optional â€” component still runs with no connections):
 - package          (Item Access; opaque payload from gh_wrapper_calculations or gh_wrapper_ct_export)
 - payload          (Item Access; alias for package)
 - timber_brep      (manual Brep list; used when package is absent or timber_source="manual")
@@ -63,14 +63,20 @@ except Exception:
 ROOT = r"C:\Users\Juste\Documents\_GitHub\MAS-2526\10_llhil-t2-fabrication\design\structure_model\Base_Plates"
 HELPER_PATH = os.path.join(ROOT, "py", "base_footing_annotation_component.py")
 RUN_TAG = "ANNOTATION_WRAPPER_SYNC_2026_05_18"
+_DEBUG_LOG = False
 
-print("[GH Annotation Wrapper] RUN_TAG:", RUN_TAG)
-print("[GH Annotation Wrapper] HELPER_PATH:", HELPER_PATH)
-print("[GH Annotation Wrapper] HELPER_EXISTS:", os.path.exists(HELPER_PATH))
+def _debug_print(*args):
+    if _DEBUG_LOG:
+        __import__("builtins").print(*args)
+
+
+_debug_print("[GH Annotation Wrapper] RUN_TAG:", RUN_TAG)
+_debug_print("[GH Annotation Wrapper] HELPER_PATH:", HELPER_PATH)
+_debug_print("[GH Annotation Wrapper] HELPER_EXISTS:", os.path.exists(HELPER_PATH))
 
 
 # ---------------------------------------------------------------------------
-# Fallback output assignments — survive any early-exit or truncated script run
+# Fallback output assignments â€” survive any early-exit or truncated script run
 # ---------------------------------------------------------------------------
 out = "Annotation wrapper startup reached"
 rh_geo_preview = []
@@ -96,7 +102,7 @@ debug_status = {
 
 def _load_helper():
     module_name = "base_footing_annotation_component"
-    print("[GH Annotation Wrapper] HELPER_LOAD_START")
+    _debug_print("[GH Annotation Wrapper] HELPER_LOAD_START")
     sys.modules.pop(module_name, None)
     spec = importlib.util.spec_from_file_location(module_name, HELPER_PATH)
     if spec is None or spec.loader is None:
@@ -104,7 +110,7 @@ def _load_helper():
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
     spec.loader.exec_module(module)
-    print("[GH Annotation Wrapper] HELPER_LOADED: True")
+    _debug_print("[GH Annotation Wrapper] HELPER_LOADED: True")
     return module
 
 
@@ -367,7 +373,7 @@ debug_status = {
     "phase": "initialized",
 }
 
-print("[GH Annotation Wrapper] OUTPUTS_INITIALIZED")
+_debug_print("[GH Annotation Wrapper] OUTPUTS_INITIALIZED")
 
 
 # ---------------------------------------------------------------------------
@@ -598,7 +604,7 @@ try:
 
         _messages = result.get("messages", [])
         _source = result.get("source_report", {})
-        out = "Annotation OK — geo: {0} items | {1}".format(
+        out = "Annotation OK â€” geo: {0} items | {1}".format(
             len(rh_geo_preview),
             ", ".join("{0}={1}".format(k, v) for k, v in _source.items()
                       if k.endswith("_count") or k == "has_package"),
@@ -635,7 +641,7 @@ try:
             "source_report": _source,
         }
 
-        print("[GH Annotation Wrapper] DONE geo_count={0}".format(len(rh_geo_preview)))
+        _debug_print("[GH Annotation Wrapper] DONE geo_count={0}".format(len(rh_geo_preview)))
 
 except Exception:
     try:
@@ -643,8 +649,8 @@ except Exception:
     except NameError:
         import traceback as _traceback
         out = _traceback.format_exc()
-    print("[GH Annotation Wrapper] Exception caught:")
-    print(out)
+    _debug_print("[GH Annotation Wrapper] Exception caught:")
+    _debug_print(out)
     rh_geo_preview = []
     dim_lines = []
     extension_lines = []
@@ -659,3 +665,5 @@ except Exception:
         "phase": "error",
         "error": out,
     }
+
+

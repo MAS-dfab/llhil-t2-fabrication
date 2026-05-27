@@ -762,3 +762,99 @@ def apply_processings_middle_prototype(model):
         else:
             continue
     return model
+
+# # -----------------------------------------------------------------------------
+# # CT BOLT HOLES MILLING 
+# # -----------------------------------------------------------------------------
+# # The timber_model / BTLx path should receive timber-removal operations only.
+# # Embedded steel plates are NOT added to the TimberModel here.
+# #
+# # Expected upstream mapping:
+# # - through bolt holes -> FastenerTimberInterface.holes
+# # - slot cuts          -> FastenerTimberInterface.shapes
+# # - counterbores       -> FastenerTimberInterface.shapes
+# # - embedded plates    -> omitted from timber_model / BTLx
+
+
+# def summarize_ct_milling_interfaces(ct_fastener_package, debug=False):
+#     """Summarize CT milling interfaces without adding embedded plates to the model.
+
+#     Parameters
+#     ----------
+#     ct_fastener_package : dict
+#         Package returned by ct_anchor_milling.build_ct_fastener_objects(...,
+#         include_plate_fasteners=False).
+
+#     Returns
+#     -------
+#     dict
+#         Counts and references to milling-only FastenerTimberInterface objects.
+#     """
+#     if not isinstance(ct_fastener_package, dict):
+#         return {
+#             "interfaces": [],
+#             "interface_count": 0,
+#             "plate_fastener_count": 0,
+#             "plate_shape_count": 0,
+#             "embedded_plate_omitted_from_timber_model": True,
+#             "error": "ct_fastener_package is not a dict",
+#         }
+
+#     interfaces = ct_fastener_package.get("interfaces", []) or []
+#     plate_fasteners = ct_fastener_package.get("plate_fasteners", []) or []
+#     plate_shapes = ct_fastener_package.get("plate_shapes", []) or []
+
+#     summary = {
+#         "interfaces": interfaces,
+#         "interface_count": len(interfaces),
+#         "plate_fastener_count": len(plate_fasteners),
+#         "plate_shape_count": len(plate_shapes),
+#         "embedded_plate_omitted_from_timber_model": True,
+#         "error": ct_fastener_package.get("error"),
+#     }
+
+#     if debug:
+#         print(
+#             "[timber_model] CT milling interfaces: interfaces={0}, plate_fasteners_ignored={1}, plate_shapes_ignored={2}".format(
+#                 summary["interface_count"],
+#                 summary["plate_fastener_count"],
+#                 summary["plate_shape_count"],
+#             )
+#         )
+
+#     return summary
+
+
+# def apply_ct_fastener_package(model, ct_fastener_package, group=None, debug=False):
+#     """Compatibility no-op for older callers.
+
+#     This function intentionally does NOT add PlateFastener objects to the
+#     TimberModel. The BTLx/timber fabrication model should contain only the
+#     timber milling Breps/features generated upstream.
+
+#     Returns a milling-interface summary.
+#     """
+#     return summarize_ct_milling_interfaces(ct_fastener_package, debug=debug)
+
+
+# def ct_fastener_records_to_model(model, records, build_function=None, group=None, debug=False):
+#     """Convenience adapter: records -> milling interfaces summary.
+
+#     Build milling-only interfaces and
+#     returns a summary so downstream BTLx logic can consume the existing Breps /
+#     feature records.
+#     """
+#     if build_function is None:
+#         return {
+#             "interfaces": [],
+#             "interface_count": 0,
+#             "embedded_plate_omitted_from_timber_model": True,
+#             "error": "build_function is required, pass ct_anchor_milling.build_ct_fastener_objects",
+#         }
+
+#     try:
+#         package = build_function(records or [], include_plate_fasteners=False)
+#     except TypeError:
+#         package = build_function(records or [])
+
+#     return summarize_ct_milling_interfaces(package, debug=debug)
