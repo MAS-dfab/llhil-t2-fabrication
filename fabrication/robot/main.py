@@ -65,7 +65,7 @@ def main():
     # 1. LOAD DATA
     # ---------------------------------------------------------
     print("Loading models...")
-    filepath_model = "fabrication\\data\\models\\tm_test.json"
+    filepath_model = "fabrication\\data\\models\\260526_v2_timber_models.json"
 
     if not os.path.exists(filepath_model):
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
@@ -73,9 +73,9 @@ def main():
     timber_model = json_load(filepath_model)
 
     timber_model.process_joinery()
-    plate_T = timber_model.plates[0].transformation_to_local()
-    for b in timber_model.beams:
-        b.attributes["parent_T"] = plate_T
+    # plate_T = timber_model.plates[0].transformation_to_local()
+    # for b in timber_model.beams:
+    #     b.attributes["parent_T"] = plate_T
 
 
     # ---------------------------------------------------------
@@ -89,11 +89,11 @@ def main():
     # 3. SEQUENCE — resume from last assembled
     # ---------------------------------------------------------
     in_seq_beams = sorted(
-        (obj for obj in timber_model.beams if "sequence" in obj.attributes),
-        key=lambda x: x.attributes["sequence"]
+        (obj for obj in timber_model.beams if "sequence_id" in obj.attributes),
+        key=lambda x: x.attributes["sequence_id"]
     )
     total_beams = len(in_seq_beams)
-    robot_beams = [b for b in in_seq_beams if b.attributes.get("robot")]
+    # robot_beams = [b for b in in_seq_beams if b.attributes.get("robot")]
 
     state = _load_state()
     last_assembled = state.get("last_assembled", -1)
@@ -146,7 +146,10 @@ def main():
 
         # Update to the scanned beam (allows jumping forward if needed)
         trajectory_planner.seq_i = seq_i
-        beam = robot_beams[seq_i]
+        beam = in_seq_beams[seq_i]
+
+        beam = timber_model.nodes_where(attributes={"sequence_id": seq_i})
+        print(beam.name)
         print("QR: {} -> seq_i={} ({})".format(payload, seq_i, beam))
 
         # --- Highlight: remove previous beam, add new one ---
@@ -211,9 +214,9 @@ def main():
 
     # --- Button: Compute Trajectories ---
     def _on_compute():
-        beam = robot_beams[trajectory_planner.seq_i]
-        all_seq_i = beam.attributes.get("sequence")
-        print(all_seq_i)
+        beam = in_seq_beams[trajectory_planner.seq_i]
+        # all_seq_i = beam.attributes.get("sequence")
+        # print(all_seq_i)
         player._cleanup_previous_run()
 
         # clear the QR highlight
@@ -239,7 +242,7 @@ def main():
             p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
             assembled_elements.append(p_mesh)
         # beam.attributes["parent_T"] = parent_T  
-        for b in in_seq_beams[:all_seq_i]:
+        for b in in_seq_beams[:trajectory_planner.seq_i]:
             # b.attributes["parent_T"] = parent_T
             b_mesh = b.geometry.transformed(trajectory_planner.at_T * b.attributes.get("parent_T")).to_viewmesh()[0]
             assembled_elements.append(b_mesh)
