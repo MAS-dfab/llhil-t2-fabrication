@@ -65,7 +65,7 @@ def main():
     # 1. LOAD DATA
     # ---------------------------------------------------------
     print("Loading models...")
-    filepath_model = "fabrication\\data\\timber_models\\260527_v2_fabrication_model.json"
+    filepath_model = "fabrication\\data\\timber_models\\260527_v1_sequenced_timber_model.json"
 
     if not os.path.exists(filepath_model):
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
@@ -128,6 +128,10 @@ def main():
 
     def _on_qr_received(payload):
         """Called from the MQTT thread when a QR scan is published."""
+        if len(player.buttons_to_del) > 0:
+            for button in player.buttons_to_del:
+                player.viewer.remove_ui_element(button)
+
         try:
             beam_id = int(payload.split("_")[-1])
         except (ValueError, IndexError):
@@ -174,7 +178,7 @@ def main():
         confirm_button = Button(text="Confirm Assembly", action=_on_confirm, label=None)
         buttons_to_del.append(confirm_button)
         player.viewer.add_ui_element(confirm_button)
-        player.viewer.buttons_to_del = buttons_to_del
+        player.buttons_to_del = buttons_to_del
 
         player._cleanup_previous_run()
 
@@ -271,6 +275,28 @@ def main():
     def _on_compute():
         beam = in_seq_beams[trajectory_planner.seq_i]
 
+        player._cleanup_previous_compute()
+
+        if hasattr(trajectory_planner, 'workpiece_manager'):
+            wm = trajectory_planner.workpiece_manager
+            wm.rules.clear()
+            wm.meshes.clear()
+            wm.latest_stock_vanish_time = 0.0
+            wm.lumber_yard_stock_y = 0.0
+
+        if hasattr(trajectory_planner, 'trajectory_list'):
+            trajectory_planner.trajectory_list = []
+
+        if hasattr(trajectory_planner, 'current_time'):
+            trajectory_planner.current_time = 0.0
+
+        if hasattr(trajectory_planner, 'planned_time'):
+            trajectory_planner.planned_time = 0.0
+
+        if trajectory_planner._fetched_pickup_frame is None:
+            print("ERROR: Fetch pickup frame first before computing.")
+            return
+
         print("\n{}".format("X" * 40))
         print("PLANNING element {} of {}: {}".format(
             beam.attributes.get("sequence"), total_beams, beam))
@@ -352,7 +378,7 @@ def main():
             _set_label("all done!", _COL_COMPUTED)
             print("All {} beams assembled!".format(total_beams))
         
-        for button in player.viewer.buttons_to_del:
+        for button in player.buttons_to_del:
             player.viewer.remove_ui_element(button)
 
 

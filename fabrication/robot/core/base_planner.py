@@ -55,9 +55,7 @@ class BaseRobotPlanner():
             if joint is not None and joint.type == 0:  # Only apply to revolute joints
                 joint.limit.lower += math.radians(2)  # Add small buffer to avoid exact limits
                 joint.limit.upper -= math.radians(2)
-                
-              
-            
+                         
     @property
     def current_configuration(self):
         """Returns the current full configuration of the robot state."""
@@ -147,7 +145,7 @@ class BaseRobotPlanner():
         else:
             return target_frame.translated(target_frame.zaxis * -approach_distance)
 
-    def get_cartesian_trajectory(self, frames_list, avoid_collisions=True, planning_group=None):
+    def get_cartesian_trajectory(self, frames_list, avoid_collisions=True, planning_group=None, path_constraints=None):
         """Plans a Cartesian trajectory through a list of frames."""
         current_frame = self.get_current_end_frame()
         frames_list.insert(0, current_frame)
@@ -156,6 +154,8 @@ class BaseRobotPlanner():
         self.state.robot_configuration = self.current_configuration
         plan_options = self.default_options
         plan_options["avoid_collisions"] = avoid_collisions
+        if path_constraints:
+            plan_options["path_constraints"] = path_constraints
 
         trajectory = None
         try:
@@ -170,7 +170,7 @@ class BaseRobotPlanner():
             print(f"Cartesian planning failed: {e}")
         return trajectory
 
-    def get_motion_to_frame(self, target_frame, planning_group=None):
+    def get_motion_to_frame(self, target_frame, planning_group=None, path_constraints=None):
         """Plans a free-space (non-Cartesian) motion to a target frame."""
         frame_target = FrameTarget(target_frame, target_mode=TargetMode.TOOL)
         self.state.robot_configuration = self.current_configuration
@@ -178,7 +178,7 @@ class BaseRobotPlanner():
             "allowed_planning_time": 10, 
             "num_planning_attempts": 50,
             "max_steps": 0.1,
-            "path_constraints": self.global_constraints
+            "path_constraints": self.global_constraints if path_constraints is None else path_constraints
             }
 
         trajectory = None

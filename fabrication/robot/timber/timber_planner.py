@@ -259,6 +259,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 2. Pick Element at pickpoint
         print("getting element pick trajectory at pickpoint")
+        gantry_constraints = self.get_gantry_constraints()
         trajectories.append(self.get_cartesian_trajectory([element_pickup_frame]))
 
         # Prepare mesh for attachment
@@ -286,8 +287,10 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 6. Place at AT
         print("getting element place trajectory at AT")
+        gantry_constraints = self.get_gantry_constraints()
         # Overriding default options to disable collision avoidance for the final placement
-        trajectories.append(self.get_cartesian_trajectory([element_at_frame], avoid_collisions=False))
+        trajectories.append(self.get_cartesian_trajectory([element_at_frame], avoid_collisions=False, path_constraints=None))
+        # trajectories.append(self.get_motion_to_frame(element_at_frame, path_constraints=gantry_constraints))
         
         self.detach_workpiece(str(element.guid), element_at_frame)
 
@@ -388,3 +391,12 @@ class TimberProcessPlanner(BaseRobotPlanner):
         e_at_frame_offset = e_at_frame.translated(e_at_frame.zaxis * -0.1)
         element_geometry = element.elementgeometry
         return grasp_frame, e_at_frame_offset, element_geometry
+    
+    def get_gantry_constraints(self):
+        current_config = self.current_configuration
+        print(current_config['bridge1_joint_EA_X'], current_config['robot12_joint_EA_Y'], current_config['robot12_joint_EA_Z'])
+        path_constraints = []
+        path_constraints.append(JointConstraint('bridge1_joint_EA_X', current_config['bridge1_joint_EA_X'], 0.00, 0.00, 1.0))
+        path_constraints.append(JointConstraint('robot12_joint_EA_Y', current_config['robot12_joint_EA_Y'], 0.05, 0.05, 1.0))
+        # path_constraints.append(JointConstraint('robot12_joint_EA_Z', current_config['robot12_joint_EA_Z'], 0.01, 0.01, 1.0))
+        return path_constraints
