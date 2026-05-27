@@ -78,19 +78,25 @@ DEFAULT_PLATE_WIDTH = 0.8
 DEFAULT_PLATE_THICKNESS = 0.02
 DEFAULT_BASEPLATE_TOP_Z = 0.3658
 RUN_TAG = "BPG_WRAPPER_SYNC_2026_05_19_DESIGNER_BOLT_INPUTS"
+_DEBUG_LOG = False
+
+def _debug_print(*args):
+    if _DEBUG_LOG:
+        __import__("builtins").print(*args)
+
 
 # Diagnostic: print resolved path
-print("[GH Wrapper] RUN_TAG:", RUN_TAG)
-print("[GH Wrapper] ROOT:", ROOT)
+_debug_print("[GH Wrapper] RUN_TAG:", RUN_TAG)
+_debug_print("[GH Wrapper] ROOT:", ROOT)
 HELPER_PATH = os.path.join(ROOT, "py", "base_plate_geometry.py")
-print("[GH Wrapper] HELPER_PATH:", HELPER_PATH)
-print("[GH Wrapper] HELPER_EXISTS:", os.path.exists(HELPER_PATH))
+_debug_print("[GH Wrapper] HELPER_PATH:", HELPER_PATH)
+_debug_print("[GH Wrapper] HELPER_EXISTS:", os.path.exists(HELPER_PATH))
 
 
 
 def _load_helper():
     module_name = "base_plate_geometry"
-    print("[GH Wrapper] HELPER_LOAD_START")
+    _debug_print("[GH Wrapper] HELPER_LOAD_START")
     sys.modules.pop(module_name, None)
     spec = importlib.util.spec_from_file_location(module_name, HELPER_PATH)
     if spec is None or spec.loader is None:
@@ -101,11 +107,11 @@ def _load_helper():
     try:
         spec.loader.exec_module(module)
     except Exception as e:
-        print("[GH Wrapper] Error importing base_plate_geometry.py:", e)
+        _debug_print("[GH Wrapper] Error importing base_plate_geometry.py:", e)
         import traceback
-        print(traceback.format_exc())
+        _debug_print(traceback.format_exc())
         raise
-    print("[GH Wrapper] HELPER_LOADED: True")
+    _debug_print("[GH Wrapper] HELPER_LOADED: True")
     return module
 
 
@@ -191,7 +197,7 @@ def _scale_breps_copy(breps, scale_factor):
             passthrough_count += 1
             scaled.append(geom)
 
-    print(
+    _debug_print(
         "[GH Wrapper] footing scale transform: transformed={0}, passthrough={1}".format(
             transformed_count,
             passthrough_count,
@@ -268,13 +274,13 @@ def _component_key():
 
 def _store_payload_reference(kind, value):
     if GH_ObjectWrapper is not None:
-        print("[GH Wrapper] payload output mode=gh_object_wrapper kind={0}".format(kind))
+        _debug_print("[GH Wrapper] payload output mode=gh_object_wrapper kind={0}".format(kind))
         return GH_ObjectWrapper(value)
     if sc is None:
         return value
     token = "BPG_PAYLOAD::{0}::{1}".format(kind, _component_key())
     sc.sticky[token] = value
-    print("[GH Wrapper] payload output mode=reference_token kind={0}".format(kind))
+    _debug_print("[GH Wrapper] payload output mode=reference_token kind={0}".format(kind))
     return token
 
 
@@ -343,13 +349,13 @@ def _coerce_webplate_hole_pattern(value):
     return aliases.get(text)
 
 
-print("[GH Wrapper] BODY_READY")
+_debug_print("[GH Wrapper] BODY_READY")
 
 
 try:
     helper = _load_helper()
     try:
-        print(
+        _debug_print(
             "[GH Wrapper] helper capabilities: rg_available={0}, base_footing_run_callable={1}".format(
                 bool(getattr(helper, "rg", None) is not None),
                 callable(getattr(helper, "base_footing_run", None)),
@@ -359,7 +365,7 @@ try:
         pass
 
     if "enabled" in globals() and enabled is False:
-        print("[GH Wrapper] Branch: disabled")
+        _debug_print("[GH Wrapper] Branch: disabled")
         out = "Base plate geometry disabled."
         payload = {}
         members = []
@@ -367,7 +373,7 @@ try:
         preview_breps = []
         footing_debug = []
     else:
-        print("[GH Wrapper] Branch: active")
+        _debug_print("[GH Wrapper] Branch: active")
         kwargs = {}
         if "payload_override" in globals() and payload_override:
             payload_candidate = _unwrap_payload(payload_override)
@@ -419,7 +425,7 @@ try:
             elif "target_member_index" in globals() and target_member_index is not None:
                 # Backward compatibility only: use target_cluster_index (1..4) going forward.
                 kwargs["target_cluster_index"] = int(target_member_index)
-                print("[GH Wrapper] target_member_index is deprecated; use target_cluster_index (1..4).")
+                _debug_print("[GH Wrapper] target_member_index is deprecated; use target_cluster_index (1..4).")
             if "geometry_kind" in globals() and geometry_kind:
                 kwargs["geometry_kind"] = str(geometry_kind)
             if "baseplate_top_z" in globals() and baseplate_top_z is not None:
@@ -442,10 +448,10 @@ try:
                 kwargs["webplate_thickness"] = float(webplate_thickness)
             if "bolt_dia" in globals() and bolt_dia is not None:
                 kwargs["bolt_dia"] = float(bolt_dia)
-                print("[GH Wrapper] designer bolt_dia applied:", kwargs["bolt_dia"])
+                _debug_print("[GH Wrapper] designer bolt_dia applied:", kwargs["bolt_dia"])
             if "hole_clearance" in globals() and hole_clearance is not None:
                 kwargs["hole_clearance"] = float(hole_clearance)
-                print("[GH Wrapper] designer hole_clearance applied:", kwargs["hole_clearance"])
+                _debug_print("[GH Wrapper] designer hole_clearance applied:", kwargs["hole_clearance"])
             total_bolt_count_input_name = None
             total_bolt_count_input_value = None
             for candidate_name in (
@@ -460,7 +466,7 @@ try:
                     break
             if total_bolt_count_input_name is not None:
                 kwargs["total_bolt_count"] = int(float(total_bolt_count_input_value))
-                print(
+                _debug_print(
                     "[GH Wrapper] designer bolt count {0}={1!r}".format(
                         total_bolt_count_input_name,
                         total_bolt_count_input_value,
@@ -468,10 +474,10 @@ try:
                 )
             if "bolt_hole_dia" in globals() and bolt_hole_dia is not None:
                 kwargs["webplate_hole_diameter"] = float(bolt_hole_dia)
-                print("[GH Wrapper] bolt_hole_dia override applied:", kwargs["webplate_hole_diameter"])
+                _debug_print("[GH Wrapper] bolt_hole_dia override applied:", kwargs["webplate_hole_diameter"])
             elif "webplate_hole_diameter" in globals() and webplate_hole_diameter is not None:
                 kwargs["webplate_hole_diameter"] = float(webplate_hole_diameter)
-                print("[GH Wrapper] webplate_hole_diameter alias applied:", kwargs["webplate_hole_diameter"])
+                _debug_print("[GH Wrapper] webplate_hole_diameter alias applied:", kwargs["webplate_hole_diameter"])
             if "webplate_hole_pitch" in globals() and webplate_hole_pitch is not None:
                 kwargs["webplate_hole_pitch"] = float(webplate_hole_pitch)
             if "webplate_hole_transverse_spacing" in globals() and webplate_hole_transverse_spacing is not None:
@@ -488,7 +494,7 @@ try:
                 resolved_rows = _coerce_webplate_hole_rows(row_input_value)
                 if resolved_rows is not None:
                     kwargs["webplate_hole_rows"] = resolved_rows
-                    print(
+                    _debug_print(
                         "[GH Wrapper] hole row input {0}={1!r} -> rows={2}".format(
                             row_input_name,
                             row_input_value,
@@ -496,7 +502,7 @@ try:
                         )
                     )
                     if row_input_name == "plate_hole_rows":
-                        print("[GH Wrapper] plate_hole_rows is a supported alias; prefer webplate_hole_rows.")
+                        _debug_print("[GH Wrapper] plate_hole_rows is a supported alias; prefer webplate_hole_rows.")
             pattern_input_name = None
             pattern_input_value = None
             if "webplate_hole_pattern" in globals() and webplate_hole_pattern is not None:
@@ -517,7 +523,7 @@ try:
                     kwargs["webplate_hole_pattern"] = resolved_pattern
                     if resolved_pattern == "staggered_double_row":
                         kwargs["webplate_hole_rows"] = 2
-                    print(
+                    _debug_print(
                         "[GH Wrapper] hole pattern input {0}={1!r} -> pattern={2}".format(
                             pattern_input_name,
                             pattern_input_value,
@@ -540,7 +546,7 @@ try:
                     break
             if pair_axis_shift_input_name is not None:
                 kwargs["stiffener_pair_axis_shift"] = float(pair_axis_shift_input_value)
-                print(
+                _debug_print(
                     "[GH Wrapper] stiffener pair axis shift {0}={1!r}".format(
                         pair_axis_shift_input_name,
                         pair_axis_shift_input_value,
@@ -560,7 +566,7 @@ try:
                     break
             if pair_from_input_name is not None:
                 kwargs["stiffener_pair_from_point"] = pair_from_input_value
-                print("[GH Wrapper] stiffener pair from point input: {0}".format(pair_from_input_name))
+                _debug_print("[GH Wrapper] stiffener pair from point input: {0}".format(pair_from_input_name))
 
             pair_to_input_name = None
             pair_to_input_value = None
@@ -575,7 +581,7 @@ try:
                     break
             if pair_to_input_name is not None:
                 kwargs["stiffener_pair_to_point"] = pair_to_input_value
-                print("[GH Wrapper] stiffener pair to point input: {0}".format(pair_to_input_name))
+                _debug_print("[GH Wrapper] stiffener pair to point input: {0}".format(pair_to_input_name))
 
             if "include_stiffeners" in globals() and include_stiffeners is not None:
                 kwargs["include_stiffeners"] = bool(include_stiffeners)
@@ -584,7 +590,7 @@ try:
             elif "calc_payload" in globals() and calc_payload:
                 kwargs["sizing_recommendations"] = _unwrap_payload(calc_payload)
 
-            print("[GH Wrapper] kwargs:", kwargs)
+            _debug_print("[GH Wrapper] kwargs:", kwargs)
 
             payload = helper.build_geometry_payload(**kwargs)
         members = payload.get("members", [])
@@ -598,10 +604,10 @@ try:
         metadata_member_count = metadata.get("member_count") if isinstance(metadata, dict) else None
         metadata_geometry_kind = metadata.get("geometry_kind") if isinstance(metadata, dict) else None
         metadata_footing_handoff_count = metadata.get("footing_handoff_count") if isinstance(metadata, dict) else None
-        print("[GH Wrapper] Extracted members: {0}".format(len(members)))
-        print("[GH Wrapper] Extracted base_plates: {0}".format(len(base_plate_records)))
+        _debug_print("[GH Wrapper] Extracted members: {0}".format(len(members)))
+        _debug_print("[GH Wrapper] Extracted base_plates: {0}".format(len(base_plate_records)))
         if metadata_member_count is not None:
-            print(
+            _debug_print(
                 "[GH Wrapper] metadata summary: member_count={0}, geometry_kind={1}, footing_handoff_count={2}".format(
                     metadata_member_count,
                     metadata_geometry_kind,
@@ -609,7 +615,7 @@ try:
                 )
             )
         if metadata.get("support_cluster_member_indices"):
-            print(
+            _debug_print(
                 "[GH Wrapper] support cluster member indices: {0}".format(
                     metadata.get("support_cluster_member_indices")
                 )
@@ -618,7 +624,7 @@ try:
             first_debug = footing_debug_records[0] if isinstance(footing_debug_records[0], dict) else {}
             stiffener_debug = first_debug.get("stiffener_specs") if isinstance(first_debug, dict) else []
             if stiffener_debug:
-                print(
+                _debug_print(
                     "[GH Wrapper] stiffeners: count={0}, kinds={1}".format(
                         len(stiffener_debug),
                         [item.get("stiffener_kind") for item in stiffener_debug],
@@ -653,14 +659,14 @@ try:
                     if item.get("stiffener_kind") == "timber_bottom_face"
                 ]
                 if face_stiffener_shifts:
-                    print(
+                    _debug_print(
                         "[GH Wrapper] timber-face stiffener edge alignment: {0}".format(
                             face_stiffener_shifts
                         )
                     )
         milling_metadata = handoff.get("milling", {}) if isinstance(handoff, dict) else {}
         if isinstance(milling_metadata, dict) and milling_metadata.get("bolt_hole_diameter") is not None:
-            print(
+            _debug_print(
                 "[GH Wrapper] web plate holes: rows={0}, per_row={1}, total={2}, mode={3}, dia_mm={4}, gage_mm={5}, pitch_mm={6}, source={7}".format(
                     milling_metadata.get("plate_hole_rows"),
                     milling_metadata.get("plate_holes_per_row"),
@@ -673,13 +679,13 @@ try:
                 )
             )
             if milling_metadata.get("plate_hole_center_counts"):
-                print(
+                _debug_print(
                     "[GH Wrapper] web plate hole center counts per plate: {0}".format(
                         milling_metadata.get("plate_hole_center_counts")
                     )
                 )
             if milling_metadata.get("plate_hole_pattern_diagnostics"):
-                print(
+                _debug_print(
                     "[GH Wrapper] web plate hole pattern diagnostics: {0}".format(
                         [
                             {
@@ -695,7 +701,7 @@ try:
                 )
         geometry_metadata = handoff.get("geometry", {}) if isinstance(handoff, dict) else {}
         if isinstance(geometry_metadata, dict) and geometry_metadata.get("stiffener_specs"):
-            print(
+            _debug_print(
                 "[GH Wrapper] stiffener targets: {0}".format(
                     [
                         {
@@ -709,9 +715,9 @@ try:
                 )
             )
         if footing_debug_records:
-            print("[GH Wrapper] footing debug: {0}".format(footing_debug_records))
+            _debug_print("[GH Wrapper] footing debug: {0}".format(footing_debug_records))
         if "target_cluster_index" in kwargs:
-            print(
+            _debug_print(
                 "[GH Wrapper] target_cluster_index={0}, mode={1}".format(
                     kwargs.get("target_cluster_index"),
                     metadata.get("target_member_index_mode"),
@@ -719,7 +725,7 @@ try:
             )
             try:
                 available_indices = [int((m or {}).get("index")) for m in members if isinstance(m, dict) and (m or {}).get("index") is not None]
-                print("[GH Wrapper] available member indices: {0}".format(available_indices))
+                _debug_print("[GH Wrapper] available member indices: {0}".format(available_indices))
             except Exception:
                 pass
         
@@ -735,7 +741,7 @@ try:
                     "source_units": footing_units,
                     "document_scale_factor": payload_to_doc,
                 }
-            print(
+            _debug_print(
                 "[GH Wrapper] Built {0} footing preview breps ({1}->doc scale={2})".format(
                     len(preview_breps),
                     footing_units,
@@ -743,11 +749,11 @@ try:
                 )
             )
             if len(preview_breps) != len(_scaled_breps):
-                print("[GH Wrapper] Dropped {0} non-geometry footing items during coercion".format(
+                _debug_print("[GH Wrapper] Dropped {0} non-geometry footing items during coercion".format(
                     len(_scaled_breps) - len(preview_breps)
                 ))
         elif metadata_geometry_kind == "footing":
-            print(
+            _debug_print(
                 "[GH Wrapper] No footing_breps in payload. diagnostics: helper_rg_available={0}, helper_base_footing_run_callable={1}, member_count={2}, footing_handoff_count={3}".format(
                     bool(getattr(helper, "rg", None) is not None),
                     callable(getattr(helper, "base_footing_run", None)),
@@ -759,11 +765,11 @@ try:
             try:
                 bp_records = [helper.BasePlateRecord(**bp) for bp in base_plate_records]
                 preview_breps = _coerce_geometry_list(helper.build_preview_breps(bp_records))
-                print("[GH Wrapper] Built {0} preview breps".format(len(preview_breps)))
+                _debug_print("[GH Wrapper] Built {0} preview breps".format(len(preview_breps)))
             except Exception as bp_err:
-                print("[GH Wrapper] Error building preview breps: {0}".format(bp_err))
+                _debug_print("[GH Wrapper] Error building preview breps: {0}".format(bp_err))
                 import traceback
-                print(traceback.format_exc())
+                _debug_print(traceback.format_exc())
 
         # GH output "base_plates" is commonly wired to geometry params; emit breps
         # directly to avoid Goo->Geometry conversion failures on dict records.
@@ -771,7 +777,7 @@ try:
             base_plates = _coerce_geometry_list(preview_breps)
             if isinstance(payload, dict):
                 payload["base_plate_records"] = base_plate_records
-            print("[GH Wrapper] base_plates output mapped to preview breps: {0}".format(len(base_plates)))
+            _debug_print("[GH Wrapper] base_plates output mapped to preview breps: {0}".format(len(base_plates)))
         else:
             base_plates = []
         
@@ -791,7 +797,7 @@ try:
             unit_hint,
         )
         payload = _store_payload_reference("geometry", payload)
-        print("[GH Wrapper] " + out)
+        _debug_print("[GH Wrapper] " + out)
 
 except Exception:
     out = traceback.format_exc()
@@ -800,5 +806,7 @@ except Exception:
     base_plates = []
     preview_breps = []
     footing_debug = []
-    print("[GH Wrapper] Exception caught:")
-    print(out)
+    _debug_print("[GH Wrapper] Exception caught:")
+    _debug_print(out)
+
+

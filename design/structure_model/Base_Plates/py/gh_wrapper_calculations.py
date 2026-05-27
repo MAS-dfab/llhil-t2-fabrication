@@ -86,10 +86,16 @@ except Exception:
 ROOT = r"C:\Users\Juste\Documents\_GitHub\MAS-2526\10_llhil-t2-fabrication\design\structure_model\Base_Plates"
 HELPER_PATH = os.path.join(ROOT, "py", "base_plate_calculations.py")
 RUN_TAG = "BPC_WRAPPER_SYNC_2026_05_19_GEOMETRY_PAYLOAD_CHECKS"
+_DEBUG_LOG = False
 
-print("[GH Calc Wrapper] RUN_TAG:", RUN_TAG)
-print("[GH Calc Wrapper] HELPER_PATH:", HELPER_PATH)
-print("[GH Calc Wrapper] HELPER_EXISTS:", os.path.exists(HELPER_PATH))
+def _debug_print(*args):
+    if _DEBUG_LOG:
+        __import__("builtins").print(*args)
+
+
+_debug_print("[GH Calc Wrapper] RUN_TAG:", RUN_TAG)
+_debug_print("[GH Calc Wrapper] HELPER_PATH:", HELPER_PATH)
+_debug_print("[GH Calc Wrapper] HELPER_EXISTS:", os.path.exists(HELPER_PATH))
 
 
 def _load_helper():
@@ -169,13 +175,13 @@ def _component_key():
 
 def _store_payload_reference(kind, value):
     if GH_ObjectWrapper is not None:
-        print("[GH Calc Wrapper] payload output mode=gh_object_wrapper kind={0}".format(kind))
+        _debug_print("[GH Calc Wrapper] payload output mode=gh_object_wrapper kind={0}".format(kind))
         return GH_ObjectWrapper(value)
     if sc is None:
         return value
     token = "BPG_PAYLOAD::{0}::{1}".format(kind, _component_key())
     sc.sticky[token] = value
-    print("[GH Calc Wrapper] payload output mode=reference_token kind={0}".format(kind))
+    _debug_print("[GH Calc Wrapper] payload output mode=reference_token kind={0}".format(kind))
     return token
 
 
@@ -258,12 +264,12 @@ try:
         if geometry_payload_input is None:
             raise ValueError("geometry_payload input is required")
         geometry_payload = _unwrap_payload(geometry_payload_input)
-        print("[GH Calc Wrapper DEBUG] geometry_payload_source=", geometry_payload_source)
-        print("[GH Calc Wrapper DEBUG] geometry_payload type=", type(geometry_payload))
+        _debug_print("[GH Calc Wrapper DEBUG] geometry_payload_source=", geometry_payload_source)
+        _debug_print("[GH Calc Wrapper DEBUG] geometry_payload type=", type(geometry_payload))
         if isinstance(geometry_payload, dict):
-            print("[GH Calc Wrapper DEBUG] geometry_payload keys=", list(geometry_payload.keys()))
+            _debug_print("[GH Calc Wrapper DEBUG] geometry_payload keys=", list(geometry_payload.keys()))
         else:
-            print("[GH Calc Wrapper DEBUG] geometry_payload value=", geometry_payload)
+            _debug_print("[GH Calc Wrapper DEBUG] geometry_payload value=", geometry_payload)
         if not isinstance(geometry_payload, dict):
             raise TypeError(
                 "geometry payload from {0} did not normalize to a dict; got {1}. "
@@ -322,12 +328,12 @@ try:
             kwargs["engineering_overrides"] = merged_engineering_overrides
 
         payload = helper.run_validation(**kwargs)
-        print("[GH Calc Wrapper DEBUG] payload type=", type(payload))
+        _debug_print("[GH Calc Wrapper DEBUG] payload type=", type(payload))
         if isinstance(payload, dict):
-            print("[GH Calc Wrapper DEBUG] payload keys=", list(payload.keys()))
-            print("[GH Calc Wrapper DEBUG] member_results count=", len(payload.get("member_results", [])))
+            _debug_print("[GH Calc Wrapper DEBUG] payload keys=", list(payload.keys()))
+            _debug_print("[GH Calc Wrapper DEBUG] member_results count=", len(payload.get("member_results", [])))
         else:
-            print("[GH Calc Wrapper DEBUG] payload value=", payload)
+            _debug_print("[GH Calc Wrapper DEBUG] payload value=", payload)
         out = "Validated {0} members".format(len(payload.get("member_results", [])))
 
     payload_data = payload
@@ -398,8 +404,8 @@ try:
 
 except Exception:
     out = traceback.format_exc()
-    print("[GH Calc Wrapper] Exception caught:")
-    print(out)
+    _debug_print("[GH Calc Wrapper] Exception caught:")
+    _debug_print(out)
     payload = {}
     report_text = out
     combined_report = out
@@ -430,3 +436,5 @@ except Exception:
     p = out
     q = report_text
     r = synced_preview_breps
+
+

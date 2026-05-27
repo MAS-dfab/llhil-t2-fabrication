@@ -524,7 +524,7 @@ def apply_processings(model):
     """Process joinery and finalize cuts which need to be done after."""
     # Shoe bevel knob: set the extension you want per end, in METERS. The bevel
     # angle is derived from it later (angle = atan(2*X / height)).
-    SHOE_EXTENSION = 0.03  # per end, in meters (0.03 = 3 cm)
+    SHOE_EXTENSION = 0.00  # per end, in meters (0.03 = 3 cm)
     # False -> trapezoid: bevel + a flat tip face, length preserved.
     # True  -> full cut: the plane slices the whole beam, leaving one face.
     SHOE_FULL_CUT = True
@@ -587,8 +587,8 @@ def apply_processings(model):
             # Blank already extended by X on both ends BEFORE joinery (see top of
             # this function), so existing joints don't shift. Reuse the same X and
             # derive the bevel angle from it.
-            X = beam.attributes.get("shoe_ext", 0.0)
-            theta = math.degrees(math.atan(2.0 * X / beam.height))   # angle derived from X
+            X = .02
+            theta = math.degrees(math.atan(2.0 * .03 / beam.height))   # angle derived from X
             SHOE_END_ANGLE = -theta                                  # negative keeps bevel on the Bottom
             if clt_plate:
                 cutting_frame = clt_plate.frame
@@ -598,7 +598,7 @@ def apply_processings(model):
             for at_start in (True, False):
                 sign = 1.0 if at_start else -1.0   # +/- gives a symmetric trapezoid; flip both signs to swap top/bottom
                 # offset=X moves the cut plane out to the newly extended blank tip
-                plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE, offset=X)
+                plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE, offset=-X)
                 jrc = JackRafterCut.from_plane_and_beam(plane, beam, is_joinery=False)
                 beam.add_feature(jrc)
 
@@ -762,3 +762,99 @@ def apply_processings_middle_prototype(model):
         else:
             continue
     return model
+
+# # -----------------------------------------------------------------------------
+# # CT BOLT HOLES MILLING 
+# # -----------------------------------------------------------------------------
+# # The timber_model / BTLx path should receive timber-removal operations only.
+# # Embedded steel plates are NOT added to the TimberModel here.
+# #
+# # Expected upstream mapping:
+# # - through bolt holes -> FastenerTimberInterface.holes
+# # - slot cuts          -> FastenerTimberInterface.shapes
+# # - counterbores       -> FastenerTimberInterface.shapes
+# # - embedded plates    -> omitted from timber_model / BTLx
+
+
+# def summarize_ct_milling_interfaces(ct_fastener_package, debug=False):
+#     """Summarize CT milling interfaces without adding embedded plates to the model.
+
+#     Parameters
+#     ----------
+#     ct_fastener_package : dict
+#         Package returned by ct_anchor_milling.build_ct_fastener_objects(...,
+#         include_plate_fasteners=False).
+
+#     Returns
+#     -------
+#     dict
+#         Counts and references to milling-only FastenerTimberInterface objects.
+#     """
+#     if not isinstance(ct_fastener_package, dict):
+#         return {
+#             "interfaces": [],
+#             "interface_count": 0,
+#             "plate_fastener_count": 0,
+#             "plate_shape_count": 0,
+#             "embedded_plate_omitted_from_timber_model": True,
+#             "error": "ct_fastener_package is not a dict",
+#         }
+
+#     interfaces = ct_fastener_package.get("interfaces", []) or []
+#     plate_fasteners = ct_fastener_package.get("plate_fasteners", []) or []
+#     plate_shapes = ct_fastener_package.get("plate_shapes", []) or []
+
+#     summary = {
+#         "interfaces": interfaces,
+#         "interface_count": len(interfaces),
+#         "plate_fastener_count": len(plate_fasteners),
+#         "plate_shape_count": len(plate_shapes),
+#         "embedded_plate_omitted_from_timber_model": True,
+#         "error": ct_fastener_package.get("error"),
+#     }
+
+#     if debug:
+#         print(
+#             "[timber_model] CT milling interfaces: interfaces={0}, plate_fasteners_ignored={1}, plate_shapes_ignored={2}".format(
+#                 summary["interface_count"],
+#                 summary["plate_fastener_count"],
+#                 summary["plate_shape_count"],
+#             )
+#         )
+
+#     return summary
+
+
+# def apply_ct_fastener_package(model, ct_fastener_package, group=None, debug=False):
+#     """Compatibility no-op for older callers.
+
+#     This function intentionally does NOT add PlateFastener objects to the
+#     TimberModel. The BTLx/timber fabrication model should contain only the
+#     timber milling Breps/features generated upstream.
+
+#     Returns a milling-interface summary.
+#     """
+#     return summarize_ct_milling_interfaces(ct_fastener_package, debug=debug)
+
+
+# def ct_fastener_records_to_model(model, records, build_function=None, group=None, debug=False):
+#     """Convenience adapter: records -> milling interfaces summary.
+
+#     Build milling-only interfaces and
+#     returns a summary so downstream BTLx logic can consume the existing Breps /
+#     feature records.
+#     """
+#     if build_function is None:
+#         return {
+#             "interfaces": [],
+#             "interface_count": 0,
+#             "embedded_plate_omitted_from_timber_model": True,
+#             "error": "build_function is required, pass ct_anchor_milling.build_ct_fastener_objects",
+#         }
+
+#     try:
+#         package = build_function(records or [], include_plate_fasteners=False)
+#     except TypeError:
+#         package = build_function(records or [])
+
+#     return summarize_ct_milling_interfaces(package, debug=debug)
