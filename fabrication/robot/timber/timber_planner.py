@@ -278,8 +278,6 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 5. Approach AT
         print("getting element approach trajectory to AT")
-        # design_insertion_vector = element.attributes.get("design_insertion_vector", None)
-        # at_insertion_vector = design_insertion_vector.transformed(self.at_T * element.attributes.get("parent_T")) if design_insertion_vector else None
         at_insertion_vector = element.attributes.get("insertion_vector", None)
         element_at_approach_frame = self.get_approach_frame(element_at_frame, approach_distance=0.3, vector=at_insertion_vector)
         approach_config = self.get_constrained_ik_from_frame(element_at_approach_frame)
@@ -366,13 +364,8 @@ class TimberProcessPlanner(BaseRobotPlanner):
     
     def calculate_element_pickup_frame(self):
         if self._fetched_pickup_frame is not None:
-            # Use the live mocap-fetched pickup frame; apply the grasp offset
-            # relative to the fetched frame so the orientation follows the grasp.
             pickup_frame = self._fetched_pickup_frame.copy()
-            # Preserve the grasp orientation axes from the computed grasp_frame
-            # pickup_frame.xaxis = grasp_frame.xaxis
-            # pickup_frame.yaxis = grasp_frame.yaxis
-            print(pickup_frame)
+            print("pickup_frame", pickup_frame)
             return pickup_frame.scaled(0.001)  # Convert from mm to m
 
         raise RuntimeError(
@@ -389,10 +382,8 @@ class TimberProcessPlanner(BaseRobotPlanner):
     def calculate_element_at_frame(self, element, grasp_frame=None):
         if not grasp_frame:
             grasp_frame = element.attributes.get("grasp_frame").transformed(element.transformation_to_local())
-            print("GRASP_FRAME", grasp_frame)
             grasp_frame = grasp_frame.rotated(math.radians(90), grasp_frame.zaxis, grasp_frame.point)
         e_at_frame = element.attributes.get("grasp_frame")
-        # e_at_frame = grasp_frame.transformed(element.transformation_to_local().inverse())
         e_at_frame = e_at_frame.rotated(math.radians(90), e_at_frame.zaxis, e_at_frame.point)
         e_at_frame_offset = e_at_frame.translated(e_at_frame.zaxis * -0.1)
         element_geometry = element.elementgeometry

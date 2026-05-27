@@ -65,7 +65,7 @@ def main():
     # 1. LOAD DATA
     # ---------------------------------------------------------
     print("Loading models...")
-    filepath_model = "fabrication\\data\\timber_models\\260527_module_3.json"
+    filepath_model = "fabrication\\data\\timber_models\\260527_v2_fabrication_model.json"
 
     if not os.path.exists(filepath_model):
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
@@ -129,8 +129,7 @@ def main():
     def _on_qr_received(payload):
         """Called from the MQTT thread when a QR scan is published."""
         try:
-            beam_id = int(payload.split("_")[-1])# - QR_SEQ_OFFSET
-            print(beam_id)
+            beam_id = int(payload.split("_")[-1])
         except (ValueError, IndexError):
             print("QR: unrecognised payload '{}'".format(payload))
             return
@@ -142,10 +141,7 @@ def main():
 
         # Update to the scanned beam (allows jumping forward if needed)
         beam = next((beam for beam in timber_model.beams if int(beam.name.split("_")[-1]) == beam_id), None)
-        print(beam)
         trajectory_planner.seq_i = beam.attributes.get("sequence_id", None)
-
-        print(beam.name)
         print("QR: {} -> seq_i={} ({})".format(payload, trajectory_planner.seq_i, beam))
 
         # --- Highlight: remove previous beam, add new one ---
@@ -154,15 +150,6 @@ def main():
                 player.viewer.remove_object(highlight_state["mesh"])
             except Exception:
                 pass
-
-        # try:
-        #     highlight_mesh = beam.geometry.to_viewmesh()[0]
-        #     highlight_mat = PhysicalMaterial(color=Color(1.0, 0.55, 0.0), roughness=0.4, opacity=0.9)
-        #     player.viewer.add_geometry(highlight_mesh, highlight_mat)
-        #     highlight_state["mesh"] = highlight_mesh
-        # except Exception as e:
-        #     print("QR: highlight failed - {}".format(e))
-        #     traceback.print_exc()
 
         # --- Fetch pickup frame (blocking, runs in MQTT thread) ---
         _set_label("fetching…", _COL_WAITING)
@@ -218,6 +205,26 @@ def main():
 
         trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
         player._draw_assembled_elements(assembled_elements)
+        
+        if hasattr(trajectory_planner, 'workpiece_manager'):
+            wm = trajectory_planner.workpiece_manager
+            wm.rules.clear()
+            wm.meshes.clear()
+            wm.latest_stock_vanish_time = 0.0
+            wm.lumber_yard_stock_y = 0.0
+
+        if hasattr(trajectory_planner, 'trajectory_list'):
+            trajectory_planner.trajectory_list = []
+
+        if hasattr(trajectory_planner, 'current_time'):
+            trajectory_planner.current_time = 0.0
+
+        if hasattr(trajectory_planner, 'planned_time'):
+            trajectory_planner.planned_time = 0.0
+
+        if trajectory_planner._fetched_pickup_frame is None:
+            print("ERROR: Fetch pickup frame first before computing.")
+            return
 
         try:
             highlight_mesh = beam.geometry.to_viewmesh()[0]
@@ -263,57 +270,6 @@ def main():
     # --- Button: Compute Trajectories ---
     def _on_compute():
         beam = in_seq_beams[trajectory_planner.seq_i]
-        # all_seq_i = beam.attributes.get("sequence")
-        # print(all_seq_i)
-        # player._cleanup_previous_run()
-
-        # # clear the QR highlight
-        # if highlight_state["mesh"] is not None:
-        #     try:
-        #         player.viewer.remove_object(highlight_state["mesh"])
-        #     except Exception:
-        #         pass
-        #     highlight_state["mesh"] = None
-
-        # trajectory_planner.state.robot_configuration = trajectory_planner.safe_configuration
-        
-        # rb_names = trajectory_planner.robot_cell.rigid_body_models.keys()
-        # for rb_name in list(rb_names):
-        #     if rb_name != "t2_rfl_colmesh":
-        #         trajectory_planner.robot_cell.rigid_body_models.pop(rb_name)
-        #         trajectory_planner.state.rigid_body_states.pop(rb_name)
-
-        # assembled_elements = []
-        # assembled_elements.clear() 
-        # for p in timber_model.plates[:1]:
-        #     p_mesh = p.geometry.to_viewmesh()[0]
-        #     assembled_elements.append(p_mesh)
-        # for b in in_seq_beams[:trajectory_planner.seq_i]:
-        #     b_mesh = b.geometry.to_viewmesh()[0]
-        #     assembled_elements.append(b_mesh)
-
-        # trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
-        # player._draw_assembled_elements(assembled_elements)
-
-        if hasattr(trajectory_planner, 'workpiece_manager'):
-            wm = trajectory_planner.workpiece_manager
-            wm.rules.clear()
-            wm.meshes.clear()
-            wm.latest_stock_vanish_time = 0.0
-            wm.lumber_yard_stock_y = 0.0
-
-        if hasattr(trajectory_planner, 'trajectory_list'):
-            trajectory_planner.trajectory_list = []
-
-        if hasattr(trajectory_planner, 'current_time'):
-            trajectory_planner.current_time = 0.0
-
-        if hasattr(trajectory_planner, 'planned_time'):
-            trajectory_planner.planned_time = 0.0
-
-        if trajectory_planner._fetched_pickup_frame is None:
-            print("ERROR: Fetch pickup frame first before computing.")
-            return
 
         print("\n{}".format("X" * 40))
         print("PLANNING element {} of {}: {}".format(
