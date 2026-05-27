@@ -37,9 +37,11 @@ if "layout_payload" not in globals():
     layout_payload = None
 if "reports" not in globals():
     reports = None
+if "annotation_scale" not in globals():
+    annotation_scale = None
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 
 ROOT = r"C:\Users\Juste\Documents\_GitHub\MAS-2526\10_llhil-t2-fabrication\design\structure_model\Base_Plates"
 HELPER_PATH = os.path.join(ROOT, "py", "base_footing_layout_component.py")
@@ -213,17 +215,29 @@ def _resolve_layout_inputs(package: Dict[str, Any]) -> Dict[str, Any]:
         )
 
     metadata = _pick_first(package, ["annotation_metadata", "handoff", "metadata"], {})
-    combined_report = _pick_first(package, ["combined_report", "report_text"], reports.get("combined_report"))
+    metadata_dict = _as_dict(metadata)
+    if not metadata_dict:
+        metadata_dict = _as_dict(_pick_first(reports, ["metadata", "source_report"], {}))
+
+    combined_report: Any = _pick_first(package, ["combined_report", "report_text"], reports.get("combined_report"))
+    if combined_report is None:
+        combined_report = _pick_first(reports, ["report_text", "messages"], None)
+    if combined_report is None and isinstance(reports.get("source_report"), dict):
+        combined_report = {
+            "source_report": _as_dict(reports.get("source_report")),
+            "messages": _as_list(reports.get("messages")),
+        }
 
     return {
         "geometry_objects": geometry_objects,
         "annotation_objects": annotation_objects,
-        "metadata": _as_dict(metadata),
+        "metadata": metadata_dict,
         "combined_report": combined_report,
         "create_named_views": bool(_pick_first(layout_payload, ["create_named_views"], True)),
         "create_layout_guides": bool(_pick_first(layout_payload, ["create_layout_guides"], True)),
         "sheet_size": _pick_first(layout_payload, ["sheet_size"], package.get("sheet_size", "A3")),
         "drawing_scale": _pick_first(layout_payload, ["drawing_scale"], package.get("drawing_scale", 20.0)),
+        "annotation_scale": _pick_first(layout_payload, ["annotation_scale"], package.get("annotation_scale", 1.0)),
         "title_block_info": _pick_first(layout_payload, ["title_block_info"], package.get("title_block_info", {})),
         "project_name": _pick_first(layout_payload, ["project_name"], package.get("project_name", "")),
         "detail_name": _pick_first(layout_payload, ["detail_name"], package.get("detail_name", "")),
@@ -237,6 +251,7 @@ def _build_resolved_inputs_from_args(
     combined_report: Any,
     layout_payload: Any,
     reports: Any,
+    annotation_scale: Any = None,
 ) -> Dict[str, Any]:
     """Build resolved_inputs directly from 6 named GH inputs."""
     lp = _as_dict(_unwrap_payload(layout_payload)) if layout_payload is not None else {}
@@ -255,7 +270,17 @@ def _build_resolved_inputs_from_args(
         )
 
     meta = _as_dict(_unwrap_payload(metadata)) if metadata is not None else {}
-    rpt = _unwrap_payload(combined_report) if combined_report is not None else rp.get("combined_report")
+    if not meta:
+        meta = _as_dict(_pick_first(rp, ["metadata", "source_report"], {}))
+
+    rpt: Any = _unwrap_payload(combined_report) if combined_report is not None else rp.get("combined_report")
+    if rpt is None:
+        rpt = _pick_first(rp, ["report_text", "messages"], None)
+    if rpt is None and isinstance(rp.get("source_report"), dict):
+        rpt = {
+            "source_report": _as_dict(rp.get("source_report")),
+            "messages": _as_list(rp.get("messages")),
+        }
 
     return {
         "geometry_objects": geo,
@@ -266,6 +291,11 @@ def _build_resolved_inputs_from_args(
         "create_layout_guides": bool(_pick_first(lp, ["create_layout_guides"], True)),
         "sheet_size": _pick_first(lp, ["sheet_size"], "A3"),
         "drawing_scale": _pick_first(lp, ["drawing_scale"], 20.0),
+        "annotation_scale": (
+            annotation_scale
+            if annotation_scale is not None
+            else _pick_first(lp, ["annotation_scale"], 1.0)
+        ),
         "title_block_info": _pick_first(lp, ["title_block_info"], {}),
         "project_name": _pick_first(lp, ["project_name"], ""),
         "detail_name": _pick_first(lp, ["detail_name"], ""),
@@ -281,6 +311,7 @@ def script(
     combined_report: Any = None,
     layout_payload: Any = None,
     reports: Any = None,
+    annotation_scale: Any = None,
 ) -> Dict[str, Any]:
     """
     Grasshopper Python entry point.
@@ -290,7 +321,9 @@ def script(
         combined_report, layout_payload, reports  (direct wiring from annotation component)
       - OR a single dict payload via 'package' or 'payload'
     """
-    # Detect which mode: 6-input direct wiring vs single-payload
+    # Detect which mode: explicit direct wiring vs single-payload.
+    # A standalone annotation_scale input should not flip the wrapper out of
+    # single-payload mode, otherwise package/payload gets ignored.
     direct_mode = any(v is not None for v in [
         geometry_objects, annotation_objects, metadata,
         combined_report, layout_payload, reports,
@@ -309,7 +342,7 @@ def script(
         nested_layout_package_used = False
         resolved_inputs = _build_resolved_inputs_from_args(
             geometry_objects, annotation_objects, metadata,
-            combined_report, layout_payload, reports,
+            combined_report, layout_payload, reports, annotation_scale,
         )
     else:
         source_info = _resolve_source_payload(package, payload)
@@ -332,45 +365,25 @@ def script(
             payload_dict = _as_dict(payload_dict.get("layout_package"))
             nested_layout_package_used = True
         resolved_inputs = _resolve_layout_inputs(payload_dict)
-
-    logging.debug("source=%s resolved_inputs keys=%s", source_label, list(resolved_inputs.keys()))
+        if annotation_scale is not None:
+            resolved_inputs["annotation_scale"] = annotation_scale
 
     try:
         result = layout.run(**resolved_inputs)
-        # Collect pre-filter counts for diagnostics
-        pre_filter_counts = {
-            key: len(_as_list(result.get(key))) for key in
-            ("viewport_guides", "title_block_curves", "title_block_text", "view_labels", "report_text_block")
-        }
         for key in ("viewport_guides", "title_block_curves", "title_block_text", "view_labels", "report_text_block"):
             if key in result:
                 result[key] = _without_none(result.get(key))
-        # Probe: try creating one test rectangle to verify rg geometry works
-        try:
-            _test_rect = layout._rectangle(0.0, 0.0, 10.0, 10.0)
-            _test_rect_type = type(_test_rect).__name__
-            _test_rect_repr = str(_test_rect)[:120]
-        except Exception as _te:
-            _test_rect_type = "EXCEPTION"
-            _test_rect_repr = str(_te)
 
         result["debug_info"] = {
             "rg_available": getattr(layout, "rg", "?") is not None,
             "create_layout_guides": resolved_inputs.get("create_layout_guides"),
             "sheet_size": resolved_inputs.get("sheet_size"),
             "drawing_scale": resolved_inputs.get("drawing_scale"),
+            "annotation_scale": resolved_inputs.get("annotation_scale"),
             "source_mode": "direct_6_inputs" if direct_mode else "single_payload",
             "layout_payload_keys": list(_as_dict(
                 _unwrap_payload(layout_payload) if direct_mode and layout_payload is not None else {}
             ).keys()),
-            "test_rect_type": _test_rect_type,
-            "test_rect_repr": _test_rect_repr,
-            "pre_filter_counts": pre_filter_counts,
-            "post_filter_counts": {
-                key: len(_as_list(result.get(key))) for key in
-                ("viewport_guides", "title_block_curves", "title_block_text", "view_labels", "report_text_block")
-            },
-            "first_viewport_guide": str(result.get("viewport_guides", [None])[0])[:120] if result.get("viewport_guides") else "EMPTY",
         }
         result["source_report"] = {
             "source_mode": "direct_6_inputs" if direct_mode else "single_payload",
@@ -385,3 +398,109 @@ def script(
     except Exception as e:
         logging.exception("Error while running layout component.")
         return {"error": str(e)}
+
+
+def _assign_gh_outputs(result: Dict[str, Any]) -> None:
+    """Map wrapper result dictionary to Grasshopper output variables."""
+    global out
+    global viewport_guides
+    global title_block_curves
+    global title_block_text
+    global view_labels
+    global report_text_block
+    global print_ready_groups
+    global debug_info
+    global a
+    global b
+    global c
+    global d
+    global e
+    global f
+    global g
+    global h
+
+    error_text = result.get("error")
+    if error_text:
+        out = "Layout wrapper error: {0}".format(error_text)
+        viewport_guides = []
+        title_block_curves = []
+        title_block_text = []
+        view_labels = []
+        report_text_block = []
+        print_ready_groups = {}
+        debug_info = cast(Dict[str, Any], {
+            "error": error_text,
+            "source_report": result.get("source_report"),
+        })
+    else:
+        viewport_guides = _without_none(result.get("viewport_guides"))
+        title_block_curves = _without_none(result.get("title_block_curves"))
+        title_block_text = _without_none(result.get("title_block_text"))
+        view_labels = _without_none(result.get("view_labels"))
+        report_text_block = _without_none(result.get("report_text_block"))
+        print_ready_groups = _as_dict(result.get("print_ready_groups"))
+
+        source_report = _as_dict(result.get("source_report"))
+        base_debug_info = _as_dict(result.get("debug_info"))
+        debug_info = cast(Dict[str, Any], {
+            "source_report": source_report,
+            "layout_debug": base_debug_info,
+            "counts": {
+                "viewport_guides": len(viewport_guides),
+                "title_block_curves": len(title_block_curves),
+                "title_block_text": len(title_block_text),
+                "view_labels": len(view_labels),
+                "report_text_block": len(report_text_block),
+            },
+        })
+        out = "Layout generated: guides={0}, labels={1}, report_lines={2}".format(
+            len(viewport_guides),
+            len(view_labels),
+            len(report_text_block),
+        )
+
+    # Legacy aliases for components whose output names are still generic.
+    a = out
+    b = viewport_guides
+    c = title_block_curves
+    d = title_block_text
+    e = view_labels
+    f = report_text_block
+    g = print_ready_groups
+    h = debug_info
+
+
+# Safe default outputs so GH never shows null due to missing assignment.
+out = "Layout wrapper initialized"
+viewport_guides = []
+title_block_curves = []
+title_block_text = []
+view_labels = []
+report_text_block = []
+print_ready_groups = {}
+debug_info: Dict[str, Any] = {
+    "phase": "initialized",
+}
+a = out
+b = viewport_guides
+c = title_block_curves
+d = title_block_text
+e = view_labels
+f = report_text_block
+g = print_ready_groups
+h: Any = debug_info
+
+
+if "ghenv" in globals():
+    _result = script(
+        package=globals().get("package"),
+        payload=globals().get("payload"),
+        geometry_objects=globals().get("geometry_objects"),
+        annotation_objects=globals().get("annotation_objects"),
+        metadata=globals().get("metadata"),
+        combined_report=globals().get("combined_report"),
+        layout_payload=globals().get("layout_payload"),
+        reports=globals().get("reports"),
+        annotation_scale=globals().get("annotation_scale"),
+    )
+    _assign_gh_outputs(_result)

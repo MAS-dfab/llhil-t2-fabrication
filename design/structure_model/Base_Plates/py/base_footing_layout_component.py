@@ -259,11 +259,27 @@ def _report_lines(metadata: Dict[str, Any], combined_report: Optional[Union[str,
             value = combined_report.get(key)
             if isinstance(value, str) and value.strip():
                 lines.extend([line for line in value.splitlines() if line.strip()])
+        messages = combined_report.get("messages")
+        if isinstance(messages, list):
+            lines.extend([str(item) for item in messages if item is not None and str(item).strip()])
+
+        source_report = combined_report.get("source_report")
+        if isinstance(source_report, dict):
+            for key in sorted(source_report.keys()):
+                value = source_report.get(key)
+                if isinstance(value, (str, int, float, bool)):
+                    lines.append("{0}: {1}".format(key, value))
 
     if not lines:
         for key in ("module", "generated_utc", "member_count"):
             value = metadata.get(key)
             if value is not None:
+                lines.append("{0}: {1}".format(key, value))
+
+    if not lines:
+        for key in sorted(metadata.keys()):
+            value = metadata.get(key)
+            if isinstance(value, (str, int, float, bool)):
                 lines.append("{0}: {1}".format(key, value))
 
     return lines
@@ -278,6 +294,7 @@ def run(
     create_layout_guides: bool = True,
     sheet_size: Union[str, Tuple[float, float]] = "A3",
     drawing_scale: float = 20.0,
+    annotation_scale: float = 1.0,
     title_block_info: Optional[Dict[str, Any]] = None,
     project_name: str = "",
     detail_name: str = "",
@@ -294,6 +311,7 @@ def run(
         create_layout_guides: Whether to create layout guides.
         sheet_size: Sheet size as a string or tuple of dimensions.
         drawing_scale: Drawing scale factor.
+        annotation_scale: Multiplier for all annotation text heights.
         title_block_info: Title block information.
         project_name: Project name.
         detail_name: Detail name.
@@ -312,6 +330,7 @@ def run(
 
     sheet_width, sheet_height = _sheet_size(sheet_size)
     scale = _coerce_float(drawing_scale, 20.0)
+    text_scale = max(_coerce_float(annotation_scale, 1.0) or 1.0, 1e-6)
     margin = 12.0
     title_height = 38.0
     gutter = 8.0
@@ -343,19 +362,19 @@ def run(
         ]
         for name, coords in viewport_defs.items():
             x0, y0, _x1, y1 = coords
-            view_labels.append(_text("{0}  1:{1:g}".format(name, scale), x0 + 3.0, y1 - 8.0, 4.0))
+            view_labels.append(_text("{0}  1:{1:g}".format(name, scale), x0 + 3.0, y1 - 8.0, 4.0 * text_scale))
 
         title_block_text = [
-            _text(project_name or title_block_info.get("project_name", ""), margin + 4.0, margin + title_height - 10.0, 5.0),
-            _text(detail_name or title_block_info.get("detail_name", ""), margin + 4.0, margin + title_height - 19.0, 4.0),
-            _text("Scale 1:{0:g}".format(scale), sheet_width - margin - 116.0, margin + title_height - 10.0, 4.0),
-            _text(str(title_block_info.get("sheet_number", "")), sheet_width - margin - 116.0, margin + title_height - 19.0, 4.0),
+            _text(project_name or title_block_info.get("project_name", ""), margin + 4.0, margin + title_height - 10.0, 5.0 * text_scale),
+            _text(detail_name or title_block_info.get("detail_name", ""), margin + 4.0, margin + title_height - 19.0, 4.0 * text_scale),
+            _text("Scale 1:{0:g}".format(scale), sheet_width - margin - 116.0, margin + title_height - 10.0, 4.0 * text_scale),
+            _text(str(title_block_info.get("sheet_number", "")), sheet_width - margin - 116.0, margin + title_height - 19.0, 4.0 * text_scale),
         ]
 
         report_lines = _report_lines(metadata, combined_report)
         cursor_y = margin + title_height - 29.0
         for line in report_lines:
-            report_text_block.append(_text(line, margin + 4.0, cursor_y, 3.5))
+            report_text_block.append(_text(line, margin + 4.0, cursor_y, 3.5 * text_scale))
             cursor_y -= 5.0
 
     named_view_data = _named_view_data(overall_bbox, _coerce_bool(create_named_views, True))

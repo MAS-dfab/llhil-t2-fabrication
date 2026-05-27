@@ -718,7 +718,7 @@ def apply_processings_middle_prototype(model):
 # def ct_fastener_records_to_model(model, records, build_function=None, group=None, debug=False):
 #     """Convenience adapter: records -> milling interfaces summary.
 
-#     This does not mutate the TimberModel. It builds milling-only interfaces and
+#     Build milling-only interfaces and
 #     returns a summary so downstream BTLx logic can consume the existing Breps /
 #     feature records.
 #     """

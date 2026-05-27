@@ -1763,3 +1763,313 @@ def _cli() -> None:
 
 if __name__ == "__main__":
     _cli()
+
+
+# =============================================================================
+# CT FASTENER OBJECT EXPORT PATCH
+# =============================================================================
+# This optional patch converts the already-computed milling records into native
+# compas_timber FastenerTimberInterface + PlateFastener objects.
+#
+# Mapping:
+# - through holes        -> FastenerTimberInterface.holes
+# - slot cutter Brep     -> FastenerTimberInterface.shapes
+# - counterbore Breps    -> FastenerTimberInterface.shapes
+# - embedded steel plate -> PlateFastener
+
+def _rhino_point3(point):
+    if rg is None or point is None:
+        return None
+    try:
+        return rg.Point3d(float(point[0]), float(point[1]), float(point[2]))
+    except Exception:
+        return None
+
+
+def _rhino_vector3(vector, fallback=(1.0, 0.0, 0.0)):
+    if rg is None:
+        return None
+    try:
+        return rg.Vector3d(float(vector[0]), float(vector[1]), float(vector[2]))
+    except Exception:
+        return rg.Vector3d(float(fallback[0]), float(fallback[1]), float(fallback[2]))
+
+
+def _cylinder_brep_from_axis(axis_start, axis_end, diameter):
+    if rg is None:
+        return None
+    p0 = _rhino_point3(axis_start)
+    p1 = _rhino_point3(axis_end)
+    if p0 is None or p1 is None:
+        return None
+    axis = p1 - p0
+    length = axis.Length
+    if length <= 0.0 or float(diameter or 0.0) <= 0.0:
+        return None
+    mid = p0 + axis * 0.5
+    plane = rg.Plane(mid, axis)
+    cyl = rg.Cylinder(rg.Circle(plane, 0.5 * float(diameter)), length)
+    return cyl.ToBrep(True, True)
+
+
+def _slot_brep_from_record(slot):
+    if rg is None or not isinstance(slot, dict):
+        return None
+    center = _point3_or_none(slot.get("center"))
+    x_axis = _point3_or_none(slot.get("x_axis"))
+    width_axis = _point3_or_none(slot.get("width_axis") or slot.get("normal"))
+    depth_axis = _point3_or_none(slot.get("depth_axis") or slot.get("y_axis"))
+    length = float(slot.get("length") or 0.0)
+    width = float(slot.get("width") or 0.0)
+    depth = float(slot.get("cutter_depth") or slot.get("depth") or 0.0)
+    if center is None or x_axis is None or width_axis is None or depth_axis is None:
+        return None
+    if length <= 0.0 or width <= 0.0 or depth <= 0.0:
+        return None
+    return _box_brep(
+        center=_to_point3(center),
+        x_axis=_unit(_to_point3(x_axis), fallback=(1.0, 0.0, 0.0)),
+        y_axis=_unit(_to_point3(width_axis), fallback=(0.0, 1.0, 0.0)),
+        z_axis=_unit(_to_point3(depth_axis), fallback=(0.0, 0.0, 1.0)),
+        lx=length,
+        ly=width,
+        lz=depth,
+    )
+
+
+def _plate_outline_from_slot(slot):
+    """Return a rectangular Rhino polyline for the embedded steel plate outline.
+
+    The outline uses the slot/plate local x-axis and depth-axis. Thickness is
+    handled separately by PlateFastener.thickness.
+    """
+    if rg is None or not isinstance(slot, dict):
+        return None
+    center = _point3_or_none(slot.get("center"))
+    x_axis = _unit(_to_point3(slot.get("x_axis") or (1.0, 0.0, 0.0)), fallback=(1.0, 0.0, 0.0))
+    z_axis = _unit(_to_point3(slot.get("depth_axis") or slot.get("y_axis") or (0.0, 0.0, 1.0)), fallback=(0.0, 0.0, 1.0))
+    length = float(slot.get("design_length") or slot.get("plate_pattern_length") or slot.get("length") or 0.0)
+    depth = float(slot.get("plate_width") or slot.get("design_depth") or slot.get("depth") or 0.0)
+    if center is None or length <= 0.0 or depth <= 0.0:
+        return None
+    c = _to_point3(center)
+    hx = _scale(x_axis, 0.5 * length)
+    hz = _scale(z_axis, 0.5 * depth)
+    pts = [
+        _add(_add(c, _scale(hx, -1.0)), _scale(hz, -1.0)),
+        _add(_add(c, hx), _scale(hz, -1.0)),
+        _add(_add(c, hx), hz),
+        _add(_add(c, _scale(hx, -1.0)), hz),
+        _add(_add(c, _scale(hx, -1.0)), _scale(hz, -1.0)),
+    ]
+    poly = rg.Polyline()
+    for pt in pts:
+        poly.Add(rg.Point3d(pt[0], pt[1], pt[2]))
+    return poly
+
+
+def _plate_cutout_polylines_from_holes(holes, diameter_key="nominal_diameter", segments=24):
+    """Create circular plate cutout polylines at through-hole centers."""
+    if rg is None:
+        return []
+    cutouts = []
+    for hole in holes or []:
+        if not isinstance(hole, dict) or str(hole.get("type") or "") != "through_hole":
+            continue
+        center = _rhino_point3(hole.get("center"))
+        axis_start = _rhino_point3(hole.get("axis_start"))
+        axis_end = _rhino_point3(hole.get("axis_end"))
+        dia = float(hole.get(diameter_key) or hole.get("diameter") or 0.0)
+        if center is None or axis_start is None or axis_end is None or dia <= 0.0:
+            continue
+        normal = axis_end - axis_start
+        if normal.Length <= 0.0:
+            continue
+        plane = rg.Plane(center, normal)
+        circle = rg.Circle(plane, 0.5 * dia)
+        curve = circle.ToNurbsCurve()
+        pts = []
+        for i in range(segments + 1):
+            t = curve.Domain.ParameterAt(float(i) / float(segments))
+            pts.append(curve.PointAt(t))
+        cutouts.append(rg.Polyline(pts))
+    return cutouts
+
+
+def _interface_outline_from_timber_face(rec):
+    """Build a simple rectangular outline on the timber side face for CT interface metadata."""
+    if rg is None or not isinstance(rec, dict):
+        return None
+    timber = rec.get("timber") if isinstance(rec.get("timber"), dict) else {}
+    center = _point3_or_none(timber.get("center"))
+    x_axis = _unit(_to_point3(timber.get("x_axis") or (1.0, 0.0, 0.0)), fallback=(1.0, 0.0, 0.0))
+    z_axis = _unit(_to_point3(timber.get("z_axis") or (0.0, 0.0, 1.0)), fallback=(0.0, 0.0, 1.0))
+    length = float(timber.get("length") or 0.0)
+    height = float(timber.get("height") or 0.0)
+    if center is None or length <= 0.0 or height <= 0.0:
+        return None
+    c = _to_point3(center)
+    hx = _scale(x_axis, 0.5 * length)
+    hz = _scale(z_axis, 0.5 * height)
+    pts = [
+        _add(_add(c, _scale(hx, -1.0)), _scale(hz, -1.0)),
+        _add(_add(c, hx), _scale(hz, -1.0)),
+        _add(_add(c, hx), hz),
+        _add(_add(c, _scale(hx, -1.0)), hz),
+        _add(_add(c, _scale(hx, -1.0)), _scale(hz, -1.0)),
+    ]
+    poly = rg.Polyline()
+    for pt in pts:
+        poly.Add(rg.Point3d(pt[0], pt[1], pt[2]))
+    return poly
+
+
+def build_ct_fastener_objects(ct_records, include_plate_fasteners=False):
+    """Build COMPAS Timber milling interfaces from CT milling records.
+
+    The timber model / BTLx export should contain timber-removal operations only:
+    - through bolt holes        -> FastenerTimberInterface.holes
+    - slot cutter Brep          -> FastenerTimberInterface.shapes
+    - counterbore pocket Breps  -> FastenerTimberInterface.shapes
+
+    Embedded steel plates are intentionally excluded by default because they are
+    not timber milling geometry. Set include_plate_fasteners=True only for
+    upstream visualization/debugging, not for the timber fabrication model.
+
+    Returns
+    -------
+    dict
+        {
+            "interfaces": [...],
+            "plate_fasteners": [...],   # empty unless include_plate_fasteners=True
+            "plate_shapes": [...],      # empty unless include_plate_fasteners=True
+            "records": [...]
+        }
+    """
+    try:
+        from compas.geometry import Brep as CompasBrep  # type: ignore
+        from compas_timber.elements import FastenerTimberInterface  # type: ignore
+        if include_plate_fasteners:
+            from compas.scene import SceneObject  # type: ignore
+            from compas_timber.elements import PlateFastener  # type: ignore
+        else:
+            SceneObject = None
+            PlateFastener = None
+    except Exception as exc:
+        return {
+            "interfaces": [],
+            "plate_fasteners": [],
+            "plate_shapes": [],
+            "records": list(ct_records or []),
+            "error": "Could not import compas_timber fastener interface classes: {0}".format(exc),
+        }
+
+    interfaces = []
+    fasteners = []
+    shapes = []
+    enriched_records = []
+
+    for rec in ct_records or []:
+        if not isinstance(rec, dict):
+            continue
+        milling_geometry = rec.get("milling_geometry") if isinstance(rec.get("milling_geometry"), dict) else {}
+        holes_src = milling_geometry.get("holes") if isinstance(milling_geometry.get("holes"), list) else []
+        through_holes = [h for h in holes_src if isinstance(h, dict) and str(h.get("type") or "") == "through_hole"]
+        counterbores = [h for h in holes_src if isinstance(h, dict) and str(h.get("type") or "") == "flat_bottom_counterbore"]
+        slot = milling_geometry.get("slot") if isinstance(milling_geometry.get("slot"), dict) else None
+        timber = rec.get("timber") if isinstance(rec.get("timber"), dict) else {}
+
+        holes = []
+        for h in through_holes:
+            p = _rhino_point3(h.get("center"))
+            axis_start = _rhino_point3(h.get("axis_start"))
+            axis_end = _rhino_point3(h.get("axis_end"))
+            vector = None
+            if axis_start is not None and axis_end is not None:
+                v = axis_end - axis_start
+                if v.Length > 0.0:
+                    vector = v
+            if p is None:
+                continue
+            holes.append(
+                {
+                    "point": p,
+                    "diameter": float(h.get("diameter") or 0.0),
+                    "vector": vector,
+                    "through": True,
+                    "source": "ct_anchor_milling",
+                    "bolt_hole_index": h.get("index"),
+                }
+            )
+
+        extra_rhino_shapes = []
+        slot_brep = _slot_brep_from_record(slot)
+        if slot_brep is not None:
+            extra_rhino_shapes.append(slot_brep)
+        for cb in counterbores:
+            cb_brep = _cylinder_brep_from_axis(cb.get("axis_start"), cb.get("axis_end"), cb.get("diameter"))
+            if cb_brep is not None:
+                extra_rhino_shapes.append(cb_brep)
+
+        extra_shapes = []
+        for brep in extra_rhino_shapes:
+            try:
+                extra_shapes.append(CompasBrep.from_native(brep))
+            except Exception:
+                pass
+
+        outline = _interface_outline_from_timber_face(rec)
+        outline_points = [pt for pt in outline] if outline else None
+        thickness = float(timber.get("width") or 0.0)
+
+        interface = FastenerTimberInterface(
+            outline_points,
+            thickness,
+            holes,
+            shapes=extra_shapes,
+            features=[],
+        )
+        interfaces.append(interface)
+
+        plate_fastener_created = False
+        if include_plate_fasteners and PlateFastener is not None:
+            plate_outline = _plate_outline_from_slot(slot)
+            plate_outline_points = [pt for pt in plate_outline] if plate_outline else None
+            plate_thickness = float((slot or {}).get("plate_thickness") or (rec.get("milling") or {}).get("plate_thickness") or 0.0)
+            plate_cutouts = _plate_cutout_polylines_from_holes(through_holes)
+            cutout_points = [[pt for pt in poly] for poly in plate_cutouts]
+            try:
+                fastener = PlateFastener(
+                    outline=plate_outline_points,
+                    thickness=plate_thickness,
+                    interfaces=[interface],
+                    cutouts=cutout_points,
+                )
+                fasteners.append(fastener)
+                plate_fastener_created = True
+                try:
+                    shapes.append(SceneObject(item=fastener.shape).draw() if SceneObject else None)
+                except Exception:
+                    shapes.append(None)
+            except Exception:
+                # Keep the timber milling interface even when optional plate visualization fails.
+                pass
+
+        rec2 = dict(rec)
+        rec2["ct_fastener_export"] = {
+            "through_hole_count": len(through_holes),
+            "counterbore_shape_count": len(counterbores),
+            "has_slot_shape": slot_brep is not None,
+            "interface_created": True,
+            "plate_fastener_created": plate_fastener_created,
+            "embedded_plate_omitted_from_timber_model": not include_plate_fasteners,
+        }
+        enriched_records.append(rec2)
+
+    return {
+        "interfaces": interfaces,
+        "plate_fasteners": fasteners,
+        "plate_shapes": shapes,
+        "records": enriched_records,
+    }
+
