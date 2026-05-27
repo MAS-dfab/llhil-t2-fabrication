@@ -55,9 +55,9 @@ def _save_state(last_assembled):
     json_dump({"last_assembled": last_assembled}, STATE_FILE)
 
 
-def _beam_label(seq_i, total, beam_id, suffix, assembly_method):
+def _beam_label(seq_i, beam_id, suffix, assembly_method):
     """e.g. 'Beam 1/12 — scan QR'"""
-    return "{}/{}\n{}\n{}\nPlaced by: {}".format(seq_i + 1, total, beam_id, suffix, assembly_method)
+    return "Seq Index: {}\n{}\n{}\nPlaced by: {}".format(seq_i, beam_id, suffix, assembly_method)
 
 
 def main():
@@ -71,12 +71,7 @@ def main():
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
 
     timber_model = json_load(filepath_model)[0].get("model")
-
     timber_model.process_joinery()
-    # plate_T = timber_model.plates[0].transformation_to_local()
-    # for b in timber_model.beams:
-    #     b.attributes["parent_T"] = plate_T
-
 
     # ---------------------------------------------------------
     # 2. INITIALIZE PLANNER
@@ -120,21 +115,22 @@ def main():
 
     # UI: text label tracks the current step state
     id_label = TextLabel(
-        text=_beam_label(trajectory_planner.seq_i, total_beams, in_seq_beams[trajectory_planner.seq_i].name, "scan QR", in_seq_beams[trajectory_planner.seq_i].attributes.get("assembly_method")),
+        text=_beam_label(trajectory_planner.seq_i, in_seq_beams[trajectory_planner.seq_i].name, "scan QR", in_seq_beams[trajectory_planner.seq_i].attributes.get("assembly_method")),
         label="Current Beam",
     )
 
     def _set_label(suffix, color):
         player.viewer.update_text_label(
             id_label,
-            _beam_label(trajectory_planner.seq_i, total_beams, in_seq_beams[trajectory_planner.seq_i].name, suffix, in_seq_beams[trajectory_planner.seq_i].attributes.get("assembly_method")),
+            _beam_label(trajectory_planner.seq_i, in_seq_beams[trajectory_planner.seq_i].name, suffix, in_seq_beams[trajectory_planner.seq_i].attributes.get("assembly_method")),
             color=color,
         )
 
     def _on_qr_received(payload):
         """Called from the MQTT thread when a QR scan is published."""
         try:
-            beam_id = int(payload.split("_")[-1]) - QR_SEQ_OFFSET
+            beam_id = int(payload.split("_")[-1])# - QR_SEQ_OFFSET
+            print(beam_id)
         except (ValueError, IndexError):
             print("QR: unrecognised payload '{}'".format(payload))
             return
@@ -145,7 +141,8 @@ def main():
             return
 
         # Update to the scanned beam (allows jumping forward if needed)
-        beam = next((beam for beam in timber_model.beams if beam.name.split("_")[-1] == beam_id), None)
+        beam = next((beam for beam in timber_model.beams if int(beam.name.split("_")[-1]) == beam_id), None)
+        print(beam)
         trajectory_planner.seq_i = beam.attributes.get("sequence_id", None)
 
         print(beam.name)
@@ -158,15 +155,14 @@ def main():
             except Exception:
                 pass
 
-        try:
-            T_place = trajectory_planner.at_T * beam.attributes.get("parent_T")
-            highlight_mesh = beam.geometry.transformed(T_place).to_viewmesh()[0]
-            highlight_mat = PhysicalMaterial(color=Color(1.0, 0.55, 0.0), roughness=0.4, opacity=0.9)
-            player.viewer.add_geometry(highlight_mesh, highlight_mat)
-            highlight_state["mesh"] = highlight_mesh
-        except Exception as e:
-            print("QR: highlight failed - {}".format(e))
-            traceback.print_exc()
+        # try:
+        #     highlight_mesh = beam.geometry.to_viewmesh()[0]
+        #     highlight_mat = PhysicalMaterial(color=Color(1.0, 0.55, 0.0), roughness=0.4, opacity=0.9)
+        #     player.viewer.add_geometry(highlight_mesh, highlight_mat)
+        #     highlight_state["mesh"] = highlight_mesh
+        # except Exception as e:
+        #     print("QR: highlight failed - {}".format(e))
+        #     traceback.print_exc()
 
         # --- Fetch pickup frame (blocking, runs in MQTT thread) ---
         _set_label("fetching…", _COL_WAITING)
@@ -180,10 +176,58 @@ def main():
             _set_label("retry — fetch failed", _COL_WAITING)
             print("QR: fetch FAILED - {}".format(e))
         
+        buttons_to_del = []
         if beam.attributes.get("assembly_method") == "robot":
-            player.viewer.add_ui_element(Button(text="Compute Trajectories", action=_on_compute, label=None))
-            player.viewer.add_ui_element(Button(text="Export Trajectory", action=_on_export, label=None))
-        player.viewer.add_ui_element(Button(text="Confirm Assembly", action=_on_export, label=None))
+            compute_button = Button(text="Compute Trajectories", action=_on_compute, label=None)
+            buttons_to_del.append(compute_button)
+            export_button = Button(text="Export Trajectory", action=_on_export, label=None)
+            buttons_to_del.append(export_button)
+            player.viewer.add_ui_element(compute_button)
+            player.viewer.add_ui_element(export_button)
+        confirm_button = Button(text="Confirm Assembly", action=_on_confirm, label=None)
+        buttons_to_del.append(confirm_button)
+        player.viewer.add_ui_element(confirm_button)
+        player.viewer.buttons_to_del = buttons_to_del
+
+        player._cleanup_previous_run()
+
+        # clear the QR highlight
+        if highlight_state["mesh"] is not None:
+            try:
+                player.viewer.remove_object(highlight_state["mesh"])
+            except Exception:
+                pass
+            highlight_state["mesh"] = None
+
+        trajectory_planner.state.robot_configuration = trajectory_planner.safe_configuration
+        
+        rb_names = trajectory_planner.robot_cell.rigid_body_models.keys()
+        for rb_name in list(rb_names):
+            if rb_name != "t2_rfl_colmesh":
+                trajectory_planner.robot_cell.rigid_body_models.pop(rb_name)
+                trajectory_planner.state.rigid_body_states.pop(rb_name)
+
+        assembled_elements = []
+        assembled_elements.clear() 
+        for p in timber_model.plates[:1]:
+            p_mesh = p.geometry.to_viewmesh()[0]
+            assembled_elements.append(p_mesh)
+        for b in in_seq_beams[:trajectory_planner.seq_i]:
+            b_mesh = b.geometry.to_viewmesh()[0]
+            assembled_elements.append(b_mesh)
+
+        trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
+        player._draw_assembled_elements(assembled_elements)
+
+        try:
+            highlight_mesh = beam.geometry.to_viewmesh()[0]
+            highlight_mat = PhysicalMaterial(color=Color(1.0, 0.55, 0.0), roughness=0.4, opacity=0.9)
+            player.viewer.add_geometry(highlight_mesh, highlight_mat)
+            highlight_state["mesh"] = highlight_mesh
+        except Exception as e:
+            print("QR: highlight failed - {}".format(e))
+            traceback.print_exc()
+
 
     def _mqtt_setup():
         def _on_connect(client, userdata, flags, rc):
@@ -221,38 +265,35 @@ def main():
         beam = in_seq_beams[trajectory_planner.seq_i]
         # all_seq_i = beam.attributes.get("sequence")
         # print(all_seq_i)
-        player._cleanup_previous_run()
+        # player._cleanup_previous_run()
 
-        # clear the QR highlight
-        if highlight_state["mesh"] is not None:
-            try:
-                player.viewer.remove_object(highlight_state["mesh"])
-            except Exception:
-                pass
-            highlight_state["mesh"] = None
+        # # clear the QR highlight
+        # if highlight_state["mesh"] is not None:
+        #     try:
+        #         player.viewer.remove_object(highlight_state["mesh"])
+        #     except Exception:
+        #         pass
+        #     highlight_state["mesh"] = None
 
-        trajectory_planner.state.robot_configuration = trajectory_planner.safe_configuration
+        # trajectory_planner.state.robot_configuration = trajectory_planner.safe_configuration
         
-        rb_names = trajectory_planner.robot_cell.rigid_body_models.keys()
-        for rb_name in list(rb_names):
-            if rb_name != "t2_rfl_colmesh":
-                trajectory_planner.robot_cell.rigid_body_models.pop(rb_name)
-                trajectory_planner.state.rigid_body_states.pop(rb_name)
+        # rb_names = trajectory_planner.robot_cell.rigid_body_models.keys()
+        # for rb_name in list(rb_names):
+        #     if rb_name != "t2_rfl_colmesh":
+        #         trajectory_planner.robot_cell.rigid_body_models.pop(rb_name)
+        #         trajectory_planner.state.rigid_body_states.pop(rb_name)
 
-        assembled_elements = []
-        assembled_elements.clear() 
-        for p in timber_model.plates[:1]:
-            # parent_T = p.transformation_to_local()
-            p_mesh = p.elementgeometry.transformed(trajectory_planner.at_T).to_viewmesh()[0]
-            assembled_elements.append(p_mesh)
-        # beam.attributes["parent_T"] = parent_T  
-        for b in in_seq_beams[:trajectory_planner.seq_i]:
-            # b.attributes["parent_T"] = parent_T
-            b_mesh = b.geometry.transformed(trajectory_planner.at_T * b.attributes.get("parent_T")).to_viewmesh()[0]
-            assembled_elements.append(b_mesh)
+        # assembled_elements = []
+        # assembled_elements.clear() 
+        # for p in timber_model.plates[:1]:
+        #     p_mesh = p.geometry.to_viewmesh()[0]
+        #     assembled_elements.append(p_mesh)
+        # for b in in_seq_beams[:trajectory_planner.seq_i]:
+        #     b_mesh = b.geometry.to_viewmesh()[0]
+        #     assembled_elements.append(b_mesh)
 
-        trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
-        player._draw_assembled_elements(assembled_elements)
+        # trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
+        # player._draw_assembled_elements(assembled_elements)
 
         if hasattr(trajectory_planner, 'workpiece_manager'):
             wm = trajectory_planner.workpiece_manager
@@ -341,9 +382,10 @@ def main():
         exported_seq_i = last_sequence["record"]["index"]
         print("Exported sequence {} to: {}".format(exported_seq_i, EXPORT_PATH))
 
-        # Advance to next beam and persist state
-        _save_state(exported_seq_i)
-        next_seq_i = exported_seq_i + 1
+    def _on_confirm():
+        confirmed_seq_i = trajectory_planner.seq_i
+        _save_state(confirmed_seq_i)
+        next_seq_i = confirmed_seq_i + 1
         if next_seq_i < total_beams:
             trajectory_planner.seq_i = next_seq_i
             trajectory_planner._fetched_pickup_frame = None
@@ -353,6 +395,11 @@ def main():
         else:
             _set_label("all done!", _COL_COMPUTED)
             print("All {} beams assembled!".format(total_beams))
+        
+        for button in player.viewer.buttons_to_del:
+            player.viewer.remove_ui_element(button)
+
+
 
     # --- Button: Prev / Next beam ---
     def _jump_to(seq_i):

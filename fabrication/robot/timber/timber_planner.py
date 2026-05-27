@@ -278,8 +278,9 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 5. Approach AT
         print("getting element approach trajectory to AT")
-        design_insertion_vector = element.attributes.get("design_insertion_vector", None)
-        at_insertion_vector = design_insertion_vector.transformed(self.at_T * element.attributes.get("parent_T")) if design_insertion_vector else None
+        # design_insertion_vector = element.attributes.get("design_insertion_vector", None)
+        # at_insertion_vector = design_insertion_vector.transformed(self.at_T * element.attributes.get("parent_T")) if design_insertion_vector else None
+        at_insertion_vector = element.attributes.get("insertion_vector", None)
         element_at_approach_frame = self.get_approach_frame(element_at_frame, approach_distance=0.3, vector=at_insertion_vector)
         approach_config = self.get_constrained_ik_from_frame(element_at_approach_frame)
         trajectories.append(self.get_motion_to_configuration(approach_config))
@@ -387,16 +388,12 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
     def calculate_element_at_frame(self, element, grasp_frame=None):
         if not grasp_frame:
-            grasp_frame = element.attributes.get("grasp_frame") 
+            grasp_frame = element.attributes.get("grasp_frame").transformed(element.transformation_to_local())
             print("GRASP_FRAME", grasp_frame)
             grasp_frame = grasp_frame.rotated(math.radians(90), grasp_frame.zaxis, grasp_frame.point)
-        e_at_frame = grasp_frame.transformed(self.at_T*element.attributes.get("parent_T")*element.transformation_to_local().inverse())
-        # e_at_frame = element.attributes.get("design_grasp_frame").transformed(self.at_T*element.attributes.get("parent_T"))
-        e_at_frame_offset = e_at_frame.translated(e_at_frame.zaxis * -0.1)  # DEPTH OFFSET FOR GRIPPER 80mm LENGTH
-        # e_at_frame_offset = e_at_frame_offset.rotated(math.radians(90), e_at_frame.zaxis, e_at_frame.point)  # Rotate to align gripper with element
-        # new_grasp_frame = grasp_frame.transformed(element.transformation_to_local())
-        element_geometry = element.geometry.transformed(element.transformation_to_local())
-        # ip_thickness = self.get_inside_plate_thickness(element)
-        # e_at_frame.translate(e_at_frame.zaxis * (ip_thickness * 0.001))  # OFFSET FOR INSIDE PLATE THICKNESS
-        # e_at_frame.translate(e_at_frame.zaxis * 0.08)  # DEPTH OFFSET FOR GRIPPER 60 WIDTH
+        e_at_frame = element.attributes.get("grasp_frame")
+        # e_at_frame = grasp_frame.transformed(element.transformation_to_local().inverse())
+        e_at_frame = e_at_frame.rotated(math.radians(90), e_at_frame.zaxis, e_at_frame.point)
+        e_at_frame_offset = e_at_frame.translated(e_at_frame.zaxis * -0.1)
+        element_geometry = element.elementgeometry
         return grasp_frame, e_at_frame_offset, element_geometry
