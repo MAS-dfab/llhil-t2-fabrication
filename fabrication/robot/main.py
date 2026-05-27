@@ -55,9 +55,9 @@ def _save_state(last_assembled):
     json_dump({"last_assembled": last_assembled}, STATE_FILE)
 
 
-def _beam_label(seq_i, total, suffix):
+def _beam_label(seq_i, total, beam_id, suffix, assembly_method):
     """e.g. 'Beam 1/12 — scan QR'"""
-    return "Beam {}/{} — {}".format(seq_i + 1, total, suffix)
+    return "{}/{}\n{}\n{}\nPlaced by: {}".format(seq_i + 1, total, beam_id, suffix, assembly_method)
 
 
 def main():
@@ -65,12 +65,12 @@ def main():
     # 1. LOAD DATA
     # ---------------------------------------------------------
     print("Loading models...")
-    filepath_model = "fabrication\\data\\models\\260526_v2_timber_models.json"
+    filepath_model = "fabrication\\data\\timber_models\\260527_module_3.json"
 
     if not os.path.exists(filepath_model):
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
 
-    timber_model = json_load(filepath_model)
+    timber_model = json_load(filepath_model)[0].get("model")
 
     timber_model.process_joinery()
     # plate_T = timber_model.plates[0].transformation_to_local()
@@ -120,37 +120,36 @@ def main():
 
     # UI: text label tracks the current step state
     id_label = TextLabel(
-        text=_beam_label(trajectory_planner.seq_i, total_beams, "scan QR"),
+        text=_beam_label(trajectory_planner.seq_i, total_beams, in_seq_beams[trajectory_planner.seq_i].name, "scan QR", in_seq_beams[trajectory_planner.seq_i].attributes.get("assembly_method")),
         label="Current Beam",
     )
 
     def _set_label(suffix, color):
         player.viewer.update_text_label(
             id_label,
-            _beam_label(trajectory_planner.seq_i, total_beams, suffix),
+            _beam_label(trajectory_planner.seq_i, total_beams, in_seq_beams[trajectory_planner.seq_i].name, suffix, in_seq_beams[trajectory_planner.seq_i].attributes.get("assembly_method")),
             color=color,
         )
 
     def _on_qr_received(payload):
         """Called from the MQTT thread when a QR scan is published."""
         try:
-            seq_i = int(payload.split("-")[-1]) - QR_SEQ_OFFSET
+            beam_id = int(payload.split("_")[-1]) - QR_SEQ_OFFSET
         except (ValueError, IndexError):
             print("QR: unrecognised payload '{}'".format(payload))
             return
 
-        if seq_i < 0 or seq_i >= total_beams:
-            print("QR: seq_i {} out of range (0-{})".format(seq_i, total_beams - 1))
+        if beam_id < 0 or beam_id >= total_beams:
+            print("QR: beam_id {} out of range (0-{})".format(beam_id, total_beams - 1))
             _set_label("out of range", _COL_WAITING)
             return
 
         # Update to the scanned beam (allows jumping forward if needed)
-        trajectory_planner.seq_i = seq_i
-        beam = in_seq_beams[seq_i]
+        beam = next((beam for beam in timber_model.beams if beam.name.split("_")[-1] == beam_id), None)
+        trajectory_planner.seq_i = beam.attributes.get("sequence_id", None)
 
-        beam = timber_model.nodes_where(attributes={"sequence_id": seq_i})
         print(beam.name)
-        print("QR: {} -> seq_i={} ({})".format(payload, seq_i, beam))
+        print("QR: {} -> seq_i={} ({})".format(payload, trajectory_planner.seq_i, beam))
 
         # --- Highlight: remove previous beam, add new one ---
         if highlight_state["mesh"] is not None:
@@ -174,12 +173,17 @@ def main():
         try:
             trajectory_planner._fetched_pickup_frame = fetch_pickup_frame()
             _set_label("ready ✓", _COL_FETCHED)
-            print("QR: pickup frame ready for seq_i={}. Press Compute.".format(seq_i))
+            print("QR: pickup frame ready for seq_i={}. Press Compute.".format(trajectory_planner.seq_i))
         except RuntimeError as e:
             from compas.geometry import Frame, Point, Vector
             trajectory_planner._fetched_pickup_frame = Frame(point=Point(x=16040, y=5076, z=1009), xaxis=Vector(x=-1.000, y=-0.000, z=-0.000), yaxis=Vector(x=0.000, y=1.000, z=0.000)).rotated(math.radians(90), Vector(0,0,1), Point(x=16040, y=7076, z=1009))
             _set_label("retry — fetch failed", _COL_WAITING)
             print("QR: fetch FAILED - {}".format(e))
+        
+        if beam.attributes.get("assembly_method") == "robot":
+            player.viewer.add_ui_element(Button(text="Compute Trajectories", action=_on_compute, label=None))
+            player.viewer.add_ui_element(Button(text="Export Trajectory", action=_on_export, label=None))
+        player.viewer.add_ui_element(Button(text="Confirm Assembly", action=_on_export, label=None))
 
     def _mqtt_setup():
         def _on_connect(client, userdata, flags, rc):
@@ -381,10 +385,8 @@ def main():
     player.viewer.picker = True
     player.viewer.set_view(CameraView.FRONT_RIGHT)
     player.viewer.add_ui_element(id_label)
-    player.viewer.add_ui_element(Button(text="← Prev", action=_on_prev, label="Sequence"))
+    player.viewer.add_ui_element(Button(text="← Prev", action=_on_prev, label=None))
     player.viewer.add_ui_element(Button(text="Next →", action=_on_next, label=None))
-    player.viewer.add_ui_element(Button(text="Compute Trajectories", action=_on_compute, label="Compute"))
-    player.viewer.add_ui_element(Button(text="Export Trajectory", action=_on_export, label="Export"))
 
     player.show()
 
