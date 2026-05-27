@@ -524,7 +524,7 @@ def apply_processings(model):
     """Process joinery and finalize cuts which need to be done after."""
     # Shoe bevel knob: set the extension you want per end, in METERS. The bevel
     # angle is derived from it later (angle = atan(2*X / height)).
-    SHOE_EXTENSION = 0.03  # per end, in meters (0.03 = 3 cm)
+    SHOE_EXTENSION = 0.00  # per end, in meters (0.03 = 3 cm)
     # False -> trapezoid: bevel + a flat tip face, length preserved.
     # True  -> full cut: the plane slices the whole beam, leaving one face.
     SHOE_FULL_CUT = True
@@ -587,8 +587,8 @@ def apply_processings(model):
             # Blank already extended by X on both ends BEFORE joinery (see top of
             # this function), so existing joints don't shift. Reuse the same X and
             # derive the bevel angle from it.
-            X = beam.attributes.get("shoe_ext", 0.0)
-            theta = math.degrees(math.atan(2.0 * X / beam.height))   # angle derived from X
+            X = .02
+            theta = math.degrees(math.atan(2.0 * .03 / beam.height))   # angle derived from X
             SHOE_END_ANGLE = -theta                                  # negative keeps bevel on the Bottom
             if clt_plate:
                 cutting_frame = clt_plate.frame
@@ -598,7 +598,7 @@ def apply_processings(model):
             for at_start in (True, False):
                 sign = 1.0 if at_start else -1.0   # +/- gives a symmetric trapezoid; flip both signs to swap top/bottom
                 # offset=X moves the cut plane out to the newly extended blank tip
-                plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE, offset=X)
+                plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE, offset=-X)
                 jrc = JackRafterCut.from_plane_and_beam(plane, beam, is_joinery=False)
                 beam.add_feature(jrc)
 
