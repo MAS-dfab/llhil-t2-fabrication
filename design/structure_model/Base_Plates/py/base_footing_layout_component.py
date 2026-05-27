@@ -62,8 +62,9 @@ except ImportError:
                 self.Plane: Optional['MockRhinoGeometry.Plane'] = None
                 self.TextHeight = 0.0
 
-    rg = MockRhinoGeometry()
-    MockRhinoGeometry.BoundingBox.Empty = MockRhinoGeometry.BoundingBox()
+    # Keep mock classes for typing/tests, but use rg=None so fallback branches
+    # produce serializable dictionaries instead of Rhino geometry objects.
+    rg = None
 
 
 SHEET_SIZES_MM = {
@@ -164,19 +165,28 @@ def _sheet_size(value: Union[str, Tuple[float, float]]) -> Tuple[float, float]:
     return value
 
 
-def _point(x: float, y: float, z: float = 0.0) -> Union[Tuple[float, float, float], 'MockRhinoGeometry.Point3d']:
+def _point(x: float, y: float, z: float = 0.0) -> Union[str, 'MockRhinoGeometry.Point3d']:
     if rg is None:
-        return (x, y, z)
+        return "PT({0:.3f}, {1:.3f}, {2:.3f})".format(float(x), float(y), float(z))
     return rg.Point3d(float(x), float(y), float(z))
 
 
-def _polyline(points: List[Union[Tuple[float, float, float], 'MockRhinoGeometry.Point3d']]) -> Union[Dict[str, Any], Any]:
+def _polyline(points: List[Union[str, 'MockRhinoGeometry.Point3d']]) -> Union[str, Any]:
     if rg is None:
-        return {"type": "polyline", "points": list(points)}
-    return rg.Polyline(points).ToNurbsCurve()
+        return "POLYLINE[{0}]".format(" -> ".join(str(point) for point in points))
+    try:
+        pl = rg.Polyline()
+        for pt in points:
+            pl.Add(pt)
+        curve = pl.ToNurbsCurve()
+        if curve is None:
+            return "ERR:polyline_ToNurbsCurve_returned_None npts={0}".format(len(points))
+        return curve
+    except Exception as _poly_exc:
+        return "ERR:polyline:{0}".format(_poly_exc)
 
 
-def _rectangle(x0: float, y0: float, x1: float, y1: float) -> Union[Dict[str, Any], Any]:
+def _rectangle(x0: float, y0: float, x1: float, y1: float) -> Union[str, Any]:
     return _polyline([
         _point(x0, y0),
         _point(x1, y0),
@@ -186,15 +196,19 @@ def _rectangle(x0: float, y0: float, x1: float, y1: float) -> Union[Dict[str, An
     ])
 
 
-def _text(text: str, x: float, y: float, height: float) -> Union[Dict[str, Any], Any]:
+def _text(text: str, x: float, y: float, height: float) -> Union[str, Any]:
     if rg is None:
-        return {"type": "text", "text": str(text), "point": (x, y, 0.0), "height": height}
-    plane = rg.Plane(_point(x, y), rg.Vector3d.XAxis, rg.Vector3d.YAxis)
-    entity = rg.TextEntity()
-    entity.Text = text
-    entity.Plane = plane
-    entity.TextHeight = height
-    return entity
+        return "TEXT[{0}] @ ({1:.3f}, {2:.3f}, 0.000), h={3:.3f}".format(str(text), float(x), float(y), float(height))
+    try:
+        origin = _point(x, y)
+        plane = rg.Plane(origin, rg.Vector3d.XAxis, rg.Vector3d.YAxis)
+        entity = rg.TextEntity()
+        entity.Text = str(text)
+        entity.Plane = plane
+        entity.TextHeight = float(height)
+        return entity
+    except Exception as _text_exc:
+        return "ERR:text:{0}".format(_text_exc)
 
 
 def _bbox_center(bbox: Union['MockRhinoGeometry.BoundingBox', Any]) -> Union['MockRhinoGeometry.Point3d', None]:
