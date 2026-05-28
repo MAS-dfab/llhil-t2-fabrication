@@ -590,7 +590,7 @@ def apply_processings(
     """Process joinery and finalize cuts which need to be done after."""
     # Shoe bevel knob: set the extension you want per end, in METERS. The bevel
     # angle is derived from it later (angle = atan(2*X / height)).
-    SHOE_EXTENSION = 0.03  # per end, in meters (0.03 = 3 cm)
+    SHOE_EXTENSION = 0.00  # per end, in meters (0.03 = 3 cm)
     # False -> trapezoid: bevel + a flat tip face, length preserved.
     # True  -> full cut: the plane slices the whole beam, leaving one face.
     SHOE_FULL_CUT = True

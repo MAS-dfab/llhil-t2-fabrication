@@ -25,6 +25,14 @@ except Exception:
     rg = None
 
 
+DEBUG_LOG = False
+
+
+def _debug_print(*args) -> None:
+    if DEBUG_LOG:
+        print(*args)
+
+
 Point3 = Tuple[float, float, float]
 
 SUPPORTED_GEOMETRY_UNITS = {"meters", "millimeters"}
@@ -5936,7 +5944,7 @@ def base_footing_run(
                 if _fp_brep is not None:
                     full_plate_breps.append(_fp_brep)
                 else:
-                    print(
+                    _debug_print(
                         "[BPG] full_plate_brep[{0}] ToBrep returned None "
                         "(az={1:.1f} alt={2:.1f} L={3:.4f} W={4:.4f} T={5:.4f})".format(
                             _fp_idx,
@@ -5948,8 +5956,8 @@ def base_footing_run(
                         )
                     )
             except Exception as _fp_exc:
-                print("[BPG] full_plate_brep[{0}] build exception: {1}".format(_fp_idx, _fp_exc))
-        print("[BPG] full_plate_breps built: {0}/{1}".format(len(full_plate_breps), len(full_plate_specs)))
+                _debug_print("[BPG] full_plate_brep[{0}] build exception: {1}".format(_fp_idx, _fp_exc))
+        _debug_print("[BPG] full_plate_breps built: {0}/{1}".format(len(full_plate_breps), len(full_plate_specs)))
 
     plate_hole_centers_built, plate_hole_curves, plate_hole_cutters, _per_plate_hole_centers = _plate_hole_geometry(
         active_plate_hole_specs,
@@ -6049,7 +6057,7 @@ def base_footing_run(
         active_web_plate_source = "mixed_profile_plate_breps"
     else:
         active_web_plate_source = "box_plate_breps"
-    print("[BPG] active_web_plate_breps: {0} ({1})".format(
+    _debug_print("[BPG] active_web_plate_breps: {0} ({1})".format(
         len(active_web_plate_breps),
         active_web_plate_source,
     ))
