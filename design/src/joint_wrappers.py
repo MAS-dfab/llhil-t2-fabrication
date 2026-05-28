@@ -32,17 +32,32 @@ def project_point_to_frame_along(point, direction, frame, tol=1e-6):
 
 
 # -----------------------------------
-# Joint Wrappers
+# TStepJoint Wrapper
 # -----------------------------------
-# TStepJoint, TMultiStepJoint, TBirdsmouthJoint, KBirdsmouthJoint and XLapJoint.
 class TSJ(object):
     """A wrapper class for TStepJoint."""
     def __init__(self, joint):
         self._raw_joint = joint
 
+        self.acute_angle = self._calculate_acute_angle()
+
     def __getattr__(self, name):
         return getattr(self._raw_joint, name)
-    
+
+    def _calculate_acute_angle(self):
+        """Calculate the acute angle in degrees between two beams."""
+        if len(self.elements) != 2:
+            raise ValueError("Joint must have exactly two elements.")
+        
+        ea, eb = self.elements
+        angle = angle_vectors(ea.centerline.direction, eb.centerline.direction, deg=True)
+        if angle > 90:
+            angle = 180 - angle
+        return angle
+
+# -----------------------------------
+# TMultiStepJoint Wrapper
+# ----------------------------------- 
 class TMSJ(object):
     """A wrapper class for TMultiStepJoint."""
     def __init__(self, joint):
@@ -216,26 +231,74 @@ class TMSJ(object):
         else:
             raise ValueError("Invalid data type.")
     
+# -----------------------------------
+# TBirdsmouthJoint Wrapper
+# -----------------------------------
 class TBMJ(object):
     """A wrapper class for TBirdsmouthJoint."""
     def __init__(self, joint):
         self._raw_joint = joint
 
+        self.acute_angle = self._calculate_acute_angle()
     def __getattr__(self, name):
         return getattr(self._raw_joint, name)
 
+    def _calculate_acute_angle(self):
+        """Calculate the acute angle in degrees between two beams."""
+        if len(self.elements) != 2:
+            raise ValueError("Joint must have exactly two elements.")
+        
+        ea, eb = self.elements
+        angle = angle_vectors(ea.centerline.direction, eb.centerline.direction, deg=True)
+        if angle > 90:
+            angle = 180 - angle
+        return angle
+    
+# -----------------------------------
+# KBirdsmouthJoint Wrapper
+# -----------------------------------
+# NOTE: split KbirdsmouthJoint into two TBirdsmouthJoints?
 class KBMJ(object):
     """A wrapper class for KBirdsmouthJoint."""
     def __init__(self, joint):
         self._raw_joint = joint
 
+        self.acute_angle = self._calculate_acute_angle()
+
     def __getattr__(self, name):
         return getattr(self._raw_joint, name)
+
+    # def _calculate_acute_angle(self):
+    #     """Calculate the acute angle in degrees between two beams."""
+    #     if len(self.elements) != 3:
+    #         raise ValueError("Joint must have exactly three elements.")
+        
+    #     main1, main2, cross = self.elements
+    #     angle = angle_vectors(main1.centerline.direction, main2.centerline.direction, deg=True)
+    #     if angle > 90:
+    #         angle = 180 - angle
+    #     return angle
     
+# -----------------------------------
+# XLapJoint Wrapper
+# -----------------------------------
 class XLJ(object):
     """A wrapper class for XLapJoint."""
     def __init__(self, joint):
         self._raw_joint = joint
 
+        self.acute_angle = self._calculate_acute_angle()
+
     def __getattr__(self, name):
         return getattr(self._raw_joint, name)
+    
+    def _calculate_acute_angle(self):
+        """Calculate the acute angle in degrees between two beams."""
+        if len(self.elements) != 2:
+            raise ValueError("Joint must have exactly two elements.")
+        
+        ea, eb = self.elements
+        angle = angle_vectors(ea.centerline.direction, eb.centerline.direction, deg=True)
+        if angle > 90:
+            angle = 180 - angle
+        return angle

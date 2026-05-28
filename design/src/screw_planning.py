@@ -313,7 +313,7 @@ class ScrewSolver:
         tol : float
             A small tolerance to move the start point away from the entry face to avoid non-intersection issue.
         with_data : bool
-            If True, return a dictionary of "entry_points" and "line_list" for debugging and visualization.
+            If True, return a dictionary of "entry_points" and "screw_lines" for debugging and visualization.
         """
         if self.determine_entry_type(joint) == "aligned":
             line_list = self.populate_aligned_screw_lines(joint, orientation=orientation, nested=False, restrict=True)
@@ -385,8 +385,16 @@ def apply_screws(
             with_data=with_data
         )
         if with_data:
-            names = (joint.main_beam.name, joint.cross_beam.name)
-            results[names] = result
-    if with_data:
-        return results
-    return {}
+            key = f"{joint.main_beam.name}_{joint.cross_beam.name}"
+            
+            strut_face = joint.get_strut_boundary(data_type="polyline")
+            entry_face, exit_face = joint.find_screw_boundaries(orientation=orientation, data_type="polylines")
+            
+            results[key] = {
+                "strut_face": strut_face,
+                "entry_face": entry_face,
+                "exit_face": exit_face,
+                "entry_points": result["entry_points"],
+                "screw_lines": result["screw_lines"]
+            }
+    return results if with_data else {}
