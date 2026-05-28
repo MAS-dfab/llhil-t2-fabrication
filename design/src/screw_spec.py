@@ -21,6 +21,12 @@ class ScrewSpecification:
             "min_widths": {1: 0.098, 2: 0.163, 3: 0.228}
         },
     }
+    ANGLE_THRESHOLD = 50
+    DRILLING_DIAMETER = 0.005
+    SCREW_DIAMETER = 0.0065
+    SCREW_LENGTHS = [0.10, 0.15, 0.20]
+    BACK_THRESHOLD = 0.015
+
     def __init__(self, entry_type=None, spec_model="WT-plus-6.5"):
         if spec_model not in self.SPEC_TABLE:
             raise ValueError(f"Unsupported screw model: {spec_model}")
@@ -28,12 +34,6 @@ class ScrewSpecification:
         self.entry_type = entry_type
         self.spec_model = spec_model
         self.spec_table = self.SPEC_TABLE[spec_model]
-
-        self.angle_threshold = 50
-        self.drilling_diameter = 0.005
-        self.screw_diameter = 0.0065
-        self.screw_lengths = [0.10, 0.15, 0.20]
-        self.back_threshold = 0.015
         
         # Minimum parameters
         if entry_type == "aligned":
@@ -54,4 +54,4 @@ class ScrewSpecification:
             self.a2_red = self.spec_table["a2_red"]
 
             self.side_angle = 45
-            self.side_offset = 0.020
+            self.side_offset = 0.030

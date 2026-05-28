@@ -37,7 +37,7 @@ class ScrewSolver:
     
     def determine_entry_type(self, joint):
         """Determine the entry type of the screw based on the angle."""
-        if joint.acute_angle > ScrewSpecification().angle_threshold:
+        if joint.acute_angle > ScrewSpecification().ANGLE_THRESHOLD:
             return "crossed"
         return "aligned"
     
@@ -144,7 +144,7 @@ class ScrewSolver:
         dire = joint.calculate_screw_direction(orientation=orientation)
 
         # 3. get the length of each screw line by projecting the point to the exit face
-        screw_lengths = sorted(spec.screw_lengths, reverse=True)
+        screw_lengths = sorted(spec.SCREW_LENGTHS, reverse=True)
         line_list = []
         for row in entry_grid:
             line_row = []
@@ -153,7 +153,7 @@ class ScrewSolver:
                 sample = row[0]
                 sample_exit = project_point_to_frame_along(sample, dire, exit_frame)
                 sample_dist = sample.distance_to_point(sample_exit)
-                max_allowed_length = sample_dist - spec.back_threshold
+                max_allowed_length = sample_dist - spec.BACK_THRESHOLD
 
                 suitable_length = next((l for l in screw_lengths if l <= max_allowed_length), None)
                 if suitable_length is None:
@@ -241,7 +241,7 @@ class ScrewSolver:
         if self.determine_entry_type(joint) != "crossed":
             raise ValueError("Wrong entry type. Expected 'crossed'.")
         spec = self._spec_cache["crossed"]
-        screw_lengths = sorted(spec.screw_lengths, reverse=True)
+        screw_lengths = sorted(spec.SCREW_LENGTHS, reverse=True)
 
         entry_grid = self.populate_crossed_entry_points(joint, orientation=orientation, nested=True)
         exit_frames = [joint.cross_beam.ref_sides[(joint.cross_beam_ref_side_index + i) % 4] for i in range(1, 4)]
@@ -271,7 +271,7 @@ class ScrewSolver:
                 
                 pt_exit = project_point_to_frame_along(pt, side_vec, exit_frame)
                 dist = pt.distance_to_point(pt_exit)
-                max_allowed_length = dist - spec.back_threshold
+                max_allowed_length = dist - spec.BACK_THRESHOLD
                 if restrict:
                     suitable_length = next((l for l in screw_lengths if l <= max_allowed_length), None)
                     if suitable_length is None:
@@ -293,55 +293,74 @@ class ScrewSolver:
             spec = self._spec_cache["crossed"]
 
         if nested:
-            return [[Cylinder.from_line_and_radius(line, spec.screw_diameter / 2) for line in row] for row in line_list]
-        return [Cylinder.from_line_and_radius(line, spec.screw_diameter / 2) for row in line_list for line in row]
+            return [[Cylinder.from_line_and_radius(line, spec.SCREW_DIAMETER / 2) for line in row] for row in line_list]
+        return [Cylinder.from_line_and_radius(line, spec.SCREW_DIAMETER / 2) for row in line_list for line in row]
     
-    def collect_drilling_features(self, joints=None, orientation=None, depth_limited=True):
-        if joints is None:
-            joints = self.joints
+    def add_drilling_features(self, joint, orientation, target="main", depth_limited=True, tol=1e-3, with_data=False):
+        """
+        Add drilling features created at the joint to the beam(s).
 
-        features = {}
-        for joint in joints:
-            if self.determine_entry_type(joint) == "aligned":
-                line_list = self.populate_aligned_screw_lines(joint, orientation=orientation, nested=False, restrict=depth_limited)
-                spec = self._spec_cache["aligned"]
-            elif self.determine_entry_type(joint) == "crossed":
-                line_list = self.populate_crossed_screw_lines(joint, orientation=orientation, nested=False, restrict=depth_limited)
-                spec = self._spec_cache["crossed"]
+        Parameters
+        ----------
+        joint : JointWrapper
+            The joint to add drilling features on.
+        orientation : str
+            "perp_main", "perp_tread", "perp_cross", "bisector" and "cross_section".
+        target : str
+            "main", "cross" or "both" to specify which beam(s) to add drilling features on.
+        depth_limited : bool
+            If True, restrict the drilling depth to the predefined screw lengths.
+        tol : float
+            A small tolerance to move the start point away from the entry face to avoid non-intersection issue.
+        with_data : bool
+            If True, return a dictionary of "entry_points" and "line_list" for debugging and visualization.
+        """
+        if self.determine_entry_type(joint) == "aligned":
+            line_list = self.populate_aligned_screw_lines(joint, orientation=orientation, nested=False, restrict=True)
+        elif self.determine_entry_type(joint) == "crossed":
+            line_list = self.populate_crossed_screw_lines(joint, orientation=orientation, nested=False, restrict=True)
 
-            name = joint.main_beam.name
-            for ln in line_list:
-                drl = Drilling(depth_limited=depth_limited).from_line_and_element(
-                    ln, joint.main_beam, spec.drilling_diameter
+        if target == "main":
+            beams = (joint.main_beam,)
+        elif target == "cross":
+            beams = (joint.cross_beam,)
+        elif target == "both":
+            beams = (joint.main_beam, joint.cross_beam)
+
+        for line in line_list:
+            # Move the start point slightly away from the entry face to avoid non-intersection issue
+            line = Line(line[0] - line.direction * tol, line[1])
+
+            for beam in beams:
+                drilling = Drilling(depth_limited=depth_limited).from_line_and_element(
+                    line, beam, ScrewSpecification().DRILLING_DIAMETER
                 )
-                features.setdefault(name, []).append(drl)
-        return features
-
-    def add_drilling_features(self, joints, orientation, depth_limited=True):
-        features = self.collect_drilling_features(joints=joints, orientation=orientation, depth_limited=depth_limited)
-
-        for beam in self.model.beams:
-            for name, drillings in features.items():
-                if beam.name != name:
-                    continue
-                try:
-                    for drl in drillings:
-                        beam.add_feature(drl)
-                except Exception as e:
-                    print(f"Error adding drilling feature: {beam.name}")
-            return
-
+                beam.add_feature(drilling)
+        
+        if with_data:
+            return {"entry_points": [ln[0] for ln in line_list], "screw_lines": line_list}
+        return {}
+    
 # -----------------------------------
 # Main API
 # -----------------------------------
-def apply_screws(model, spec_model="WT-plus-6.5"):
+def apply_screws(
+        model,
+        spec_model="WT-plus-6.5",
+        orientation_aligned="perp_tread",
+        orientation_crossed="cross_section",
+        drill_target="main",
+        depth_limited=True,
+        with_data=False
+    ):
     JOINT_MAP = {
         TMultiStepJoint : TMSJ,
 
     }
+
     solver = ScrewSolver(model, spec_model=spec_model)
 
-
+    results = {}
     for joint in model.joints:
         if joint.name != "TMultiStepJoint":
             continue  # temporary for testing only TMultiStepJoint
@@ -350,6 +369,24 @@ def apply_screws(model, spec_model="WT-plus-6.5"):
         joint_class = joint.__class__
         if joint_class in JOINT_MAP:
             joint = JOINT_MAP[joint_class](joint)
-
-        solver.add_drilling_features(joint, orientation="perp_tread")
-    return
+        
+        if solver.determine_entry_type(joint) == "aligned":
+            orientation = orientation_aligned
+        elif solver.determine_entry_type(joint) == "crossed":
+            orientation = orientation_crossed
+        else:
+            raise ValueError("Unknown entry type.")
+        
+        result = solver.add_drilling_features(
+            joint,
+            orientation=orientation,
+            target=drill_target,
+            depth_limited=depth_limited,
+            with_data=with_data
+        )
+        if with_data:
+            names = (joint.main_beam.name, joint.cross_beam.name)
+            results[names] = result
+    if with_data:
+        return results
+    return {}
