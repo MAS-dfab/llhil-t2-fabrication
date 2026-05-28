@@ -35,8 +35,10 @@ from compas_timber.fabrication import JackRafterCut, LongitudinalCut
 from collections import Counter
 
 from timber_config import (
-    TIMBER_MODEL_TOL, PLATE_THICKNESS, PLATE_Z_OFFSET, MAX_JOINT_DIST,
-    TMULTI_HEEL_THRESHOLD, TMULTI_STEP_DEPTH, TMULTI_RISER_ANGLE,
+    TIMBER_MODEL_TOL, PLATE_THICKNESS, PLATE_Z_OFFSET, 
+    FP_THICKNESS, FP_SCREW_ROW_COUNT, FP_SCREW_COLUMN_COUNT, FP_SCREW_MINIMUM_SPACING, FP_SCREW_MINIMUM_OFFSET,
+    MP_THICKNESS, MP_SCREW_ROW_COUNT, MP_SCREW_COLUMN_COUNT, MP_SCREW_MINIMUM_SPACING, MP_SCREW_MINIMUM_OFFSET,
+    MAX_JOINT_DIST, TMULTI_HEEL_THRESHOLD, TMULTI_STEP_DEPTH, TMULTI_RISER_ANGLE,
     KBIRD_MILL_DEPTH, KBIRD_MITER_TYPE, TBUTT_ANGLE_THRESHOLD
 )
 
@@ -446,7 +448,6 @@ def apply_joints(
     for beam in model.beams:
         beam.reset_computed_properties()
 
-    
     model.connect_adjacent_beams(max_distance)
 
     # 1. Handle K joints with three beams first
@@ -458,13 +459,27 @@ def apply_joints(
         miter_flag=k_miter_flag
     )
 
+    anchor_point = model.attributes.get("reached")
+
+    # Prepare vertical cut planes for middle joints and reached beams.
+    if anchor_point:
+        cut_plane_x = Plane(anchor_point, Vector(0, 1, 0))
+        cut_plane_y = Plane(anchor_point, Vector(1, 0, 0))
+    else:
+        raise ValueError("Anchor point is required for vertical cut planes. Please check if it's provided in the graph node attributes.")
+
     # 2. Handle all pair joints, T, L, X
     for candidate in model.joint_candidates:
+        test = []
         if candidate.is_promoted:  # all joints that are not k-topology
             continue
         
         topo = candidate.topology
         ca, cb = candidate.elements
+
+        # Prepare mid points
+        ca_mid = ca.centerline.midpoint
+        cb_mid = cb.centerline.midpoint
 
         if ca.attributes["level"] >= 1 and cb.attributes["hierarchy"] == 'shoe':
             continue # avoid creating joint between shoe and lower beam
@@ -477,7 +492,7 @@ def apply_joints(
 
                 # Middle T Joint
                 elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-                    TMultiStepJoint.create(model, ca, cb, step_depth=step_depth) # NOTE: step_shape?
+                    TMultiStepJoint.create(model, ca, cb, step_depth=step_depth) # NOTE: step_shape? Currently just left as TMultiStep...
 
                 else:
                     if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < heel_threshold:
@@ -500,9 +515,20 @@ def apply_joints(
                     # Non-planar T joints
                     TBirdsmouthJoint.create(model, ca, cb)
 
-        # ### L Miter Joint at the middle of the structure
-        # elif topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-        #     LMiterJoint.create(model, ca, cb, cutoff=False)
+        ### L Miter Joint at the middle of the structure
+        elif topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
+            if ca.attributes["hierarchy"] != cb.attributes["hierarchy"]:
+                #rotate around the anchor point
+                if ca_mid.x < anchor_point.x and cb_mid.x < anchor_point.x:         # Bottom half
+                    vertical_miter_plane = cut_plane_x
+                elif ca_mid.x > anchor_point.x and cb_mid.x > anchor_point.x:       # Top half
+                    vertical_miter_plane = cut_plane_x
+                elif ca_mid.y > anchor_point.y and cb_mid.y > anchor_point.y:       # Right half
+                    vertical_miter_plane = cut_plane_y
+                elif ca_mid.y < anchor_point.y and cb_mid.y < anchor_point.y:       # Left half
+                    vertical_miter_plane = cut_plane_y    
+                LMiterJoint.create(model, ca, cb, miter_plane=vertical_miter_plane, cutoff=False)
+
 
         ### X Lap Joint
         elif topo == JointTopology.TOPO_X:
@@ -518,9 +544,49 @@ def apply_joints(
             if debug:
                 print(f"Unhandled joint candidate with topology {topo}. edges: {ca.attributes['edge']}, {cb.attributes['edge']}")
             continue
-    return model
+    return model, test
 
-def apply_processings(model):
+def apply_processings(
+        model,
+
+        # footing parameters
+        fp_thickness=None,
+        fp_screw_row_count=None,
+        fp_screw_column_count=None,
+        fp_screw_minimum_spacing=None,
+        fp_screw_minimum_offset=None,
+
+        # middle node parameters
+        mp_thickness=None,
+        mp_screw_row_count=None,
+        mp_screw_column_count=None,
+        mp_screw_minimum_spacing=None,
+        mp_screw_minimum_offset=None
+        ):
+    
+    # default config
+    if fp_thickness is None:
+        fp_thickness=FP_THICKNESS
+    if fp_screw_row_count is None:
+        fp_screw_row_count=FP_SCREW_ROW_COUNT
+    if fp_screw_column_count is None:
+        fp_screw_column_count=FP_SCREW_COLUMN_COUNT
+    if fp_screw_minimum_spacing is None:
+        fp_screw_minimum_spacing=FP_SCREW_MINIMUM_SPACING
+    if fp_screw_minimum_offset is None:
+        fp_screw_minimum_offset=FP_SCREW_MINIMUM_OFFSET
+        
+    if mp_thickness is None:
+        mp_thickness=MP_THICKNESS
+    if mp_screw_row_count is None:
+        mp_screw_row_count=MP_SCREW_ROW_COUNT
+    if mp_screw_column_count is None:
+        mp_screw_column_count=MP_SCREW_COLUMN_COUNT
+    if mp_screw_minimum_spacing is None:
+        mp_screw_minimum_spacing=MP_SCREW_MINIMUM_SPACING
+    if mp_screw_minimum_offset is None:
+        mp_screw_minimum_offset=MP_SCREW_MINIMUM_OFFSET
+
     """Process joinery and finalize cuts which need to be done after."""
     # Shoe bevel knob: set the extension you want per end, in METERS. The bevel
     # angle is derived from it later (angle = atan(2*X / height)).
@@ -553,37 +619,37 @@ def apply_processings(model):
     else:
         raise ValueError("Anchor point is required for vertical cut planes. Please check if it's provided in the graph node attributes.")
     
-
-
     for beam in model.beams:
         beam.reset_computed_properties()
 
-        """JackRafterCut representing the middle joint condition, similar to LMiterJoint."""
-        if beam.attributes["has_middle_joint"] and beam.attributes['level'] >= 1 and anchor_point:
-            # Copy cut planes
-            cut_plane_x = vertical_cut_plane_x.copy()
-            cut_plane_y = vertical_cut_plane_y.copy()
+        # """JackRafterCut representing the middle joint condition, visually similar to LMiterJoint."""
+        # if beam.attributes["has_middle_joint"] and beam.attributes['level'] >= 1 and anchor_point:
+        #     # Copy cut planes
+        #     cut_plane_x = vertical_cut_plane_x.copy()
+        #     cut_plane_y = vertical_cut_plane_y.copy()
             
-            mid_point = beam.centerline.midpoint
-            # extend the beams to ensure the cut planes intersect with the full cross-section.
-            beam.add_blank_extension(-0.1, 0.1)  # extend by 10 cm on the end side (relative to beam length)
+        #     mid_point = beam.centerline.midpoint
+        #     # extend the beams to ensure the cut planes intersect with the full cross-section.
+        #     beam.add_blank_extension(-0.1, 0.1)  # extend by 10 cm on the end side (relative to beam length)
 
-            # Orient the cut planes so their normal points towards the beam centerline midpoint, to ensure the correct side of the plane is used for cutting.
-            if mid_point.y > cut_plane_x.point.y:
-                cut_plane_x.normal = cut_plane_x.normal * -1
-            if mid_point.x > cut_plane_y.point.x:
-                cut_plane_y.normal = cut_plane_y.normal * -1
+        #     # Orient the cut planes so their normal points towards the beam centerline midpoint, to ensure the correct side of the plane is used for cutting.
+        #     if mid_point.y > cut_plane_x.point.y:
+        #         cut_plane_x.normal = cut_plane_x.normal * -1
+        #     if mid_point.x > cut_plane_y.point.x:
+        #         cut_plane_y.normal = cut_plane_y.normal * -1
 
-            # Check intersection and add cuts
-            if intersection_line_plane(beam.centerline, cut_plane_x):
-                jrc_x = JackRafterCut.from_plane_and_beam(cut_plane_x, beam, is_joinery=False)
-                beam.add_feature(jrc_x)
-            if intersection_line_plane(beam.centerline, cut_plane_y):
-                jrc_y = JackRafterCut.from_plane_and_beam(cut_plane_y, beam, is_joinery=False)
-                beam.add_feature(jrc_y)
+        #     # Offset cut planes to represent plate thickness
+
+        #     # Check intersection and add cuts
+        #     if intersection_line_plane(beam.centerline, cut_plane_x):
+        #         jrc_x = JackRafterCut.from_plane_and_beam(cut_plane_x, beam, is_joinery=False)
+        #         beam.add_feature(jrc_x)
+        #     if intersection_line_plane(beam.centerline, cut_plane_y):
+        #         jrc_y = JackRafterCut.from_plane_and_beam(cut_plane_y, beam, is_joinery=False)
+        #         beam.add_feature(jrc_y)
         
-            """LongitudinalCut for shoes"""
-        elif beam.attributes["hierarchy"] == "shoe":
+        """LongitudinalCut for shoes"""
+        if beam.attributes["hierarchy"] == "shoe":
             # Blank already extended by X on both ends BEFORE joinery (see top of
             # this function), so existing joints don't shift. Reuse the same X and
             # derive the bevel angle from it.
@@ -621,143 +687,6 @@ def apply_processings(model):
                     beam.add_feature(jrc)
                     vjrc_y = JackRafterCut.from_plane_and_beam(cut_plane, beam, is_joinery=False)
                     beam.add_feature(vjrc_y)
-
-        else:
-            continue
-    return model
-
-def apply_joints_middle_prototype(
-        model,
-        max_distance=None,
-        k_mill_depth=None,
-        k_miter_type=None,
-        k_miter_flag=False,
-        heel_threshold=None,
-        step_depth=None,
-        riser_angle=None,
-        mid_lap_flip=False,
-        debug=False
-    ):
-
-    # Default config
-    if max_distance is None:
-        max_distance = MAX_JOINT_DIST
-    if k_mill_depth is None:
-        k_mill_depth = KBIRD_MILL_DEPTH
-    if k_miter_type is None:
-        k_miter_type = KBIRD_MITER_TYPE
-    if heel_threshold is None:
-        heel_threshold = TMULTI_HEEL_THRESHOLD
-    if step_depth is None:
-        step_depth = TMULTI_STEP_DEPTH
-    if riser_angle is None:
-        riser_angle = TMULTI_RISER_ANGLE
-
-    for beam in model.beams:
-        beam.reset_computed_properties()
-
-    model.connect_adjacent_beams(max_distance)
-
-    # 1. Handle K joints with three beams first
-    _k_birdsmouth_solver(
-        model,
-        mill_depth=k_mill_depth,
-        miter_type=k_miter_type,
-        miter_flag=k_miter_flag
-    )
-    miter_beams = []
-    planes = []
-
-    # 2. Handle all pair joints, T, L, X
-    for candidate in model.joint_candidates:
-        if candidate.is_promoted:  # all joints that are not k-topology
-            continue
-
-        topo = candidate.topology
-        ca, cb = candidate.elements
-
-        is_planar = _is_planar(ca, cb)
-
-        ### Planar T joints
-        if topo == JointTopology.TOPO_T and is_planar:
-            # CLT shoe to middle beam
-            # if cb.attributes["hierarchy"] == 'shoe' and ca.attributes["has_middle_joint"]:
-            #     # TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
-
-            # CLT shoe to Top Beam
-            if cb.attributes["hierarchy"] == 'shoe':
-                TStepJoint.create(model, ca, cb, step_shape="double")
-            
-            # # Middle T Lap Joint
-            # elif ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-            #     # TLapJoint.create(model, ca, cb, flip_lap_side=_determine_lap_flip(ca, cb, mid_lap_flip))
-            #     TLapJoint.create(model, ca, cb)
-
-            else:
-                if angle_vectors(ca.centerline.direction, cb.centerline.direction, deg=True) < heel_threshold:
-                    step_shape = "heel"
-                else:
-                    step_shape = "step"
-
-                TMultiStepJoint.create(
-                    model, ca, cb,
-                    step_shape=step_shape,
-                    step_depth=step_depth,
-                    riser_angle=riser_angle
-                )
-
-        ### Non-planar T joints
-        elif topo == JointTopology.TOPO_T and not is_planar:
-            TBirdsmouthJoint.create(model, ca, cb)
-
-        ### L Miter Joint at the middle of the structure
-        elif topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
-            # miter_plane = _get_vertical_miter_plane_l(ca, cb, location=candidate.location, flip=False)
-            # a = LMiterJoint.create(model, ca, cb, cutoff=False, miter_plane=miter_plane)
-            a = LMiterJoint.create(model, ca, cb, cutoff=False)
-            planes.extend(a.cutting_planes)
-            miter_beams.extend([ca, cb])
-
-        ### X Lap Joint
-        elif topo == JointTopology.TOPO_X:
-            XLapJoint.create(model, ca, cb)
-
-        else:
-            if debug:
-                print(f"Unhandled joint candidate with topology {topo}. edges: {ca.attributes['edge']}, {cb.attributes['edge']}")
-            continue
-
-    return model
-
-def apply_processings_middle_prototype(model):
-    """Process joinery and finalize cuts which need to be done after."""
-    model.process_joinery()
-    
-    clt_plate = model.attributes.get("clt_plate")
-    for beam in model.beams:
-        beam.reset_computed_properties()
-
-        # Middle joint cut
-        if beam.attributes["has_middle_joint"]:
-            if beam.attributes['reached']:
-                cutting_plane = model.attributes.get("cut_plane")
-                if intersection_line_plane(beam.centerline, cutting_plane):
-                    jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam)
-                    beam.add_feature(jrc)
-            
-            else:
-                if clt_plate:
-                    if intersection_line_plane(beam.centerline, Plane.from_frame(clt_plate.frame)):
-                        cutting_frame = clt_plate.frame
-                        jrc = JackRafterCut.from_plane_and_beam(cutting_frame, beam)
-                        beam.add_feature(jrc)
-
-            # LongitudinalCut
-        # elif beam.attributes["hierarchy"] == "shoe":
-        #     if clt_plate:
-        #         cutting_frame = clt_plate.frame
-        #         lc = LongitudinalCut.from_plane_and_beam(cutting_frame, beam)
-        #         beam.add_feature(lc)
 
         else:
             continue
