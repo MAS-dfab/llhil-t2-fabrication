@@ -281,37 +281,6 @@ def is_planar_t_joint(candidate, tol=1e-3):
 
     return abs(ya.dot(yb)) >= 1 - tol
 
-def _is_planar(element_a, element_b):
-    """Check if two beams are planar.
-
-    Parameters
-    ----------
-    element_a : :class:`compas_timber.elements.Beam`
-        The first beam.
-    element_b : :class:`compas_timber.elements.Beam`
-        The second beam.
-
-    Returns
-    -------
-    bool
-        ``True`` if the beams are planar, ``False`` otherwise.
-
-    """
-    # Get frame from each beam
-    frame_a = element_a.frame
-    frame_b = element_b.frame
-
-    # NOTE: don't change axis in place
-    # Match orientation of the frames
-    frame_a.xaxis = Vector(0, 0, 1)
-    frame_b.xaxis = Vector(0, 0, 1)
-
-    # Calculate the angle between the two vectors
-    angle = angle_vectors(frame_a.normal, frame_b.normal, deg=True)
-
-    # If the angle is close to 0 or 180 degrees, the beams are planar
-    return angle < 1e-6 or angle - 180 < 1e-6
-
 def _get_vertical_miter_plane_k(reordered_elements, flip=False):
     _, a, b = reordered_elements
     ori = a.centerline.start  # temp.
@@ -373,7 +342,6 @@ def _k_birdsmouth_solver(model, mill_depth, max_distance=None, miter_type=None, 
     -------
     None
     """
-    max_offset = max(candidate.distance for candidate in model.joint_candidates)
 
     # handle non-pair joints (in this case a 3-way connection using TripletAnalyzer)
     analyzer = TripletAnalyzer(model, max_distance=max_distance)
@@ -434,8 +402,6 @@ def apply_joints(
         max_distance = MAX_JOINT_DIST
     if k_mill_depth is None:
         k_mill_depth = KBIRD_MILL_DEPTH
-    # if k_miter_type is None:
-    #     k_miter_type = KBIRD_MITER_TYPE
     if heel_threshold is None:
         heel_threshold = TMULTI_HEEL_THRESHOLD
     if step_depth is None:
@@ -459,9 +425,8 @@ def apply_joints(
         miter_flag=k_miter_flag
     )
 
-    anchor_point = model.attributes.get("reached")
-
     # Prepare vertical cut planes for middle joints and reached beams.
+    anchor_point = model.attributes.get("reached")
     if anchor_point:
         cut_plane_x = Plane(anchor_point, Vector(0, 1, 0))
         cut_plane_y = Plane(anchor_point, Vector(1, 0, 0))
@@ -470,7 +435,6 @@ def apply_joints(
 
     # 2. Handle all pair joints, T, L, X
     for candidate in model.joint_candidates:
-        test = []
         if candidate.is_promoted:  # all joints that are not k-topology
             continue
         
@@ -515,7 +479,7 @@ def apply_joints(
                     # Non-planar T joints
                     TBirdsmouthJoint.create(model, ca, cb)
 
-        ### L Miter Joint at the middle of the structure
+        ### L Miter Joint for mid node
         elif topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
             if ca.attributes["hierarchy"] != cb.attributes["hierarchy"]:
                 #rotate around the anchor point
@@ -528,7 +492,6 @@ def apply_joints(
                 elif ca_mid.y < anchor_point.y and cb_mid.y < anchor_point.y:       # Left half
                     vertical_miter_plane = cut_plane_y    
                 LMiterJoint.create(model, ca, cb, miter_plane=vertical_miter_plane, cutoff=False)
-
 
         ### X Lap Joint
         elif topo == JointTopology.TOPO_X:
@@ -544,7 +507,7 @@ def apply_joints(
             if debug:
                 print(f"Unhandled joint candidate with topology {topo}. edges: {ca.attributes['edge']}, {cb.attributes['edge']}")
             continue
-    return model, test
+    return model
 
 def apply_processings(
         model,
@@ -614,7 +577,6 @@ def apply_processings(
 
     # Prepare vertical cut planes for middle joints and reached beams.
     if anchor_point:
-        vertical_cut_plane_x = Plane(anchor_point, Vector(0, 1, 0))
         vertical_cut_plane_y = Plane(anchor_point, Vector(1, 0, 0))
     else:
         raise ValueError("Anchor point is required for vertical cut planes. Please check if it's provided in the graph node attributes.")
@@ -622,31 +584,23 @@ def apply_processings(
     for beam in model.beams:
         beam.reset_computed_properties()
 
-        # """JackRafterCut representing the middle joint condition, visually similar to LMiterJoint."""
-        # if beam.attributes["has_middle_joint"] and beam.attributes['level'] >= 1 and anchor_point:
-        #     # Copy cut planes
-        #     cut_plane_x = vertical_cut_plane_x.copy()
-        #     cut_plane_y = vertical_cut_plane_y.copy()
-            
-        #     mid_point = beam.centerline.midpoint
-        #     # extend the beams to ensure the cut planes intersect with the full cross-section.
-        #     beam.add_blank_extension(-0.1, 0.1)  # extend by 10 cm on the end side (relative to beam length)
+        """JackRafterCut for tension plate for middle node."""
+        if beam.attributes["has_middle_joint"] and beam.attributes['level'] >= 1:
+            # Copy cut planes
+            cut_plane_y = vertical_cut_plane_y.copy()
+            mid_point = beam.centerline.midpoint
 
-        #     # Orient the cut planes so their normal points towards the beam centerline midpoint, to ensure the correct side of the plane is used for cutting.
-        #     if mid_point.y > cut_plane_x.point.y:
-        #         cut_plane_x.normal = cut_plane_x.normal * -1
-        #     if mid_point.x > cut_plane_y.point.x:
-        #         cut_plane_y.normal = cut_plane_y.normal * -1
+            # Orient the cut planes so their normal points towards the beam centerline midpoint, to ensure the correct side of the plane is used for cutting.
+            if mid_point.x > cut_plane_y.point.x:
+                cut_plane_y.normal = cut_plane_y.normal * -1
+                cut_plane_y.point.x += mp_thickness/2               # Offset cut planes to represent plate thickness
+            elif mid_point.x < cut_plane_y.point.x:
+                cut_plane_y.point.x -= mp_thickness/2               # Offset cut planes to represent plate thickness
 
-        #     # Offset cut planes to represent plate thickness
-
-        #     # Check intersection and add cuts
-        #     if intersection_line_plane(beam.centerline, cut_plane_x):
-        #         jrc_x = JackRafterCut.from_plane_and_beam(cut_plane_x, beam, is_joinery=False)
-        #         beam.add_feature(jrc_x)
-        #     if intersection_line_plane(beam.centerline, cut_plane_y):
-        #         jrc_y = JackRafterCut.from_plane_and_beam(cut_plane_y, beam, is_joinery=False)
-        #         beam.add_feature(jrc_y)
+            # Check intersection and add cuts
+            if intersection_line_plane(beam.centerline, cut_plane_y):
+                jrc_y = JackRafterCut.from_plane_and_beam(cut_plane_y, beam, is_joinery=False)
+                beam.add_feature(jrc_y)
         
         """LongitudinalCut for shoes"""
         if beam.attributes["hierarchy"] == "shoe":
