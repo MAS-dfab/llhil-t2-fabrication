@@ -31,7 +31,7 @@ from compas_timber.connections import (
     XLapJoint, KBirdsmouthJoint, TBirdsmouthJoint, TLapJoint, TButtJoint
 )
 
-from compas_timber.fabrication import JackRafterCut, LongitudinalCut
+from compas_timber.fabrication import JackRafterCut, LongitudinalCut, Slot
 from collections import Counter
 
 from timber_config import (
@@ -425,7 +425,7 @@ def apply_joints(
         miter_flag=k_miter_flag
     )
 
-    # Prepare vertical cut planes for middle joints and reached beams.
+    # Prepare vertical cut planes for middle joints
     anchor_point = model.attributes.get("reached")
     if anchor_point:
         cut_plane_x = Plane(anchor_point, Vector(0, 1, 0))
@@ -444,6 +444,9 @@ def apply_joints(
         # Prepare mid points
         ca_mid = ca.centerline.midpoint
         cb_mid = cb.centerline.midpoint
+
+        if ca.attributes["level"] > 1 or cb.attributes["level"] > 1:
+            continue
 
         if ca.attributes["level"] >= 1 and cb.attributes["hierarchy"] == 'shoe':
             continue # avoid creating joint between shoe and lower beam
@@ -480,7 +483,7 @@ def apply_joints(
                     TBirdsmouthJoint.create(model, ca, cb)
 
         ### L Miter Joint for mid node
-        elif topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
+        if topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
             if ca.attributes["hierarchy"] != cb.attributes["hierarchy"]:
                 #rotate around the anchor point
                 if ca_mid.x < anchor_point.x and cb_mid.x < anchor_point.x:         # Bottom half
@@ -494,7 +497,7 @@ def apply_joints(
                 LMiterJoint.create(model, ca, cb, miter_plane=vertical_miter_plane, cutoff=False)
 
         ### X Lap Joint
-        elif topo == JointTopology.TOPO_X:
+        if topo == JointTopology.TOPO_X:
             # Fix the order of main and cross beams based on direction_id
             if ca.attributes['direction_id'] == 'A':
                 XLapJoint.create(model, ca, cb, flip_lap_side=x_lap_flip)
@@ -563,6 +566,8 @@ def apply_processings(
     # The full cut needs 2*X of stock so the plane exits through the far face;
     # the trapezoid needs only X. The plane position (offset=X) is the same either way.
 
+    a = []
+
     for beam in model.beams:
         if beam.attributes.get("hierarchy") == "shoe":
             ext = 2.0 * SHOE_EXTENSION if SHOE_FULL_CUT else SHOE_EXTENSION
@@ -601,6 +606,8 @@ def apply_processings(
             if intersection_line_plane(beam.centerline, cut_plane_y):
                 jrc_y = JackRafterCut.from_plane_and_beam(cut_plane_y, beam, is_joinery=False)
                 beam.add_feature(jrc_y)
+            else:
+                raise ValueError("No intersection found between beam centerline and JackRafter cut plane")
         
         """LongitudinalCut for shoes"""
         if beam.attributes["hierarchy"] == "shoe":
@@ -622,25 +629,35 @@ def apply_processings(
                 jrc = JackRafterCut.from_plane_and_beam(plane, beam, is_joinery=False)
                 beam.add_feature(jrc)
 
-            """End cuts for reached beams"""
-        elif beam.attributes['reached']:
-                # Get the horizontal cutting plane for the beam
-                cutting_plane = model.attributes.get("cut_plane")
+        """End cuts for reached beams"""
+        if beam.attributes['reached']:
+            # Get the horizontal cutting plane for the beam
+            cutting_plane = model.attributes.get("cut_plane")
 
-                print(anchor_point, beam.name)
-                cut_plane = vertical_cut_plane_y.copy()
+            # Get the vertical cutting plane for the beam
+            v_cut_plane = vertical_cut_plane_y.copy()
 
-                # Orient the cut plane normal to point towards the beam centerline midpoint
-                mid_point = beam.centerline.midpoint
-                if mid_point.x > cut_plane.point.x:
-                    cut_plane.normal = cut_plane.normal * -1
+            # Orient the cut plane normal to point towards the beam centerline midpoint
+            mid_point = beam.centerline.midpoint
+            if mid_point.x > v_cut_plane.point.x:
+                v_cut_plane.normal = v_cut_plane.normal * -1
 
-                # Check intersection and add cuts
-                if intersection_line_plane(beam.centerline, cutting_plane):
-                    jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam, is_joinery=False)
-                    beam.add_feature(jrc)
-                    vjrc_y = JackRafterCut.from_plane_and_beam(cut_plane, beam, is_joinery=False)
-                    beam.add_feature(vjrc_y)
+            # Check intersection and add cuts
+            if intersection_line_plane(beam.centerline, cutting_plane):
+                jrc = JackRafterCut.from_plane_and_beam(cutting_plane, beam, is_joinery=False)
+                beam.add_feature(jrc)
+                vjrc = JackRafterCut.from_plane_and_beam(v_cut_plane, beam, is_joinery=False)
+                beam.add_feature(vjrc)
+    
+            # """Slot cut for footing plates"""
+            # # Get intersection point between cutting plane and centerline
+            # fp_stp = Point(*intersection_line_plane(beam.centerline, cutting_plane))
+            # move_v = beam.centerline.direction.unitized()
+            # translation_v = Translation.from_vector(move_v * .2)
+            # fp_ep = fp_stp.transformed(translation_v)
+            # slot_plane = Plane.from_point_and_two_vectors(move_v, fp_stp, (0,0,1))
+            # p_slot = Slot.from_plane_and_beam(slot_plane, beam, depth=1, thickness=0.01)     # no 'is joinery=Flase' cheat code
+            # a.append(slot_plane)
 
         else:
             continue

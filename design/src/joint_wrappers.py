@@ -30,7 +30,6 @@ def project_point_to_frame_along(point, direction, frame, tol=1e-6):
     t = num / denom
     return point + dire * t
 
-
 # -----------------------------------
 # TStepJoint Wrapper
 # -----------------------------------
@@ -39,7 +38,14 @@ class TSJ(object):
     def __init__(self, joint):
         self._raw_joint = joint
 
+        self.main_ref_frame = self.main_beam.ref_sides[self.main_beam_ref_side_index]
+        self.cross_ref_frame = self.cross_beam.ref_sides[self.cross_beam_ref_side_index]
+
         self.acute_angle = self._calculate_acute_angle()
+        self.strut_length = self._get_strut_length()
+        self.strut_direction = self._get_strut_direction()
+        self.strut_vector = self._get_strut_vector()
+
 
     def __getattr__(self, name):
         return getattr(self._raw_joint, name)
@@ -54,6 +60,139 @@ class TSJ(object):
         if angle > 90:
             angle = 180 - angle
         return angle
+    
+    def _get_strut_length(self):
+        strut_height = self.main_beam.height
+        return strut_height/math.sin(math.radians(self.acute_angle))
+    
+    def _get_strut_direction(self):
+        strut_direction = Vector(*cross_vectors(self.main_ref_frame.yaxis, self.cross_ref_frame.zaxis)).unitized()
+        #check for direction
+        if TOL.is_positive(dot_vectors(self.main_ref_frame.normal, strut_direction)):
+            strut_direction = -strut_direction
+        return strut_direction
+    
+    def _get_strut_vector(self):
+        return self.strut_direction * self.strut_length
+    
+    def calculate_screw_direction(self, orientation="prep_tread", flip=False):
+        """
+        Find the screw direction vector for a TStepJoint based on the specified orientation.
+
+        Parameters
+        ----------
+        orientation : str
+            "perp_main", "perp_tread" (incorrect naming), "perp_cross",
+            and "bisector" for screwing from the main beam to the cross beam.
+        """
+        # Option 1: screws perpendicular to the centerline of the main beam
+        if orientation=="perp_main":
+            main_ref_frame=self.main_beam.ref_sides[self.main_beam_ref_side_index]
+            vec = -main_ref_frame.normal
+        
+        # Option 2: screws perpendicular to the riser (butt) plane.
+        elif orientation=="perp_tread":
+            butt_plane = self._get_double_cut_butt_plane()           #need to check this..
+            vec = -butt_plane.normal
+
+        # Option 3: screws perpendicular to the centerline of the cross beam.
+        elif orientation=="prep_cross":
+            cross_ref_frame = self.cross_beam.ref_sides[self.cross_beam_ref_side_index]
+            vec = -cross_ref_frame.normal
+
+        # Option 4: screws perpendicular to the bisector
+        elif orientation=="bisector":
+            bisec = self.main_ref_frame.normal + self.cross_ref_frame.normal
+            vec = -bisec.unitized()
+
+        else:
+            raise ValueError("Invalid orientation type!")
+        return vec.unitized()
+    
+    def get_strut_boundary(self, data_type="points"):
+        p0 = intersection_plane_plane_plane(
+            Plane.from_frame(self.main_ref_frame),
+            Plane.from_frame(self.cross_ref_frame),
+            Plane.from_frame(self.main_beam.front_side(self.main_beam_ref_side_index))
+        )
+
+        p0 = Point(*p0) #sad
+        p1 = p0 + self.strut_vector
+
+        vW = self.main_ref_frame.yaxis * self.main_beam.width
+        p2 = p1 + vW
+        p3 = p0 + vW
+
+        if data_type=="polyline":
+            return Polyline([p0, p1, p2, p3, p0])
+        if data_type=="points":
+            return (p0,p1,p2,p3)    
+
+    def get_strut_frame(self):
+        corners = self.get_strut_boundary(data_type="points")
+        return Frame.from_points(corners[0], corners[1], corners[3])
+    
+    def find_screw_boundaries(self, orientation="bisector", flip=False, data_type="points"):
+        """
+        Find the entry and exit retangular boundaries.
+
+        Parameters
+        ----------
+        orientation : str
+            "perp_main", "perp_tread", "perp_cross", and "bisector".
+        flip : bool
+            whether to flip the screw direction.
+        data_type : str
+            "points", "brep", "polylines".
+        """
+
+        #projection vector
+        dire = self.calculate_screw_direction(orientation=orientation, flip=flip)
+
+        coords = intersection_plane_plane_plane(
+            Plane.from_frame(self.main_ref_frame),
+            Plane.from_frame(self.cross_ref_frame),
+            Plane.from_frame(self.main_beam.front_side(self.main_beam_ref_side_index))
+        )
+        strut_start = Point(*coords)
+        cross_side_opp = self.cross_beam.opp_side(self.cross_beam_ref_side_index)
+        _strut_end = strut_start + self.strut_vector
+
+        # width vector
+        vW = self.main_ref_frame.yaxis * self.main_beam.width
+        if orientation in ("perp_main", "perp_tread", "perp_cross", "bisector"):
+            # get projection sides (both main and cross beam)
+            proj_start =project_point_to_frame_along(strut_start, dire, cross_side_opp)
+            
+            proj_end_to_cross = project_point_to_frame_along(_strut_end, dire, cross_side_opp)
+            proj_end_to_main = project_point_to_frame_along(_strut_end, dire, self.main_ref_frame)
+
+            pts_entry = [strut_start, proj_end_to_main, proj_end_to_main + vW, strut_start + vW]
+            pts_exit = [proj_start, proj_end_to_cross, proj_end_to_cross + vW , proj_start + vW]
+
+        else:
+            raise ValueError("invalid orientation type!")
+        
+        # output data
+        if data_type=="points":
+            return(pts_entry, pts_exit)
+        
+        elif data_type == "brep":
+            pts_entry += [pts_entry[0]]
+            pts_exit += [pts_exit[0]]
+            crv1 = NurbsCurve.from_points(pts_entry, degree=1)
+            crv2 = NurbsCurve.from_points(pts_exit, degree=1)
+            brep = Brep.from_loft([crv1, crv2])
+            brep.cap_planar_holes()
+            return brep
+        
+        elif data_type == "polylines":
+            pts_entry += [pts_entry[0]]
+            pts_exit += [pts_exit[0]]
+            return [Polyline(pts_entry), Polyline(pts_exit)]
+        
+        else:
+            raise ValueError("Invalid data type!")
 
 # -----------------------------------
 # TMultiStepJoint Wrapper
