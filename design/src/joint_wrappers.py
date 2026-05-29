@@ -75,6 +75,11 @@ class TSJ(object):
     def _get_strut_vector(self):
         return self.strut_direction * self.strut_length
     
+    def _get_butt_plane(self):
+        cross_ref_side = self.cross_beam.ref_sides[self.cross_beam_ref_side_index]
+        butt_plane = Plane(cross_ref_side.point, -cross_ref_side.normal)
+        return butt_plane.translated(butt_plane.normal * self.step_depth)
+    
     def calculate_screw_direction(self, orientation="prep_tread", flip=False):
         """
         Find the screw direction vector for a TStepJoint based on the specified orientation.
@@ -92,7 +97,7 @@ class TSJ(object):
         
         # Option 2: screws perpendicular to the riser (butt) plane.
         elif orientation=="perp_tread":
-            butt_plane = self._get_double_cut_butt_plane()           #need to check this..
+            butt_plane = self._get_butt_plane()           #need to check this..
             vec = -butt_plane.normal
 
         # Option 3: screws perpendicular to the centerline of the cross beam.
