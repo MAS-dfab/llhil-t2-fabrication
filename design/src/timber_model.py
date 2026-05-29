@@ -445,9 +445,6 @@ def apply_joints(
         ca_mid = ca.centerline.midpoint
         cb_mid = cb.centerline.midpoint
 
-        if ca.attributes["level"] > 1 or cb.attributes["level"] > 1:
-            continue
-
         if ca.attributes["level"] >= 1 and cb.attributes["hierarchy"] == 'shoe':
             continue # avoid creating joint between shoe and lower beam
 
