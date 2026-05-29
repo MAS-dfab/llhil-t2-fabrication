@@ -1,6 +1,6 @@
 """Timber screw planning."""
 
-from joint_wrappers import TMSJ, project_point_to_frame_along
+from joint_wrappers import TSJ, TMSJ, project_point_to_frame_along
 from screw_spec import ScrewSpecification
 from compas.geometry import (
     Frame, Line, Cylinder,
@@ -354,16 +354,16 @@ def apply_screws(
         with_data=False
     ):
     JOINT_MAP = {
+        TStepJoint : TSJ,
         TMultiStepJoint : TMSJ,
-
     }
 
     solver = ScrewSolver(model, spec_model=spec_model)
 
     results = {}
     for joint in model.joints:
-        if joint.name != "TMultiStepJoint":
-            continue  # temporary for testing only TMultiStepJoint
+        if joint.name not in ("TStepJoint", "TMultiStepJoint"):
+            continue  # temporary for testing only TStepJoint, and TMultiStepJoint
         
         # Wrap the joint with the corresponding class in JOINT_MAP if it exists
         joint_class = joint.__class__
