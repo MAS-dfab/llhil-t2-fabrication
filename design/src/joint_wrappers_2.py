@@ -235,11 +235,28 @@ class BaseStepWrapper(BaseWrapper):
             Plane.from_frame(self.main_beam.front_side(self.main_beam_ref_side_index)),
         )
         strut_start = Point(*coords)
-        cross_side_opp = self.cross_beam.opp_side(self.cross_beam_ref_side_index)
-        _strut_end = strut_start + self.strut_vector
 
         # Width vector
         vW = self.main_ref_frame.yaxis * self.main_beam.width
+
+        # list of all features in cross_beam
+        beam_features = self.cross_beam.features
+
+        # find longitudinal cut in features
+        longitudinal = next((f for f in beam_features if type(f).__name__ == "LongitudinalCut"), None)
+
+        if longitudinal is not None:
+            cross_side_opp = longitudinal.plane_from_params_and_beam(self.cross_beam)
+            #project vW onto longitudinal_cut plane
+            n = cross_side_opp.normal.unitized()
+            vW_exit = vW - n * dot_vectors(vW, n)
+
+        else:
+            # fallback if no LongitudinalCut found
+            cross_side_opp = self.cross_beam.opp_side(self.cross_beam_ref_side_index)
+            vW_exit = vW
+
+        _strut_end = strut_start + self.strut_vector
         
         if orientation in ("perp_main", "perp_riser", "perp_cross", "bisector"):
             # 2. Get projection sides (both main and cross beam)
@@ -253,7 +270,7 @@ class BaseStepWrapper(BaseWrapper):
             proj_end_to_cross = project_point_to_frame_along(_strut_end, dire, cross_side_opp)
             
             pts_entry = [proj_start_to_main, proj_end_to_main, proj_end_to_main + vW, proj_start_to_main + vW]
-            pts_exit = [proj_start_to_cross, proj_end_to_cross, proj_end_to_cross + vW, proj_start_to_cross + vW]
+            pts_exit = [proj_start_to_cross, proj_end_to_cross, proj_end_to_cross + vW_exit, proj_start_to_cross + vW_exit]
 
         elif orientation == "along_cross":
             # p0: projection to cross beam
@@ -287,7 +304,7 @@ class BaseStepWrapper(BaseWrapper):
             pts_exit += [pts_exit[0]]
             return [Polyline(pts_entry), Polyline(pts_exit)]
         else:
-            raise ValueError("Invalid data type.")
+            raise ValueError("Invalid data type.")            
 
 class TSJ(BaseStepWrapper):
     """A wrapper class for TStepJoint."""
