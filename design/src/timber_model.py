@@ -416,6 +416,8 @@ def apply_joints(
 
     model.connect_adjacent_beams(max_distance)
 
+
+
     # 1. Handle K joints with three beams first
     _k_birdsmouth_solver(
         model,
@@ -444,6 +446,11 @@ def apply_joints(
         # Prepare mid points
         ca_mid = ca.centerline.midpoint
         cb_mid = cb.centerline.midpoint
+
+        # # skip joints for faster debugging
+        # if ca.attributes["level"] >= 1 or cb.attributes["level"] >= 1:
+        #     if cb.attributes["hierarchy"] != 'shoe':
+        #         continue
 
         if ca.attributes["level"] >= 1 and cb.attributes["hierarchy"] == 'shoe':
             continue # avoid creating joint between shoe and lower beam

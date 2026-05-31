@@ -403,6 +403,6 @@ def apply_screws(
                 "entry_face": entry_face,
                 "exit_face": exit_face,
                 "entry_points": result["entry_points"],
-                "screw_lines": result["screw_lines"]
+                "screw_lines": result["screw_lines"],
             }
     return results if with_data else {}
