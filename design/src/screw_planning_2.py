@@ -275,14 +275,15 @@ class ScrewSolver:
                     # Check if sufficient penetration from interface to exit face is achieved
                     corners = joint.get_interface_boundary(data_type="points")
                     interface = Frame.from_points(corners[0], corners[1], corners[3])
-                    dist_to_exit = project_point_to_frame_along(pt_exit, -dire, interface).distance_to_point(pt_exit)
-                    if dist_to_exit < spec.penetration:
+                    dist_in_entry = project_point_to_frame_along(pt_entry, dire, interface).distance_to_point(pt_entry)
+                    penetration_in_exit = suitable_length - dist_in_entry
+                    if penetration_in_exit < spec.penetration:
                         self.rejected_logs.append({
                             "joint_guid": joint.guid,
                             "joint": joint,
                             "entry_point": pt_entry,
                             "exit_point": pt_exit,
-                            "distance_interface_to_exit": dist_to_exit,
+                            "penetrations": (dist_in_entry, penetration_in_exit),
                             "required_penetration": spec.penetration,
                             "reason": "Insufficient penetration to exit face."
                         })
@@ -363,14 +364,15 @@ class ScrewSolver:
                     # Check if sufficient penetration from interface to exit face is achieved
                     corners = joint.get_interface_boundary(data_type="points")
                     interface = Frame.from_points(corners[0], corners[1], corners[3])
-                    dist_to_exit = project_point_to_frame_along(pt_exit, -side_vec, interface).distance_to_point(pt_exit)
-                    if dist_to_exit < spec.penetration:
+                    dist_in_entry = project_point_to_frame_along(pt, side_vec, interface).distance_to_point(pt)
+                    penetration_in_exit = suitable_length - dist_in_entry
+                    if penetration_in_exit < spec.penetration:
                         self.rejected_logs.append({
                             "joint_guid": joint.guid,
                             "joint": joint,
                             "entry_point": pt,
                             "exit_point": pt_exit,
-                            "distance_interface_to_exit": dist_to_exit,
+                            "penetrations": (dist_in_entry, penetration_in_exit),
                             "required_penetration": spec.penetration,
                             "reason": "Insufficient penetration to exit face."
                         })
