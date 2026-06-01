@@ -455,7 +455,7 @@ wheels = [
 [[package]]
 name = "easyhops"
 version = "0.1.0"
-source = { git = "https://github.com/MAS-dfab/easyhops.git#814cdaae638977e66c03af70672d395a222eb159" }
+source = { git = "https://github.com/MAS-dfab/easyhops.git#e7c78d7f60f16a59d8cb91208aa6750324113758" }
 dependencies = [
     { name = "compas" },
 ]

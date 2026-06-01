@@ -86,10 +86,6 @@ def load_model(filepath):
 def override_features(beam):
     """Replace any JackRafterCut features on the beam with new features based on the same planes but with ref_side_index taken from beam attributes."""
     ref_side_index = beam.attributes.get("ref_side_index", 0)
-    # if beam.attributes.get("assembly_method") == "robot":
-    #     ref_side_index = (
-    #         ref_side_index + 2
-    #     ) % 4  # flip ref side for robot-assembled beams
 
     for f in beam.features:
         if isinstance(f, JackRafterCut):
@@ -99,7 +95,7 @@ def override_features(beam):
             beam.add_feature(new_feature)
 
 
-def resolve_beam(model, index, hierarchy):
+def resolve_beam(model, index, hierarchy, group):
     """Return the single beam matching the given selection criteria.
 
     Type-mode (hierarchy is not None):
@@ -139,6 +135,30 @@ def resolve_beam(model, index, hierarchy):
         print("[{}] {}/{} | beam: {}".format(hierarchy, index + 1, total, beam.name))
         return beam
 
+    elif group is not None:
+        filtered = [b for b in model.beams if b.attributes.get("group") == group]
+        total = len(filtered)
+
+        if total == 0:
+            ghenv.Component.AddRuntimeMessage(
+                warn,
+                "No beams found with group '{}'.".format(group),
+            )
+            return None
+
+        if index is None or index < 0 or index >= total:
+            ghenv.Component.AddRuntimeMessage(
+                warn,
+                "index {} out of range. [group={}] has {} beam(s) (0\u2013{}).".format(
+                    index, group, total, total - 1
+                ),
+            )
+            return None
+
+        beam = filtered[index]
+        print("[group={}] {}/{} | beam: {}".format(group, index + 1, total, beam.name))
+        return beam
+
     else:
         for beam in model.beams:
             if beam.attributes.get("idx") == index:
@@ -160,10 +180,7 @@ def visualize_geometry(beam):
     scene = Scene()
 
     ref_side_index = beam.attributes.get("ref_side_index", 0)
-    # if ref_side_index is None:
-    #     raise ValueError(
-    #         "Beam {} is missing 'ref_side_index' attribute.".format(beam.name)
-    #     )
+
     width, _ = beam.get_dimensions_relative_to_side(ref_side_index)
 
     ref_frame = beam.ref_frame.transformed(beam.transformation_to_local())
@@ -329,15 +346,25 @@ def run(filepath, index, hierarchy, export):
         geometry          — result of scene.draw()
         processing_report — list[str] of processing descriptions
     """
+    # Load model
     model = load_model(filepath)
     export_dir = os.path.join(os.path.dirname(filepath), "hops")
 
+    # Resolve beam
     beam = resolve_beam(model, index, hierarchy)
     if beam is None:
         return None, []
 
+    # Override features
+    override_features(beam)
+
+    # Visualise geometry
     geometry = visualize_geometry(beam)
+
+    # Export HOP
     export_hop(beam, export_dir, export)
+
+    # Get processing report
     processing_report = get_processing_report(beam)
 
     return geometry, processing_report
