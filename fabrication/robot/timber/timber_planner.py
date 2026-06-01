@@ -392,11 +392,14 @@ class TimberProcessPlanner(BaseRobotPlanner):
         element_geometry = element.elementgeometry
         return grasp_frame, e_at_frame_offset, element_geometry
     
-    def get_gantry_constraints(self):
-        current_config = self.current_configuration
+    def get_gantry_constraints(self, configuration=None):
+        if configuration is None:
+            current_config = self.current_configuration
+        else:
+            current_config = configuration
         print(current_config['bridge1_joint_EA_X'], current_config['robot12_joint_EA_Y'], current_config['robot12_joint_EA_Z'])
         path_constraints = []
-        path_constraints.append(JointConstraint('bridge1_joint_EA_X', current_config['bridge1_joint_EA_X'], 0.00, 0.00, 1.0))
-        path_constraints.append(JointConstraint('robot12_joint_EA_Y', current_config['robot12_joint_EA_Y'], 0.05, 0.05, 1.0))
-        # path_constraints.append(JointConstraint('robot12_joint_EA_Z', current_config['robot12_joint_EA_Z'], 0.01, 0.01, 1.0))
+        path_constraints.append(JointConstraint('bridge1_joint_EA_X', current_config['bridge1_joint_EA_X'], 0.01, 0.01, 1.0))
+        path_constraints.append(JointConstraint('robot12_joint_EA_Y', current_config['robot12_joint_EA_Y'], 0.01, 0.01, 1.0))
+        path_constraints.append(JointConstraint('robot12_joint_EA_Z', current_config['robot12_joint_EA_Z'], 0.01, 0.01, 1.0))
         return path_constraints

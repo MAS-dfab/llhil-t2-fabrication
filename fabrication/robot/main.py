@@ -65,7 +65,7 @@ def main():
     # 1. LOAD DATA
     # ---------------------------------------------------------
     print("Loading models...")
-    filepath_model = "fabrication\\data\\timber_models\\260527_v1_sequenced_timber_model.json"
+    filepath_model = "fabrication\\data\\timber_models\\260529_v1_fabrication_model_1.json"
 
     if not os.path.exists(filepath_model):
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
