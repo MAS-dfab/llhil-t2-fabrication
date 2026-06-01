@@ -618,8 +618,8 @@ def apply_processings(
             # Blank already extended by X on both ends BEFORE joinery (see top of
             # this function), so existing joints don't shift. Reuse the same X and
             # derive the bevel angle from it.
-            X = beam.attributes.get("shoe_ext", 0.0)
-            theta = math.degrees(math.atan(2.0 * X / beam.height))   # angle derived from X
+            X = .02
+            theta = math.degrees(math.atan(2.0 * .03 / beam.height))   # angle derived from X
             SHOE_END_ANGLE = -theta                                  # negative keeps bevel on the Bottom
             if clt_plate:
                 cutting_frame = clt_plate.frame
@@ -629,7 +629,7 @@ def apply_processings(
             for at_start in (True, False):
                 sign = 1.0 if at_start else -1.0   # +/- gives a symmetric trapezoid; flip both signs to swap top/bottom
                 # offset=X moves the cut plane out to the newly extended blank tip
-                plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE, offset=X)
+                plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE, offset=-X)
                 jrc = JackRafterCut.from_plane_and_beam(plane, beam, is_joinery=False)
                 beam.add_feature(jrc)
 
