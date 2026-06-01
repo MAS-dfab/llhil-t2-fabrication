@@ -362,7 +362,11 @@ class TBJ(BaseWrapper):
 
     def determine_entry_type(self):
         # NOTE: maybe determine by is planar or not?
-        return "crossed" if self.is_planar else "aligned"
+        if self.is_planar:
+            if self.acute_angle > ScrewSpecification.ANGLE_THRESHOLD:
+                return "crossed"
+            return "aligned"
+        return "crossed"
 
     @property
     def interface_area(self):

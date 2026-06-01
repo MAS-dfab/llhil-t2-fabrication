@@ -295,7 +295,7 @@ class ScrewSolver:
     def create_screw_cylinders(self, line_grid):
         radius = ScrewSpecification.SCREW_DIAMETER / 2.0
         return [Cylinder.from_line_and_radius(line, radius) for row in line_grid for line in row]
-                
+
     def add_drilling_features(self, joint, line_grid, target="main", depth_limited=True, tol=1e-3):
         """
         Add drilling features created at the joint to the beam(s).
@@ -341,6 +341,7 @@ def apply_screws(
         screw_map=None,
         orientation_aligned="bisector",
         orientation_crossed="along_cross",
+        add_features=True,
         drill_target="main",
         depth_limited=True,
         with_data=False
@@ -369,7 +370,11 @@ def apply_screws(
         if not joint.is_planar:
             print(f"Warning: {joint.name} is not planar. Skipping screw placement.")
             continue  # temp.
-
+        
+        screw_count = screw_map.get(str(joint.guid), -1)
+        if screw_count == -1:
+            raise ValueError(f"Screw count for joint {joint.guid} not specified in screw_map.")
+        
         if joint.entry_type == "aligned":
             orientation = orientation_aligned
             entry_point_grid = solver.populate_aligned_entry_points(joint, orientation)
@@ -383,12 +388,13 @@ def apply_screws(
         else:
             raise ValueError("Unknown entry type.")
         
-        solver.add_drilling_features(
-            joint,
-            line_grid=screw_line_grid,
-            target=drill_target,
-            depth_limited=depth_limited
-        )
+        if add_features:
+            solver.add_drilling_features(
+                joint,
+                line_grid=screw_line_grid,
+                target=drill_target,
+                depth_limited=depth_limited
+            )
         if with_data:
             interface = joint.get_interface_boundary(data_type="polyline")
             entry_face, exit_face = joint.find_screw_boundaries(orientation=orientation, data_type="polylines")
