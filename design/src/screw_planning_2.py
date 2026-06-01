@@ -45,6 +45,11 @@ class ScrewSolver:
     def get_specification(self, joint):
         return self._spec_cache[joint.entry_type]
     
+    def calculate_screw_capacity_2(self, joint, orientation):
+        """Calculate the maximum amount of screws in width and length direction."""
+        spec = self.get_specification(joint)
+
+
     def calculate_screw_capacity(self, joint, orientation):
         """Calculate the maximum amount of screws in width and length direction."""
         spec = self.get_specification(joint)
@@ -59,7 +64,7 @@ class ScrewSolver:
             main_dire = -joint.point_centerline_towards_joint(joint.main_beam)
             angle = angle_vectors(dire, main_dire)
             l_spacing = spec.a1 / math.sin(angle)
-            max_l_num = int(len_l // l_spacing)
+            max_l_num = len_l // l_spacing
 
         elif joint.entry_type == "crossed":
             max_w_num = 2  # Left and right each along width
@@ -68,26 +73,10 @@ class ScrewSolver:
 
         else:
             raise ValueError("Unknown entry type.")
-        return max_w_num, max_l_num
-    
-    def populate_entry_points(self, joint, amount, orientation):
-        """Populate entry points by a given amount of screws."""
-        w_num, max_l_num = self.calculate_screw_capacity(joint, orientation)
-        if amount > w_num * max_l_num:
-            raise ValueError(f"Too many screws requested. Max capacity is {w_num * max_l_num}.")
-        
-        l_num = amount // w_num + (1 if amount % w_num > 0 else 0)
+        return int(max_w_num), int(max_l_num)
+        # TODO: implement the a1_cg (65mm) check with "aligned" entry type, 60/60 mm penetration for both entry types.
 
-        entry_corners, _ = joint.find_screw_boundaries(orientation=orientation, data_type="points")
-        vec_w = (entry_corners[3] - entry_corners[0]).unitized()
-        vec_l = (entry_corners[1] - entry_corners[0]).unitized()
-
-        if joint.entry_type == "aligned":
-            spec = self._spec_cache["aligned"]
-            w_steps = (spec.a2_cg, spec.a2, spec.a2_cg)
-        pass  # TODO: implement the a1_cg (65mm) check with "aligned" entry type, 60/60 mm penetration for both entry types.
-
-    def populate_aligned_entry_points(self, joint, orientation="bisector"):
+    def populate_aligned_entry_points(self, joint, amount=None, orientation="bisector"):
         """
         Populate screw points on the entry face.
 
@@ -110,6 +99,14 @@ class ScrewSolver:
         pts_entry, _ = joint.find_screw_boundaries(orientation=orientation, data_type="points")
 
         w_num, l_num = self.calculate_screw_capacity(joint, orientation)
+        if amount is None:
+            pass
+        elif amount <= int(w_num * l_num):
+            l_num = (amount // w_num) + (1 if amount % w_num > 0 else 0)
+        else:
+            print(f"Warning: Joint {joint.guid} requested {amount} screws, but max capacity is {w_num * l_num}.")
+            pass
+        l_num += 1
         if w_num != 2:
             raise NotImplementedError("Only support 2 pairs for now.")
         w_steps = (spec.a2_cg, spec.a2, spec.a2_cg)
@@ -132,7 +129,7 @@ class ScrewSolver:
                 curr_w += w_steps[j + 1]
         return point_grid
     
-    def populate_crossed_entry_points(self, joint, orientation="along_cross"):
+    def populate_crossed_entry_points(self, joint, amount=None, orientation="along_cross"):
         """
         Populate screw points on the entry face from the height sides.
 
@@ -160,7 +157,15 @@ class ScrewSolver:
 
         pts_entry = [p + offset_vec for p in corners]
 
-        _, l_num = self.calculate_screw_capacity(joint, orientation)
+        w_num, l_num = self.calculate_screw_capacity(joint, orientation)
+        if amount is None:
+            pass
+        elif amount <= int(w_num * l_num):
+            l_num = (amount // w_num) + (1 if amount % w_num > 0 else 0)
+        else:
+            print(f"Warning: Joint {joint.guid} requested {amount} screws, but max capacity is {w_num * l_num}.")
+            pass
+
         if l_num > 3:
             raise NotImplementedError("Only support up to 3 pairs for now.")
         
@@ -371,18 +376,22 @@ def apply_screws(
             print(f"Warning: {joint.name} is not planar. Skipping screw placement.")
             continue  # temp.
         
-        screw_count = screw_map.get(str(joint.guid), -1)
-        if screw_count == -1:
-            raise ValueError(f"Screw count for joint {joint.guid} not specified in screw_map.")
+        # 3. Get requested screw amount if provided, otherwise use the maximum capacity
+        if screw_map is None:
+            screw_amount = None
+        else:
+            screw_amount = int(screw_map.get(str(joint.guid), -1))
+            if screw_amount == -1:
+                raise ValueError(f"Screw amount for joint {joint.guid} not specified in screw_map.")
         
         if joint.entry_type == "aligned":
             orientation = orientation_aligned
-            entry_point_grid = solver.populate_aligned_entry_points(joint, orientation)
+            entry_point_grid = solver.populate_aligned_entry_points(joint, amount=screw_amount, orientation=orientation)
             screw_line_grid = solver.populate_aligned_screw_lines(joint, entry_point_grid, orientation, restrict=True)
 
         elif joint.entry_type == "crossed":
             orientation = orientation_crossed
-            entry_point_grid = solver.populate_crossed_entry_points(joint, orientation)
+            entry_point_grid = solver.populate_crossed_entry_points(joint, amount=screw_amount, orientation=orientation)
             screw_line_grid = solver.populate_crossed_screw_lines(joint, entry_point_grid, orientation, restrict=True)
 
         else:

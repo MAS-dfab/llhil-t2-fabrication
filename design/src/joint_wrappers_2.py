@@ -259,6 +259,8 @@ class BaseStepWrapper(BaseWrapper):
             proj_end_to_main = project_point_to_frame_along(_strut_end, dire, entry_frame)
             
             pts_entry = [proj_start_to_main, proj_end_to_main, proj_end_to_main + vW, proj_start_to_main + vW]
+            if self.__class__.__name__ == "TSJ":
+                pts_entry = pts_entry[2:] + pts_entry[:2]  # flip the entry rectangle to be in the order of [p2, p3, p0, p1]
             pts_exit = [project_point_to_frame_along(p, dire, exit_frame) for p in pts_entry]
 
         elif orientation == "along_cross":
@@ -266,6 +268,8 @@ class BaseStepWrapper(BaseWrapper):
             p0 = project_point_to_frame_along(strut_start, -dire, exit_frame)
             p1 = project_point_to_frame_along(_strut_end, -dire, exit_frame)        
             pts_entry = [p0, p1, p1 + vW, p0 + vW]
+            if self.__class__.__name__ == "TSJ":
+                pts_entry = pts_entry[2:] + pts_entry[:2]
 
             # Find the farthest cross section side of the main beam to the strut start
             crosec_sides = self.main_beam.ref_sides[4:]
