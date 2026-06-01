@@ -110,7 +110,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         configuration["bridge2_joint_EA_X"] = 30
 
         """ get robot_11 out of the way """
-        configuration["robot11_joint_EA_Y"] = -2
+        configuration["robot11_joint_EA_Y"] = -3.4
         configuration["robot11_joint_EA_Z"] = -4.5
         configuration["robot11_joint_1"] = math.radians(0)
         configuration["robot11_joint_2"] = math.radians(90)
