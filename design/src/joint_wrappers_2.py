@@ -23,7 +23,7 @@ def project_point_to_frame_along(point, direction, frame, tol=1e-6):
         raise ValueError("Direction is parallel to the plane.")
 
     if denom < 0:
-        dire = -dire
+        dire = -dire  # TODO: don't flip the direction, but flip the plane instead
         denom = -denom
     
     num = dot_vectors(P - point, N)
@@ -36,6 +36,7 @@ def project_point_to_frame_along(point, direction, frame, tol=1e-6):
 # -----------------------------------
 class BaseWrapper(object):
     """A base wrapper class for compas timber joints."""
+
     def __init__(self, joint):
         self._raw_joint = joint
 
@@ -49,7 +50,7 @@ class BaseWrapper(object):
 
     @property
     def is_planar(self):
-        """Check if the  joint is planar."""
+        """Check if the joint is planar."""
         tol = 1e-3
         def _is_coplanar(points):
             # Remove duplicates
@@ -163,6 +164,7 @@ class BaseWrapper(object):
 # -----------------------------------
 class BaseStepWrapper(BaseWrapper):
     """A base wrapper class for step joint family."""
+
     def __init__(self, joint):
         super().__init__(joint)
 
@@ -189,8 +191,8 @@ class BaseStepWrapper(BaseWrapper):
     def _get_strut_vector(self):
         return self.strut_direction * self.strut_length
     
-    def get_strut_boundary(self, data_type="points"):
-        """Get the rectangular boundary of the strut."""
+    def get_interface_boundary(self, data_type="points"):
+        """Get the rectangular boundary of the interface between main and cross beam."""
         p0 = intersection_plane_plane_plane(
             Plane.from_frame(self.main_ref_frame),
             Plane.from_frame(self.cross_ref_frame),
@@ -209,6 +211,14 @@ class BaseStepWrapper(BaseWrapper):
             return (p0, p1, p2, p3)
         return
 
+    @property
+    def default_exit_frame(self):
+        beam_features = self.cross_beam.features
+        longitudinal = next((f for f in beam_features if type(f).__name__ == "LongitudinalCut"), None)
+        if longitudinal is not None:
+            return longitudinal.plane_from_params_and_beam(self.cross_beam)
+        return self.cross_beam.opp_side(self.cross_beam_ref_side_index)
+
     def find_screw_boundaries(self, orientation="perp_riser", flip=False, data_type="points"):
         """
         Find the entry and exit retangular boundaries.
@@ -218,12 +228,12 @@ class BaseStepWrapper(BaseWrapper):
         orientation : str
             "perp_main", "perp_riser", "perp_cross", "along_cross" and "bisector".
         flip : bool
-            whether to flip the screw direction.
+            Whether to flip the screw direction.
         data_type : str
             "points", "brep", "polylines".
         """
-        if self.entry_type == "crossed":
-            pass  # NOTE: find the entry and exit from get_strut_boundary()
+        # if self.entry_type == "crossed":
+            # find the entry and exit from get_interface_boundary()
         # NOTE: for aligned, entry corners + exit frame, for crossed, entry corners + two exit frames
 
         # 1. Get projection vector
@@ -235,47 +245,26 @@ class BaseStepWrapper(BaseWrapper):
             Plane.from_frame(self.main_beam.front_side(self.main_beam_ref_side_index)),
         )
         strut_start = Point(*coords)
+        _strut_end = strut_start + self.strut_vector
 
         # Width vector
         vW = self.main_ref_frame.yaxis * self.main_beam.width
-
-        # list of all features in cross_beam
-        beam_features = self.cross_beam.features
-
-        # find longitudinal cut in features
-        longitudinal = next((f for f in beam_features if type(f).__name__ == "LongitudinalCut"), None)
-
-        if longitudinal is not None:
-            cross_side_opp = longitudinal.plane_from_params_and_beam(self.cross_beam)
-            #project vW onto longitudinal_cut plane
-            n = cross_side_opp.normal.unitized()
-            vW_exit = vW - n * dot_vectors(vW, n)
-
-        else:
-            # fallback if no LongitudinalCut found
-            cross_side_opp = self.cross_beam.opp_side(self.cross_beam_ref_side_index)
-            vW_exit = vW
-
-        _strut_end = strut_start + self.strut_vector
         
+        exit_frame = self.default_exit_frame
+
         if orientation in ("perp_main", "perp_riser", "perp_cross", "bisector"):
             # 2. Get projection sides (both main and cross beam)
             entry_frame = self._get_entry_frame(flip=flip)
             proj_start_to_main = project_point_to_frame_along(strut_start, dire, entry_frame)
             proj_end_to_main = project_point_to_frame_along(_strut_end, dire, entry_frame)
-            # proj_start_to_main = project_point_to_frame_along(strut_start, -dire, self.main_beam.opp_side(self.main_beam_ref_side_index))
-            # proj_end_to_main = project_point_to_frame_along(_strut_end, -dire, self.main_beam.opp_side(self.main_beam_ref_side_index))
-
-            proj_start_to_cross= project_point_to_frame_along(strut_start, dire, cross_side_opp)
-            proj_end_to_cross = project_point_to_frame_along(_strut_end, dire, cross_side_opp)
             
             pts_entry = [proj_start_to_main, proj_end_to_main, proj_end_to_main + vW, proj_start_to_main + vW]
-            pts_exit = [proj_start_to_cross, proj_end_to_cross, proj_end_to_cross + vW_exit, proj_start_to_cross + vW_exit]
+            pts_exit = [project_point_to_frame_along(p, dire, exit_frame) for p in pts_entry]
 
         elif orientation == "along_cross":
             # p0: projection to cross beam
-            p0 = project_point_to_frame_along(strut_start, -dire, cross_side_opp)
-            p1 = project_point_to_frame_along(_strut_end, -dire, cross_side_opp)        
+            p0 = project_point_to_frame_along(strut_start, -dire, exit_frame)
+            p1 = project_point_to_frame_along(_strut_end, -dire, exit_frame)        
             pts_entry = [p0, p1, p1 + vW, p0 + vW]
 
             # Find the farthest cross section side of the main beam to the strut start
@@ -304,10 +293,12 @@ class BaseStepWrapper(BaseWrapper):
             pts_exit += [pts_exit[0]]
             return [Polyline(pts_entry), Polyline(pts_exit)]
         else:
-            raise ValueError("Invalid data type.")            
+            raise ValueError("Invalid data type.")
+
 
 class TSJ(BaseStepWrapper):
     """A wrapper class for TStepJoint."""
+
     def __init__(self, joint):
         super().__init__(joint)
 
@@ -320,12 +311,12 @@ class TSJ(BaseStepWrapper):
         return -cross_ref_frame.normal
 
     def _get_perpendicular_riser_normal(self):
-        pass
         # def _get_butt_plane(self):
         #         cross_ref_side = self.cross_beam.ref_sides[self.cross_beam_ref_side_index]
         #         butt_plane = Plane(cross_ref_side.point, -cross_ref_side.normal)
         #         return butt_plane.translated(butt_plane.normal * self.step_depth).normal
         # return _get_butt_plane(self)
+        raise NotImplementedError()
     
     def _get_bisector_normal(self):
         return (self.main_ref_frame.normal - self.cross_ref_frame.normal).unitized()
@@ -349,7 +340,7 @@ class TMSJ(BaseStepWrapper):
         return -cross_ref_frame.normal
     
     def _get_perpendicular_riser_normal(self):
-        tread_0, riser_0 = self._compute_base_planes()
+        _, riser_0 = self._compute_base_planes()
         return -riser_0.normal
     
     def _get_bisector_normal(self):
@@ -365,12 +356,21 @@ class TMSJ(BaseStepWrapper):
 # -----------------------------------
 class TBJ(BaseWrapper):
     """A wrapper class for TButtJoint."""
+
     def __init__(self, joint):
         super().__init__(joint)
 
     def determine_entry_type(self):
         # NOTE: maybe determine by is planar or not?
-        return "crossed" if self.is_planar else "aligned"
+        if self.is_planar:
+            if self.acute_angle > ScrewSpecification.ANGLE_THRESHOLD:
+                return "crossed"
+            return "aligned"
+        return "crossed"
+
+    @property
+    def interface_area(self):
+        pass
 
     def find_screw_boundaries(self, orientation="perp_riser", flip=False, data_type="points"):
         pass
@@ -381,6 +381,7 @@ class TBJ(BaseWrapper):
 # -----------------------------------
 class BaseBirdsmouthWrapper(BaseWrapper):
     """A base wrapper class for birdsmouth joints."""
+
     def __init__(self, joint):
         super().__init__(joint)
 
@@ -390,12 +391,14 @@ class BaseBirdsmouthWrapper(BaseWrapper):
 
 class TBMJ(BaseBirdsmouthWrapper):
     """A wrapper class for TBirdsmouthJoint."""
+
     def __init__(self, joint):
         super().__init__(joint)
 
 
 class KBMJ(BaseBirdsmouthWrapper):
     """A sub-wrapper class splitting a KBirdsmouthJoint into two joint classes."""
+
     def __init__(self, joint, main_id):
         if main_id not in (0, 1):
             raise ValueError("main_id should be either 0 or 1.")
