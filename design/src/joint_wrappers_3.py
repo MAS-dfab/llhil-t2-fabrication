@@ -30,6 +30,10 @@ def project_point_to_frame_along(point, direction, frame, tol=1e-6):
     t = num / denom
     return point + dire * t
 
+def is_same_xy_sign(direction):
+    """Return True if direction.x and direction.y have the same sign (or zero)."""
+    x, y = direction.x, direction.y
+    return (x >= 0 and y >= 0) or (x <= 0 and y <= 0)
 
 # -----------------------------------
 # Base joint wrapper (Parent)
@@ -338,9 +342,16 @@ class BaseBirdsmouthWrapper(BaseWrapper):
     def __init__(self, joint):
         super().__init__(joint)
 
+    @property
+    def _is_acute(self):
+        """check if beam pair is acute angled or obtuse angled."""
+        angle = angle_vectors(
+            self.main_beam.centerline.direction, self.cross_beam.centerline.direction, deg=True
+        )
+        return angle <= 90
+
     def determine_entry_type(self):
         return "crossed"  # Must be crossed entry, or third entry type?
-
 
 class TBMJ(BaseBirdsmouthWrapper):
     """A wrapper class for TBirdsmouthJoint."""
@@ -352,20 +363,103 @@ class TBMJ(BaseBirdsmouthWrapper):
 class KBMJ(BaseBirdsmouthWrapper):
     """A sub-wrapper class splitting a KBirdsmouthJoint into two joint classes."""
 
-    def __init__(self, joint, main_id):
+    def __init__(self, joint, main_id):     # main_id to specify which of the two main beams to compute
         if main_id not in (0, 1):
             raise ValueError("main_id should be either 0 or 1.")
         self.main_id = main_id
         self.main_beam = joint.elements[main_id + 1]
         self.cross_beam = joint.elements[0]
-        
-        if main_id == 0:
-            self.main_beam_ref_side_index = joint.main_ref_side_index
+
+        # determine main_beam_ref_side_index based on centerline xy sign
+        if is_same_xy_sign(self.main_beam.centerline.direction):
+            self.main_beam_ref_side_index = joint.main_ref_side_index + 3
         else:
-            self.main_beam_ref_side_index = joint.main_ref_side_index#(joint.main_ref_side_index + 2) % 4
+            self.main_beam_ref_side_index = joint.main_ref_side_index + 1  # NOTE: ref side index rotates clockwise (centerline direction away from joint location)
+
         self.cross_beam_ref_side_index = joint.cross_ref_side_indices[main_id][0]
 
         super().__init__(joint)
-    
-    def find_screw_boundaries(self, angle=None, flip=False, data_type="points"):
-        pass
+
+    def _get_double_cut_planes(self):
+        beam_features = self.main_beam.features
+        double = next((f for f in beam_features if type(f).__name__ == "DoubleCut"), None)
+        if double is not None:
+            return double.planes_from_params_and_beam(self.main_beam) # returns a list of two planes
+        return None
+
+    def _get_bisector_normal(self):
+        return (self.main_ref_frame.normal - self.cross_ref_frame.normal).unitized()
+
+    def _calculate_screw_directions(self):
+        """Create a dictionary of candidate screw direction vectors.
+
+        Keys:
+            - 'bisector' : bisector direction (always attempted)
+            - 'perp_vertical_double' : perpendicular to vertical double cut (if available)
+            - 'vertical' : vertical in z direction (always attempted)
+        """
+        # NOTE: screw directions towards joint 'location'
+        screw_directions = {}
+        
+        # 1) Bisector direction
+        try:
+            bis = self._get_bisector_normal()
+        except Exception:
+            bis = None
+        if bis is not None:
+            screw_directions["bisector"] = bis.unitized()
+
+        # 2) Perpendicular to the vertical-double-cut
+        try:
+            pv = self._get_perpendicular_vertical_double_normal()
+        except Exception:
+            pv = None
+        if pv is not None:
+            screw_directions["perp_vertical_double"] = pv.unitized()
+
+        # 3) Vertical
+        screw_directions["vertical"] = -Vector(0, 0, 1)
+
+        return screw_directions
+
+    def _get_perpendicular_main_normal(self):
+        """Find normal to main_ref_side, used for calculating entry frame for perp_vertical_double"""
+        return None
+
+    def _calculate_entry_exit_frames(self):
+        """Calculate entry and exit frames for screw projection based on screw direction candidates."""
+        screw_directions = self._calculate_screw_directions()
+
+        return self.main_ref_frame, self.cross_ref_frame
+
+    def find_screw_boundaries(self, flip=False, data_type="points"):
+        """
+        Find the entry and exit boundaries for all candidate screw directions.
+        
+        Returns a dict mapping a direction-key (sting) to a tuple (pts_entry, pts_exit).
+        Each pts_* is a list of minimum 3 corner Points (entry polygon and exit polygon).
+
+        Parameters
+        ----------
+        flip : bool
+            Whether to flip the screw direction.
+        data_type : str
+            "points", "brep", "polylines".       
+        """
+        # NOTE: only works with 'crossed' entry type. all potential orientation types are calculated
+
+        screw_directions = self._calculate_screw_directions()
+        entry_frame, exit_frame = self._calculate_entry_exit_frames()
+
+        boundaries = {}
+        for key, dire in screw_directions.items():
+            # 1. Find projection of a reference point to entry and exit frames along the screw direction
+            # 2. Construct boundary Polygons based on the 'projected' points and the beam widths
+            # 3. Store the boundaries in the dictionary with the same keys as screw_directions
+            pass
+
+        if data_type == "points":
+            return boundaries
+
+        # Placeholder: other data_type handling can be implemented later.
+        raise NotImplementedError("find_screw_boundaries currently only supports data_type='points'.")
