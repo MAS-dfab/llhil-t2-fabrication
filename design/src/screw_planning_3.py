@@ -1,6 +1,6 @@
 """Timber screw planning."""
 
-from joint_wrappers_2 import TMSJ, TSJ, TBJ, TBMJ, KBMJ, project_point_to_frame_along # NOTE: temp.
+from joint_wrappers_3 import TMSJ, TSJ, TBJ, TBMJ, KBMJ, project_point_to_frame_along # NOTE: temp.
 from screw_spec_2 import ScrewSpecification
 from compas.geometry import (
     Frame, Line, Cylinder, Polyline,
@@ -49,20 +49,20 @@ class ScrewSolver:
         """Get the screw specification based on the joint's entry type."""
         return self._spec_cache[joint.entry_type]
 
-    def shrink_aligned_entry_corners(self, joint, orientation):
+    def shrink_aligned_entry_corners(self, joint, angle):
         """Shrink the entry face corners for aligned entry type with the constraint of screw penetration."""
         if joint.entry_type != "aligned":
             raise ValueError("Wrong entry type. Expected 'aligned'.")
         spec = self._spec_cache["aligned"]
 
-        dire = joint.calculate_screw_direction(orientation=orientation)
+        dire = joint.calculate_screw_direction(angle=angle)
         angle_dire_cross = angle_vectors(dire, joint.cross_beam.centerline.direction)
         if angle_dire_cross > math.pi / 2:
             angle_dire_cross = math.pi - angle_dire_cross
         dist_perp_to_cross = math.sin(angle_dire_cross) * spec.penetration
         amp = dist_perp_to_cross / math.sin(math.radians(joint.acute_angle))
 
-        entry_corners, _ = joint.find_screw_boundaries(orientation=orientation, data_type="points")
+        entry_corners, _ = joint.find_screw_boundaries(angle=angle, data_type="points")
         dire = (entry_corners[1] - entry_corners[0]).unitized()
         offset_vec = dire * amp
 
@@ -71,28 +71,27 @@ class ScrewSolver:
                 entry_corners[i] = corner + offset_vec
         return entry_corners
 
-    def calculate_screw_capacity(self, joint, orientation):
+    def calculate_screw_capacity(self, joint, angle=None):
         """Calculate the maximum amount of screws in width and length direction."""        
         if joint.entry_type == "aligned":
             spec = self._spec_cache["aligned"]
-            entry_corners = self.shrink_aligned_entry_corners(joint, orientation)
-            # entry_corners, _ = joint.find_screw_boundaries(orientation=orientation, data_type="points")
+            entry_corners = self.shrink_aligned_entry_corners(joint, angle=angle)
             len_l = entry_corners[0].distance_to_point(entry_corners[1])
 
-            max_w_num = 2  # In our project it's always two screws (row) along width (25, 50, 25)
+            max_w_num = 3  # Spacings (25, 25, 25, 25)
 
-            dire = joint.calculate_screw_direction(orientation=orientation)
+            dire = joint.calculate_screw_direction(angle=angle)
             main_dire = joint.main_beam.centerline.direction
-            angle = angle_vectors(dire, main_dire)
-            if angle > math.pi / 2:
-                angle = math.pi - angle
+            acute_angle = angle_vectors(dire, main_dire)
+            if acute_angle > math.pi / 2:
+                acute_angle = math.pi - acute_angle
 
-            l_spacing = spec.a1 / math.sin(angle)
+            l_spacing = spec.a1 / math.sin(acute_angle)
             max_l_num = len_l // l_spacing
 
         elif joint.entry_type == "crossed":
             spec = self._spec_cache["crossed"]
-            entry_corners, _ = joint.find_screw_boundaries(orientation=orientation, data_type="points")
+            entry_corners, _ = joint.find_screw_boundaries(data_type="points")
             len_l = entry_corners[0].distance_to_point(entry_corners[1])
 
             max_w_num = 2  # Left and right each along width
@@ -102,9 +101,23 @@ class ScrewSolver:
         else:
             raise ValueError("Unknown entry type.")
         return int(max_w_num), int(max_l_num)
-        # TODO: implement the a1_cg (65mm) check with "aligned" entry type, 60/60 mm penetration for both entry types.
+        # TODO: implement the a1_cg (65mm) check with "aligned" entry type
 
-    def populate_aligned_entry_points(self, joint, amount: int = None, orientation="bisector"):
+    @staticmethod
+    def calculate_screw_distributions(amount, max_width_number=3):
+        """Calculate the screw distributions in width and length direction based on the requested amount of screws."""
+        if amount < 0:
+            raise ValueError("Amount should be non-negative.")
+        elif amount == 0:
+            return []
+        
+        distributions = []
+        for w_num in range(max_width_number, 0, -1):
+            l_num = (amount + w_num - 1) // w_num  # ceiling division to get the minimum length number
+            distributions.append((w_num, l_num))
+        return distributions
+
+    def populate_aligned_entry_points(self, joint, angle, amount: int = None):
         """
         Populate screw points on the entry face.
 
@@ -112,10 +125,10 @@ class ScrewSolver:
         ----------
         joint : JointWrapper
             The joint to populate screws on.
+        angle : float
+            The angle to determine the screw direction for aligned entry type.
         amount : int or None
             The requested amount of screws. If None, use the maximum capacity.
-        orientation : str
-            "perp_main", "perp_riser", "perp_cross", "along_main", and "bisector".
         
         Returns
         -------
@@ -126,26 +139,37 @@ class ScrewSolver:
             raise ValueError("Wrong entry type. Expected 'aligned'.")
         spec = self._spec_cache["aligned"]
 
-        pts_entry = self.shrink_aligned_entry_corners(joint, orientation)
-        # pts_entry, _ = joint.find_screw_boundaries(orientation=orientation, data_type="points")
+        if amount == 0:
+            return [[]]
+        
+        max_w_num, max_l_num = self.calculate_screw_capacity(joint, angle=angle)
+        if max_w_num > 3:
+            raise NotImplementedError("Only support up to 3 screws in one row for now.")
 
-        w_num, l_num = self.calculate_screw_capacity(joint, orientation)
         if amount is None:
             pass
-        elif amount <= w_num * l_num:
-            l_num = amount // w_num + (1 if amount % w_num > 0 else 0)
+        elif amount <= max_w_num * max_l_num:
+            distributions = self.calculate_screw_distributions(amount, max_w_num)
+            # Length direction is the priority to fill
+            distributions.sort(key=lambda x: x[1], reverse=True)
+            best = next(((w_num, l_num) for w_num, l_num in distributions if l_num <= max_l_num))
+            max_w_num, max_l_num = best
         else:
             self.capacity_warnings.append(
-                {"joint_guid": joint.guid, "joint": joint, "requested": amount, "capacity": (w_num, l_num)}
+                {"joint_guid": joint.guid, "joint": joint, "requested": amount, "capacity": (max_w_num, max_l_num)}
             )
             pass
         
-        if w_num != 2:
-            raise NotImplementedError("Only support 2 pairs for now.")
-        w_steps = (spec.a2_cg, spec.a2, spec.a2_cg)
+        if max_w_num == 3:
+            w_steps = (spec.a2_cg, spec.a2_cg, spec.a2_cg, spec.a2_cg)
+        elif max_w_num == 2:
+            w_steps = (spec.a2_cg, spec.a2, spec.a2_cg)
+        elif max_w_num == 1:
+            w_steps = (spec.a2_cg * 2, spec.a2_cg * 2)
 
+        pts_entry = self.shrink_aligned_entry_corners(joint, angle=angle)
         l = pts_entry[0].distance_to_point(pts_entry[1])
-        l_step = l / (l_num)
+        l_step = l / (max_l_num)
 
         vec_w = (pts_entry[3] - pts_entry[0]).unitized()
         vec_l = (pts_entry[1] - pts_entry[0]).unitized()
@@ -154,15 +178,15 @@ class ScrewSolver:
         start = pts_entry[0] + (vec_w * w_steps[0])# + (vec_l * l_step)
 
         # 3. Create point grid
-        point_grid = [[None for _ in range(w_num)] for _ in range(l_num)]
-        for i in range(l_num):
+        point_grid = [[None for _ in range(max_w_num)] for _ in range(max_l_num)]
+        for i in range(max_l_num):
             curr_w = 0.0
-            for j in range(w_num):
+            for j in range(max_w_num):
                 point_grid[i][j] = start + (vec_w * curr_w) + (vec_l * i * l_step)
                 curr_w += w_steps[j + 1]
         return point_grid
     
-    def populate_crossed_entry_points(self, joint, amount: int = None, orientation="along_main"):
+    def populate_crossed_entry_points(self, joint, amount: int = None):
         """
         Populate screw points on the entry face from the height sides.
 
@@ -186,14 +210,14 @@ class ScrewSolver:
 
         # Find offset entry points
         corners = joint.get_interface_boundary(data_type="points")
-        offset_dire = joint.calculate_screw_direction(orientation=orientation)
+        offset_dire = joint.calculate_screw_direction()
         amp = math.cos(math.radians(spec.side_angle)) * spec.penetration
         offset_vec = offset_dire * amp
 
         pts_entry = [p + offset_vec for p in corners]
 
         # Calculate screw amount and check with capacity
-        w_num, l_num = self.calculate_screw_capacity(joint, orientation)
+        w_num, l_num = self.calculate_screw_capacity(joint)
         if amount is None:
             pass
         elif amount <= w_num * l_num:
@@ -218,7 +242,7 @@ class ScrewSolver:
             point_grid.append([pt_left, pt_right])
         return point_grid
 
-    def populate_aligned_screw_lines(self, joint, point_grid, orientation="bisector", restrict=True):
+    def populate_aligned_screw_lines(self, joint, angle, point_grid, restrict=True):
         """
         Populate screw lines from the entry face to the exit face.
 
@@ -226,10 +250,10 @@ class ScrewSolver:
         ----------
         joint : JointWrapper
             The joint to populate screws on.
+        angle : float
+            The angle to determine the screw direction for aligned entry type.
         point_grid : list of list of Point
             The entry points to create screw lines.
-        orientation : str
-            "perp_main", "perp_riser", "perp_cross", "bisector" and "along_main".
         restrict : bool
             If True, restrict the screw length to the predefined lengths.
         
@@ -244,9 +268,9 @@ class ScrewSolver:
         screw_lengths = sorted(spec.SCREW_LENGTHS, reverse=True)
 
         # 2. Create exit frame and screw direction
-        _, pts_exit = joint.find_screw_boundaries(orientation=orientation, data_type="points")
+        _, pts_exit = joint.find_screw_boundaries(angle=angle, data_type="points")
         exit_frame = Frame.from_points(pts_exit[0], pts_exit[1], pts_exit[3])
-        dire = joint.calculate_screw_direction(orientation=orientation)
+        dire = joint.calculate_screw_direction(angle=angle)
 
         # 3. get the length of each screw line by projecting the point to the exit face
         line_grid = []
@@ -294,7 +318,7 @@ class ScrewSolver:
         # TODO: check teh penetration from interface to exit face
         return line_grid
 
-    def populate_crossed_screw_lines(self, joint, point_grid, orientation="along_main", restrict=True):
+    def populate_crossed_screw_lines(self, joint, point_grid, restrict=True):
         """
         Populate screw lines from the height sides diagonally.
 
@@ -304,8 +328,6 @@ class ScrewSolver:
             The joint to populate screws on.
         point_grid : list of list of Point
             The entry points to create screw lines.
-        orientation : str
-            "perp_main", "perp_riser", "perp_cross", "bisector" and "along_main".
         restrict : bool
             If True, restrict the screw length to the predefined lengths.
         
@@ -322,7 +344,7 @@ class ScrewSolver:
         exit_frames = [joint.cross_beam.ref_sides[(joint.cross_beam_ref_side_index + i) % 4] for i in range(1, 4)]
 
         # Find rotate axis
-        dire = -joint.calculate_screw_direction(orientation=orientation)
+        dire = -joint.calculate_screw_direction()
         normal = joint.main_beam.front_side(joint.main_beam_ref_side_index).normal
         rotate_axis = cross_vectors(dire, normal)
     
@@ -430,8 +452,7 @@ def apply_screws(
         model,
         spec_model="WT-plus-6.5",
         screw_map=None,
-        orientation_tstep="perp_cross",
-        orientation_tmulti="bisector",
+        screw_angle=40,
         add_features=True,
         drill_target="main",
         depth_limited=True,
@@ -449,10 +470,8 @@ def apply_screws(
         The specification model to use for screws.
     screw_map : dict, optional
         A mapping of joint GUIDs to screw amounts.
-    orientation_tstep : str, optional
-        The orientation for TStepJoint aligned entry type.
-    orientation_tmulti : str, optional
-        The orientation for TMultiStepJoint aligned entry type.
+    screw_angle : float, optional
+        The angle to determine the screw direction for aligned entry type.
     add_features : bool, optional
         Whether to add drilling features to the beams.
     drill_target : str, optional
@@ -504,19 +523,16 @@ def apply_screws(
             if screw_amount == -1:
                 raise ValueError(f"Screw amount for joint {joint.guid} not specified in screw_map.")
         
-        if isinstance(joint, TSJ) and joint.entry_type == "aligned":
-            orientation = orientation_tstep
-        elif isinstance(joint, TMSJ) and joint.entry_type == "aligned":
-            orientation = orientation_tmulti
-
+        # if isinstance(joint, TSJ) and joint.entry_type == "aligned":
+            
         if joint.entry_type == "aligned":
-            entry_point_grid = solver.populate_aligned_entry_points(joint, amount=screw_amount, orientation=orientation)
-            screw_line_grid = solver.populate_aligned_screw_lines(joint, entry_point_grid, orientation, restrict=True)
+            restrict = False if joint.__class__ == TSJ else True
+            entry_point_grid = solver.populate_aligned_entry_points(joint, angle=screw_angle, amount=screw_amount)
+            screw_line_grid = solver.populate_aligned_screw_lines(joint, angle=screw_angle, point_grid=entry_point_grid, restrict=restrict)
             
         elif joint.entry_type == "crossed":
-            orientation = "along_main"  # Fix the orientation for crossed entry type
-            entry_point_grid = solver.populate_crossed_entry_points(joint, amount=screw_amount, orientation=orientation)
-            screw_line_grid = solver.populate_crossed_screw_lines(joint, entry_point_grid, orientation, restrict=True)
+            entry_point_grid = solver.populate_crossed_entry_points(joint, amount=screw_amount)
+            screw_line_grid = solver.populate_crossed_screw_lines(joint, entry_point_grid, restrict=True)
 
         else:
             raise ValueError("Unknown entry type.")
@@ -530,9 +546,9 @@ def apply_screws(
             )
         if with_data:
             interface = joint.get_interface_boundary(data_type="polyline")
-            entry_face, exit_face = joint.find_screw_boundaries(orientation=orientation, data_type="polylines")
+            entry_face, exit_face = joint.find_screw_boundaries(angle=screw_angle, data_type="polylines")
             if joint.entry_type == "aligned":
-                corners = solver.shrink_aligned_entry_corners(joint, orientation=orientation)
+                corners = solver.shrink_aligned_entry_corners(joint, angle=screw_angle)
                 entry_face = Polyline(corners + [corners[0]])
 
             joint_data[joint.guid] = {
