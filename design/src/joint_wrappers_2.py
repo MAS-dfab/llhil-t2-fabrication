@@ -127,7 +127,7 @@ class BaseWrapper(object):
         ----------
         orientation : str
             "perp_main", "perp_riser", "perp_cross" and "bisector" for screwing from the main beam to the cross beam,
-            "along_cross" for screwing from the cross beam towards the cross section of the main beam.
+            "along_main" for screwing from the cross beam towards the cross section of the main beam.
         """
         # Option 1: screw perpendicular to the centerline of the main beam
         if orientation == "perp_main":
@@ -148,7 +148,7 @@ class BaseWrapper(object):
             if vec is None:
                 raise ValueError(f"This joint type ({self.__class__}) does not physically have a bisector direction.")
 
-        elif orientation == "along_cross":
+        elif orientation == "along_main":
             vec = -self.point_centerline_towards_joint(self.main_beam)
  
         else:
@@ -226,7 +226,7 @@ class BaseStepWrapper(BaseWrapper):
         Parameters
         ----------
         orientation : str
-            "perp_main", "perp_riser", "perp_cross", "along_cross" and "bisector".
+            "perp_main", "perp_riser", "perp_cross", "along_main" and "bisector".
         flip : bool
             Whether to flip the screw direction.
         data_type : str
@@ -263,7 +263,7 @@ class BaseStepWrapper(BaseWrapper):
                 pts_entry = pts_entry[2:] + pts_entry[:2]  # flip the entry rectangle to be in the order of [p2, p3, p0, p1]
             pts_exit = [project_point_to_frame_along(p, dire, exit_frame) for p in pts_entry]
 
-        elif orientation == "along_cross":
+        elif orientation == "along_main":
             # p0: projection to cross beam
             p0 = project_point_to_frame_along(strut_start, -dire, exit_frame)
             p1 = project_point_to_frame_along(_strut_end, -dire, exit_frame)        
