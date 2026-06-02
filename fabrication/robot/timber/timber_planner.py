@@ -224,7 +224,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
     def global_constraints(self):
         constraints = []
         # constraints.append(JointConstraint('robot12_joint_1', math.radians(90), math.radians(85), math.radians(90), 1.0))
-        # constraints.append(JointConstraint('robot12_joint_2', math.radians(-55), math.radians(10), math.radians(10), 1.0))
+        constraints.append(JointConstraint('robot12_joint_2', math.radians(0), math.radians(85), math.radians(85), 1.0))
         # constraints.append(JointConstraint('robot12_joint_3', math.radians(55), math.radians(10), math.radians(10), 0.9))
         # constraints.append(JointConstraint('robot12_joint_4', math.radians(180), math.radians(270), math.radians(270), 0.5))
         # constraints.append(JointConstraint('robot12_joint_5', math.radians(90), math.radians(25), math.radians(180), 0.5))
@@ -262,7 +262,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         # 2. Pick Element at pickpoint
         print("getting element pick trajectory at pickpoint")
         gantry_constraints = self.get_gantry_constraints()
-        trajectories.append(self.get_cartesian_trajectory([element_pickup_frame]))
+        trajectories.append(self.get_cartesian_trajectory([element_pickup_frame], path_constraints=None))
 
         # Prepare mesh for attachment
         element_mesh_at = element_geometry.to_viewmesh()[0]
@@ -291,15 +291,15 @@ class TimberProcessPlanner(BaseRobotPlanner):
         print("getting element place trajectory at AT")
         gantry_constraints = self.get_gantry_constraints()
         # Overriding default options to disable collision avoidance for the final placement
-        trajectories.append(self.get_cartesian_trajectory([element_at_frame], avoid_collisions=False, path_constraints=None))
+        trajectories.append(self.get_cartesian_trajectory([element_at_frame], avoid_collisions=False, path_constraints=gantry_constraints))
         # trajectories.append(self.get_motion_to_frame(element_at_frame, path_constraints=gantry_constraints))
         
         self.detach_workpiece(str(element.name), element_at_frame)
 
         # 7. Retract from AT
         print("getting element retract trajectory at AT")
-        place_retract_traj = self.get_retract_trajectory(retract_distance=0.3, avoid_collisions=False)
-        # place_retract_traj = self.get_cartesian_trajectory([element_at_approach_frame], avoid_collisions=False)
+        # place_retract_traj = self.get_retract_trajectory(retract_distance=0.2, avoid_collisions=False)
+        place_retract_traj = self.get_cartesian_trajectory([element_at_approach_frame], avoid_collisions=False)
         if place_retract_traj is not None:
             self._last_place_retract_frame = element_at_frame.translated(element_at_frame.zaxis * -0.3)
         trajectories.append(place_retract_traj)
@@ -402,15 +402,16 @@ class TimberProcessPlanner(BaseRobotPlanner):
             current_config = configuration
         path_constraints = []
         path_constraints.append(JointConstraint('bridge1_joint_EA_X', current_config['bridge1_joint_EA_X'], 0.01, 0.01, 1.0))
-        path_constraints.append(JointConstraint('robot12_joint_EA_Y', current_config['robot12_joint_EA_Y'], 0.01, 0.01, 1.0))
-        path_constraints.append(JointConstraint('robot12_joint_EA_Z', current_config['robot12_joint_EA_Z'], 0.01, 0.01, 1.0))
+        # path_constraints.append(JointConstraint('robot12_joint_EA_Y', current_config['robot12_joint_EA_Y'], 0.01, 0.01, 1.0))
+        # path_constraints.append(JointConstraint('robot12_joint_EA_Z', current_config['robot12_joint_EA_Z'], 0.01, 0.01, 1.0))
         return path_constraints
 
     def get_end_configuration(self, element):
         next_robotb_location = element.attributes.get("next_robotb_location", None)
         if next_robotb_location is not None:
             outline = element.attributes.get("plate_outline")
-            offset_pts = offset_polyline(outline, 0.5)
+            offset_pts = outline.divide_by_length(0.2, strict=False)
+            # offset_pts = offset_polyline(outline, 0.5)
             dist = 99999999
             closest_pt = None
             for pt in offset_pts:

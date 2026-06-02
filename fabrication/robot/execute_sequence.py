@@ -144,8 +144,8 @@ def execute_sequence(abb11, abb12, record):
 
     # 1. Approach to pick
     print("\n[1/7] approach_to_pick")
-    # execute_trajectory(abb11, abb12, steps["approach_to_pick"], SPEED_FREE)
-    # time.sleep(1.5)  # small pause to ensure we're settled at the end of the approach trajectory
+    execute_trajectory(abb11, abb12, steps["approach_to_pick"], SPEED_FREE)
+    time.sleep(1.5)  # small pause to ensure we're settled at the end of the approach trajectory
 
     # Corrective Cartesian move to the exact approach frame before descending
     print("  Corrective move to approach frame...")
@@ -207,7 +207,9 @@ def execute_sequence(abb11, abb12, record):
     place_retract_frame = record.get("place_retract_frame")
     if place_retract_frame is not None:
         print("  MoveL to place retract frame")
-        abb12.send_and_wait(rrc.MoveToFrame(place_retract_frame, SPEED_HOLD, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=60.0)
+        # abb12.send_and_wait(rrc.MoveToFrame(place_retract_frame, SPEED_HOLD, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=60.0)
+        retract_ext_r12 = _ext_r12_from_last_point(steps["retract_from_AT"])
+        abb12.send_and_wait(rrc.MoveToRobtarget(place_retract_frame, retract_ext_r12, SPEED_PLACE, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR))
     else:
         print("  WARNING: no place_retract_frame in record, falling back to joint trajectory.")
         execute_trajectory(abb11, abb12, steps["retract_from_AT"], SPEED_HOLD)

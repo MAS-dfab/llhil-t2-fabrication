@@ -50,11 +50,13 @@ class BaseRobotPlanner():
 
     def enforce_joint_limits(self):
         """Utility to enforce joint limits on a given configuration."""
+        print("Enforcing joint limits with buffer...")
         robot_model = self.robot_cell.robot_model
         for joint in robot_model.joints:
-            if joint is not None and joint.type == 0:  # Only apply to revolute joints
-                joint.limit.lower += math.radians(2)  # Add small buffer to avoid exact limits
-                joint.limit.upper -= math.radians(2)
+            if joint.type == 0:  # Only apply to revolute joints
+                joint.limit.lower += math.radians(4)  # Add small buffer to avoid exact limits
+                joint.limit.upper -= math.radians(4)
+        self.robot_cell.robot_model = robot_model
                          
     @property
     def current_configuration(self):
@@ -88,7 +90,7 @@ class BaseRobotPlanner():
         frame_target = FrameTarget(target_frame, target_mode=TargetMode.TOOL)
         options = {
             "return_full_configuration": True,
-            "allow_collisions": False
+            "allow_collisions": True
         }
         ik_config = self.planner.inverse_kinematics(frame_target, self.state, self.group, options=options)
         try:
@@ -148,10 +150,12 @@ class BaseRobotPlanner():
         
         waypoints = FrameWaypoints(frames_list, TargetMode.TOOL)
         self.state.robot_configuration = self.current_configuration
-        plan_options = self.default_options
+        plan_options = self.default_options.copy()
+        plan_options["path_constraints"] = list(self.default_options["path_constraints"])
         plan_options["avoid_collisions"] = avoid_collisions
         if path_constraints:
-            plan_options["path_constraints"] = path_constraints
+            plan_options["path_constraints"].extend(path_constraints)
+        # plan_options["path_constraints"].append(JointConstraint('robot12_joint_2', math.radians(0), math.radians(85), math.radians(85), 1.0))
 
         trajectory = None
         try:
@@ -174,8 +178,10 @@ class BaseRobotPlanner():
             "allowed_planning_time": 10, 
             "num_planning_attempts": 50,
             "max_steps": 0.1,
-            "path_constraints": self.global_constraints if path_constraints is None else path_constraints
+            "path_constraints": self.global_constraints
             }
+        if path_constraints:
+            plan_options["path_constraints"].extend(path_constraints)
 
         trajectory = None
         try:
@@ -232,6 +238,7 @@ class BaseRobotPlanner():
         
         r_options = self.default_options.copy()
         r_options["avoid_collisions"] = avoid_collisions
+        r_options["path_constraints"] = self.global_constraints
         trajectory = None
         try:
             if planning_group:
