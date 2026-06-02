@@ -253,11 +253,12 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 1. Approach pickpoint
         print("getting element approach trajectory to pickpoint")
-        approach_frame = self.get_approach_frame(element_pickup_frame, approach_distance=0.2)
+        approach_frame = self.get_approach_frame(element_pickup_frame, approach_distance=0.1)
         self._last_approach_frame = approach_frame
         approach_config = self.get_constrained_ik_from_frame(approach_frame)
         trajectories.append(self.get_motion_to_configuration(approach_config))
         # trajectories.append(self.get_motion_to_frame(approach_frame))
+
 
         # 2. Pick Element at pickpoint
         print("getting element pick trajectory at pickpoint")
@@ -272,7 +273,10 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 3. Retract from pickpoint
         print("getting element retract trajectory at pickpoint")
-        pick_retract_traj = self.get_retract_trajectory(retract_distance=0.3)
+        # pick_retract_traj = self.get_retract_trajectory(retract_distance=0.3)
+        retract_frame = element_pickup_frame.translated(element_pickup_frame.zaxis * -0.3)
+        gantry_constraints = self.get_gantry_constraints()
+        pick_retract_traj = self.get_cartesian_trajectory([retract_frame], avoid_collisions=False, path_constraints=None)
         if pick_retract_traj is not None:
             self._last_pick_retract_frame = pick_retract_traj.points[-1]  # stored as last joint point
             # compute the actual retract frame from the pickup frame
@@ -299,9 +303,10 @@ class TimberProcessPlanner(BaseRobotPlanner):
         # 7. Retract from AT
         print("getting element retract trajectory at AT")
         # place_retract_traj = self.get_retract_trajectory(retract_distance=0.2, avoid_collisions=False)
-        place_retract_traj = self.get_cartesian_trajectory([element_at_approach_frame], avoid_collisions=False)
+        place_retract_frame = element_at_frame.translated(element_at_frame.zaxis * -0.15)
+        place_retract_traj = self.get_cartesian_trajectory([place_retract_frame], avoid_collisions=False)
         if place_retract_traj is not None:
-            self._last_place_retract_frame = element_at_frame.translated(element_at_frame.zaxis * -0.3)
+            self._last_place_retract_frame = element_at_frame.translated(element_at_frame.zaxis * -0.1)
         trajectories.append(place_retract_traj)
 
         # 8. Return to safe configuration
