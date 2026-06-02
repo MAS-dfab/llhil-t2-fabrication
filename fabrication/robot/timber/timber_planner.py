@@ -3,6 +3,7 @@ import math
 from compas.data import json_dump
 from compas.geometry import Box
 from compas.geometry import Frame
+from compas.geometry import Polyline
 from compas.datastructures import Mesh
 from compas.geometry import Point
 from compas.geometry import Scale
@@ -15,6 +16,7 @@ from compas_fab.robots.constraints import JointConstraint
 from core.base_planner import BaseRobotPlanner
 from compas_fab.robots.targets import FrameTarget
 from compas_fab.robots.targets import TargetMode
+from compas.geometry import offset_polyline
 
 
 class TimberProcessPlanner(BaseRobotPlanner):
@@ -241,7 +243,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
     def pick_and_place_element(self, element_guid, timber_model):
         element = timber_model.element_by_guid(element_guid)
 
-        print("Picking and placing element:", element.guid)
+        print("Picking and placing element:", element.name)
         trajectories = []
 
         grasp_frame, element_at_frame, element_geometry = self.calculate_element_at_frame(element)
@@ -266,7 +268,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         element_mesh_at = element_geometry.to_viewmesh()[0]
         # adjusted_grasp_frame = element_grasp_frame.copy()
         # adjusted_grasp_frame.point.z -= 0.08  # Account for gripper offset
-        self.attach_workpiece(str(element.guid), element_mesh_at, grasp_frame, attached_to_tool="schunk")
+        self.attach_workpiece(str(element.name), element_mesh_at, grasp_frame, attached_to_tool="schunk")
 
         # 3. Retract from pickpoint
         print("getting element retract trajectory at pickpoint")
@@ -292,7 +294,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         trajectories.append(self.get_cartesian_trajectory([element_at_frame], avoid_collisions=False, path_constraints=None))
         # trajectories.append(self.get_motion_to_frame(element_at_frame, path_constraints=gantry_constraints))
         
-        self.detach_workpiece(str(element.guid), element_at_frame)
+        self.detach_workpiece(str(element.name), element_at_frame)
 
         # 7. Retract from AT
         print("getting element retract trajectory at AT")
@@ -304,7 +306,9 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 8. Return to safe configuration
         print("getting trajectory back to safe configuration")
-        trajectories.append(self.get_motion_to_configuration(self.safe_configuration))
+        end_config = self.get_end_configuration(element)
+
+        trajectories.append(self.get_motion_to_configuration(end_config))
         # trajectories.append(self.get_motion_to_configuration(self.inter_configuration))
 
         # json_dump(trajectories, "C:\\Users\\paulj\\Downloads\\element_trajs.json")
@@ -368,8 +372,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
     def calculate_element_pickup_frame(self):
         if self._fetched_pickup_frame is not None:
             pickup_frame = self._fetched_pickup_frame.copy()
-            print("pickup_frame", pickup_frame)
-            return pickup_frame.scaled(0.001)  # Convert from mm to m
+            return pickup_frame.scaled(0.001)
 
         raise RuntimeError(
             "Pickup frame has not been fetched yet. "
@@ -397,9 +400,30 @@ class TimberProcessPlanner(BaseRobotPlanner):
             current_config = self.current_configuration
         else:
             current_config = configuration
-        print(current_config['bridge1_joint_EA_X'], current_config['robot12_joint_EA_Y'], current_config['robot12_joint_EA_Z'])
         path_constraints = []
         path_constraints.append(JointConstraint('bridge1_joint_EA_X', current_config['bridge1_joint_EA_X'], 0.01, 0.01, 1.0))
         path_constraints.append(JointConstraint('robot12_joint_EA_Y', current_config['robot12_joint_EA_Y'], 0.01, 0.01, 1.0))
         path_constraints.append(JointConstraint('robot12_joint_EA_Z', current_config['robot12_joint_EA_Z'], 0.01, 0.01, 1.0))
         return path_constraints
+
+    def get_end_configuration(self, element):
+        next_robotb_location = element.attributes.get("next_robotb_location", None)
+        if next_robotb_location is not None:
+            outline = element.attributes.get("plate_outline")
+            offset_pts = offset_polyline(outline, 0.5)
+            dist = 99999999
+            closest_pt = None
+            for pt in offset_pts:
+                d = next_robotb_location.distance_to_point(Point(*pt))
+                if d < dist:
+                    dist = d
+                    closest_pt = Point(*pt)
+            safe_config_frame = self.get_fk_from_config(self.safe_configuration)
+            diff_X = closest_pt.x - safe_config_frame.point.x
+            diff_Y = closest_pt.y - safe_config_frame.point.y
+            end_config = self.safe_configuration.copy()
+            end_config["bridge1_joint_EA_X"] += diff_X
+            end_config["robot12_joint_EA_Y"] -= diff_Y
+            return end_config            
+        else:
+            return self.safe_configuration

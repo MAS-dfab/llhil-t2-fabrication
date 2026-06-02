@@ -59,11 +59,7 @@ class BaseRobotPlanner():
     @property
     def current_configuration(self):
         """Returns the current full configuration of the robot state."""
-        if len(self.trajectory_list) == 0:
-            return self.safe_configuration
-        else:
-            full_config = self.state.robot_configuration
-            return full_config
+        return self.state.robot_configuration
         
     def relauch_client_and_planner(self):
         """Utility to relaunch the ROS client and MoveIt planner, useful for resetting state."""

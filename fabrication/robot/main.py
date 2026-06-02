@@ -191,6 +191,9 @@ def main():
             highlight_state["mesh"] = None
 
         trajectory_planner.state.robot_configuration = trajectory_planner.safe_configuration
+        if os.path.exists(EXPORT_PATH):
+            record = json_load(EXPORT_PATH)
+            trajectory_planner.update_state_from_trajectory(record["steps"]["return_to_safe"])
         
         rb_names = trajectory_planner.robot_cell.rigid_body_models.keys()
         for rb_name in list(rb_names):
@@ -273,7 +276,14 @@ def main():
 
     # --- Button: Compute Trajectories ---
     def _on_compute():
+        # if os.path.exists(EXPORT_PATH):
+        #     record = json_load(EXPORT_PATH)
+        #     trajectory_planner.update_state_from_trajectory(record["steps"]["return_to_safe"])
         beam = in_seq_beams[trajectory_planner.seq_i]
+        next_robotb = next((b for b in in_seq_beams[trajectory_planner.seq_i + 1:] if b.attributes.get("assembly_method") == "robot"), None)
+        next_robotb_location = next_robotb.attributes.get("grasp_frame").point if next_robotb else None
+        beam.attributes["next_robotb_location"] = next_robotb_location
+        beam.attributes["plate_outline"] = timber_model.plates[0].outline_a
 
         player._cleanup_previous_compute()
 
@@ -299,7 +309,7 @@ def main():
 
         print("\n{}".format("X" * 40))
         print("PLANNING element {} of {}: {}".format(
-            beam.attributes.get("sequence"), total_beams, beam))
+            beam.attributes.get("sequence_id"), total_beams, beam.name))
         print("{}".format("X" * 40))
         try:
             element_trajectories = trajectory_planner.pick_and_place_element(
