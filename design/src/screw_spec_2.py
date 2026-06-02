@@ -24,7 +24,7 @@ class ScrewSpecification:
     ANGLE_THRESHOLD = 45  # Originally 50 degrees
     DRILLING_DIAMETER = 0.004
     SCREW_DIAMETER = 0.0065
-    SCREW_LENGTHS = [0.12, 0.16, 0.19, 0.22]  # Not confirmed yet
+    SCREW_LENGTHS = [0.130, 0.150, 0.190, 0.215]  # Not confirmed yet
     BACK_THRESHOLD = 0.000  # Cound be zero
 
     def __init__(self, entry_type=None, spec_model="WT-plus-6.5"):

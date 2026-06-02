@@ -142,10 +142,13 @@ class ScrewSolver:
         if amount == 0:
             return [[]]
         
+        # 1. Calculate the maximum screw number in width and length
         max_w_num, max_l_num = self.calculate_screw_capacity(joint, angle=angle)
         if max_w_num > 3:
             raise NotImplementedError("Only support up to 3 screws in one row for now.")
 
+        # 2. If requested amount is not provided or is more than the maximum capacity, use the maximum capacity.
+        #    Otherwise, calculate the screw distributions by prioritizing the length direction to get more rows.
         if amount is None:
             pass
         elif amount <= max_w_num * max_l_num:
@@ -160,13 +163,15 @@ class ScrewSolver:
             )
             pass
         
-        if max_w_num == 3:
-            w_steps = (spec.a2_cg, spec.a2_cg, spec.a2_cg, spec.a2_cg)
-        elif max_w_num == 2:
-            w_steps = (spec.a2_cg, spec.a2, spec.a2_cg)
-        elif max_w_num == 1:
-            w_steps = (spec.a2_cg * 2, spec.a2_cg * 2)
+        # 3. Create the step distances in width
+        w_steps_map = {
+            1: (spec.a2_cg * 2,) * 2,
+            2: (spec.a2_cg, spec.a2, spec.a2_cg),
+            3: (spec.a2_cg,) * 4,
+        }
+        w_steps = w_steps_map[max_w_num]
 
+        # 4. Populate entry points
         pts_entry = self.shrink_aligned_entry_corners(joint, angle=angle)
         l = pts_entry[0].distance_to_point(pts_entry[1])
         l_step = l / (max_l_num)
@@ -174,10 +179,9 @@ class ScrewSolver:
         vec_w = (pts_entry[3] - pts_entry[0]).unitized()
         vec_l = (pts_entry[1] - pts_entry[0]).unitized()
 
-        # 2. Start at the first offset point
-        start = pts_entry[0] + (vec_w * w_steps[0])# + (vec_l * l_step)
+        # Start at the first offset point
+        start = pts_entry[0] + (vec_w * w_steps[0])
 
-        # 3. Create point grid
         point_grid = [[None for _ in range(max_w_num)] for _ in range(max_l_num)]
         for i in range(max_l_num):
             curr_w = 0.0
