@@ -353,6 +353,7 @@ class BaseBirdsmouthWrapper(BaseWrapper):
     def determine_entry_type(self):
         return "crossed"  # Must be crossed entry, or third entry type?
 
+
 class TBMJ(BaseBirdsmouthWrapper):
     """A wrapper class for TBirdsmouthJoint."""
 
@@ -369,17 +370,17 @@ class KBMJ(BaseBirdsmouthWrapper):
         self.main_id = main_id
         self.main_beam = joint.elements[main_id + 1]
         self.cross_beam = joint.elements[0]
-
-        # determine main_beam_ref_side_index based on centerline xy sign
+        
         if is_same_xy_sign(self.main_beam.centerline.direction):
-            self.main_beam_ref_side_index = joint.main_ref_side_index + 3
+            self.main_beam_ref_side_index = joint.main_ref_side_index + 3           # NOTE: main_ref_side pointing 'inwards' where its 'normal' is orientated towards the cross_beam centerline
+            self._adjacency_direction = -1
         else:
-            self.main_beam_ref_side_index = joint.main_ref_side_index + 1  # NOTE: ref side index rotates clockwise (centerline direction away from joint location)
+            self.main_beam_ref_side_index = joint.main_ref_side_index + 1           # NOTE: main_ref_side pointing 'inwards' where its 'normal' is orientated towards the cross_beam centerline
+            self._adjacency_direction = 1
 
-        self.cross_beam_ref_side_index = joint.cross_ref_side_indices[main_id][0]
-
+        self.cross_beam_ref_side_index = joint.cross_ref_side_indices[main_id][1]   # NOTE: cross_beam_ref_side pointing 'inwards' where its 'normal' is orientated towards the main_ref_side centerline
         super().__init__(joint)
-
+    
     def _get_double_cut_planes(self):
         beam_features = self.main_beam.features
         double = next((f for f in beam_features if type(f).__name__ == "DoubleCut"), None)
