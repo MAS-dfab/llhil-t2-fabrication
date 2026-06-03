@@ -30,6 +30,10 @@ def project_point_to_frame_along(point, direction, frame, tol=1e-6):
     t = num / denom
     return point + dire * t
 
+def is_same_xy_sign(direction):
+    """Return True if direction.x and direction.y have the same sign (or zero)."""
+    x, y = direction.x, direction.y
+    return (x >= 0 and y >= 0) or (x <= 0 and y <= 0)
 
 # -----------------------------------
 # Base joint wrapper (Parent)
@@ -110,52 +114,27 @@ class BaseWrapper(object):
             angle = 180 - angle
         return angle
     
-    def _get_perpendicular_riser_normal(self):
-        return None
-
-    def _get_bisector_normal(self):
-        return None
-    
     def determine_entry_type(self):
         return None
     
-    def calculate_screw_direction(self, orientation="perp_riser", flip=False):
-        """
-        Find the screw direction vector for a TMultiStepJoint based on the specified orientation.
-
-        Parameters
-        ----------
-        orientation : str
-            "perp_main", "perp_riser", "perp_cross" and "bisector" for screwing from the main beam to the cross beam,
-            "along_main" for screwing from the cross beam towards the cross section of the main beam.
-        """
-        # Option 1: screw perpendicular to the centerline of the main beam
-        if orientation == "perp_main":
-            vec = self._get_perpendicular_main_normal()
-
-        # Option 2: screw perpendicular to the centerline of the cross beam
-        elif orientation == "perp_cross":
-            vec = self._get_perpendicular_cross_normal()
-
-        # Option 3: screw perpendicular to the jagged riser plane
-        elif orientation == "perp_riser":
-            vec = self._get_perpendicular_riser_normal()
-            if vec is None:
-                raise ValueError(f"This joint type ({self.__class__}) does not physically have a riser face.")
+    def calculate_screw_direction(self, angle=None):
+        """Calculate the screw direction based on the entry type and the given angle."""
+        if angle is not None:
+            if angle <= 0:
+                raise ValueError("Angle should be larger than 0.")
             
-        elif orientation == "bisector":
-            vec = self._get_bisector_normal()
-            if vec is None:
-                raise ValueError(f"This joint type ({self.__class__}) does not physically have a bisector direction.")
-
-        elif orientation == "along_main":
-            vec = -self.point_centerline_towards_joint(self.main_beam)
- 
+        main_dire = self.point_centerline_towards_joint(self.main_beam)
+        if self.entry_type == "aligned":
+            rotation_axis = self._get_rotation_axis()
+            return main_dire.rotated(math.radians(angle), rotation_axis).unitized()
+        
+        elif self.entry_type == "crossed":
+            return -main_dire.unitized()
+        
         else:
-            raise ValueError("Invalid orientation type.")
-        return vec.unitized() if not flip else -vec.unitized()
+            raise ValueError("Invalid entry type.")
 
-    def find_screw_boundaries(self, orientation="perp_riser", flip=False, data_type="points"):
+    def find_screw_boundaries(self, angle=None, flip=False, data_type="points"):
         raise NotImplementedError(f"Subclass {self.__class__.__name__} must implement this method.")
     
 
@@ -219,25 +198,25 @@ class BaseStepWrapper(BaseWrapper):
             return longitudinal.plane_from_params_and_beam(self.cross_beam)
         return self.cross_beam.opp_side(self.cross_beam_ref_side_index)
 
-    def find_screw_boundaries(self, orientation="perp_riser", flip=False, data_type="points"):
+    def find_screw_boundaries(self, angle=None, flip=False, data_type="points"):
         """
         Find the entry and exit retangular boundaries.
 
         Parameters
         ----------
-        orientation : str
-            "perp_main", "perp_riser", "perp_cross", "along_main" and "bisector".
+        angle : float
+            The angle to rotate the screw direction for aligned entry type. Ignored for crossed entry type.
         flip : bool
             Whether to flip the screw direction.
         data_type : str
             "points", "brep", "polylines".
         """
-        # if self.entry_type == "crossed":
-            # find the entry and exit from get_interface_boundary()
-        # NOTE: for aligned, entry corners + exit frame, for crossed, entry corners + two exit frames
-
+        if angle is not None:
+            if angle <= 0:
+                raise ValueError("Angle should be larger than 0.")
+            
         # 1. Get projection vector
-        dire = self.calculate_screw_direction(orientation=orientation, flip=flip)
+        dire = self.calculate_screw_direction(angle)
 
         coords = intersection_plane_plane_plane(
             Plane.from_frame(self.main_ref_frame),
@@ -252,7 +231,7 @@ class BaseStepWrapper(BaseWrapper):
         
         exit_frame = self.default_exit_frame
 
-        if orientation in ("perp_main", "perp_riser", "perp_cross", "bisector"):
+        if self.entry_type == "aligned":
             # 2. Get projection sides (both main and cross beam)
             entry_frame = self._get_entry_frame(flip=flip)
             proj_start_to_main = project_point_to_frame_along(strut_start, dire, entry_frame)
@@ -263,7 +242,7 @@ class BaseStepWrapper(BaseWrapper):
                 pts_entry = pts_entry[2:] + pts_entry[:2]  # flip the entry rectangle to be in the order of [p2, p3, p0, p1]
             pts_exit = [project_point_to_frame_along(p, dire, exit_frame) for p in pts_entry]
 
-        elif orientation == "along_main":
+        elif self.entry_type == "crossed":
             # p0: projection to cross beam
             p0 = project_point_to_frame_along(strut_start, -dire, exit_frame)
             p1 = project_point_to_frame_along(_strut_end, -dire, exit_frame)        
@@ -277,7 +256,7 @@ class BaseStepWrapper(BaseWrapper):
             pts_exit = [project_point_to_frame_along(p, dire, farthest) for p in pts_entry]
 
         else:
-            raise ValueError("Invalid orientation type.")
+            raise ValueError("Invalid entry type.")
         
         # Output data
         if data_type == "points":
@@ -306,24 +285,8 @@ class TSJ(BaseStepWrapper):
     def __init__(self, joint):
         super().__init__(joint)
 
-    def _get_perpendicular_main_normal(self):
-        main_ref_frame = self.main_beam.ref_sides[self.main_beam_ref_side_index]
-        return main_ref_frame.normal
-    
-    def _get_perpendicular_cross_normal(self):
-        cross_ref_frame = self.cross_beam.ref_sides[self.cross_beam_ref_side_index]
-        return -cross_ref_frame.normal
-
-    def _get_perpendicular_riser_normal(self):
-        # def _get_butt_plane(self):
-        #         cross_ref_side = self.cross_beam.ref_sides[self.cross_beam_ref_side_index]
-        #         butt_plane = Plane(cross_ref_side.point, -cross_ref_side.normal)
-        #         return butt_plane.translated(butt_plane.normal * self.step_depth).normal
-        # return _get_butt_plane(self)
-        raise NotImplementedError()
-    
-    def _get_bisector_normal(self):
-        return (self.main_ref_frame.normal - self.cross_ref_frame.normal).unitized()
+    def _get_rotation_axis(self):
+        return Vector(*cross_vectors(self.main_ref_frame.normal, self.cross_ref_frame.normal)).unitized()
     
     def _get_entry_frame(self, flip=False):
         if flip:
@@ -332,28 +295,18 @@ class TSJ(BaseStepWrapper):
     
 class TMSJ(BaseStepWrapper):
     """A wrapper class for TMultiStepJoint."""
+
     def __init__(self, joint):
         super().__init__(joint)
 
-    def _get_perpendicular_main_normal(self):
-        main_ref_frame = self.main_beam.ref_sides[self.main_beam_ref_side_index]
-        return -main_ref_frame.normal
-    
-    def _get_perpendicular_cross_normal(self):
-        cross_ref_frame = self.cross_beam.ref_sides[self.cross_beam_ref_side_index]
-        return -cross_ref_frame.normal
-    
-    def _get_perpendicular_riser_normal(self):
-        _, riser_0 = self._compute_base_planes()
-        return -riser_0.normal
-    
-    def _get_bisector_normal(self):
-        return -(self.main_ref_frame.normal + self.cross_ref_frame.normal).unitized()
+    def _get_rotation_axis(self):
+        return -Vector(*cross_vectors(self.main_ref_frame.normal, self.cross_ref_frame.normal)).unitized()
     
     def _get_entry_frame(self, flip=False):
         if flip:
             return self.cross_ref_frame
         return self.main_ref_frame
+
 
 # -----------------------------------
 # TButtJoint wrapper
@@ -376,7 +329,7 @@ class TBJ(BaseWrapper):
     def interface_area(self):
         pass
 
-    def find_screw_boundaries(self, orientation="perp_riser", flip=False, data_type="points"):
+    def find_screw_boundaries(self, angle=None, flip=False, data_type="points"):
         pass
 
 
@@ -389,14 +342,64 @@ class BaseBirdsmouthWrapper(BaseWrapper):
     def __init__(self, joint):
         super().__init__(joint)
 
+    @property
+    def _is_acute(self):
+        """check if beam pair is acute angled or obtuse angled."""
+        angle = angle_vectors(
+            self.main_beam.centerline.direction, self.cross_beam.centerline.direction, deg=True
+        )
+        return angle <= 90
+
     def determine_entry_type(self):
-        return "crossed"  # Must be crossed entry
-    
-    def get_interface_boundary(self, data_type="points"):
-        """Get the rectangular boundary of the interface between main_a cross beam."""
-        main_beam_a = self.main_beam_a
-        main_beam_b = self.main_beam_b
+        return "crossed"  # Must be crossed entry, or third entry type?
+
+
+class TBMJ(BaseBirdsmouthWrapper):
+    """A wrapper class for TBirdsmouthJoint."""
+
+    def __init__(self, joint):
+        super().__init__(joint)
+
+
+class KBMJ(BaseBirdsmouthWrapper):
+    """A sub-wrapper class splitting a KBirdsmouthJoint into two joint classes."""
+
+    def __init__(self, joint, main_id):     # main_id to specify which of the two main beams to compute
+        if main_id not in (0, 1):
+            raise ValueError("main_id should be either 0 or 1.")
+        self.main_id = main_id
+        self.main_beam = joint.elements[main_id + 1]
+        self.cross_beam = joint.elements[0]
+        self.cuts = joint._get_cutting_planes()[main_id]
         
+        if is_same_xy_sign(self.main_beam.centerline.direction):
+            self.main_beam_ref_side_index = joint.main_ref_side_index + 3           # NOTE: main_ref_side pointing 'inwards' where its 'normal' is orientated towards the cross_beam centerline
+            self._adjacency_direction = -1
+        else:
+            self.main_beam_ref_side_index = joint.main_ref_side_index + 1           # NOTE: main_ref_side pointing 'inwards' where its 'normal' is orientated towards the cross_beam centerline
+            self._adjacency_direction = 1
+
+        self.cross_beam_ref_side_index = joint.cross_ref_side_indices[main_id][1]   # NOTE: cross_beam_ref_side pointing 'inwards' where its 'normal' is orientated towards the main_ref_side centerline
+        super().__init__(joint)
+    
+    def _get_double_cut_planes(self):
+        beam_features = self.main_beam.features
+        double = next((f for f in beam_features if type(f).__name__ == "DoubleCut"), None)
+        if double is not None:
+            return double.planes_from_params_and_beam(self.main_beam) # returns a list of two planes
+        return None
+
+    def get_interface_boundaries(self, data_type="polyline"):
+        """
+        Find the interface boundaries for main beam and cross beam.
+        
+        Returns a polyline.
+
+        Parameters
+        ----------
+        data_type : str
+            "points", "polylines".       
+        """
         def _sort_points(points, plane):
             # Find the center mass of the 4 points
             cx = sum(p.x for p in points) / 4.0
@@ -419,91 +422,131 @@ class BaseBirdsmouthWrapper(BaseWrapper):
             # Sort the points chronologically around the center (clockwise/counter-clockwise)
             sorted_points = sorted(points, key=get_angle_fallback)
             return sorted_points
-            
-        def _get_interface_boundary_by_beam(beam, data_type="points"):
-            cuts = self._get_cutting_planes()
-            if beam == self.main_beam_a:
-                cut_plane_side = Plane.from_frame(cuts[0][1])
-                cut_plane_top = Plane.from_frame(cuts[0][0])
-            else:
-                cut_plane_side = Plane.from_frame(cuts[1][1])
-                cut_plane_top = Plane.from_frame(cuts[1][0])
 
-            bottom_side = Plane.from_frame(beam.ref_sides[0])
-            top_side = Plane.from_frame(beam.ref_sides[2])
-            ref_side = Plane.from_frame(beam.ref_frame)
-            opp_side = Plane.from_frame(beam.opp_side(self.main_ref_side_index))
+        # Extract all cutting planes
+        cut_plane_side = Plane.from_frame(self.cuts[1])
+        cut_plane_top = Plane.from_frame(self.cuts[0])
 
-            p0 = intersection_plane_plane_plane(ref_side, cut_plane_side, top_side)
-            p1 = intersection_plane_plane_plane(opp_side, cut_plane_side, top_side)
-            p2 = intersection_plane_plane_plane(bottom_side, ref_side, cut_plane_side)
-            p3 = intersection_plane_plane_plane(bottom_side, opp_side, cut_plane_side)
-            
-            relevent_pt = intersection_plane_plane_plane(cut_plane_top, cut_plane_side, ref_side)
-            
-            raw_points = [p0, p1, p2, p3]
-            points = [Point(*p) for p in raw_points]
-            
-            sorted_points = _sort_points(points, cut_plane_side)
-            
-            # Intersect 
-            poly = Polyline(sorted_points + [sorted_points[0]])
-            int_pts = intersection_polyline_plane(poly, cut_plane_top)
+        bottom_side = Plane.from_frame(self.main_beam.ref_sides[0])
+        top_side = Plane.from_frame(self.main_beam.ref_sides[2])
+        ref_side = Plane.from_frame(self.main_beam.ref_frame)
+        opp_side = Plane.from_frame(self.main_beam.opp_side(self.main_ref_side_index))
 
-            for pt in int_pts:
-                sorted_points.append(Point(*pt))
-            
-            plane_pt = cut_plane_top.point
-            normal = Vector(*cut_plane_top.normal)
-            normal_u = normal.unitized()
-            
-            interface_pts = []
-            for pt in sorted_points:
-                v = [pt[0] - plane_pt[0], 
-                    pt[1] - plane_pt[1], 
-                    pt[2] - plane_pt[2]]
-                vec = Vector(*v)
-                u = vec.unitized()
-                dot_product = u.dot(normal_u)
-                if dot_product <= 1e-2:
-                    interface_pts.append(pt)
-                    
-            sorted_interface_pts = _sort_points(interface_pts, cut_plane_side)
-            print(sorted_interface_pts)
-            # 4. Return sorted data
-            if data_type == "polyline":
-                # Append the first point to the end to cleanly close the loop
-                return Polyline(sorted_interface_pts + [sorted_interface_pts[0]])
-            
-            elif data_type == "points":
-                return tuple(sorted_interface_pts)
-            return 
-        return _get_interface_boundary_by_beam(main_beam_b, data_type="polyline"), _get_interface_boundary_by_beam(main_beam_a, data_type="polyline")
-
-class TBMJ(BaseBirdsmouthWrapper):
-    """A wrapper class for TBirdsmouthJoint."""
-
-    def __init__(self, joint):
-        super().__init__(joint)
-
-
-class KBMJ(BaseBirdsmouthWrapper):
-    """A sub-wrapper class splitting a KBirdsmouthJoint into two joint classes."""
-
-    def __init__(self, joint, main_id):
-        if main_id not in (0, 1):
-            raise ValueError("main_id should be either 0 or 1.")
-        self.main_id = main_id
-        self.main_beam = joint.elements[main_id + 1]
-        self.cross_beam = joint.elements[0]
+        p0 = intersection_plane_plane_plane(ref_side, cut_plane_side, top_side)
+        p1 = intersection_plane_plane_plane(opp_side, cut_plane_side, top_side)
+        p2 = intersection_plane_plane_plane(bottom_side, ref_side, cut_plane_side)
+        p3 = intersection_plane_plane_plane(bottom_side, opp_side, cut_plane_side)
         
-        if main_id == 0:
-            self.main_beam_ref_side_index = joint.main_ref_side_index
-        else:
-            self.main_beam_ref_side_index = joint.main_ref_side_index#(joint.main_ref_side_index + 2) % 4
-        self.cross_beam_ref_side_index = joint.cross_ref_side_indices[main_id][0]
+        raw_points = [p0, p1, p2, p3]
+        points = [Point(*p) for p in raw_points]
+        sorted_points = _sort_points(points, cut_plane_side)
+        poly = Polyline(sorted_points + [sorted_points[0]])
+        
+        # Intersect cross section with cuting side plane 
+        int_pts = intersection_polyline_plane(poly, cut_plane_top)
 
-        super().__init__(joint)
+        # Get a list of all the points 
+        all_pts = sorted_points
+        for pt in int_pts:
+            all_pts.append(Point(*pt))
+        
+        # Get interface points
+        plane_pt = cut_plane_top.point
+        normal = Vector(*cut_plane_top.normal)
+        normal_u = normal.unitized()
+        interface_pts = []
+        
+        for pt in all_pts:
+            v = Vector(*[pt[0] - plane_pt[0], pt[1] - plane_pt[1], pt[2] - plane_pt[2]])
+            u = v.unitized()
+            dot_product = u.dot(normal_u)
+            if dot_product <= 1e-2:
+                interface_pts.append(pt)
+                
+        sorted_interface_pts = _sort_points(interface_pts, cut_plane_side)
+        
+        # 4. Return sorted data
+        if data_type == "polyline":
+            # Append the first point to the end to cleanly close the loop
+            return Polyline(sorted_interface_pts + [sorted_interface_pts[0]])
+        
+        elif data_type == "points":
+            return tuple(sorted_interface_pts)
+        return 
     
-    def find_screw_boundaries(self, orientation="perp_riser", flip=False, data_type="points"):
-        pass
+    def _get_bisector_normal(self):
+        return (self.main_ref_frame.normal - self.cross_ref_frame.normal).unitized()
+
+    def _calculate_screw_directions(self):
+        """Create a dictionary of candidate screw direction vectors.
+
+        Keys:
+            - 'bisector' : bisector direction (always attempted)
+            - 'perp_vertical_double' : perpendicular to vertical double cut (if available)
+            - 'vertical' : vertical in z direction (always attempted)
+        """
+        # NOTE: screw directions towards joint 'location'
+        screw_directions = {}
+        
+        # 1) Bisector direction
+        try:
+            bis = self._get_bisector_normal()
+        except Exception:
+            bis = None
+        if bis is not None:
+            screw_directions["bisector"] = bis.unitized()
+
+        # 2) Perpendicular to the vertical-double-cut
+        try:
+            pv = self._get_perpendicular_vertical_double_normal()
+        except Exception:
+            pv = None
+        if pv is not None:
+            screw_directions["perp_vertical_double"] = pv.unitized()
+
+        # 3) Vertical
+        screw_directions["vertical"] = -Vector(0, 0, 1)
+
+        return screw_directions
+
+    def _get_perpendicular_main_normal(self):
+        """Find normal to main_ref_side, used for calculating entry frame for perp_vertical_double"""
+        return None
+
+    def _calculate_entry_exit_frames(self):
+        """Calculate entry and exit frames for screw projection based on screw direction candidates."""
+        screw_directions = self._calculate_screw_directions()
+
+        return self.main_ref_frame, self.cross_ref_frame
+
+    def find_screw_boundaries(self, flip=False, data_type="points"):
+        """
+        Find the entry and exit boundaries for all candidate screw directions.
+        
+        Returns a dict mapping a direction-key (sting) to a tuple (pts_entry, pts_exit).
+        Each pts_* is a list of minimum 3 corner Points (entry polygon and exit polygon).
+
+        Parameters
+        ----------
+        flip : bool
+            Whether to flip the screw direction.
+        data_type : str
+            "points", "brep", "polylines".       
+        """
+        # NOTE: only works with 'crossed' entry type. all potential orientation types are calculated
+
+        screw_directions = self._calculate_screw_directions()
+        entry_frame, exit_frame = self._calculate_entry_exit_frames()
+
+        boundaries = {}
+        for key, dire in screw_directions.items():
+            # 1. Find projection of a reference point to entry and exit frames along the screw direction
+            # 2. Construct boundary Polygons based on the 'projected' points and the beam widths
+            # 3. Store the boundaries in the dictionary with the same keys as screw_directions
+            pass
+
+        if data_type == "points":
+            return boundaries
+
+        # Placeholder: other data_type handling can be implemented later.
+        raise NotImplementedError("find_screw_boundaries currently only supports data_type='points'.")
