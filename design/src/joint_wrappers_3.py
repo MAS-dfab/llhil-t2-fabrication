@@ -131,6 +131,9 @@ class BaseWrapper(object):
         elif self.entry_type == "crossed":
             return -main_dire.unitized()
         
+        elif self.entry_type == "krossed":
+            return # Something
+        
         else:
             raise ValueError("Invalid entry type.")
 
@@ -350,9 +353,6 @@ class BaseBirdsmouthWrapper(BaseWrapper):
         )
         return angle <= 90
 
-    def determine_entry_type(self):
-        return "crossed"  # Must be crossed entry, or third entry type?
-
 
 class TBMJ(BaseBirdsmouthWrapper):
     """A wrapper class for TBirdsmouthJoint."""
@@ -382,6 +382,9 @@ class KBMJ(BaseBirdsmouthWrapper):
 
         self.cross_beam_ref_side_index = joint.cross_ref_side_indices[main_id][1]   # NOTE: cross_beam_ref_side pointing 'inwards' where its 'normal' is orientated towards the main_ref_side centerline
         super().__init__(joint)
+
+    def determine_entry_type(self):
+        return "krossed"
     
     def _get_double_cut_planes(self):
         beam_features = self.main_beam.features
