@@ -17,8 +17,8 @@ HOME_EXT_R11    = [17985.0, -2117.46, -4880.92, 0.0, 0.0, 0.0]
 SPEED_FREE       = 500
 SPEED_HOLD       = 200
 SPEED_APPROACH_AT = 300
-SPEED_PICK       = 20
-SPEED_PLACE      = 20
+SPEED_PICK       = 10
+SPEED_PLACE      = 10
 
 
 # ── ROS ─────────────────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ def soft_move_on(abb12):
         rrc.CustomInstruction(
             "r_A083_ActSoftMove",
             feedback_level=rrc.FeedbackLevel.DONE,
-            float_values=[20, 80],
+            float_values=[40, 90],
             string_values=["XYRZ"],
         ),
         timeout=5.0,
@@ -90,6 +90,10 @@ def _ext_r12_from_last_point(trajectory):
     _, ext_r12, _ = _split_point(trajectory.points[-1])
     return ext_r12
 
+def _ext_r12_from_first_point(trajectory):
+    """Return R12 external axes [EA_X(mm), EA_Y(mm), EA_Z(mm), 0,0,0] from the first trajectory point."""
+    _, ext_r12, _ = _split_point(trajectory.points[0])
+    return ext_r12
 
 def _ext_r11_from_last_point(trajectory):
     """Return R11 external axes [EA_X(mm), HOME_Y, HOME_Z, 0,0,0] from the last trajectory point."""
@@ -145,7 +149,7 @@ def execute_sequence(abb11, abb12, record):
     # 1. Approach to pick
     print("\n[1/7] approach_to_pick")
     execute_trajectory(abb11, abb12, steps["approach_to_pick"], SPEED_FREE)
-    time.sleep(1.5)  # small pause to ensure we're settled at the end of the approach trajectory
+    # small pause to ensure we're settled at the end of the approach trajectory
 
     # Corrective Cartesian move to the exact approach frame before descending
     print("  Corrective move to approach frame...")
@@ -156,8 +160,7 @@ def execute_sequence(abb11, abb12, record):
         if abb11.send_and_wait(rrc.GetJoints())[1][0] - app_ext_r11[0] > 2:  # sanity check to avoid large unexpected moves
             abb11.send_and_wait(rrc.MoveToJoints(HOME_JOINTS_R11, app_ext_r11, SPEED_HOLD, rrc.Zone.FINE), timeout=30.0)
         
-        # abb12.send_and_wait(rrc.MoveToJoints(abb12.send_and_wait(rrc.GetJoints())[0], app_ext_r12, SPEED_HOLD, rrc.Zone.FINE), timeout=60.0)
-        time.sleep(1.5)  # small pause to ensure we're settled before the next move
+        # small pause to ensure we're settled before the next move
         print("  Moving linearly to approach frame...", approach_frame)
         abb12.send_and_wait(rrc.MoveToFrame(approach_frame, SPEED_HOLD, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=30.0)
 
@@ -166,7 +169,7 @@ def execute_sequence(abb11, abb12, record):
 
     # 2. Pick
     print("\n[2/7] pick")
-    time.sleep(0.5)  # small pause to ensure we're settled before the next move
+    time.sleep(1.2)  # small pause to ensure we're settled before the next move
     soft_move_on(abb12)
     abb12.send_and_wait(rrc.MoveToFrame(pickup_frame, SPEED_PICK, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=30.0)
     soft_move_off(abb12)
@@ -208,7 +211,7 @@ def execute_sequence(abb11, abb12, record):
     if place_retract_frame is not None:
         print("  MoveL to place retract frame")
         # abb12.send_and_wait(rrc.MoveToFrame(place_retract_frame, SPEED_HOLD, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=60.0)
-        retract_ext_r12 = _ext_r12_from_last_point(steps["retract_from_AT"])
+        retract_ext_r12 = _ext_r12_from_first_point(steps["retract_from_AT"])
         abb12.send_and_wait(rrc.MoveToRobtarget(place_retract_frame, retract_ext_r12, SPEED_PLACE, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR))
     else:
         print("  WARNING: no place_retract_frame in record, falling back to joint trajectory.")

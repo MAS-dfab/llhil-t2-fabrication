@@ -99,8 +99,8 @@ class TimberProcessPlanner(BaseRobotPlanner):
         configuration = self.robot_cell.zero_configuration(group=self.group)
         self.robot_cell.configuration_to_full_configuration(configuration)
         configuration = self.state.robot_configuration.copy()
-        configuration["bridge1_joint_EA_X"] = 17
-        configuration["robot12_joint_EA_Y"] = -7
+        configuration["bridge1_joint_EA_X"] = 16.0
+        configuration["robot12_joint_EA_Y"] = -9.25
         configuration["robot12_joint_EA_Z"] = -4
         configuration["robot12_joint_1"] = math.radians(0)
         configuration["robot12_joint_2"] = math.radians(-55)
@@ -253,7 +253,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 1. Approach pickpoint
         print("getting element approach trajectory to pickpoint")
-        approach_frame = self.get_approach_frame(element_pickup_frame, approach_distance=0.1)
+        approach_frame = self.get_approach_frame(element_pickup_frame, approach_distance=0.075)
         self._last_approach_frame = approach_frame
         approach_config = self.get_constrained_ik_from_frame(approach_frame)
         trajectories.append(self.get_motion_to_configuration(approach_config))
@@ -293,7 +293,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
 
         # 6. Place at AT
         print("getting element place trajectory at AT")
-        gantry_constraints = self.get_gantry_constraints()
+        gantry_constraints = self.global_constraints
         # Overriding default options to disable collision avoidance for the final placement
         trajectories.append(self.get_cartesian_trajectory([element_at_frame], avoid_collisions=False, path_constraints=gantry_constraints))
         # trajectories.append(self.get_motion_to_frame(element_at_frame, path_constraints=gantry_constraints))
@@ -412,24 +412,4 @@ class TimberProcessPlanner(BaseRobotPlanner):
         return path_constraints
 
     def get_end_configuration(self, element):
-        next_robotb_location = element.attributes.get("next_robotb_location", None)
-        if next_robotb_location is not None:
-            outline = element.attributes.get("plate_outline")
-            offset_pts = outline.divide_by_length(0.2, strict=False)
-            # offset_pts = offset_polyline(outline, 0.5)
-            dist = 99999999
-            closest_pt = None
-            for pt in offset_pts:
-                d = next_robotb_location.distance_to_point(Point(*pt))
-                if d < dist:
-                    dist = d
-                    closest_pt = Point(*pt)
-            safe_config_frame = self.get_fk_from_config(self.safe_configuration)
-            diff_X = closest_pt.x - safe_config_frame.point.x
-            diff_Y = closest_pt.y - safe_config_frame.point.y
-            end_config = self.safe_configuration.copy()
-            end_config["bridge1_joint_EA_X"] += diff_X
-            end_config["robot12_joint_EA_Y"] -= diff_Y
-            return end_config            
-        else:
-            return self.safe_configuration
+        return self.safe_configuration

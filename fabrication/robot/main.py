@@ -65,7 +65,7 @@ def main():
     # 1. LOAD DATA
     # ---------------------------------------------------------
     print("Loading models...")
-    filepath_model = "fabrication\\data\\timber_models\\260602_v2_sequenced_timber_model.json"
+    filepath_model = "fabrication\\data\\timber_models\\260603_v1_sequenced_timber_model.json"
 
     if not os.path.exists(filepath_model):
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
@@ -112,6 +112,7 @@ def main():
 
     last_sequence = {"record": None}
     highlight_state = {"mesh": None}
+    compute_state = {"done_once": False}  # True after first compute; triggers re-fetch on recompute
 
     # UI: text label tracks the current step state
     id_label = TextLabel(
@@ -159,11 +160,13 @@ def main():
         _set_label("fetching…", _COL_WAITING)
         try:
             trajectory_planner._fetched_pickup_frame = fetch_pickup_frame()
+            compute_state["done_once"] = False
             _set_label("ready ✓", _COL_FETCHED)
             print("QR: pickup frame ready for seq_i={}. Press Compute.".format(trajectory_planner.seq_i))
         except RuntimeError as e:
             from compas.geometry import Frame, Point, Vector
             trajectory_planner._fetched_pickup_frame = Frame(point=Point(x=16040, y=5076, z=1009), xaxis=Vector(x=-1.000, y=-0.000, z=-0.000), yaxis=Vector(x=0.000, y=1.000, z=0.000)).rotated(math.radians(90), Vector(0,0,1), Point(x=16040, y=7076, z=1009))
+            compute_state["done_once"] = False
             _set_label("retry — fetch failed", _COL_WAITING)
             print("QR: fetch FAILED - {}".format(e))
         
@@ -276,9 +279,23 @@ def main():
 
     # --- Button: Compute Trajectories ---
     def _on_compute():
-        # if os.path.exists(EXPORT_PATH):
-        #     record = json_load(EXPORT_PATH)
-        #     trajectory_planner.update_state_from_trajectory(record["steps"]["return_to_safe"])
+        # Re-fetch only when recomputing (second press onwards); first compute uses QR frame
+        if compute_state["done_once"]:
+            _set_label("re-fetching…", _COL_WAITING)
+            try:
+                trajectory_planner._fetched_pickup_frame = fetch_pickup_frame()
+                _set_label("ready ✓ — computing…", _COL_FETCHED)
+            except RuntimeError as e:
+                _set_label("error — fetch failed", _COL_WAITING)
+                print("Compute: re-fetch FAILED - {}".format(e))
+                return
+        else:
+            if trajectory_planner._fetched_pickup_frame is None:
+                _set_label("error — no frame (rescan QR)", _COL_WAITING)
+                print("ERROR: no pickup frame from QR scan. Rescan QR first.")
+                return
+            _set_label("computing…", _COL_FETCHED)
+
         beam = in_seq_beams[trajectory_planner.seq_i]
         next_robotb = next((b for b in in_seq_beams[trajectory_planner.seq_i + 1:] if b.attributes.get("assembly_method") == "robot"), None)
         next_robotb_location = next_robotb.attributes.get("grasp_frame").point if next_robotb else None
@@ -326,6 +343,7 @@ def main():
         print("\nCombining trajectories...")
         if not valid:
             print("ERROR: all {} step(s) failed. Cannot combine.".format(len(failed)))
+            _set_label("error — not computed", _COL_WAITING)
             return
         if failed:
             print("WARNING: step(s) {} failed, combining {} of {} steps.".format(
@@ -362,7 +380,12 @@ def main():
         if hasattr(player, "_scrub_callback"):
             player._scrub_callback([0])
 
-        _set_label("computed ✓", _COL_COMPUTED)
+        compute_state["done_once"] = True  # next press will re-fetch
+
+        if failed:
+            _set_label("error — partial ({}/{} steps)".format(len(valid), len(element_trajectories)), _COL_WAITING)
+        else:
+            _set_label("computed ✓", _COL_COMPUTED)
         print("Done. Use the timeline to preview the trajectory.")
 
     # --- Button: Export Trajectory ---
