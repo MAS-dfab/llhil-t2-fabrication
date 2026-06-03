@@ -49,6 +49,17 @@ class ScrewSolver:
         """Get the screw specification based on the joint's entry type."""
         return self._spec_cache[joint.entry_type]
 
+    @staticmethod
+    def convert_to_acute_angle(angle, deg=False):
+        """Convert the angle to an acute angle."""
+        if deg:
+            angle = math.radians(angle)
+        if angle < 0 or angle > math.pi:
+            raise ValueError("Angle should be between 0 and 180 degrees.")
+        if angle > math.pi / 2:
+            return math.pi - angle
+        return angle
+    
     def shrink_aligned_entry_corners(self, joint, angle):
         """Shrink the entry face corners for aligned entry type with the constraint of screw penetration."""
         if joint.entry_type != "aligned":
@@ -56,19 +67,26 @@ class ScrewSolver:
         spec = self._spec_cache["aligned"]
 
         dire = joint.calculate_screw_direction(angle=angle)
-        angle_dire_cross = angle_vectors(dire, joint.cross_beam.centerline.direction)
-        if angle_dire_cross > math.pi / 2:
-            angle_dire_cross = math.pi - angle_dire_cross
-        dist_perp_to_cross = math.sin(angle_dire_cross) * spec.penetration
-        amp = dist_perp_to_cross / math.sin(math.radians(joint.acute_angle))
 
+        # 1. Offset the corners where the screws will start to be placed
+        angle_dire_cross = angle_vectors(dire, joint.cross_beam.centerline.direction)
+        angle_dire_cross = self.convert_to_acute_angle(angle_dire_cross)
+        dist_perp_to_cross = math.sin(angle_dire_cross) * spec.penetration
+        amp_start = dist_perp_to_cross / math.sin(math.radians(joint.acute_angle))
+
+        # 2. Offset the corners where the screws will end to be placed
+        angle_dire_main = angle_vectors(dire, joint.main_beam.centerline.direction)
+        angle_dire_main = self.convert_to_acute_angle(angle_dire_main)
+        amp_end = spec.SCREW_DIAMETER / math.sin(angle_dire_main)  # The screw will attach the edge if divided by 2.0
+        
         entry_corners, _ = joint.find_screw_boundaries(angle=angle, data_type="points")
-        dire = (entry_corners[1] - entry_corners[0]).unitized()
-        offset_vec = dire * amp
+        offset_dire = (entry_corners[1] - entry_corners[0]).unitized()
 
         for i, corner in enumerate(entry_corners):
             if i in (0, 3):
-                entry_corners[i] = corner + offset_vec
+                entry_corners[i] = corner + offset_dire * amp_start
+            else:
+                entry_corners[i] = corner - offset_dire * amp_end
         return entry_corners
 
     def calculate_screw_capacity(self, joint, angle=None):
@@ -83,11 +101,10 @@ class ScrewSolver:
             dire = joint.calculate_screw_direction(angle=angle)
             main_dire = joint.main_beam.centerline.direction
             acute_angle = angle_vectors(dire, main_dire)
-            if acute_angle > math.pi / 2:
-                acute_angle = math.pi - acute_angle
+            acute_angle = self.convert_to_acute_angle(acute_angle)
 
             l_spacing = spec.a1 / math.sin(acute_angle)
-            max_l_num = len_l // l_spacing
+            max_l_num = len_l // l_spacing + 1
 
         elif joint.entry_type == "crossed":
             spec = self._spec_cache["crossed"]
@@ -174,7 +191,7 @@ class ScrewSolver:
         # 4. Populate entry points
         pts_entry = self.shrink_aligned_entry_corners(joint, angle=angle)
         l = pts_entry[0].distance_to_point(pts_entry[1])
-        l_step = l / (max_l_num)
+        l_step = l / (max_l_num - 1)
 
         vec_w = (pts_entry[3] - pts_entry[0]).unitized()
         vec_l = (pts_entry[1] - pts_entry[0]).unitized()
@@ -531,6 +548,7 @@ def apply_screws(
             
         if joint.entry_type == "aligned":
             restrict = False if joint.__class__ == TSJ else True
+            # restrict = True  # temp. restrict for testing
             entry_point_grid = solver.populate_aligned_entry_points(joint, angle=screw_angle, amount=screw_amount)
             screw_line_grid = solver.populate_aligned_screw_lines(joint, angle=screw_angle, point_grid=entry_point_grid, restrict=restrict)
             
