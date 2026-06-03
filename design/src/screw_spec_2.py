@@ -24,7 +24,7 @@ class ScrewSpecification:
     ANGLE_THRESHOLD = 45  # Originally 50 degrees
     DRILLING_DIAMETER = 0.004
     SCREW_DIAMETER = 0.0065
-    SCREW_LENGTHS = [0.10, 0.13, 0.16, 0.19]  # Not confirmed yet
+    SCREW_LENGTHS = [0.130, 0.150, 0.190, 0.215]  # Not confirmed yet
     BACK_THRESHOLD = 0.000  # Cound be zero
 
     def __init__(self, entry_type=None, spec_model="WT-plus-6.5"):
@@ -37,13 +37,13 @@ class ScrewSpecification:
 
         # Minimum parameters
         if entry_type == "aligned":
-            self.a1 = 0.041  # > 40mm
+            self.a1 = 0.040  # Originally > 40mm
             self.a1_cg = 0.065
             self.a2 = 0.050
             self.a2_cg = 0.025
             self.a2_red = None
 
-            self.penetration = 0.040  # Temporary value, should be 0.060
+            self.penetration = 0.060  # Temporary value, should be 0.060
             self.side_angle = None
             
         elif entry_type == "crossed":
