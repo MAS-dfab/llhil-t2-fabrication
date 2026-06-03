@@ -4,7 +4,7 @@ from compas.tolerance import TOL
 from compas.geometry import (
     Vector, Plane, Polyline, Point, Frame, NurbsCurve, Brep,
     angle_vectors, cross_vectors, dot_vectors,
-    intersection_plane_plane_plane,
+    intersection_plane_plane_plane, intersection_polyline_plane
 )
 import math
 
@@ -370,6 +370,7 @@ class KBMJ(BaseBirdsmouthWrapper):
         self.main_id = main_id
         self.main_beam = joint.elements[main_id + 1]
         self.cross_beam = joint.elements[0]
+        self.cuts = joint._get_cutting_planes()[main_id]
         
         if is_same_xy_sign(self.main_beam.centerline.direction):
             self.main_beam_ref_side_index = joint.main_ref_side_index + 3           # NOTE: main_ref_side pointing 'inwards' where its 'normal' is orientated towards the cross_beam centerline
@@ -388,6 +389,91 @@ class KBMJ(BaseBirdsmouthWrapper):
             return double.planes_from_params_and_beam(self.main_beam) # returns a list of two planes
         return None
 
+    def get_interface_boundaries(self, data_type="polyline"):
+        """
+        Find the interface boundaries for main beam and cross beam.
+        
+        Returns a polyline.
+
+        Parameters
+        ----------
+        data_type : str
+            "points", "polylines".       
+        """
+        def _sort_points(points, plane):
+            # Find the center mass of the 4 points
+            cx = sum(p.x for p in points) / 4.0
+            cy = sum(p.y for p in points) / 4.0
+            cz = sum(p.z for p in points) / 4.0
+            
+            normal = plane.normal
+            nx, ny, nz = abs(normal[0]), abs(normal[1]), abs(normal[2])
+            
+            # Project points to the local 2D space of the cut_plane to calculate angles accurately
+            def get_angle_fallback(point):
+                # Project onto the flat plane that matches the highest normal direction
+                if nz >= nx and nz >= ny:
+                    return math.atan2(point.y - cy, point.x - cx)
+                elif ny >= nx and ny >= nz:
+                    return math.atan2(point.z - cz, point.x - cx)
+                else:
+                    return math.atan2(point.z - cz, point.y - cy)
+
+            # Sort the points chronologically around the center (clockwise/counter-clockwise)
+            sorted_points = sorted(points, key=get_angle_fallback)
+            return sorted_points
+
+        # Extract all cutting planes
+        cut_plane_side = Plane.from_frame(self.cuts[1])
+        cut_plane_top = Plane.from_frame(self.cuts[0])
+
+        bottom_side = Plane.from_frame(self.main_beam.ref_sides[0])
+        top_side = Plane.from_frame(self.main_beam.ref_sides[2])
+        ref_side = Plane.from_frame(self.main_beam.ref_frame)
+        opp_side = Plane.from_frame(self.main_beam.opp_side(self.main_ref_side_index))
+
+        p0 = intersection_plane_plane_plane(ref_side, cut_plane_side, top_side)
+        p1 = intersection_plane_plane_plane(opp_side, cut_plane_side, top_side)
+        p2 = intersection_plane_plane_plane(bottom_side, ref_side, cut_plane_side)
+        p3 = intersection_plane_plane_plane(bottom_side, opp_side, cut_plane_side)
+        
+        raw_points = [p0, p1, p2, p3]
+        points = [Point(*p) for p in raw_points]
+        sorted_points = _sort_points(points, cut_plane_side)
+        poly = Polyline(sorted_points + [sorted_points[0]])
+        
+        # Intersect cross section with cuting side plane 
+        int_pts = intersection_polyline_plane(poly, cut_plane_top)
+
+        # Get a list of all the points 
+        all_pts = sorted_points
+        for pt in int_pts:
+            all_pts.append(Point(*pt))
+        
+        # Get interface points
+        plane_pt = cut_plane_top.point
+        normal = Vector(*cut_plane_top.normal)
+        normal_u = normal.unitized()
+        interface_pts = []
+        
+        for pt in all_pts:
+            v = Vector(*[pt[0] - plane_pt[0], pt[1] - plane_pt[1], pt[2] - plane_pt[2]])
+            u = v.unitized()
+            dot_product = u.dot(normal_u)
+            if dot_product <= 1e-2:
+                interface_pts.append(pt)
+                
+        sorted_interface_pts = _sort_points(interface_pts, cut_plane_side)
+        
+        # 4. Return sorted data
+        if data_type == "polyline":
+            # Append the first point to the end to cleanly close the loop
+            return Polyline(sorted_interface_pts + [sorted_interface_pts[0]])
+        
+        elif data_type == "points":
+            return tuple(sorted_interface_pts)
+        return 
+    
     def _get_bisector_normal(self):
         return (self.main_ref_frame.normal - self.cross_ref_frame.normal).unitized()
 
