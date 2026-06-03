@@ -370,7 +370,8 @@ class KBMJ(BaseBirdsmouthWrapper):
         self.main_id = main_id
         self.main_beam = joint.elements[main_id + 1]
         self.cross_beam = joint.elements[0]
-        self.cuts = joint._get_cutting_planes()[main_id]
+        self.cutting_planes = joint._get_cutting_planes()[main_id]
+        self.miter_plane = joint._get_miter_planes()[main_id]
         
         if is_same_xy_sign(self.main_beam.centerline.direction):
             self.main_beam_ref_side_index = joint.main_ref_side_index + 3           # NOTE: main_ref_side pointing 'inwards' where its 'normal' is orientated towards the cross_beam centerline
@@ -387,11 +388,11 @@ class KBMJ(BaseBirdsmouthWrapper):
         double = next((f for f in beam_features if type(f).__name__ == "DoubleCut"), None)
         if double is not None:
             return double.planes_from_params_and_beam(self.main_beam) # returns a list of two planes
-        return None
+        return None                                                                 # NOTE: we dont need this since we have this our class as self
 
-    def get_interface_boundaries(self, data_type="polyline"):
+    def get_interface_boundarie_vertical(self, data_type="polyline"):
         """
-        Find the interface boundaries for main beam and cross beam.
+        Find the vertical interface boundaries for main beam and cross beam.
         
         Returns a polyline.
 
@@ -424,8 +425,8 @@ class KBMJ(BaseBirdsmouthWrapper):
             return sorted_points
 
         # Extract all cutting planes
-        cut_plane_side = Plane.from_frame(self.cuts[1])
-        cut_plane_top = Plane.from_frame(self.cuts[0])
+        cut_plane_side = Plane.from_frame(self.cutting_planes[1])
+        cut_plane_top = Plane.from_frame(self.cutting_planes[0])
 
         bottom_side = Plane.from_frame(self.main_beam.ref_sides[0])
         top_side = Plane.from_frame(self.main_beam.ref_sides[2])
@@ -465,7 +466,99 @@ class KBMJ(BaseBirdsmouthWrapper):
                 
         sorted_interface_pts = _sort_points(interface_pts, cut_plane_side)
         
-        # 4. Return sorted data
+        # Return sorted data
+        if data_type == "polyline":
+            # Append the first point to the end to cleanly close the loop
+            return Polyline(sorted_interface_pts + [sorted_interface_pts[0]])
+        
+        elif data_type == "points":
+            return tuple(sorted_interface_pts)
+        return 
+    
+    def get_interface_boundarie_horizontal(self, data_type="polyline"):
+        """
+        Find the horizontal interface boundaries for main beam and cross beam.
+        
+        Returns a polyline.
+
+        Parameters
+        ----------
+        data_type : str
+            "points", "polylines".       
+        """
+        def _sort_points(points, plane):
+            # Find the center mass of the 4 points
+            cx = sum(p.x for p in points) / len(points)
+            cy = sum(p.y for p in points) / len(points)
+            cz = sum(p.z for p in points) / len(points)
+            
+            normal = plane.normal
+            nx, ny, nz = abs(normal[0]), abs(normal[1]), abs(normal[2])
+            
+            # Project points to the local 2D space of the cut_plane to calculate angles accurately
+            def get_angle_fallback(point):
+                # Project onto the flat plane that matches the highest normal direction
+                if nz >= nx and nz >= ny:
+                    return math.atan2(point.y - cy, point.x - cx)
+                elif ny >= nx and ny >= nz:
+                    return math.atan2(point.z - cz, point.x - cx)
+                else:
+                    return math.atan2(point.z - cz, point.y - cy)
+
+            # Sort the points chronologically around the center (clockwise/counter-clockwise)
+            sorted_points = sorted(points, key=get_angle_fallback)
+            return sorted_points
+
+        # Extract all cutting planes
+        cut_plane_side = Plane.from_frame(self.cutting_planes[1])
+        cut_plane_top = Plane.from_frame(self.cutting_planes[0])
+
+        bottom_side = Plane.from_frame(self.main_beam.ref_sides[0])
+        top_side = Plane.from_frame(self.main_beam.ref_sides[2])
+        ref_side = Plane.from_frame(self.main_beam.ref_frame)
+        opp_side = Plane.from_frame(self.main_beam.opp_side(self.main_ref_side_index))
+
+        p0 = intersection_plane_plane_plane(ref_side, cut_plane_top, top_side)
+        p1 = intersection_plane_plane_plane(opp_side, cut_plane_top, top_side)
+        p2 = intersection_plane_plane_plane(bottom_side, ref_side, cut_plane_top)
+        p3 = intersection_plane_plane_plane(bottom_side, opp_side, cut_plane_top)
+        
+        raw_points = [p0, p1, p2, p3]
+        points = [Point(*p) for p in raw_points]
+        sorted_points = _sort_points(points, cut_plane_top)
+        poly = Polyline(sorted_points + [sorted_points[0]])
+        
+        # Intersect cross section with cuting side plane 
+        int_pts = [*intersection_polyline_plane(poly, cut_plane_side), *intersection_polyline_plane(poly, self.miter_plane)]
+        # Get a list of all the points 
+        all_pts = sorted_points
+        for pt in int_pts:
+            all_pts.append(Point(*pt))
+        
+        # Get interface points
+        plane_pt = cut_plane_side.point
+        miter_plane_pt = self.miter_plane.point
+        normal = Vector(*cut_plane_side.normal)
+        normal_miter = Vector(*self.miter_plane.normal)
+        normal_u = normal.unitized()
+        normal_miter_u = normal_miter.unitized()
+        interface_pts = []
+        
+        for pt in all_pts:
+            v = Vector(*[pt[0] - plane_pt[0], pt[1] - plane_pt[1], pt[2] - plane_pt[2]])
+            u = v.unitized()
+            
+            v_miter = Vector(*[pt[0] - miter_plane_pt[0], pt[1] - miter_plane_pt[1], pt[2] - miter_plane_pt[2]])
+            u_miter = v_miter.unitized()
+            
+            dot_product = u.dot(normal_u)
+            dot_product_miter = u_miter.dot(normal_miter_u)
+            if dot_product <= 1e-2 and dot_product_miter <= 1e-2:
+                interface_pts.append(pt)
+        
+        sorted_interface_pts = _sort_points(interface_pts, cut_plane_top)
+        
+        # Return sorted data
         if data_type == "polyline":
             # Append the first point to the end to cleanly close the loop
             return Polyline(sorted_interface_pts + [sorted_interface_pts[0]])
@@ -516,7 +609,13 @@ class KBMJ(BaseBirdsmouthWrapper):
     def _calculate_entry_exit_frames(self):
         """Calculate entry and exit frames for screw projection based on screw direction candidates."""
         screw_directions = self._calculate_screw_directions()
-
+        pts_to_project = self.get_interface_boundarie_vertical(data_type="points")
+        
+        # projected_pts = []
+        # for p in pts_to_project:
+        #     p_point = project_point_to_frame_along(p, screw_directions, self.main_ref_frame, tol=1e-6)
+        #     projected_pts.append(p_point)
+        return self.main_ref_frame
         return self.main_ref_frame, self.cross_ref_frame
 
     def find_screw_boundaries(self, flip=False, data_type="points"):
