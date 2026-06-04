@@ -2,7 +2,7 @@
 from screw_spec_2 import ScrewSpecification  # NOTE: temp.
 from compas.tolerance import TOL
 from compas.geometry import (
-    Vector, Plane, Polyline, Point, Frame, NurbsCurve, Brep,
+    Vector, Plane, Polyline, Point, Frame, NurbsCurve, Brep, Rotation, Transformation,
     angle_vectors, cross_vectors, dot_vectors,
     intersection_plane_plane_plane, intersection_polyline_plane
 )
@@ -34,6 +34,12 @@ def is_same_xy_sign(direction):
     """Return True if direction.x and direction.y have the same sign (or zero)."""
     x, y = direction.x, direction.y
     return (x >= 0 and y >= 0) or (x <= 0 and y <= 0)
+
+def find_average_point(points):
+    cx = sum(p.x for p in points) / len(points)
+    cy = sum(p.y for p in points) / len(points)
+    cz = sum(p.z for p in points) / len(points)
+    return Point(cx, cy, cz)
 
 # -----------------------------------
 # Base joint wrapper (Parent)
@@ -384,10 +390,6 @@ class KBMJ(BaseBirdsmouthWrapper):
         super().__init__(joint)
 
     def determine_entry_type(self):
-        return "krossed"
-    
-
-    def determine_entry_type(self):
         return "krossed"  # kool entry type exclusive for KBMJ
     
     def _get_double_cut_planes(self):
@@ -403,6 +405,11 @@ class KBMJ(BaseBirdsmouthWrapper):
         else:
             flipped_main_centerline = (-self.cross_beam.centerline.direction.x, -self.cross_beam.centerline.direction.y, self.cross_beam.centerline.direction.z)
             return (self.main_beam.centerline.direction + Vector(*flipped_main_centerline)).unitized()
+        
+    def _get_vertical_pivot(self):
+        x = self.main_beam.centerline.direction
+        y = cross_vectors(x, Vector(0,0,1))
+        return cross_vectors(x,y)
         
     def get_interface_boundary_vertical(self, data_type="polyline"):
         """
@@ -580,58 +587,81 @@ class KBMJ(BaseBirdsmouthWrapper):
         elif data_type == "points":
             return tuple(sorted_interface_pts)
         return 
-    
-    def calculate_screw_direction(self):
-        """Calculate the screw direction based on centerline directions."""
 
-        if self.entry_type == "krossed":
-            return self._get_bisector_of_centerlines()
-        
-        else:
-            raise ValueError("Invalid entry type. Its not kool")
-
-    def find_screw_boundaries(self, angle=None, flip=False, data_type="points"):
-        raise NotImplementedError(f"Subclass {self.__class__.__name__} must implement this method.")
-
-    def _calculate_screw_directions(self):
+    def _calculate_screw_directions(self, angle=20):
         """Create a dictionary of candidate screw direction vectors.
 
         Keys:
-            - 'bisector' : bisector direction
-            - 'tilted_vertical' : vertical in z direction
+            - 'sides' : sides direction
         """
         # NOTE: screw directions towards joint 'location'
+
+        if angle is not None:
+            if angle <= 0:
+                raise ValueError("Angle should be larger than 0.")
+            
         screw_directions = {}
         
-        # 1) Bisector direction
-        try:
-            bis = self._get_bisector_of_centerlines()
-        except Exception:
-            bis = None
-        if bis is not None:
-            screw_directions["bisector"] = bis.unitized()
+        # 1) Bisector direction a
+        if self.entry_type == "krossed":
+            centerline_dir = self.main_beam.centerline.direction
+            pivot = self._get_vertical_pivot()
+            rotation = Rotation.from_axis_and_angle(pivot, math.radians(20))
+            direction = centerline_dir.transformed(rotation).unitized()
 
-        # 3) Tilted Vertical
-        screw_directions["tilted_vertical"] = -Vector(0, 0, 1) # NOTE: to be tilted
+        if direction is not None:
+            screw_directions["sides"] = direction
+
+        screw_directions["top"] = None
+        screw_directions["bottom"] = None
 
         return screw_directions
 
-    def _get_perpendicular_main_normal(self):
-        """Find normal to main_ref_side, used for calculating entry frame for perp_vertical_double"""
-        return None
+    def _calculate_entry_exit_frames(self, data_type="polyline"):
+        """Return a dict mapping each candidate direction name to (entry_polyline, exit_polyline).
+        """
+        # get candidate screw directions as {name: Vector, ...}
 
-    def _calculate_entry_exit_frames(self):
-        """Calculate entry and exit frames for screw projection based on screw direction candidates."""
-        screw_direction_a = self.calculate_screw_direction()
+        directions = self._calculate_screw_directions(angle=20)
         pts_to_project = self.get_interface_boundary_vertical(data_type="points")
-        
-        projected_pts = []
-        for p in pts_to_project:
-            p_point = project_point_to_frame_along(p, screw_direction_a, self.main_beam.front_side(self.main_beam_ref_side_index), tol=1e-6)
-            projected_pts.append(p_point)
-        return Polyline(projected_pts + [projected_pts[0]])
 
-    def find_screw_boundaries(self, flip=False, data_type="points"):
+        if not pts_to_project:
+            return {}
+        entry_frame = self.main_beam.front_side(self.main_beam_ref_side_index)
+        exit_frame = self.cross_beam.opp_side(self.cross_beam_ref_side_index)
+        # exit_frame = Plane.from_frame(self.main_beam.front_side(self.main_beam_ref_side_index + 2))
+
+        result = {}
+        if data_type == "polyline":
+            for name, dire in directions.items():
+                if name == "sides":
+                    entry_pts = [project_point_to_frame_along(p, dire, entry_frame, tol=1e-6) for p in pts_to_project]
+                    exit_pts = [project_point_to_frame_along(p, -dire, exit_frame, tol=1e-6) for p in pts_to_project]
+
+                    # close polylines
+                    entry_poly = Polyline(entry_pts + [entry_pts[0]])
+                    exit_poly = Polyline(exit_pts + [exit_pts[0]])
+
+                    result[name] = (entry_poly, exit_poly)
+                elif name == "bottom":
+                    pass
+                elif name == "top":
+                    pass
+
+        elif data_type == "points":
+            for name, dire in directions.items():
+                entry_pts = tuple(project_point_to_frame_along(p, dire, entry_frame, tol=1e-6) for p in pts_to_project)
+                exit_pts = tuple(project_point_to_frame_along(p, -dire, exit_frame, tol=1e-6) for p in pts_to_project)
+
+                result[name] = (entry_pts, exit_pts)
+
+        return result
+    
+    @property
+    def vertical_exit_frame(self):
+        return self.cross_beam.opp_site(self.cross_beam_ref_side_index)
+
+    def find_screw_boundaries(self, angle=None, flip=False, data_type="points"):
         """
         Find the entry and exit boundaries for all candidate screw directions.
         
@@ -645,20 +675,19 @@ class KBMJ(BaseBirdsmouthWrapper):
         data_type : str
             "points", "brep", "polylines".       
         """
-        # NOTE: only works with 'crossed' entry type. all potential orientation types are calculated
+        # NOTE: only works with 'krossed' entry type. Other types are not kool.
 
-        screw_directions = self._calculate_screw_directions()
-        entry_frame, exit_frame = self._calculate_entry_exit_frames()
+        if angle is not None:
+            if angle <= 0:
+                raise ValueError("Angle should be larger than 0")
 
-        boundaries = {}
-        for key, dire in screw_directions.items():
-            # 1. Find projection of a reference point to entry and exit frames along the screw direction
-            # 2. Construct boundary Polygons based on the 'projected' points and the beam widths
-            # 3. Store the boundaries in the dictionary with the same keys as screw_directions
-            pass
-
+        if self.entry_type == "krossed":
+            pts_entry,pts_exit = self._calculate_entry_exit_frames(data_type="polyline") # NOTE: should return 2 lists of lists. 1 for 'front side' and one for 'opposite side'
+        else:
+            raise ValueError("Invalid entry type")
+        
         if data_type == "points":
-            return boundaries
+            return None
 
         # Placeholder: other data_type handling can be implemented later.
         raise NotImplementedError("find_screw_boundaries currently only supports data_type='points'.")
