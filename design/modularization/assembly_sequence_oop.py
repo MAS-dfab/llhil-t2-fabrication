@@ -220,11 +220,18 @@ class AssemblySolver:
             el_joint_priority = 99
             
             if matching_joints:
+                beam.attributes.update({
+                    "color": self.colors_map.get("robot"),
+                    "assembly_method": "robot",
+                    })
                 for t_joint in matching_joints:
                     joint_elements = [element for element in t_joint.elements if element != beam]
-                    
                     # Look back only at elements processed up to the current step
                     for beam_element in joint_elements:
+                        beam_element.attributes.update({
+                            "color": self.colors_map.get("robot"),
+                            "assembly_method": "robot",
+                            })
                         if beam_element not in attributes_rank.keys():
                             el_attrs = beam_element.attributes
                             el_level = el_attrs.get("level", 0)
@@ -245,7 +252,7 @@ class AssemblySolver:
                                 el_joint_priority = count + 2
                                 joint_priority = count + 1
                             count += 2
-                            # beam_element.attributes.update({"assembly_method": "robot"})
+
                             attributes_rank[beam_element] = (
                                 el_shoe_priority, 
                                 el_level, 
@@ -315,8 +322,18 @@ class AssemblySolver:
         for beam, joints in beam_to_joints.items():
             sorted_joints = sorted(joints, key=lambda j: j.location.z)[:2]  # Keep 2 lowest joints
             my_joint_planes = []
+            
+            # NOTE: If joint is target_joint_types = ["TButtJoint", "TBirdsmouthJoint", "KBirdsmouthJoint"]
+            # Step 1: calculate insertion planes for specific joint types and if beam is tertiary hierarchy
+            target_joint_types = ["TButtJoint", "TBirdsmouthJoint", "KBirdsmouthJoint"]
+            matching_joints = [j for j in joints if beam in j.elements if type(j).__name__ in target_joint_types]
+            if len(matching_joints) >= 2 and beam.attributes.get("hierarchy") == "tertiary":
+                print(True)
+                
+                 
 
             for joint in sorted_joints:
+                
                 planes = [f.planes_from_params_and_beam(beam) for f in joint.features if type(f).__name__ in ["DoubleCut", "BirdsMouth"]]
                 joint_planes = [p for sub_planes in planes for p in sub_planes]
 

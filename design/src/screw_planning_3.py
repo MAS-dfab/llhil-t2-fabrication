@@ -49,6 +49,17 @@ class ScrewSolver:
         """Get the screw specification based on the joint's entry type."""
         return self._spec_cache[joint.entry_type]
 
+    @staticmethod
+    def convert_to_acute_angle(angle, deg=False):
+        """Convert the angle to an acute angle."""
+        if deg:
+            angle = math.radians(angle)
+        if angle < 0 or angle > math.pi:
+            raise ValueError("Angle should be between 0 and 180 degrees.")
+        if angle > math.pi / 2:
+            return math.pi - angle
+        return angle
+    
     def shrink_aligned_entry_corners(self, joint, angle):
         """Shrink the entry face corners for aligned entry type with the constraint of screw penetration."""
         if joint.entry_type != "aligned":
@@ -56,19 +67,26 @@ class ScrewSolver:
         spec = self._spec_cache["aligned"]
 
         dire = joint.calculate_screw_direction(angle=angle)
-        angle_dire_cross = angle_vectors(dire, joint.cross_beam.centerline.direction)
-        if angle_dire_cross > math.pi / 2:
-            angle_dire_cross = math.pi - angle_dire_cross
-        dist_perp_to_cross = math.sin(angle_dire_cross) * spec.penetration
-        amp = dist_perp_to_cross / math.sin(math.radians(joint.acute_angle))
 
+        # 1. Offset the corners where the screws will start to be placed.
+        angle_dire_cross = angle_vectors(dire, joint.cross_beam.centerline.direction)
+        angle_dire_cross = self.convert_to_acute_angle(angle_dire_cross)
+        dist_perp_to_cross = math.sin(angle_dire_cross) * spec.penetration
+        amp_start = dist_perp_to_cross / math.sin(math.radians(joint.acute_angle))
+
+        # 2. Offset the corners where the screws will end to be placed.
+        angle_dire_main = angle_vectors(dire, joint.main_beam.centerline.direction)
+        angle_dire_main = self.convert_to_acute_angle(angle_dire_main)
+        amp_end = spec.SCREW_DIAMETER / math.sin(angle_dire_main)  # The screw will attach the edge if divided by 2.0
+        
         entry_corners, _ = joint.find_screw_boundaries(angle=angle, data_type="points")
-        dire = (entry_corners[1] - entry_corners[0]).unitized()
-        offset_vec = dire * amp
+        offset_dire = (entry_corners[1] - entry_corners[0]).unitized()
 
         for i, corner in enumerate(entry_corners):
             if i in (0, 3):
-                entry_corners[i] = corner + offset_vec
+                entry_corners[i] = corner + offset_dire * amp_start
+            else:
+                entry_corners[i] = corner - offset_dire * amp_end
         return entry_corners
 
     def calculate_screw_capacity(self, joint, angle=None):
@@ -83,11 +101,10 @@ class ScrewSolver:
             dire = joint.calculate_screw_direction(angle=angle)
             main_dire = joint.main_beam.centerline.direction
             acute_angle = angle_vectors(dire, main_dire)
-            if acute_angle > math.pi / 2:
-                acute_angle = math.pi - acute_angle
+            acute_angle = self.convert_to_acute_angle(acute_angle)
 
             l_spacing = spec.a1 / math.sin(acute_angle)
-            max_l_num = len_l // l_spacing
+            max_l_num = len_l // l_spacing + 1
 
         elif joint.entry_type == "crossed":
             spec = self._spec_cache["crossed"]
@@ -113,7 +130,7 @@ class ScrewSolver:
         
         distributions = []
         for w_num in range(max_width_number, 0, -1):
-            l_num = (amount + w_num - 1) // w_num  # ceiling division to get the minimum length number
+            l_num = (amount + w_num - 1) // w_num  # ceiling division
             distributions.append((w_num, l_num))
         return distributions
 
@@ -142,10 +159,13 @@ class ScrewSolver:
         if amount == 0:
             return [[]]
         
+        # 1. Calculate the maximum screw number in width and length
         max_w_num, max_l_num = self.calculate_screw_capacity(joint, angle=angle)
         if max_w_num > 3:
             raise NotImplementedError("Only support up to 3 screws in one row for now.")
 
+        # 2. If requested amount is not provided or is more than the maximum capacity, use the maximum capacity.
+        #    Otherwise, calculate the screw distributions by prioritizing the length direction to get more rows.
         if amount is None:
             pass
         elif amount <= max_w_num * max_l_num:
@@ -160,24 +180,25 @@ class ScrewSolver:
             )
             pass
         
-        if max_w_num == 3:
-            w_steps = (spec.a2_cg, spec.a2_cg, spec.a2_cg, spec.a2_cg)
-        elif max_w_num == 2:
-            w_steps = (spec.a2_cg, spec.a2, spec.a2_cg)
-        elif max_w_num == 1:
-            w_steps = (spec.a2_cg * 2, spec.a2_cg * 2)
+        # 3. Create the step distances in width
+        w_steps_map = {
+            1: (spec.a2_cg * 2,) * 2,
+            2: (spec.a2_cg, spec.a2, spec.a2_cg),
+            3: (spec.a2_cg,) * 4,
+        }
+        w_steps = w_steps_map[max_w_num]
 
+        # 4. Populate entry points
         pts_entry = self.shrink_aligned_entry_corners(joint, angle=angle)
         l = pts_entry[0].distance_to_point(pts_entry[1])
-        l_step = l / (max_l_num)
+        l_step = l / (max_l_num - 1)
 
         vec_w = (pts_entry[3] - pts_entry[0]).unitized()
         vec_l = (pts_entry[1] - pts_entry[0]).unitized()
 
-        # 2. Start at the first offset point
-        start = pts_entry[0] + (vec_w * w_steps[0])# + (vec_l * l_step)
+        # Start at the first offset point
+        start = pts_entry[0] + (vec_w * w_steps[0])
 
-        # 3. Create point grid
         point_grid = [[None for _ in range(max_w_num)] for _ in range(max_l_num)]
         for i in range(max_l_num):
             curr_w = 0.0
@@ -267,6 +288,9 @@ class ScrewSolver:
         spec = self._spec_cache["aligned"]
         screw_lengths = sorted(spec.SCREW_LENGTHS, reverse=True)
 
+        corners = joint.get_interface_boundary(data_type="points")
+        interface = Frame.from_points(corners[0], corners[1], corners[3])
+        
         # 2. Create exit frame and screw direction
         _, pts_exit = joint.find_screw_boundaries(angle=angle, data_type="points")
         exit_frame = Frame.from_points(pts_exit[0], pts_exit[1], pts_exit[3])
@@ -280,42 +304,59 @@ class ScrewSolver:
                 pt_exit = project_point_to_frame_along(pt_entry, dire, exit_frame)
 
                 if restrict:
+                    # 1. Check if sufficient penetration in exit beam is achieved
                     dist = pt_entry.distance_to_point(pt_exit)
-                    max_allowed_length = dist - spec.BACK_THRESHOLD
+                    dist_entry = project_point_to_frame_along(pt_entry, dire, interface).distance_to_point(pt_entry)
+                    dist_exit = dist - dist_entry
+                    if dist_exit < spec.penetration:
+                        self.rejected_logs.append({
+                            "joint_guid": joint.guid,
+                            "joint": joint,
+                            "reject_type": "A",  # temp.
+                            "entry_point": pt_entry,
+                            "exit_point": pt_exit,
+                            "penetrations": (dist_entry, dist_exit),
+                            "required_penetration": spec.penetration,
+                            "reason": "Insufficient penetration in exit beam."
+                        })
+                        continue
                     
+                    # 2. Check if the screw length is within the predefined screw lengths
+                    max_allowed_length = dist - spec.BACK_THRESHOLD
                     suitable_length = next((l for l in screw_lengths if l <= max_allowed_length), None)
                     if suitable_length is None:
                         self.rejected_logs.append({
                             "joint_guid": joint.guid,
                             "joint": joint,
+                            "reject_type": "B",  # temp.
                             "entry_point": pt_entry,
+                            "exit_point": pt_exit,
                             "distance_entry_to_exit": dist,
                             "max_allowed_length": max_allowed_length,
-                            "reason": "No suitable screw length."
+                            "reason": "Screw lengths are too long."
                         })
                         continue
                     pt_exit = pt_entry + dire * suitable_length
 
-                    # Check if sufficient penetration from interface to exit face is achieved
-                    corners = joint.get_interface_boundary(data_type="points")
-                    interface = Frame.from_points(corners[0], corners[1], corners[3])
-                    dist_in_entry = project_point_to_frame_along(pt_entry, dire, interface).distance_to_point(pt_entry)
-                    penetration_in_exit = suitable_length - dist_in_entry
-                    if penetration_in_exit < spec.penetration:
+                    # 3. Check if sufficient penetration from interface to the end of screw is achieved
+                    screw_in_exit = suitable_length - dist_entry
+                    if screw_in_exit < spec.penetration:
                         self.rejected_logs.append({
                             "joint_guid": joint.guid,
                             "joint": joint,
+                            "reject_type": "C",  # temp.
                             "entry_point": pt_entry,
                             "exit_point": pt_exit,
-                            "penetrations": (dist_in_entry, penetration_in_exit),
+                            "penetrations": (dist_entry, screw_in_exit),
                             "required_penetration": spec.penetration,
-                            "reason": "Insufficient penetration to exit face."
+                            "reason": "Screw lengths are too short in exit beam, but penetration is sufficient."
                         })
+                        # amp = line_grid[0][0].distance_to_point(line_grid[-1][0]) * (spec.penetration - screw_in_exit) / (suitable_length - screw_in_exit)
+
                         continue
 
                 line_row.append(Line(pt_entry, pt_exit))
             line_grid.append(line_row)
-        # TODO: check teh penetration from interface to exit face
         return line_grid
 
     def populate_crossed_screw_lines(self, joint, point_grid, restrict=True):
@@ -367,43 +408,84 @@ class ScrewSolver:
                         exit_frame = ef
                 
                 pt_exit = project_point_to_frame_along(pt, side_vec, exit_frame)
-                dist = pt.distance_to_point(pt_exit)
-                max_allowed_length = dist - spec.BACK_THRESHOLD
                 if restrict:
+                    # 1. Check if sufficient penetration in exit beam is achieved
+                    corners = joint.get_interface_boundary(data_type="points")
+                    interface = Frame.from_points(corners[0], corners[1], corners[3])
+
+                    dist = pt.distance_to_point(pt_exit)
+                    dist_entry = project_point_to_frame_along(pt, dire, interface).distance_to_point(pt)
+                    dist_exit = dist - dist_entry
+                    if dist_exit < spec.penetration:
+                        self.rejected_logs.append({
+                            "joint_guid": joint.guid,
+                            "joint": joint,
+                            "reject_type": "A",  # temp.
+                            "entry_point": pt,
+                            "exit_point": pt_exit,
+                            "penetrations": (dist_entry, dist_exit),
+                            "required_penetration": spec.penetration,
+                            "reason": "Insufficient penetration in exit beam."
+                        })
+                        continue
+
+                    # 2. Check if the screw length is within the predefined screw lengths
+                    max_allowed_length = dist - spec.BACK_THRESHOLD
                     suitable_length = next((l for l in screw_lengths if l <= max_allowed_length), None)
                     if suitable_length is None:
                         self.rejected_logs.append({
                             "joint_guid": joint.guid,
                             "joint": joint,
+                            "reject_type": "B",  # temp.
                             "entry_point": pt,
                             "distance": dist,
                             "max_allowed_length": max_allowed_length,
-                            "reason": "No suitable screw length."
+                            "reason": "Screw lengths are too long."
                         })
                         continue
                     pt_exit = pt + side_vec * suitable_length
 
-                    # Check if sufficient penetration from interface to exit face is achieved
-                    corners = joint.get_interface_boundary(data_type="points")
-                    interface = Frame.from_points(corners[0], corners[1], corners[3])
-                    dist_in_entry = project_point_to_frame_along(pt, side_vec, interface).distance_to_point(pt)
-                    penetration_in_exit = suitable_length - dist_in_entry
+                    # 3. Check if sufficient penetration from interface to the end of screw is achieved
+                    penetration_in_exit = suitable_length - dist_entry
                     if penetration_in_exit < spec.penetration:
                         self.rejected_logs.append({
                             "joint_guid": joint.guid,
                             "joint": joint,
+                            "reject_type": "C",  # temp.
                             "entry_point": pt,
                             "exit_point": pt_exit,
-                            "penetrations": (dist_in_entry, penetration_in_exit),
+                            "penetrations": (dist_entry, penetration_in_exit),
                             "required_penetration": spec.penetration,
-                            "reason": "Insufficient penetration to exit face."
+                            "reason": "Screw lengths are too short in exit beam, but penetration is sufficient."
                         })
                         continue
 
                 line_row.append(Line(pt, pt_exit))
             line_grid.append(line_row)
-        # TODO: check teh penetration from interface to exit face
         return line_grid
+
+    def has_rejections(self, joint):
+        """Check if there are any rejections for the given joint."""
+        if not self.rejected_logs:
+            return False
+        for rej in self.rejected_logs:
+            if rej["joint_guid"] == joint.guid:
+                return True
+            return False
+        
+    def evaluate_screw_lengths(self, joint):
+        if not self.rejected_logs or not self.has_rejections(joint):
+            return # Something  # No rejections, all good
+        rejects = []
+        for rej in self.rejected_logs:
+            if rej["joint_guid"] == joint.guid:
+                rejects.append(rej)
+        
+        spec = self.get_specification(joint)
+        for rej in rejects:
+            _, pene_exit = rej["penetrations"]
+            needed_length = (spec.BACK_THRESHOLD + spec.penetration) - pene_exit
+        
 
     def create_screw_cylinders(self, line_grid):
         radius = ScrewSpecification.SCREW_DIAMETER / 2.0
@@ -527,6 +609,7 @@ def apply_screws(
             
         if joint.entry_type == "aligned":
             restrict = False if joint.__class__ == TSJ else True
+            # restrict = True  # temp. restrict for testing
             entry_point_grid = solver.populate_aligned_entry_points(joint, angle=screw_angle, amount=screw_amount)
             screw_line_grid = solver.populate_aligned_screw_lines(joint, angle=screw_angle, point_grid=entry_point_grid, restrict=restrict)
             
