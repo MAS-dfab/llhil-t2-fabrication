@@ -168,6 +168,7 @@ class ScrewSolver:
         #    For large requests (>10), prefer 3 screws in width
 
         forced_extend = True
+        forced_extend = True
         if amount is None:
             pass
         else:
@@ -578,7 +579,9 @@ class ScrewSolver:
 
             for beam in beams:
                 drilling = Drilling.from_line_and_element(line = line, element = beam, diameter = ScrewSpecification.DRILLING_DIAMETER)
+                
                 drilling._is_joinery = False
+                drilling.depth_limited = False
                 beam.add_feature(drilling)
                 #print(f"Added drilling feature on beam {beam.guid} for joint {joint.guid} with line {line}.")
         return
