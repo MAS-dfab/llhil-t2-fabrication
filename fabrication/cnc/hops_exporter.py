@@ -50,16 +50,16 @@ from compas.geometry import Vector
 from compas.scene import Scene
 from compas_timber.fabrication import JackRafterCut
 
-from easyhops.hop_job import HOPSJob, HOPSMachining, WorkPlane
-from easyhops.hop_core import EasySnapXY
-from easyhops.hop_core import EasySnapZ
+from easyhops.hop_job import HOPSJob
+from easyhops.hop_core import ParkMode
 from easyhops.utility_commands import MachineStop
 from easyhops.strategies import LapStrategies
 from easyhops.strategies import JackRafterCutStrategies
 from easyhops.strategies import LongitudinalCutStrategies
 from easyhops.strategies import DrillingStrategies
-from easyhops.machining_commands import SawYOperation
-from easyhops.machining_commands import CompensationMode
+from easyhops.strategies import DoubleCutStrategies
+from easyhops.strategies import BirdsMouthStrategies
+from easyhops.strategies import StepJointStrategies
 from easyhops.tool_library import SaegeD350
 from easyhops.tool_library import CastorD61
 from easyhops.tool_library import SRSLD12
@@ -95,7 +95,7 @@ def override_features(beam):
             beam.add_feature(new_feature)
 
 
-def resolve_beam(model, index, hierarchy, group):
+def resolve_beam(model, index, hierarchy, level):
     """Return the single beam matching the given selection criteria.
 
     Type-mode (hierarchy is not None):
@@ -135,28 +135,28 @@ def resolve_beam(model, index, hierarchy, group):
         print("[{}] {}/{} | beam: {}".format(hierarchy, index + 1, total, beam.name))
         return beam
 
-    elif group is not None:
-        filtered = [b for b in model.beams if b.attributes.get("group") == group]
+    elif level is not None:
+        filtered = [b for b in model.beams if b.attributes.get("level") == level]
         total = len(filtered)
 
         if total == 0:
             ghenv.Component.AddRuntimeMessage(
                 warn,
-                "No beams found with group '{}'.".format(group),
+                "No beams found with level '{}'.".format(level),
             )
             return None
 
         if index is None or index < 0 or index >= total:
             ghenv.Component.AddRuntimeMessage(
                 warn,
-                "index {} out of range. [group={}] has {} beam(s) (0\u2013{}).".format(
-                    index, group, total, total - 1
+                "index {} out of range. [level={}] has {} beam(s) (0\u2013{}).".format(
+                    index, level, total, total - 1
                 ),
             )
             return None
 
         beam = filtered[index]
-        print("[group={}] {}/{} | beam: {}".format(group, index + 1, total, beam.name))
+        print("[level={}] {}/{} | beam: {}".format(level, index + 1, total, beam.name))
         return beam
 
     else:
@@ -237,26 +237,6 @@ def _element_to_job(element, scale_factor=1000.0):
     pre_flip = []
     post_flip = []
 
-    # Add cuts at the end of the part at the pre-flip stage.
-    cut_end = SawYOperation(
-        radius_compensation=CompensationMode.RIGHT,
-        easy_snap_xy=EasySnapXY.FRONT_RIGHT,
-        easy_snap_z=EasySnapZ.BOTTOM_SIDE,
-    )
-
-    pre_flip.append(
-        HOPSMachining(
-            tool=SaegeD350(),
-            work_plane=WorkPlane.TOP,
-            operations=[cut_end],
-            comments=[
-                "; ---------------------------------",
-                ";ENDCut_Sawing",
-                "; ---------------------------------",
-            ],
-        )
-    )
-
     for processing in element.features:
         processing = processing.scaled(scale_factor)
         name = processing.PROCESSING_NAME
@@ -268,17 +248,16 @@ def _element_to_job(element, scale_factor=1000.0):
             post_flip.extend(machinings)
 
         elif name == "Lap":
-            machinings = LapStrategies.milling(
+            machinings = LapStrategies.pocketing(
                 processing, machine_ref_side_index=rsi, tool=CastorD61()
             )
-            if processing.ref_side_index == rsi:
+            post_flip.extend(machinings)
+            if (
+                processing.ref_side_index == opp_rsi
+            ):  # introduce a flip if the lap is on the opposite side
                 pre_flip.extend(machinings)
-            elif processing.ref_side_index == opp_rsi:
-                post_flip.extend(machinings)
             else:
-                raise ValueError(
-                    f"Unexpected ref_side_index {processing.ref_side_index} for Lap"
-                )
+                post_flip.extend(machinings)
 
         elif name == "JackRafterCut":
             assert processing.ref_side_index in (rsi, opp_rsi), (
@@ -294,14 +273,36 @@ def _element_to_job(element, scale_factor=1000.0):
             machinings = DrillingStrategies.pocketing(
                 processing, machine_ref_side_index=rsi, tool=SRSLD12()
             )
-            if processing.ref_side_index == rsi:
+            if processing.ref_side_index == opp_rsi:
                 pre_flip.extend(machinings)
-            elif processing.ref_side_index == opp_rsi:
-                post_flip.extend(machinings)
             else:
-                raise ValueError(
-                    f"Unexpected ref_side_index {processing.ref_side_index} for Drilling"
+                post_flip.extend(machinings)
+
+        elif name == "DoubleCut":
+            if processing.user_attributes.get("strategy", None) == "pocketing":
+                machinings = DoubleCutStrategies.pocketing(
+                    processing, machine_ref_side_index=rsi
                 )
+            else:
+                machinings = DoubleCutStrategies.milling(
+                    processing,
+                    machine_ref_side_index=rsi,
+                    first_cut=False,
+                    avoid_splintering=True,
+                )
+            post_flip.extend(machinings)
+
+        elif name == "BirdsMouth":
+            machinings = BirdsMouthStrategies.milling(
+                processing, machine_ref_side_index=rsi, avoid_splintering=True
+            )
+            post_flip.extend(machinings)
+
+        elif name == "StepJoint":
+            machinings = StepJointStrategies.milling(
+                processing, machine_ref_side_index=rsi
+            )
+            post_flip.extend(machinings)
 
     # Sort pre-flip: milling before sawing
     pre_flip.sort(
@@ -312,14 +313,14 @@ def _element_to_job(element, scale_factor=1000.0):
 
     # Sort post-flip: milling before sawing
     post_flip.sort(
-        key=lambda m: {"MILLING": 0, "SAWING": 1}.get(
-            getattr(m, "OPERATION_TYPE", ""), 2
+        key=lambda m: {"SAWING": 0, "DRILLING": 1, "MILLING": 2}.get(
+            getattr(m, "OPERATION_TYPE", ""), 3
         )
     )
 
     if pre_flip:
         job.add(pre_flip)
-        job.add(MachineStop("flip beam 180deg"))
+        job.add(MachineStop(message="flip beam 180deg", park_mode=ParkMode.RIGHT_FRONT))
     job.add(post_flip)
 
     return job
