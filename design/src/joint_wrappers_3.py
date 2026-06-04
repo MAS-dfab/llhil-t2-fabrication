@@ -410,6 +410,9 @@ class KBMJ(BaseBirdsmouthWrapper):
         x = self.main_beam.centerline.direction
         y = cross_vectors(x, Vector(0,0,1))
         return cross_vectors(x,y)
+    
+    def _get_rotation_axis(self):
+        return Vector(*cross_vectors(self.main_beam.centerline.direction, Vector(0,0,1))).unitized()
         
     def get_interface_boundary_vertical(self, data_type="polyline"):
         """
@@ -613,7 +616,13 @@ class KBMJ(BaseBirdsmouthWrapper):
             screw_directions["sides"] = direction
 
         screw_directions["top"] = None
-        screw_directions["bottom"] = None
+        
+        centerline_dir = self.main_beam.centerline.direction
+        axis = self._get_rotation_axis()
+        rotation_axis = Rotation.from_axis_and_angle(axis, -math.radians(20))
+        direction_bottom = centerline_dir.transformed(rotation_axis).unitized()
+        
+        screw_directions["bottom"] = direction_bottom
 
         return screw_directions
 
@@ -623,14 +632,18 @@ class KBMJ(BaseBirdsmouthWrapper):
         # get candidate screw directions as {name: Vector, ...}
 
         directions = self._calculate_screw_directions(angle=20)
-        pts_to_project = self.get_interface_boundary_vertical(data_type="points")
+        pts_to_project_vertical = self.get_interface_boundary_vertical(data_type="points")
+        pts_to_project_horizontal = self.get_interface_boundary_horizontal(data_type="points")
+        pts_to_project = pts_to_project_vertical
 
         if not pts_to_project:
             return {}
         entry_frame = self.main_beam.front_side(self.main_beam_ref_side_index)
         exit_frame = self.cross_beam.opp_side(self.cross_beam_ref_side_index)
-        # exit_frame = Plane.from_frame(self.main_beam.front_side(self.main_beam_ref_side_index + 2))
-
+        
+        bottom_frame = self.main_beam.ref_sides[0]
+        top_frame = Plane.from_frame(self.main_beam.ref_sides[2])
+        
         result = {}
         if data_type == "polyline":
             for name, dire in directions.items():
@@ -644,7 +657,14 @@ class KBMJ(BaseBirdsmouthWrapper):
 
                     result[name] = (entry_poly, exit_poly)
                 elif name == "bottom":
-                    pass
+                    entry_pts = [project_point_to_frame_along(p, dire, bottom_frame, tol=1e-6) for p in pts_to_project]
+                    exit_pts = [project_point_to_frame_along(p, -dire, top_frame, tol=1e-6) for p in pts_to_project]
+                    
+                    # close polylines
+                    entry_poly = Polyline(entry_pts + [entry_pts[0]])
+                    exit_poly = Polyline(exit_pts + [exit_pts[0]])
+                    
+                    result[name] = (entry_poly, exit_poly, dire)
                 elif name == "top":
                     pass
 
