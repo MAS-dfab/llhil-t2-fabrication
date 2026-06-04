@@ -167,7 +167,7 @@ class ScrewSolver:
         # 2. If requested amount is not provided, use the maximum capacity.
         #    For large requests (>10), prefer 3 screws in width
 
-        forced_extend = False
+        forced_extend = True
         if amount is None:
             pass
         else:
@@ -578,8 +578,11 @@ class ScrewSolver:
 
             for beam in beams:
                 drilling = Drilling.from_line_and_element(line = line, element = beam, diameter = ScrewSpecification.DRILLING_DIAMETER)
+                
                 drilling._is_joinery = False
+                drilling.depth_limited = False
                 beam.add_feature(drilling)
+                #print(f"Added drilling feature on beam {beam.guid} for joint {joint.guid} with line {line}.")
         return
     
 # -----------------------------------
@@ -680,7 +683,7 @@ def apply_screws(
                 joint,
                 line_grid=screw_line_grid,
                 target=drill_target,
-                depth_limited=depth_limited
+                depth_limited=False
             )
         if with_data:
             interface = joint.get_interface_boundary(data_type="polyline")
