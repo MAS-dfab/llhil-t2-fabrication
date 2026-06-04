@@ -627,7 +627,7 @@ def apply_screws(
         A dictionary containing joint data and capacity warnings if debug is True.
     """
     if add_features:
-        model.process_joinerys()
+        model.process_joinery()
     solver = ScrewSolver(model, spec_model=spec_model)
     joint_data = {}
 
