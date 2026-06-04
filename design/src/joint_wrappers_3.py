@@ -386,6 +386,10 @@ class KBMJ(BaseBirdsmouthWrapper):
     def determine_entry_type(self):
         return "krossed"
     
+
+    def determine_entry_type(self):
+        return "krossed"  # kool entry type exclusive for KBMJ
+    
     def _get_double_cut_planes(self):
         beam_features = self.main_beam.features
         double = next((f for f in beam_features if type(f).__name__ == "DoubleCut"), None)
@@ -393,7 +397,14 @@ class KBMJ(BaseBirdsmouthWrapper):
             return double.planes_from_params_and_beam(self.main_beam) # returns a list of two planes
         return None                                                                 # NOTE: we dont need this since we have this our class as self
 
-    def get_interface_boundarie_vertical(self, data_type="polyline"):
+    def _get_bisector_of_centerlines(self):
+        if self._is_acute:
+            return (self.main_beam.centerline.direction + self.cross_beam.centerline.direction).unitized()
+        else:
+            flipped_main_centerline = (-self.cross_beam.centerline.direction.x, -self.cross_beam.centerline.direction.y, self.cross_beam.centerline.direction.z)
+            return (self.main_beam.centerline.direction + Vector(*flipped_main_centerline)).unitized()
+        
+    def get_interface_boundary_vertical(self, data_type="polyline"):
         """
         Find the vertical interface boundaries for main beam and cross beam.
         
@@ -478,7 +489,7 @@ class KBMJ(BaseBirdsmouthWrapper):
             return tuple(sorted_interface_pts)
         return 
     
-    def get_interface_boundarie_horizontal(self, data_type="polyline"):
+    def get_interface_boundary_horizontal(self, data_type="polyline"):
         """
         Find the horizontal interface boundaries for main beam and cross beam.
         
@@ -570,38 +581,38 @@ class KBMJ(BaseBirdsmouthWrapper):
             return tuple(sorted_interface_pts)
         return 
     
-    def _get_bisector_normal(self):
-        return (self.main_ref_frame.normal - self.cross_ref_frame.normal).unitized()
+    def calculate_screw_direction(self):
+        """Calculate the screw direction based on centerline directions."""
+
+        if self.entry_type == "krossed":
+            return self._get_bisector_of_centerlines()
+        
+        else:
+            raise ValueError("Invalid entry type. Its not kool")
+
+    def find_screw_boundaries(self, angle=None, flip=False, data_type="points"):
+        raise NotImplementedError(f"Subclass {self.__class__.__name__} must implement this method.")
 
     def _calculate_screw_directions(self):
         """Create a dictionary of candidate screw direction vectors.
 
         Keys:
-            - 'bisector' : bisector direction (always attempted)
-            - 'perp_vertical_double' : perpendicular to vertical double cut (if available)
-            - 'vertical' : vertical in z direction (always attempted)
+            - 'bisector' : bisector direction
+            - 'tilted_vertical' : vertical in z direction
         """
         # NOTE: screw directions towards joint 'location'
         screw_directions = {}
         
         # 1) Bisector direction
         try:
-            bis = self._get_bisector_normal()
+            bis = self._get_bisector_of_centerlines()
         except Exception:
             bis = None
         if bis is not None:
             screw_directions["bisector"] = bis.unitized()
 
-        # 2) Perpendicular to the vertical-double-cut
-        try:
-            pv = self._get_perpendicular_vertical_double_normal()
-        except Exception:
-            pv = None
-        if pv is not None:
-            screw_directions["perp_vertical_double"] = pv.unitized()
-
-        # 3) Vertical
-        screw_directions["vertical"] = -Vector(0, 0, 1)
+        # 3) Tilted Vertical
+        screw_directions["tilted_vertical"] = -Vector(0, 0, 1) # NOTE: to be tilted
 
         return screw_directions
 
@@ -611,15 +622,14 @@ class KBMJ(BaseBirdsmouthWrapper):
 
     def _calculate_entry_exit_frames(self):
         """Calculate entry and exit frames for screw projection based on screw direction candidates."""
-        screw_directions = self._calculate_screw_directions()
-        pts_to_project = self.get_interface_boundarie_vertical(data_type="points")
+        screw_direction_a = self.calculate_screw_direction()
+        pts_to_project = self.get_interface_boundary_vertical(data_type="points")
         
-        # projected_pts = []
-        # for p in pts_to_project:
-        #     p_point = project_point_to_frame_along(p, screw_directions, self.main_ref_frame, tol=1e-6)
-        #     projected_pts.append(p_point)
-        return self.main_ref_frame
-        return self.main_ref_frame, self.cross_ref_frame
+        projected_pts = []
+        for p in pts_to_project:
+            p_point = project_point_to_frame_along(p, screw_direction_a, self.main_beam.front_side(self.main_beam_ref_side_index), tol=1e-6)
+            projected_pts.append(p_point)
+        return Polyline(projected_pts + [projected_pts[0]])
 
     def find_screw_boundaries(self, flip=False, data_type="points"):
         """
