@@ -373,13 +373,16 @@ class KBMJ(BaseBirdsmouthWrapper):
     def __init__(self, joint, main_id):     # main_id to specify which of the two main beams to compute
         if main_id not in (0, 1):
             raise ValueError("main_id should be either 0 or 1.")
+        
         self.main_id = main_id
         self.main_beam = joint.elements[main_id + 1]
         self.cross_beam = joint.elements[0]
         self.cutting_planes = joint._get_cutting_planes()[main_id]
         self.miter_plane = joint._get_miter_planes()[main_id]
+        self.is_same_xy_sign = is_same_xy_sign(self.main_beam.centerline.direction)
+        self.is_acute = joint._is_
         
-        if is_same_xy_sign(self.main_beam.centerline.direction):
+        if self.is_same_xy_sign:
             self.main_beam_ref_side_index = joint.main_ref_side_index + 3           # NOTE: main_ref_side pointing 'inwards' where its 'normal' is orientated towards the cross_beam centerline
             self._adjacency_direction = -1
         else:
@@ -389,22 +392,15 @@ class KBMJ(BaseBirdsmouthWrapper):
         self.cross_beam_ref_side_index = joint.cross_ref_side_indices[main_id][1]   # NOTE: cross_beam_ref_side pointing 'inwards' where its 'normal' is orientated towards the main_ref_side centerline
         super().__init__(joint)
 
-    def determine_entry_type(self):
-        return "krossed"  # kool entry type exclusive for KBMJ
-    
-    def _get_double_cut_planes(self):
-        beam_features = self.main_beam.features
-        double = next((f for f in beam_features if type(f).__name__ == "DoubleCut"), None)
-        if double is not None:
-            return double.planes_from_params_and_beam(self.main_beam) # returns a list of two planes
-        return None                                                                 # NOTE: we dont need this since we have this our class as self
-
     def _get_bisector_of_centerlines(self):
         if self._is_acute:
             return (self.main_beam.centerline.direction + self.cross_beam.centerline.direction).unitized()
         else:
             flipped_main_centerline = (-self.cross_beam.centerline.direction.x, -self.cross_beam.centerline.direction.y, self.cross_beam.centerline.direction.z)
             return (self.main_beam.centerline.direction + Vector(*flipped_main_centerline)).unitized()
+        
+    def determine_entry_type(self):
+        return "krossed"  # kool entry type exclusive for KBMJ
         
     def _get_vertical_pivot(self):
         x = self.main_beam.centerline.direction
@@ -591,42 +587,39 @@ class KBMJ(BaseBirdsmouthWrapper):
             return tuple(sorted_interface_pts)
         return 
 
-    def _calculate_screw_directions(self, angle=20):
+    def _calculate_screw_directions(self, angle=None):
         """Create a dictionary of candidate screw direction vectors.
 
         Keys:
             - 'sides' : sides direction
         """
-        # NOTE: screw directions towards joint 'location'
-
-        if angle is not None:
-            if angle <= 0:
-                raise ValueError("Angle should be larger than 0.")
+        # NOTE: screw directions away from joint 'location'. used for projecting entry and exit
             
         screw_directions = {}
         
-        # 1) Bisector direction a
-        if self.entry_type == "krossed":
+        # 1) Side Direction: 
+        if self.entry_type == "krossed":    # Used for sides, specific to KBMJ
             centerline_dir = self.main_beam.centerline.direction
             pivot = self._get_vertical_pivot()
-            rotation = Rotation.from_axis_and_angle(pivot, math.radians(20))
-            direction = centerline_dir.transformed(rotation).unitized()
 
-        if direction is not None:
-            screw_directions["sides"] = direction
+            # flip based on vector direction
+            if self.is_same_xy_sign:
+                pivot = -pivot
 
-        screw_directions["top"] = None
-        
-        centerline_dir = self.main_beam.centerline.direction
-        axis = self._get_rotation_axis()
-        rotation_axis = Rotation.from_axis_and_angle(axis, -math.radians(20))
-        direction_bottom = centerline_dir.transformed(rotation_axis).unitized()
-        
-        screw_directions["bottom"] = direction_bottom
+            rotation_a = Rotation.from_axis_and_angle(pivot, math.radians(angle))
+            rotation_b = Rotation.from_axis_and_angle(pivot, math.radians(-angle))
+            direction_a = centerline_dir.transformed(rotation_a).unitized()
+            direction_b = centerline_dir.transformed(rotation_b).unitized()
+
+        if direction_a and direction_b:
+            screw_directions["sides"] = direction_a, direction_b
+
+        if self.entry_type == "crossed":
+            pass
 
         return screw_directions
 
-    def _calculate_entry_exit_frames(self, data_type="polyline"):
+    def _calculate_entry_exit_frames(self, data_type="polyline", angle=None):
         """Return a dict mapping each candidate direction name to (entry_polyline, exit_polyline).
         """
         # get candidate screw directions as {name: Vector, ...}
@@ -638,7 +631,9 @@ class KBMJ(BaseBirdsmouthWrapper):
 
         if not pts_to_project:
             return {}
-        entry_frame = self.main_beam.front_side(self.main_beam_ref_side_index)
+        entry_frame_a = self.main_beam.front_side(self.main_beam_ref_side_index)
+        entry_frame_b = self.main_beam.front_side(self.main_beam_ref_side_index + 2)  # opposite sides
+
         exit_frame = self.cross_beam.opp_side(self.cross_beam_ref_side_index)
         
         bottom_frame = self.main_beam.ref_sides[0]
@@ -648,14 +643,21 @@ class KBMJ(BaseBirdsmouthWrapper):
         if data_type == "polyline":
             for name, dire in directions.items():
                 if name == "sides":
-                    entry_pts = [project_point_to_frame_along(p, dire, entry_frame, tol=1e-6) for p in pts_to_project]
-                    exit_pts = [project_point_to_frame_along(p, -dire, exit_frame, tol=1e-6) for p in pts_to_project]
+                    entry_pts_a = [project_point_to_frame_along(p, dire[0], entry_frame_a, tol=1e-6) for p in pts_to_project]
+                    exit_pts_a = [project_point_to_frame_along(p, -dire[0], exit_frame, tol=1e-6) for p in pts_to_project]
+
+                    entry_pts_b = [project_point_to_frame_along(p, dire[1], entry_frame_b, tol=1e-6) for p in pts_to_project]
+                    exit_pts_b = [project_point_to_frame_along(p, -dire[1], exit_frame, tol=1e-6) for p in pts_to_project]
 
                     # close polylines
-                    entry_poly = Polyline(entry_pts + [entry_pts[0]])
-                    exit_poly = Polyline(exit_pts + [exit_pts[0]])
+                    entry_poly_a = Polyline(entry_pts_a + [entry_pts_a[0]])
+                    exit_poly_a = Polyline(exit_pts_a + [exit_pts_a[0]])
 
-                    result[name] = (entry_poly, exit_poly)
+                    entry_poly_b = Polyline(entry_pts_b + [entry_pts_b[0]])
+                    exit_poly_b = Polyline(exit_pts_b + [exit_pts_b[0]])
+
+                    result[name] = [entry_poly_a, exit_poly_a],[entry_poly_b, exit_poly_b]
+
                 elif name == "bottom":
                     entry_pts = [project_point_to_frame_along(p, dire, bottom_frame, tol=1e-6) for p in pts_to_project]
                     exit_pts = [project_point_to_frame_along(p, -dire, top_frame, tol=1e-6) for p in pts_to_project]
@@ -670,7 +672,7 @@ class KBMJ(BaseBirdsmouthWrapper):
 
         elif data_type == "points":
             for name, dire in directions.items():
-                entry_pts = tuple(project_point_to_frame_along(p, dire, entry_frame, tol=1e-6) for p in pts_to_project)
+                entry_pts = tuple(project_point_to_frame_along(p, dire, entry_frame_a, tol=1e-6) for p in pts_to_project)
                 exit_pts = tuple(project_point_to_frame_along(p, -dire, exit_frame, tol=1e-6) for p in pts_to_project)
 
                 result[name] = (entry_pts, exit_pts)
