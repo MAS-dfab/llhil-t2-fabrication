@@ -4,7 +4,7 @@ from compas.tolerance import TOL
 from compas.geometry import (
     Vector, Plane, Polyline, Point, Frame, NurbsCurve, Brep,
     angle_vectors, cross_vectors, dot_vectors,
-    intersection_plane_plane_plane,
+    intersection_plane_plane_plane, intersection_polyline_plane
 )
 import math
 
@@ -127,7 +127,7 @@ class BaseWrapper(object):
         ----------
         orientation : str
             "perp_main", "perp_riser", "perp_cross" and "bisector" for screwing from the main beam to the cross beam,
-            "along_cross" for screwing from the cross beam towards the cross section of the main beam.
+            "along_main" for screwing from the cross beam towards the cross section of the main beam.
         """
         # Option 1: screw perpendicular to the centerline of the main beam
         if orientation == "perp_main":
@@ -148,7 +148,7 @@ class BaseWrapper(object):
             if vec is None:
                 raise ValueError(f"This joint type ({self.__class__}) does not physically have a bisector direction.")
 
-        elif orientation == "along_cross":
+        elif orientation == "along_main":
             vec = -self.point_centerline_towards_joint(self.main_beam)
  
         else:
@@ -226,7 +226,7 @@ class BaseStepWrapper(BaseWrapper):
         Parameters
         ----------
         orientation : str
-            "perp_main", "perp_riser", "perp_cross", "along_cross" and "bisector".
+            "perp_main", "perp_riser", "perp_cross", "along_main" and "bisector".
         flip : bool
             Whether to flip the screw direction.
         data_type : str
@@ -263,7 +263,7 @@ class BaseStepWrapper(BaseWrapper):
                 pts_entry = pts_entry[2:] + pts_entry[:2]  # flip the entry rectangle to be in the order of [p2, p3, p0, p1]
             pts_exit = [project_point_to_frame_along(p, dire, exit_frame) for p in pts_entry]
 
-        elif orientation == "along_cross":
+        elif orientation == "along_main":
             # p0: projection to cross beam
             p0 = project_point_to_frame_along(strut_start, -dire, exit_frame)
             p1 = project_point_to_frame_along(_strut_end, -dire, exit_frame)        
@@ -391,7 +391,94 @@ class BaseBirdsmouthWrapper(BaseWrapper):
 
     def determine_entry_type(self):
         return "crossed"  # Must be crossed entry
+    
+    def get_interface_boundary(self, data_type="points"):
+        """Get the rectangular boundary of the interface between main_a cross beam."""
+        main_beam_a = self.main_beam_a
+        main_beam_b = self.main_beam_b
+        
+        def _sort_points(points, plane):
+            # Find the center mass of the 4 points
+            cx = sum(p.x for p in points) / 4.0
+            cy = sum(p.y for p in points) / 4.0
+            cz = sum(p.z for p in points) / 4.0
+            
+            normal = plane.normal
+            nx, ny, nz = abs(normal[0]), abs(normal[1]), abs(normal[2])
+            
+            # Project points to the local 2D space of the cut_plane to calculate angles accurately
+            def get_angle_fallback(point):
+                # Project onto the flat plane that matches the highest normal direction
+                if nz >= nx and nz >= ny:
+                    return math.atan2(point.y - cy, point.x - cx)
+                elif ny >= nx and ny >= nz:
+                    return math.atan2(point.z - cz, point.x - cx)
+                else:
+                    return math.atan2(point.z - cz, point.y - cy)
 
+            # Sort the points chronologically around the center (clockwise/counter-clockwise)
+            sorted_points = sorted(points, key=get_angle_fallback)
+            return sorted_points
+            
+        def _get_interface_boundary_by_beam(beam, data_type="points"):
+            cuts = self._get_cutting_planes()
+            if beam == self.main_beam_a:
+                cut_plane_side = Plane.from_frame(cuts[0][1])
+                cut_plane_top = Plane.from_frame(cuts[0][0])
+            else:
+                cut_plane_side = Plane.from_frame(cuts[1][1])
+                cut_plane_top = Plane.from_frame(cuts[1][0])
+
+            bottom_side = Plane.from_frame(beam.ref_sides[0])
+            top_side = Plane.from_frame(beam.ref_sides[2])
+            ref_side = Plane.from_frame(beam.ref_frame)
+            opp_side = Plane.from_frame(beam.opp_side(self.main_ref_side_index))
+
+            p0 = intersection_plane_plane_plane(ref_side, cut_plane_side, top_side)
+            p1 = intersection_plane_plane_plane(opp_side, cut_plane_side, top_side)
+            p2 = intersection_plane_plane_plane(bottom_side, ref_side, cut_plane_side)
+            p3 = intersection_plane_plane_plane(bottom_side, opp_side, cut_plane_side)
+            
+            relevent_pt = intersection_plane_plane_plane(cut_plane_top, cut_plane_side, ref_side)
+            
+            raw_points = [p0, p1, p2, p3]
+            points = [Point(*p) for p in raw_points]
+            
+            sorted_points = _sort_points(points, cut_plane_side)
+            
+            # Intersect 
+            poly = Polyline(sorted_points + [sorted_points[0]])
+            int_pts = intersection_polyline_plane(poly, cut_plane_top)
+
+            for pt in int_pts:
+                sorted_points.append(Point(*pt))
+            
+            plane_pt = cut_plane_top.point
+            normal = Vector(*cut_plane_top.normal)
+            normal_u = normal.unitized()
+            
+            interface_pts = []
+            for pt in sorted_points:
+                v = [pt[0] - plane_pt[0], 
+                    pt[1] - plane_pt[1], 
+                    pt[2] - plane_pt[2]]
+                vec = Vector(*v)
+                u = vec.unitized()
+                dot_product = u.dot(normal_u)
+                if dot_product <= 1e-2:
+                    interface_pts.append(pt)
+                    
+            sorted_interface_pts = _sort_points(interface_pts, cut_plane_side)
+            print(sorted_interface_pts)
+            # 4. Return sorted data
+            if data_type == "polyline":
+                # Append the first point to the end to cleanly close the loop
+                return Polyline(sorted_interface_pts + [sorted_interface_pts[0]])
+            
+            elif data_type == "points":
+                return tuple(sorted_interface_pts)
+            return 
+        return _get_interface_boundary_by_beam(main_beam_b, data_type="polyline"), _get_interface_boundary_by_beam(main_beam_a, data_type="polyline")
 
 class TBMJ(BaseBirdsmouthWrapper):
     """A wrapper class for TBirdsmouthJoint."""

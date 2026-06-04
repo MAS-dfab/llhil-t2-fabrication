@@ -95,16 +95,23 @@ def _polyline_aligned_frame(polyline, thickness):
     and its normal pointing DOWNWARDS.
     """
     longest = max(polyline.lines, key=lambda ln: ln.length)
+    p0, p1 = longest.start, longest.end
+
+    if (p0.y, -p0.x) < (p1.y, -p1.x):
+        longest = Line(p1, p0) 
 
     normal = get_polyline_normal_vector(polyline)
     if normal.z < 0:
         normal = -normal
 
-    center = _average_points(polyline.points[:-1])
-    center += normal.unitized() * thickness
+    # get the top left corner of the polyline
+    pts = sorted(polyline.points[:-1], key=lambda p: (p.y, -p.x))
+    pt = pts[-2]  # sort by y desc, then x asc
+    #center = _average_points(polyline.points[:-1])
+    #center += normal.unitized() * thickness
 
     cross = longest.direction.cross(normal)
-    return Frame(center, longest.direction, cross)
+    return Frame(pt, longest.direction, cross)
 
 # --------------------------------------
 # Element Creations
@@ -618,8 +625,8 @@ def apply_processings(
             # Blank already extended by X on both ends BEFORE joinery (see top of
             # this function), so existing joints don't shift. Reuse the same X and
             # derive the bevel angle from it.
-            X = beam.attributes.get("shoe_ext", 0.0)
-            theta = math.degrees(math.atan(2.0 * X / beam.height))   # angle derived from X
+            X = .02
+            theta = math.degrees(math.atan(2.0 * .03 / beam.height))   # angle derived from X
             SHOE_END_ANGLE = -theta                                  # negative keeps bevel on the Bottom
             if clt_plate:
                 cutting_frame = clt_plate.frame
@@ -629,7 +636,7 @@ def apply_processings(
             for at_start in (True, False):
                 sign = 1.0 if at_start else -1.0   # +/- gives a symmetric trapezoid; flip both signs to swap top/bottom
                 # offset=X moves the cut plane out to the newly extended blank tip
-                plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE, offset=X)
+                plane = _angled_end_plane(beam, at_start, sign * SHOE_END_ANGLE, offset=-X)
                 jrc = JackRafterCut.from_plane_and_beam(plane, beam, is_joinery=False)
                 beam.add_feature(jrc)
 
