@@ -54,4 +54,4 @@ class ScrewSpecification:
             self.a2_red = self.spec_table["a2_red"]
 
             self.penetration = 0.060
-            self.side_angle = 30  # Originally 45 degrees
+            self.side_angle = 45  # Originally 45 degrees

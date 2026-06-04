@@ -131,6 +131,9 @@ class BaseWrapper(object):
         elif self.entry_type == "crossed":
             return -main_dire.unitized()
         
+        elif self.entry_type == "krossed":
+            return # Something
+        
         else:
             raise ValueError("Invalid entry type.")
 
@@ -379,6 +382,9 @@ class KBMJ(BaseBirdsmouthWrapper):
 
         self.cross_beam_ref_side_index = joint.cross_ref_side_indices[main_id][1]   # NOTE: cross_beam_ref_side pointing 'inwards' where its 'normal' is orientated towards the main_ref_side centerline
         super().__init__(joint)
+
+    def determine_entry_type(self):
+        return "krossed"
     
 
     def determine_entry_type(self):
