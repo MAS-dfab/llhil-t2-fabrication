@@ -32,7 +32,8 @@ class ScrewSolver:
 
         self._spec_cache = {
             "aligned": ScrewSpecification("aligned", spec_model=spec_model),
-            "crossed": ScrewSpecification("crossed", spec_model=spec_model)
+            "crossed": ScrewSpecification("crossed", spec_model=spec_model),
+            "krossed": ScrewSpecification("crossed", spec_model=spec_model),  # temp. use the same spec for "krossed" entry type
         }
 
         self.capacity_warnings = []
@@ -112,6 +113,19 @@ class ScrewSolver:
             len_l = entry_corners[0].distance_to_point(entry_corners[1])
 
             max_w_num = 2  # Left and right each along width
+            table = sorted(spec.spec_table["min_widths"].items(), key=lambda x: x[0], reverse=True)
+            max_l_num = next((pair_count for pair_count, min_width in table if len_l >= min_width), 0)
+
+        elif joint.entry_type == "krossed":
+            spec = self._spec_cache["krossed"]
+            entry_corners_a, _ = joint._calculate_entry_exit_frames(data_type="points")["sides"][0]
+            entry_corners_b, _ = joint._calculate_entry_exit_frames(data_type="points")["sides"][1]
+            
+            len_l_a = entry_corners_a[0].distance_to_point(entry_corners_a[1])
+            len_l_b = entry_corners_b[0].distance_to_point(entry_corners_b[1])
+            len_l = len_l_a if len_l_a < len_l_b else len_l_b       # Take smaller value of the two sides. or average?
+
+            max_w_num = 2
             table = sorted(spec.spec_table["min_widths"].items(), key=lambda x: x[0], reverse=True)
             max_l_num = next((pair_count for pair_count, min_width in table if len_l >= min_width), 0)
 
@@ -262,6 +276,37 @@ class ScrewSolver:
             pt_right = pts_entry[3] + (vec_l * a2_cg) + (vec_l * spec.a1) * i + (vec_l * spec.a2_red)
             point_grid.append([pt_left, pt_right])
         return point_grid
+
+    def populate_krossed_entry_points(self, joint, amount: int = None):
+        """
+        Populate screw points on the entry face from the height sides.
+
+        Parameters
+        ----------
+        joint : JointWrapper
+            The joint to populate screws on.
+        amount : int or None
+            The requested amount of screws. If None, use the maximum capacity.
+        orientation : str
+            "sides"
+
+        Returns
+        -------
+        lists of list of Point
+            Inner list is along the width direction.
+            Returns two list, acute, then obtuse sides.
+        """
+        if joint.entry_type != "krossed":
+            raise ValueError("Wrong entry type. Not kool...")
+        spec = self._spec_cache["krossed"]
+
+        # Find offset entry points
+        corners_a = joint._calculate_entry_exit_frames(data_type="points")["sides"][0]
+        offset_dire_a = joint._calculate_screw_directions()["sides"][0]
+        
+        corners_b = joint._calculate_entry_exit_frames(data_type="points")["sides"][1]
+        offset_dire_b = joint._calculate_screw_directions()["sides"][1]
+
 
     def populate_aligned_screw_lines(self, joint, angle, point_grid, restrict=True):
         """
