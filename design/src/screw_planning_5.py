@@ -150,52 +150,6 @@ class ScrewSolver:
             l_num = (amount + w_num - 1) // w_num  # ceiling division
             distributions.append((w_num, l_num))
         return distributions
-    
-    def regenerate_aligned_entry_points(self, joint):
-        """Regenerate entry points when the requested screw amount is larger than the maximum capacity."""
-        if joint.entry_type != "aligned":
-            raise ValueError("Wrong entry type. Expected 'aligned'.")
-        spec = self._spec_cache["aligned"]
-
-        if not self.capacity_warnings:
-            return
-        warning = next((w for w in self.capacity_warnings if w["joint_guid"] == joint.guid), None)
-
-        requested = warning["requested"]
-        w_num, _ = warning["capacity"]
-        new_l_num = math.ceil(requested / w_num)
-        
-        # 3. Create the step distances in width
-        w_steps_map = {
-            1: (spec.a2_cg * 2,) * 2,
-            2: (spec.a2_cg, spec.a2, spec.a2_cg),
-            3: (spec.a2_cg,) * 4,
-        }
-        w_steps = w_steps_map[w_num]
-
-        # 4. Populate entry points
-        screw_angle = warning["screw_angle"]
-
-        dire = joint.calculate_screw_direction(angle=screw_angle)
-        main_dire = joint.main_beam.centerline.direction
-        angle_main_screw = angle_vectors(dire, main_dire)
-        angle_main_screw = self.convert_to_acute_angle(angle_main_screw)
-        l_step = spec.a1 / math.sin(angle_main_screw)  # Fix the step
-
-        pts_entry = self.shrink_aligned_entry_corners(joint, angle=screw_angle)
-        vec_w = (pts_entry[3] - pts_entry[0]).unitized()
-        vec_l = (pts_entry[1] - pts_entry[0]).unitized()
-
-        # Start at the first offset point
-        start = pts_entry[0] + (vec_w * w_steps[0])
-
-        point_grid = [[None for _ in range(w_num)] for _ in range(new_l_num)]
-        for i in range(new_l_num):
-            curr_w = 0.0
-            for j in range(w_num):
-                point_grid[i][j] = start + (vec_w * curr_w) + (vec_l * i * l_step)
-                curr_w += w_steps[j + 1]
-        return point_grid
 
     def populate_aligned_entry_points(self, joint, angle, amount: int = None):
         """
@@ -275,6 +229,52 @@ class ScrewSolver:
                 curr_w += w_steps[j + 1]
         success = True
         return success, point_grid
+
+    def regenerate_aligned_entry_points(self, joint):
+        """Regenerate entry points when the requested screw amount is larger than the maximum capacity."""
+        if joint.entry_type != "aligned":
+            raise ValueError("Wrong entry type. Expected 'aligned'.")
+        spec = self._spec_cache["aligned"]
+
+        if not self.capacity_warnings:
+            return
+        warning = next((w for w in self.capacity_warnings if w["joint_guid"] == joint.guid), None)
+
+        requested = warning["requested"]
+        w_num, _ = warning["capacity"]
+        new_l_num = math.ceil(requested / w_num)
+        
+        # 3. Create the step distances in width
+        w_steps_map = {
+            1: (spec.a2_cg * 2,) * 2,
+            2: (spec.a2_cg, spec.a2, spec.a2_cg),
+            3: (spec.a2_cg,) * 4,
+        }
+        w_steps = w_steps_map[w_num]
+
+        # 4. Populate entry points
+        screw_angle = warning["screw_angle"]
+
+        dire = joint.calculate_screw_direction(angle=screw_angle)
+        main_dire = joint.main_beam.centerline.direction
+        angle_main_screw = angle_vectors(dire, main_dire)
+        angle_main_screw = self.convert_to_acute_angle(angle_main_screw)
+        l_step = spec.a1 / math.sin(angle_main_screw)  # Fix the step
+
+        pts_entry = self.shrink_aligned_entry_corners(joint, angle=screw_angle)
+        vec_w = (pts_entry[3] - pts_entry[0]).unitized()
+        vec_l = (pts_entry[1] - pts_entry[0]).unitized()
+
+        # Start at the first offset point
+        start = pts_entry[0] + (vec_w * w_steps[0])
+
+        point_grid = [[None for _ in range(w_num)] for _ in range(new_l_num)]
+        for i in range(new_l_num):
+            curr_w = 0.0
+            for j in range(w_num):
+                point_grid[i][j] = start + (vec_w * curr_w) + (vec_l * i * l_step)
+                curr_w += w_steps[j + 1]
+        return point_grid
     
     def populate_crossed_entry_points(self, joint, amount: int = None):
         """
@@ -688,7 +688,7 @@ def apply_screws(
     joints_to_process = []
     # 1. Wrap the joint with the corresponding class in JOINT_MAP if it exists
     for joint in model.joints:
-        if joint.name not in ("TMultiStepJoint", "TStepJoint", "KBirdsmouthJoint"):
+        if joint.name not in ("TMultiStepJoint", "TStepJoint", "KBirdsmouthJoint",):
             continue  # temporary for testing only TMultiStepJoint, TStepJoint first
         
         joint_class = joint.__class__
@@ -703,10 +703,7 @@ def apply_screws(
 
     # 2. Populate screws and add drilling features
     for joint in joints_to_process:
-    #     if not joint.is_planar:
-    #         print(f"Warning: {joint.name} is not planar. Skipping screw placement.")
-    #         continue  # temp.
-        
+
         # 3. Get requested screw amount if provided, otherwise use the maximum capacity
         if screw_map is None:
             screw_amount = None
@@ -747,7 +744,6 @@ def apply_screws(
                 if joint.__class__ == TSJ and joint.cross_beam.attributes["level"] == 0:
                     screw.protrude()
             elif screw.reject_reason == RejectReason.ENTRY_MATERIAL_TOO_THICK:
-                if joint.__class__ == TMSJ:
                     counterbored_lines = screw.counterbore(penetration=solver.get_specification(joint).penetration)        
 
         if add_features:
@@ -762,18 +758,18 @@ def apply_screws(
                 #pass
             
         if with_data:
-            if joint.name != "KBirdsmouthJoint":
+            if joint.name == "KBirdsmouthJoint":
+                interface = joint.get_interface_boundary_horizontal(data_type="polyline")
+                entry_face, exit_face = joint.find_screw_boundaries(angle=screw_angle, data_type="polylines")["bottom"]
+            else:
                 interface = joint.get_interface_boundary(data_type="polyline")
                 entry_face, exit_face = joint.find_screw_boundaries(angle=screw_angle, data_type="polylines")
-            else:
-                interface = joint.get_interface_boundary_horizontal(data_type="polyline")
-                entry_face, exit_face = joint.find_screw_boundaries(angle=screw_angle, data_type="points")["bottom"]
-            
+
             if joint.entry_type == "aligned":
                 corners = solver.shrink_aligned_entry_corners(joint, angle=screw_angle)
                 entry_face = Polyline(corners + [corners[0]])
 
-            joint_data[joint.guid] = {
+            joint_data[joint] = {
                 "interface": interface,
                 "entry_face": entry_face,
                 "exit_face": exit_face,

@@ -727,8 +727,8 @@ class KBMJ(BaseBirdsmouthWrapper):
 
         if self.entry_type == "krossed":
             result = {}
-            pts_entry_sides,pts_exit_sides = self._calculate_entry_exit_frames(angle=angle, data_type="points")["sides"] # NOTE: should return 2 lists of lists. 1 for 'front side' and one for 'opposite side'
-            pts_entry_bottom,pts_exit_bottom = self._calculate_entry_exit_frames(angle=angle, data_type="points")["bottom"]
+            pts_entry_sides, pts_exit_sides = self._calculate_entry_exit_frames(angle=angle, data_type="points")["sides"] # NOTE: should return 2 lists of lists. 1 for 'front side' and one for 'opposite side'
+            pts_entry_bottom, pts_exit_bottom = self._calculate_entry_exit_frames(angle=angle, data_type="points")["bottom"]
             
             result["sides"] = (pts_entry_sides, pts_exit_sides)
             result["bottom"] = (pts_entry_bottom, pts_exit_bottom)
@@ -738,6 +738,13 @@ class KBMJ(BaseBirdsmouthWrapper):
         
         if data_type == "points":
             return result
-
+        elif data_type == "polylines":
+            result = {}
+            pts_entry_sides, pts_exit_sides = self._calculate_entry_exit_frames(angle=angle, data_type="polyline")["sides"] # NOTE: should return 2 lists of lists. 1 for 'front side' and one for 'opposite side'
+            pts_entry_bottom, pts_exit_bottom = self._calculate_entry_exit_frames(angle=angle, data_type="polyline")["bottom"]
+            
+            result["sides"] = (pts_entry_sides, pts_exit_sides)
+            result["bottom"] = (pts_entry_bottom, pts_exit_bottom)
+            return result
         # Placeholder: other data_type handling can be implemented later.
         raise NotImplementedError("find_screw_boundaries currently only supports data_type='points'.")
