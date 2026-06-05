@@ -580,6 +580,7 @@ def apply_processings(
     a = []
 
     for beam in model.beams:
+        beam.features = []
         if beam.attributes.get("hierarchy") == "shoe":
             ext = 2.0 * SHOE_EXTENSION if SHOE_FULL_CUT else SHOE_EXTENSION
             beam.attributes["shoe_ext"] = SHOE_EXTENSION
