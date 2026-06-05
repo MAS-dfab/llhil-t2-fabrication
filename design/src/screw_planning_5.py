@@ -150,6 +150,52 @@ class ScrewSolver:
             l_num = (amount + w_num - 1) // w_num  # ceiling division
             distributions.append((w_num, l_num))
         return distributions
+    
+    def regenerate_aligned_entry_points(self, joint):
+        """Regenerate entry points when the requested screw amount is larger than the maximum capacity."""
+        if joint.entry_type != "aligned":
+            raise ValueError("Wrong entry type. Expected 'aligned'.")
+        spec = self._spec_cache["aligned"]
+
+        if not self.capacity_warnings:
+            return
+        warning = next((w for w in self.capacity_warnings if w["joint_guid"] == joint.guid), None)
+
+        requested = warning["requested"]
+        w_num, _ = warning["capacity"]
+        new_l_num = math.ceil(requested / w_num)
+        
+        # 3. Create the step distances in width
+        w_steps_map = {
+            1: (spec.a2_cg * 2,) * 2,
+            2: (spec.a2_cg, spec.a2, spec.a2_cg),
+            3: (spec.a2_cg,) * 4,
+        }
+        w_steps = w_steps_map[w_num]
+
+        # 4. Populate entry points
+        screw_angle = warning["screw_angle"]
+
+        dire = joint.calculate_screw_direction(angle=screw_angle)
+        main_dire = joint.main_beam.centerline.direction
+        angle_main_screw = angle_vectors(dire, main_dire)
+        angle_main_screw = self.convert_to_acute_angle(angle_main_screw)
+        l_step = spec.a1 / math.sin(angle_main_screw)  # Fix the step
+
+        pts_entry = self.shrink_aligned_entry_corners(joint, angle=screw_angle)
+        vec_w = (pts_entry[3] - pts_entry[0]).unitized()
+        vec_l = (pts_entry[1] - pts_entry[0]).unitized()
+
+        # Start at the first offset point
+        start = pts_entry[0] + (vec_w * w_steps[0])
+
+        point_grid = [[None for _ in range(w_num)] for _ in range(new_l_num)]
+        for i in range(new_l_num):
+            curr_w = 0.0
+            for j in range(w_num):
+                point_grid[i][j] = start + (vec_w * curr_w) + (vec_l * i * l_step)
+                curr_w += w_steps[j + 1]
+        return point_grid
 
     def populate_aligned_entry_points(self, joint, angle, amount: int = None):
         """
@@ -166,15 +212,15 @@ class ScrewSolver:
         
         Returns
         -------
-        list of list of Point
-            Inner list is along the width direction.
+        bool, list of list of Point
+            Success flag and the entry points to create screw lines.
         """
         if joint.entry_type != "aligned":
             raise ValueError("Wrong entry type. Expected 'aligned'.")
         spec = self._spec_cache["aligned"]
 
         if amount == 0:
-            return [[]]
+            return False, None
         
         # 1. Calculate the maximum screw number in width and length
         max_w_num, max_l_num = self.calculate_screw_capacity(joint, angle=angle)
@@ -192,10 +238,15 @@ class ScrewSolver:
             best = next(((w_num, l_num) for w_num, l_num in distributions if l_num <= max_l_num))
             max_w_num, max_l_num = best
         else:
-            self.capacity_warnings.append(
-                {"joint_guid": joint.guid, "joint": joint, "requested": amount, "capacity": (max_w_num, max_l_num)}
-            )
-            pass
+            self.capacity_warnings.append({
+                "joint_guid": joint.guid,
+                "joint": joint,
+                "requested": amount,
+                "capacity": (max_w_num, max_l_num),
+                "screw_angle": angle,
+                })
+            success = False
+            return success, None
         
         # 3. Create the step distances in width
         w_steps_map = {
@@ -222,7 +273,8 @@ class ScrewSolver:
             for j in range(max_w_num):
                 point_grid[i][j] = start + (vec_w * curr_w) + (vec_l * i * l_step)
                 curr_w += w_steps[j + 1]
-        return point_grid
+        success = True
+        return success, point_grid
     
     def populate_crossed_entry_points(self, joint, amount: int = None):
         """
@@ -670,7 +722,10 @@ def apply_screws(
             
         if joint.entry_type == "aligned":
 
-            entry_point_grid = solver.populate_aligned_entry_points(joint, angle=screw_angle, amount=screw_amount)
+            success, entry_point_grid = solver.populate_aligned_entry_points(joint, angle=screw_angle, amount=screw_amount)
+            if not success:
+                entry_point_grid = solver.regenerate_aligned_entry_points(joint)
+                # continue
             screws = solver.populate_aligned_screws(joint, angle=screw_angle, point_grid=entry_point_grid)                
 
         elif joint.entry_type == "crossed":
