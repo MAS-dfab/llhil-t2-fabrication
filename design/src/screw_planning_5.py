@@ -6,7 +6,7 @@ from screw import Screw, RejectReason
 from compas.geometry import (
     Frame, Line, Cylinder, Polyline,
     cross_vectors, angle_vectors,
-    KDTree
+    KDTree, Point, Vector
 )
 from compas_timber.connections import (
     TMultiStepJoint, TStepJoint, TButtJoint, TBirdsmouthJoint, KBirdsmouthJoint
@@ -119,8 +119,9 @@ class ScrewSolver:
 
         elif joint.entry_type == "krossed":
             spec = self._spec_cache["krossed"]
-            entry_corners_a, _ = joint._calculate_entry_exit_frames(data_type="points")["sides"][0]
-            entry_corners_b, _ = joint._calculate_entry_exit_frames(data_type="points")["sides"][1]
+            entry_corners_a, _ = joint._calculate_entry_exit_frames(angle=angle, data_type="points")["sides"][0]
+            entry_corners_b, _ = joint._calculate_entry_exit_frames(angle=angle, data_type="points")["sides"][1]
+            entry_bottom, _ = joint._calculate_entry_exit_frames(angle=angle, data_type="points")["bottom"]
             
             len_l_a = entry_corners_a[0].distance_to_point(entry_corners_a[1])
             len_l_b = entry_corners_b[0].distance_to_point(entry_corners_b[1])
@@ -128,7 +129,8 @@ class ScrewSolver:
 
             max_w_num = 2
             table = sorted(spec.spec_table["min_widths"].items(), key=lambda x: x[0], reverse=True)
-            max_l_num = next((pair_count for pair_count, min_width in table if len_l >= min_width), 0)
+            # max_l_num = next((pair_count for pair_count, min_width in table if len_l >= min_width), 0)
+            max_l_num = 1
 
         else:
             raise ValueError("Unknown entry type.")
@@ -278,7 +280,7 @@ class ScrewSolver:
             point_grid.append([pt_left, pt_right])
         return point_grid
 
-    def populate_krossed_entry_points(self, joint, amount: int = None):
+    def populate_krossed_entry_points(self, joint, angle, amount: int = None):
         """
         Populate screw points on the entry face from the height sides.
 
@@ -301,12 +303,25 @@ class ScrewSolver:
             raise ValueError("Wrong entry type. Not kool...")
         spec = self._spec_cache["krossed"]
 
-        # Find offset entry points
-        corners_a = joint._calculate_entry_exit_frames(data_type="points")["sides"][0]
-        offset_dire_a = joint._calculate_screw_directions()["sides"][0]
+        entry_points = {}
         
-        corners_b = joint._calculate_entry_exit_frames(data_type="points")["sides"][1]
-        offset_dire_b = joint._calculate_screw_directions()["sides"][1]
+        # Find offset entry points
+        corners_a = joint._calculate_entry_exit_frames(angle=angle, data_type="points")["sides"][0]
+        offset_dire_a = joint._calculate_screw_directions(angle=angle)["sides"][0]
+        
+        corners_b = joint._calculate_entry_exit_frames(angle=angle, data_type="points")["sides"][1]
+        offset_dire_b = joint._calculate_screw_directions(angle=angle)["sides"][1]
+        
+        entry_bottom, _ = joint._calculate_entry_exit_frames(angle=angle, data_type="points")["bottom"]
+        
+        # Test: get center point of the entry 
+        cx = sum(p.x for p in entry_bottom) / len(entry_bottom)
+        cy = sum(p.y for p in entry_bottom) / len(entry_bottom)
+        cz = sum(p.z for p in entry_bottom) / len(entry_bottom)
+        
+        entry_points["bottom"] = Point(cx, cy, cz)
+        
+        return entry_points
 
 
     @staticmethod
@@ -475,6 +490,56 @@ class ScrewSolver:
                 screw_list.append(screw)
         return screw_list
 
+    def populate_krossed_screws(self, joint, angle, point_grid):
+        """
+        Populate screw lines from the entry face to the exit face.
+
+        Parameters
+        ----------
+        joint : JointWrapper
+            The joint to populate screws on.
+        angle : float
+            The angle to determine the screw direction for aligned entry type.
+        point_grid : list of list of Point
+            The entry points to create screw lines.
+        restrict : bool
+            If True, restrict the screw length to the predefined lengths.
+        
+        Returns
+        -------
+        list of list of Lines
+            Inner list is along the width direction.
+        """
+        if joint.entry_type != "krossed":
+            raise ValueError("Wrong entry type. Expected 'aligned'.")
+        spec = self._spec_cache["krossed"]
+        screw_lengths = sorted(spec.SCREW_LENGTHS, reverse=True)
+        
+        corners = joint.get_interface_boundary_vertical(data_type="points")
+        interface = Frame.from_points(corners[0], corners[1], corners[2])
+
+        # 2. Create exit frame and screw direction
+        _, pts_exit = joint.find_screw_boundaries(angle=angle, data_type="points")["bottom"]
+        exit_frame = Frame.from_points(pts_exit[0], pts_exit[1], pts_exit[2])
+        dire = joint._calculate_screw_directions(angle=angle)["bottom"]
+        
+
+        
+        # 3. get the length of each screw line by projecting the point to the exit face
+        screw_list = []
+        for i, row in enumerate(point_grid):
+            for j, pt_entry in enumerate(row):
+                pt_exit = project_point_to_frame_along(pt_entry, dire, exit_frame)
+                dire = Vector.from_start_end(pt_entry, pt_exit).unitized()
+                
+                screw = self.generate_screw(pt_entry, dire, interface, exit_frame, spec, screw_lengths)
+                screw.joint_guid = joint.guid
+                screw.joint_type = joint.__class__.__name__
+                screw.position = (i, j)
+
+                screw_list.append(screw)
+        return screw_list
+    
     def create_screw_cylinders(self, screw_list):
         cylinders = []
         for screw in screw_list:
@@ -571,7 +636,7 @@ def apply_screws(
     joints_to_process = []
     # 1. Wrap the joint with the corresponding class in JOINT_MAP if it exists
     for joint in model.joints:
-        if joint.name not in ("TMultiStepJoint", "TStepJoint",):
+        if joint.name not in ("TMultiStepJoint", "TStepJoint", "KBirdsmouthJoint"):
             continue  # temporary for testing only TMultiStepJoint, TStepJoint first
         
         joint_class = joint.__class__
@@ -586,9 +651,9 @@ def apply_screws(
 
     # 2. Populate screws and add drilling features
     for joint in joints_to_process:
-        if not joint.is_planar:
-            print(f"Warning: {joint.name} is not planar. Skipping screw placement.")
-            continue  # temp.
+    #     if not joint.is_planar:
+    #         print(f"Warning: {joint.name} is not planar. Skipping screw placement.")
+    #         continue  # temp.
         
         # 3. Get requested screw amount if provided, otherwise use the maximum capacity
         if screw_map is None:
@@ -596,7 +661,8 @@ def apply_screws(
         else:
             screw_amount = int(screw_map.get(str(joint.guid), -1))
             if screw_amount == -1:
-                raise ValueError(f"Screw amount for joint {joint.guid} not specified in screw_map.")
+                screw_amount = 1
+                # raise ValueError(f"Screw amount for joint {joint.guid} not specified in screw_map.")
             if screw_amount == 2:
                 screw_amount = 3 # minimun screw amount 
         
@@ -611,6 +677,10 @@ def apply_screws(
             entry_point_grid = solver.populate_crossed_entry_points(joint, amount=screw_amount)
             screws = solver.populate_crossed_screws(joint, entry_point_grid)
 
+        elif joint.entry_type == "krossed":
+            entry_point_grid = [[solver.populate_krossed_entry_points(joint, angle=screw_angle, amount=screw_amount)["bottom"]]]
+            screws = solver.populate_krossed_screws(joint, angle=screw_angle, point_grid=entry_point_grid)
+
         else:
             raise ValueError("Unknown entry type.")
 
@@ -622,7 +692,8 @@ def apply_screws(
                 if joint.__class__ == TSJ and joint.cross_beam.attributes["level"] == 0:
                     screw.protrude()
             elif screw.reject_reason == RejectReason.ENTRY_MATERIAL_TOO_THICK:
-                counterbored_lines = screw.counterbore(penetration=solver.get_specification(joint).penetration)        
+                if joint.__class__ == TMSJ:
+                    counterbored_lines = screw.counterbore(penetration=solver.get_specification(joint).penetration)        
 
         if add_features:
             solver.add_drilling_features(
@@ -636,8 +707,13 @@ def apply_screws(
                 #pass
             
         if with_data:
-            interface = joint.get_interface_boundary(data_type="polyline")
-            entry_face, exit_face = joint.find_screw_boundaries(angle=screw_angle, data_type="polylines")
+            if joint.name != "KBirdsmouthJoint":
+                interface = joint.get_interface_boundary(data_type="polyline")
+                entry_face, exit_face = joint.find_screw_boundaries(angle=screw_angle, data_type="polylines")
+            else:
+                interface = joint.get_interface_boundary_horizontal(data_type="polyline")
+                entry_face, exit_face = joint.find_screw_boundaries(angle=screw_angle, data_type="points")["bottom"]
+            
             if joint.entry_type == "aligned":
                 corners = solver.shrink_aligned_entry_corners(joint, angle=screw_angle)
                 entry_face = Polyline(corners + [corners[0]])
