@@ -1,4 +1,29 @@
-"""Timber screw planning."""
+"""
+Timber screw planning.
+
+Usage in grasshopper:
+    from screw_planning_5 import apply_screws
+    from Grasshopper import DataTree
+    from Grasshopper.Kernel.Data import GH_Path
+    
+    results = apply_screws(
+        model,
+        spec_model="WT-plus-6.5",
+        screw_map=mapped,
+        screw_angle=40,
+        add_features=False,
+        drill_target="main",
+        depth_limited=False,
+        with_data=True,
+        debug=True
+    )
+    screw_lines = DataTree[object]()
+    for i, result in enumerate(results["joint_data"].values()):
+        path = GH_Path(i)
+        screws = result["screws"]
+        lines = [s.line for s in screws]
+        screw_lines.AddRange(lines, path)
+"""
 
 from joint_wrappers_3 import TMSJ, TSJ, TBJ, TBMJ, KBMJ, project_point_to_frame_along # NOTE: temp.
 from screw_spec_2 import ScrewSpecification
@@ -73,7 +98,7 @@ class ScrewSolver:
         # 1. Offset the corners where the screws will start to be placed.
         angle_dire_cross = angle_vectors(dire, joint.cross_beam.centerline.direction)
         angle_dire_cross = self.convert_to_acute_angle(angle_dire_cross)
-        dist_perp_to_cross = math.sin(angle_dire_cross) * spec.penetration
+        dist_perp_to_cross = math.sin(angle_dire_cross) * spec.PENENTRATION_ENTRY
         amp_start = dist_perp_to_cross / math.sin(math.radians(joint.acute_angle))
 
         # 2. Offset the corners where the screws will end to be placed.
@@ -188,7 +213,8 @@ class ScrewSolver:
         elif amount <= max_w_num * max_l_num:
             distributions = self.calculate_screw_distributions(amount, max_w_num)
             # Length direction is the priority to fill
-            distributions.sort(key=lambda x: x[1], reverse=True)
+            # distributions.sort(key=lambda x: x[1], reverse=True)
+            distributions.sort(key=lambda x: (-x[1], x[0]))  # Sort by length descending, then width descending
             best = next(((w_num, l_num) for w_num, l_num in distributions if l_num <= max_l_num))
             max_w_num, max_l_num = best
         else:
@@ -301,7 +327,7 @@ class ScrewSolver:
         # Find offset entry points
         corners = joint.get_interface_boundary(data_type="points")
         offset_dire = joint.calculate_screw_direction()
-        amp = math.cos(math.radians(spec.side_angle)) * spec.penetration
+        amp = math.cos(math.radians(spec.side_angle)) * spec.PENENTRATION_ENTRY
         offset_vec = offset_dire * amp
 
         pts_entry = [p + offset_vec for p in corners]
@@ -412,21 +438,21 @@ class ScrewSolver:
         
         # 1. Check if sufficient penetration in exit beam is achieved
         dist_exit = depth - dist_entry
-        if dist_exit < spec.penetration:
+        if dist_exit < spec.PENENTRATION_EXIT:
             screw.is_valid = False
             screw.reject_reason = RejectReason.EXIT_MATERIAL_TOO_THIN
             screw.dist_in_exit = dist_exit
             return screw
         
         # 2.
-        min_required_length = dist_entry + spec.penetration
+        min_required_length = dist_entry + spec.PENENTRATION_EXIT
         valid_screws = [l for l in screw_lengths if l >= min_required_length]
         if not valid_screws:
             screw.is_valid = False
             screw.length = screw_lengths[0]  # The longest screw in the catalog
             screw.dist_in_exit = screw.length - dist_entry
 
-            if (spec.penetration * 2) > screw.length:
+            if (spec.PENENTRATION_ENTRY + spec.PENENTRATION_EXIT) > screw.length:
                 screw.reject_reason = RejectReason.SPEC_MAX_INSUFFICIENT
             else:
                 screw.reject_reason = RejectReason.ENTRY_MATERIAL_TOO_THICK  # Do counterbore
@@ -714,15 +740,11 @@ def apply_screws(
                 # raise ValueError(f"Screw amount for joint {joint.guid} not specified in screw_map.")
             if screw_amount == 2:
                 screw_amount = 3 # minimun screw amount 
-        
-        # if isinstance(joint, TSJ) and joint.entry_type == "aligned":
             
         if joint.entry_type == "aligned":
-
             success, entry_point_grid = solver.populate_aligned_entry_points(joint, angle=screw_angle, amount=screw_amount)
             if not success:
                 entry_point_grid = solver.regenerate_aligned_entry_points(joint)
-                # continue
             screws = solver.populate_aligned_screws(joint, angle=screw_angle, point_grid=entry_point_grid)                
 
         elif joint.entry_type == "crossed":
@@ -736,15 +758,15 @@ def apply_screws(
         else:
             raise ValueError("Unknown entry type.")
 
-        # Allow to protrude through the exit beam into clt plate
+        # Evaluate and resolve the screws
         for screw in screws:
             if screw.is_valid:
                 continue
             if screw.reject_reason == RejectReason.EXIT_PROTRUSION:
                 if joint.__class__ == TSJ and joint.cross_beam.attributes["level"] == 0:
-                    screw.protrude()
+                    screw.protrude()  # Allow to protrude through the exit beam into clt plate
             elif screw.reject_reason == RejectReason.ENTRY_MATERIAL_TOO_THICK:
-                    counterbored_lines = screw.counterbore(penetration=solver.get_specification(joint).penetration)        
+                    counterbored_lines = screw.counterbore(penetration=solver.get_specification(joint).PENENTRATION_EXIT)        
 
         if add_features:
             solver.add_drilling_features(
@@ -753,9 +775,6 @@ def apply_screws(
                 target=drill_target,
                 depth_limited=depth_limited
             )
-            #if counterbored_lines:
-                # Add counterbored drilling features here
-                #pass
             
         if with_data:
             if joint.name == "KBirdsmouthJoint":

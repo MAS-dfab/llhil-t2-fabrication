@@ -25,7 +25,9 @@ class ScrewSpecification:
     DRILLING_DIAMETER = 0.004
     SCREW_DIAMETER = 0.0065
     SCREW_LENGTHS = [0.130, 0.150, 0.190, 0.215]  # Not confirmed yet
-    BACK_THRESHOLD = 0.000  # Cound be zero
+    BACK_THRESHOLD = 0.005  # Could be zero
+    PENENTRATION_ENTRY = 0.065  # Includes the screw head
+    PENENTRATION_EXIT = 0.060
 
     def __init__(self, entry_type=None, spec_model="WT-plus-6.5"):
         if spec_model not in self.SPEC_TABLE:
@@ -43,7 +45,6 @@ class ScrewSpecification:
             self.a2_cg = 0.025
             self.a2_red = None
 
-            self.penetration = 0.060  # Temporary value, should be 0.060
             self.side_angle = None
             
         elif entry_type == "crossed":
@@ -53,5 +54,4 @@ class ScrewSpecification:
             self.a2_cg = self.spec_table["a2_cg"]
             self.a2_red = self.spec_table["a2_red"]
 
-            self.penetration = 0.060
             self.side_angle = 45  # Originally 45 degrees
