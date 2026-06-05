@@ -1,0 +1,2098 @@
+<?xml version="1.0" ?>
+<BTLx xmlns="https://www.design2machine.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="2.0.0" Language="en" xsi:schemaLocation="https://www.design2machine.com https://www.design2machine.com/btlx/btlx_2_0_0.xsd">
+   <FileHistory>
+      <InitialExportProgram CompanyName="Gramazio Kohler Research" ProgramName="COMPAS_Timber" ProgramVersion="Compas: 2.15.1" ComputerName="PAPACHAP" UserName="kapso" FileName="" Date="2026-05-27" Time="16:36:57" Comment=""/>
+   </FileHistory>
+   <Project Name="COMPAS Timber Project">
+      <Parts>
+         <Part SingleMemberNumber="0" AssemblyNumber="" OrderNumber="0" Designation="Beam" Annotation="M0L0_41" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1945.130" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="04c6" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{04c653ab-93a5-45b0-81b9-902e8d4ae14b}">
+                  <Position>
+                     <ReferencePoint X="11162.154" Y="10963.704" Z="408.658"/>
+                     <XVector X="0.909" Y="-0.417" Z="-0.000"/>
+                     <YVector X="-0.044" Y="-0.096" Z="-0.994"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="3" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>64.545</StartY>
+                  <Inclination>-83.951</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1945.130</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>460.197</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>159.405</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1532.222</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>155.252</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="3">
+                  <Orientation>start</Orientation>
+                  <StartX>955.792</StartX>
+                  <StartY>0.000</StartY>
+                  <Angle>48.958</Angle>
+                  <Inclination>84.581</Inclination>
+                  <Slope>-4.700</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>54.232</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="3">
+                  <Orientation>start</Orientation>
+                  <StartX>-10.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>90.000</Angle>
+                  <Inclination>59.036</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="3">
+                  <Orientation>end</Orientation>
+                  <StartX>1955.130</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>90.000</Angle>
+                  <Inclination>59.036</Inclination>
+               </JackRafterCut>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="1" AssemblyNumber="" OrderNumber="1" Designation="Beam" Annotation="M0L0_34" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1932.819" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="1730" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{17309c28-97d4-47df-927a-dc9032895568}">
+                  <Position>
+                     <ReferencePoint X="15157.423" Y="9244.209" Z="411.139"/>
+                     <XVector X="0.907" Y="0.421" Z="0.000"/>
+                     <YVector X="0.068" Y="-0.148" Z="-0.987"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="1" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>61.749</StartY>
+                  <Inclination>-80.631</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1932.819</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1882.819</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>444.046</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>158.151</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1488.504</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>158.173</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>943.458</StartX>
+                  <StartY>0.000</StartY>
+                  <Angle>49.180</Angle>
+                  <Inclination>90.060</Inclination>
+                  <Slope>0.052</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>42.887</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="2" AssemblyNumber="" OrderNumber="2" Designation="Beam" Annotation="M0L0_40" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1932.819" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="1953" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{19533699-b26f-498e-a5bd-87f388d12378}">
+                  <Position>
+                     <ReferencePoint X="11205.102" Y="10154.156" Z="411.139"/>
+                     <XVector X="0.907" Y="0.421" Z="0.000"/>
+                     <YVector X="0.068" Y="-0.148" Z="-0.987"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="1" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>61.749</StartY>
+                  <Inclination>-80.631</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1932.819</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1882.819</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>477.731</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>160.614</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1454.817</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>160.632</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>943.458</StartX>
+                  <StartY>-0.000</StartY>
+                  <Angle>49.180</Angle>
+                  <Inclination>90.060</Inclination>
+                  <Slope>0.052</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>42.887</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="3" AssemblyNumber="" OrderNumber="3" Designation="Beam" Annotation="M0L0_4" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1932.819" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="42b1" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{42b1c8a2-35ab-4c94-95d2-06189eb83d8b}">
+                  <Position>
+                     <ReferencePoint X="11223.867" Y="8334.261" Z="411.139"/>
+                     <XVector X="0.907" Y="0.421" Z="0.000"/>
+                     <YVector X="0.068" Y="-0.148" Z="-0.987"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="1" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>61.749</StartY>
+                  <Inclination>-80.631</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1932.819</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1882.819</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>442.772</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>158.046</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1549.350</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>151.720</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>943.458</StartX>
+                  <StartY>-0.000</StartY>
+                  <Angle>49.180</Angle>
+                  <Inclination>90.060</Inclination>
+                  <Slope>0.052</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>42.887</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="4" AssemblyNumber="" OrderNumber="4" Designation="Beam" Annotation="M0L0_11" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1945.130" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="4dd2" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{4dd248e3-10b1-4f3f-a9ac-de836f9bcc8e}">
+                  <Position>
+                     <ReferencePoint X="13152.389" Y="9143.809" Z="408.658"/>
+                     <XVector X="0.909" Y="-0.417" Z="0.000"/>
+                     <YVector X="-0.044" Y="-0.096" Z="-0.994"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="3" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>64.545</StartY>
+                  <Inclination>-83.951</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1945.130</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1895.130</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="3">
+                  <Orientation>start</Orientation>
+                  <StartX>955.792</StartX>
+                  <StartY>0.000</StartY>
+                  <Angle>48.958</Angle>
+                  <Inclination>84.581</Inclination>
+                  <Slope>-4.700</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>54.232</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>447.857</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>158.460</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1472.924</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>160.249</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="5" AssemblyNumber="" OrderNumber="5" Designation="Beam" Annotation="M0L0_23" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1945.130" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="5e2b" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{5e2b94ed-89cb-41cf-bcc2-7f8892e28885}">
+                  <Position>
+                     <ReferencePoint X="11171.537" Y="10053.756" Z="408.658"/>
+                     <XVector X="0.909" Y="-0.417" Z="0.000"/>
+                     <YVector X="-0.044" Y="-0.096" Z="-0.994"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="3" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>64.545</StartY>
+                  <Inclination>-83.951</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1945.130</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1895.130</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="3">
+                  <Orientation>start</Orientation>
+                  <StartX>955.792</StartX>
+                  <StartY>0.000</StartY>
+                  <Angle>48.958</Angle>
+                  <Inclination>84.581</Inclination>
+                  <Slope>-4.700</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>54.232</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1539.523</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>154.460</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>446.114</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>158.320</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="6" AssemblyNumber="" OrderNumber="6" Designation="Beam" Annotation="M0L0_47" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1945.130" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="60fe" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{60fe5b3c-a695-42bd-afc8-ed26d9975d31}">
+                  <Position>
+                     <ReferencePoint X="13133.623" Y="10963.704" Z="408.658"/>
+                     <XVector X="0.909" Y="-0.417" Z="0.000"/>
+                     <YVector X="-0.044" Y="-0.096" Z="-0.994"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="3" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>64.545</StartY>
+                  <Inclination>-83.951</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1945.130</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1895.130</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="3">
+                  <Orientation>start</Orientation>
+                  <StartX>955.792</StartX>
+                  <StartY>0.000</StartY>
+                  <Angle>48.958</Angle>
+                  <Inclination>84.581</Inclination>
+                  <Slope>-4.700</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>54.232</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1464.041</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>160.830</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>456.692</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>159.145</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="7" AssemblyNumber="" OrderNumber="7" Designation="Beam" Annotation="M0L0_5" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1945.130" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="695f" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{695fbdc3-0a29-4de8-bd83-cfa1f3ab8c28}">
+                  <Position>
+                     <ReferencePoint X="11180.920" Y="9143.809" Z="408.658"/>
+                     <XVector X="0.909" Y="-0.417" Z="-0.000"/>
+                     <YVector X="-0.044" Y="-0.096" Z="-0.994"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="3" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>64.545</StartY>
+                  <Inclination>-83.951</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1945.130</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1895.130</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1478.269</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>159.882</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="3">
+                  <Orientation>start</Orientation>
+                  <StartX>955.792</StartX>
+                  <StartY>0.000</StartY>
+                  <Angle>48.958</Angle>
+                  <Inclination>84.581</Inclination>
+                  <Slope>-4.700</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>54.232</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>442.544</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>158.026</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="8" AssemblyNumber="" OrderNumber="8" Designation="Beam" Annotation="M0L0_29" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1945.130" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="7b24" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{7b24d51c-c947-495b-acb8-3c1bde24d414}">
+                  <Position>
+                     <ReferencePoint X="13143.006" Y="10053.756" Z="408.658"/>
+                     <XVector X="0.909" Y="-0.417" Z="0.000"/>
+                     <YVector X="-0.044" Y="-0.096" Z="-0.994"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="3" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>64.545</StartY>
+                  <Inclination>-83.951</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1945.130</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1895.130</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>330.528</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>142.077</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="3">
+                  <Orientation>start</Orientation>
+                  <StartX>955.792</StartX>
+                  <StartY>0.000</StartY>
+                  <Angle>48.958</Angle>
+                  <Inclination>84.581</Inclination>
+                  <Slope>-4.700</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>54.232</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1594.884</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>146.331</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="9" AssemblyNumber="" OrderNumber="9" Designation="Beam" Annotation="M0L0_35" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1945.130" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="8a7d" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{8a7d6eba-22af-4636-b54b-937819b8d6a0}">
+                  <Position>
+                     <ReferencePoint X="15114.475" Y="10053.756" Z="408.658"/>
+                     <XVector X="0.909" Y="-0.417" Z="-0.000"/>
+                     <YVector X="-0.044" Y="-0.096" Z="-0.994"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="3" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>64.545</StartY>
+                  <Inclination>-83.951</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1945.130</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1895.130</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>371.350</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>149.961</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1492.569</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>158.830</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="3">
+                  <Orientation>start</Orientation>
+                  <StartX>955.792</StartX>
+                  <StartY>-0.000</StartY>
+                  <Angle>48.958</Angle>
+                  <Inclination>84.581</Inclination>
+                  <Slope>-4.700</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>54.232</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="10" AssemblyNumber="" OrderNumber="10" Designation="Beam" Annotation="M0L0_22" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1932.819" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="90d1" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{90d126de-a7ea-4ace-9658-3c1b36563b88}">
+                  <Position>
+                     <ReferencePoint X="11214.485" Y="9244.209" Z="411.139"/>
+                     <XVector X="0.907" Y="0.421" Z="-0.000"/>
+                     <YVector X="0.068" Y="-0.148" Z="-0.987"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="1" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>61.749</StartY>
+                  <Inclination>-80.631</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1932.819</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1882.819</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>943.458</StartX>
+                  <StartY>0.000</StartY>
+                  <Angle>49.180</Angle>
+                  <Inclination>90.060</Inclination>
+                  <Slope>0.052</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>42.887</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>462.810</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>159.595</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1469.738</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>159.614</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="11" AssemblyNumber="" OrderNumber="11" Designation="Beam" Annotation="M0L0_16" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1932.819" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="9ab2" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{9ab27e32-f9fb-4482-b7d2-22cbd7a22506}">
+                  <Position>
+                     <ReferencePoint X="15166.806" Y="8334.261" Z="411.139"/>
+                     <XVector X="0.907" Y="0.421" Z="-0.000"/>
+                     <YVector X="0.068" Y="-0.148" Z="-0.987"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="1" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>61.749</StartY>
+                  <Inclination>-80.631</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1932.819</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1882.819</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>429.082</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>156.847</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>943.458</StartX>
+                  <StartY>0.000</StartY>
+                  <Angle>49.180</Angle>
+                  <Inclination>90.060</Inclination>
+                  <Slope>0.052</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>42.887</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1503.469</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>156.871</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="12" AssemblyNumber="" OrderNumber="12" Designation="Beam" Annotation="M0L0_28" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1932.819" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="9d59" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{9d59a9d2-4491-4a69-91ea-88e161b9de4d}">
+                  <Position>
+                     <ReferencePoint X="13185.954" Y="9244.209" Z="411.139"/>
+                     <XVector X="0.907" Y="0.421" Z="0.000"/>
+                     <YVector X="0.068" Y="-0.148" Z="-0.987"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="1" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>61.749</StartY>
+                  <Inclination>-80.631</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1932.819</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1882.819</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>338.212</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>143.853</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1594.352</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>143.909</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>943.458</StartX>
+                  <StartY>-0.000</StartY>
+                  <Angle>49.180</Angle>
+                  <Inclination>90.060</Inclination>
+                  <Slope>0.052</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>42.887</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="13" AssemblyNumber="" OrderNumber="13" Designation="Beam" Annotation="M0L0_52" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1932.819" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="a168" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{a168902f-8bba-42b1-939d-9cecb79e8e5b}">
+                  <Position>
+                     <ReferencePoint X="15148.040" Y="10154.156" Z="411.139"/>
+                     <XVector X="0.907" Y="0.421" Z="-0.000"/>
+                     <YVector X="0.068" Y="-0.148" Z="-0.987"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="1" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>61.749</StartY>
+                  <Inclination>-80.631</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1932.819</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1882.819</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>943.458</StartX>
+                  <StartY>0.000</StartY>
+                  <Angle>49.180</Angle>
+                  <Inclination>90.060</Inclination>
+                  <Slope>0.052</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>42.887</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>383.235</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>151.688</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1490.274</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>158.027</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="14" AssemblyNumber="" OrderNumber="14" Designation="Beam" Annotation="M0L0_46" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1932.819" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="d450" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{d4500a59-62ff-40bf-8cfe-597d389cb89e}">
+                  <Position>
+                     <ReferencePoint X="13176.571" Y="10154.156" Z="411.139"/>
+                     <XVector X="0.907" Y="0.421" Z="-0.000"/>
+                     <YVector X="0.068" Y="-0.148" Z="-0.987"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="1" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>61.749</StartY>
+                  <Inclination>-80.631</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1932.819</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1882.819</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>392.123</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>152.857</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>943.458</StartX>
+                  <StartY>0.000</StartY>
+                  <Angle>49.180</Angle>
+                  <Inclination>90.060</Inclination>
+                  <Slope>0.052</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>42.887</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1476.744</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>159.099</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="15" AssemblyNumber="" OrderNumber="15" Designation="Beam" Annotation="M0L0_53" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1945.130" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="d485" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{d485edf5-cc37-4ed2-a0a9-675769f91ab0}">
+                  <Position>
+                     <ReferencePoint X="15105.093" Y="10963.704" Z="408.658"/>
+                     <XVector X="0.909" Y="-0.417" Z="0.000"/>
+                     <YVector X="-0.044" Y="-0.096" Z="-0.994"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="3" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>64.545</StartY>
+                  <Inclination>-83.951</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1945.130</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1895.130</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="3">
+                  <Orientation>start</Orientation>
+                  <StartX>955.792</StartX>
+                  <StartY>-0.000</StartY>
+                  <Angle>48.958</Angle>
+                  <Inclination>84.581</Inclination>
+                  <Slope>-4.700</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>54.232</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>442.005</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>157.981</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1478.810</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>159.844</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="16" AssemblyNumber="" OrderNumber="16" Designation="Beam" Annotation="M0L0_10" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1932.819" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="e5c5" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{e5c5fb54-f558-46c1-8e7b-23a01808229a}">
+                  <Position>
+                     <ReferencePoint X="13195.337" Y="8334.261" Z="411.139"/>
+                     <XVector X="0.907" Y="0.421" Z="0.000"/>
+                     <YVector X="0.068" Y="-0.148" Z="-0.987"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="1" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>61.749</StartY>
+                  <Inclination>-80.631</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1932.819</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1882.819</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>1366.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>566.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <StartX>766.409</StartX>
+                  <StartY>50.000</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>90.000</Inclination>
+                  <DepthLimited>yes</DepthLimited>
+                  <Depth>40.000</Depth>
+                  <Diameter>20.500</Diameter>
+               </Drilling>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>943.458</StartX>
+                  <StartY>-0.000</StartY>
+                  <Angle>49.180</Angle>
+                  <Inclination>90.060</Inclination>
+                  <Slope>0.052</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>42.887</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1545.969</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>152.175</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>447.672</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>158.445</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+            </Processings>
+         </Part>
+         <Part SingleMemberNumber="17" AssemblyNumber="" OrderNumber="17" Designation="Beam" Annotation="M0L0_17" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1945.130" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="ff57" Layer="0" ModuleNumber="">
+            <Transformations>
+               <Transformation GUID="{ff57071d-490b-45c5-a741-e6c6cf1a84f2}">
+                  <Position>
+                     <ReferencePoint X="15123.858" Y="9143.809" Z="408.658"/>
+                     <XVector X="0.909" Y="-0.417" Z="0.000"/>
+                     <YVector X="-0.044" Y="-0.096" Z="-0.994"/>
+                  </Position>
+               </Transformation>
+            </Transformations>
+            <GrainDirection X="1" Y="0" Z="0" Align="no"/>
+            <ReferenceSide Side="3" Align="yes"/>
+            <Processings>
+               <LongitudinalCut Name="LongitudinalCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4" ToolPosition="left">
+                  <StartX>0.000</StartX>
+                  <StartY>64.545</StartY>
+                  <Inclination>-83.951</Inclination>
+                  <StartLimited>no</StartLimited>
+                  <EndLimited>no</EndLimited>
+                  <Length>1945.130</Length>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>0.000</Depth>
+                  <AngleStart>90.000</AngleStart>
+                  <AngleEnd>90.000</AngleEnd>
+               </LongitudinalCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>start</Orientation>
+                  <StartX>50.000</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>1895.130</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>120.964</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <Lap Name="Lap" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="3">
+                  <Orientation>start</Orientation>
+                  <StartX>955.792</StartX>
+                  <StartY>-0.000</StartY>
+                  <Angle>48.958</Angle>
+                  <Inclination>84.581</Inclination>
+                  <Slope>-4.700</Slope>
+                  <Length>100.000</Length>
+                  <Width>100.000</Width>
+                  <Depth>54.232</Depth>
+                  <LeadAngleParallel>yes</LeadAngleParallel>
+                  <LeadAngle>90.000</LeadAngle>
+                  <LeadInclinationParallel>yes</LeadInclinationParallel>
+                  <LeadInclination>90.000</LeadInclination>
+                  <MachiningLimits FaceLimitedStart="yes" FaceLimitedEnd="yes" FaceLimitedFront="no" FaceLimitedBack="no" FaceLimitedTop="no" FaceLimitedBottom="yes"/>
+               </Lap>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>start</Orientation>
+                  <StartX>1506.907</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>157.661</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+               <StepJointNotch Name="StepJointNotch" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="1">
+                  <Orientation>end</Orientation>
+                  <StartX>361.955</StartX>
+                  <StartY>0.000</StartY>
+                  <StrutInclination>148.444</StrutInclination>
+                  <NotchLimited>no</NotchLimited>
+                  <NotchWidth>100.000</NotchWidth>
+                  <StepDepth>15.000</StepDepth>
+                  <HeelDepth>25.000</HeelDepth>
+                  <StrutHeight>100.000</StrutHeight>
+                  <StepShape>double</StepShape>
+                  <Mortise>no</Mortise>
+                  <MortiseWidth>40.000</MortiseWidth>
+                  <MortiseHeight>40.000</MortiseHeight>
+               </StepJointNotch>
+            </Processings>
+         </Part>
+      </Parts>
+   </Project>
+</BTLx>
