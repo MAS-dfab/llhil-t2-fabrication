@@ -727,10 +727,10 @@ class KBMJ(BaseBirdsmouthWrapper):
 
         if self.entry_type == "krossed":
             result = {}
-            pts_entry_sides, pts_exit_sides = self._calculate_entry_exit_frames(angle=angle, data_type="points")["sides"] # NOTE: should return 2 lists of lists. 1 for 'front side' and one for 'opposite side'
+            pts_side_a, pts_side_b = self._calculate_entry_exit_frames(angle=angle, data_type="points")["sides"] # NOTE: should return 2 lists of lists. 1 for 'front side' and one for 'opposite side'
             pts_entry_bottom, pts_exit_bottom = self._calculate_entry_exit_frames(angle=angle, data_type="points")["bottom"]
             
-            result["sides"] = (pts_entry_sides, pts_exit_sides)
+            result["sides"] = [(pts_side_a[0], pts_side_b[0]), (pts_side_a[1], pts_side_b[1])]
             result["bottom"] = (pts_entry_bottom, pts_exit_bottom)
             
         else:
@@ -740,10 +740,10 @@ class KBMJ(BaseBirdsmouthWrapper):
             return result
         elif data_type == "polylines":
             result = {}
-            pts_entry_sides, pts_exit_sides = self._calculate_entry_exit_frames(angle=angle, data_type="polyline")["sides"] # NOTE: should return 2 lists of lists. 1 for 'front side' and one for 'opposite side'
+            pts_side_a, pts_side_b = self._calculate_entry_exit_frames(angle=angle, data_type="polyline")["sides"] # NOTE: should return 2 lists of lists. 1 for 'front side' and one for 'opposite side'
             pts_entry_bottom, pts_exit_bottom = self._calculate_entry_exit_frames(angle=angle, data_type="polyline")["bottom"]
             
-            result["sides"] = (pts_entry_sides, pts_exit_sides)
+            result["sides"] = [(pts_side_a[0], pts_side_b[0]), (pts_side_a[1], pts_side_b[1])]
             result["bottom"] = (pts_entry_bottom, pts_exit_bottom)
             return result
         # Placeholder: other data_type handling can be implemented later.
