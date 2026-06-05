@@ -387,7 +387,6 @@ class KBMJ(BaseBirdsmouthWrapper):
         self.cutting_planes = joint._get_cutting_planes()[main_id]
         self.miter_plane = joint._get_miter_planes()[main_id]
         self.is_same_xy_sign = is_same_xy_sign(self.main_beam.centerline.direction)
-        self.is_acute = joint._is_
         
         if self.is_same_xy_sign:
             self.main_beam_ref_side_index = joint.main_ref_side_index + 3           # NOTE: main_ref_side pointing 'inwards' where its 'normal' is orientated towards the cross_beam centerline
@@ -412,7 +411,8 @@ class KBMJ(BaseBirdsmouthWrapper):
     def _get_vertical_pivot(self):
         x = self.main_beam.centerline.direction
         y = cross_vectors(x, Vector(0,0,1))
-        return cross_vectors(x,y)
+        pivot = Vector(*cross_vectors(x,y))
+        return pivot
     
     def _get_rotation_axis(self):
         return Vector(*cross_vectors(self.main_beam.centerline.direction, Vector(0,0,1))).unitized()
@@ -617,9 +617,14 @@ class KBMJ(BaseBirdsmouthWrapper):
             rotation_b = Rotation.from_axis_and_angle(pivot, math.radians(-angle))
             direction_a = centerline_dir.transformed(rotation_a).unitized()
             direction_b = centerline_dir.transformed(rotation_b).unitized()
+            
+            axis = self._get_rotation_axis()
+            rotation_axis = Rotation.from_axis_and_angle(axis, math.radians(-angle))
+            direction_axis = centerline_dir.transformed(rotation_axis).unitized()
 
         if direction_a and direction_b:
             screw_directions["sides"] = direction_a, direction_b
+            screw_directions["bottom"] = direction_axis
 
         if self.entry_type == "crossed":
             pass
@@ -631,7 +636,7 @@ class KBMJ(BaseBirdsmouthWrapper):
         """
         # get candidate screw directions as {name: Vector, ...}
 
-        directions = self._calculate_screw_directions(angle=20)
+        directions = self._calculate_screw_directions(angle=angle)
         pts_to_project_vertical = self.get_interface_boundary_vertical(data_type="points")
         pts_to_project_horizontal = self.get_interface_boundary_horizontal(data_type="points")
         pts_to_project = pts_to_project_vertical
@@ -673,16 +678,26 @@ class KBMJ(BaseBirdsmouthWrapper):
                     entry_poly = Polyline(entry_pts + [entry_pts[0]])
                     exit_poly = Polyline(exit_pts + [exit_pts[0]])
                     
-                    result[name] = (entry_poly, exit_poly, dire)
+                    result[name] = (entry_poly, exit_poly)
                 elif name == "top":
                     pass
 
         elif data_type == "points":
             for name, dire in directions.items():
-                entry_pts = tuple(project_point_to_frame_along(p, dire, entry_frame_a, tol=1e-6) for p in pts_to_project)
-                exit_pts = tuple(project_point_to_frame_along(p, -dire, exit_frame, tol=1e-6) for p in pts_to_project)
+                if name == "sides":
+                    entry_pts_a = [project_point_to_frame_along(p, dire[0], entry_frame_a, tol=1e-6) for p in pts_to_project]
+                    exit_pts_a = [project_point_to_frame_along(p, -dire[0], exit_frame, tol=1e-6) for p in pts_to_project]
 
-                result[name] = (entry_pts, exit_pts)
+                    entry_pts_b = [project_point_to_frame_along(p, dire[1], entry_frame_b, tol=1e-6) for p in pts_to_project]
+                    exit_pts_b = [project_point_to_frame_along(p, -dire[1], exit_frame, tol=1e-6) for p in pts_to_project]
+
+                    result[name] = [entry_pts_a, exit_pts_a],[entry_pts_b, exit_pts_b]
+                    
+                elif name == "bottom":
+                    entry_pts = [project_point_to_frame_along(p, dire, bottom_frame, tol=1e-6) for p in pts_to_project]
+                    exit_pts = [project_point_to_frame_along(p, -dire, top_frame, tol=1e-6) for p in pts_to_project]
+                    
+                    result[name] = (entry_pts, exit_pts)
 
         return result
     
@@ -711,12 +726,18 @@ class KBMJ(BaseBirdsmouthWrapper):
                 raise ValueError("Angle should be larger than 0")
 
         if self.entry_type == "krossed":
-            pts_entry,pts_exit = self._calculate_entry_exit_frames(data_type="polyline") # NOTE: should return 2 lists of lists. 1 for 'front side' and one for 'opposite side'
+            result = {}
+            pts_entry_sides,pts_exit_sides = self._calculate_entry_exit_frames(angle=angle, data_type="points")["sides"] # NOTE: should return 2 lists of lists. 1 for 'front side' and one for 'opposite side'
+            pts_entry_bottom,pts_exit_bottom = self._calculate_entry_exit_frames(angle=angle, data_type="points")["bottom"]
+            
+            result["sides"] = (pts_entry_sides, pts_exit_sides)
+            result["bottom"] = (pts_entry_bottom, pts_exit_bottom)
+            
         else:
             raise ValueError("Invalid entry type")
         
         if data_type == "points":
-            return None
+            return result
 
         # Placeholder: other data_type handling can be implemented later.
         raise NotImplementedError("find_screw_boundaries currently only supports data_type='points'.")

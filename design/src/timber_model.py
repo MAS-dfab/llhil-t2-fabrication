@@ -379,9 +379,9 @@ def _k_birdsmouth_solver(model, mill_depth, max_distance=None, miter_type=None, 
                 miter_pln = None
 
             if reordered_elements[-1].attributes["level"] == 0:
-                kwargs = {"mill_depth": mill_depth, "miter_plane": miter_pln}
+                kwargs = {"mill_depth": mill_depth}
             else:
-                kwargs = {"mill_depth": mill_depth/2, "miter_plane": miter_pln}
+                kwargs = {"mill_depth": mill_depth/2}
             # kwargs = {"mill_depth": mill_depth}
             KBirdsmouthJoint.promote_cluster(model, cluster, reordered_elements=reordered_elements, **kwargs)
     return
@@ -580,6 +580,7 @@ def apply_processings(
     a = []
 
     for beam in model.beams:
+        beam.features = []
         if beam.attributes.get("hierarchy") == "shoe":
             ext = 2.0 * SHOE_EXTENSION if SHOE_FULL_CUT else SHOE_EXTENSION
             beam.attributes["shoe_ext"] = SHOE_EXTENSION

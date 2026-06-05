@@ -512,9 +512,11 @@ class ScrewSolver:
             line = Line(line[0] - line.direction * tol, line[1])
 
             for beam in beams:
-                drilling = Drilling(depth_limited=depth_limited).from_line_and_element(
+                drilling = Drilling.from_line_and_element(
                     line, beam, ScrewSpecification.DRILLING_DIAMETER
                 )
+                drilling._is_joinery = False
+                drilling.depth_limited = False
                 beam.add_feature(drilling)
         return
     
@@ -595,6 +597,8 @@ def apply_screws(
             screw_amount = int(screw_map.get(str(joint.guid), -1))
             if screw_amount == -1:
                 raise ValueError(f"Screw amount for joint {joint.guid} not specified in screw_map.")
+            if screw_amount == 2:
+                screw_amount = 3 # minimun screw amount 
         
         # if isinstance(joint, TSJ) and joint.entry_type == "aligned":
             
@@ -627,9 +631,9 @@ def apply_screws(
                 target=drill_target,
                 depth_limited=depth_limited
             )
-            if counterbored_lines:
+            #if counterbored_lines:
                 # Add counterbored drilling features here
-                pass
+                #pass
             
         if with_data:
             interface = joint.get_interface_boundary(data_type="polyline")
