@@ -197,6 +197,8 @@ class BaseStepWrapper(BaseWrapper):
             return Polyline([p0, p1, p2, p3, p0])
         elif data_type == "points":
             return (p0, p1, p2, p3)
+        elif data_type == "frame":
+            return Frame.from_points(p0, p1, p3)
         return
 
     @property
@@ -218,7 +220,7 @@ class BaseStepWrapper(BaseWrapper):
         flip : bool
             Whether to flip the screw direction.
         data_type : str
-            "points", "brep", "polylines".
+            "points", "frame", "brep", "polylines".
         """
         if angle is not None:
             if angle <= 0:
@@ -270,6 +272,11 @@ class BaseStepWrapper(BaseWrapper):
         # Output data
         if data_type == "points":
             return (pts_entry, pts_exit)
+        
+        elif data_type == "frame":
+            frame_entry = Frame.from_points(pts_entry[0], pts_entry[1], pts_entry[3])
+            frame_exit = Frame.from_points(pts_exit[0], pts_exit[1], pts_exit[3])
+            return frame_entry, frame_exit
         
         elif data_type == "brep":
             pts_entry += [pts_entry[0]]
