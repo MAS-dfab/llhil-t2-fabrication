@@ -386,12 +386,19 @@ class ScrewSolver:
         # Find offset entry points for side A (acute)
         corners_a, _ = joint._calculate_entry_exit_frames(angle=angle, data_type="points")["sides"][0]
         offset_dire_a = joint._calculate_screw_directions(angle=angle)["sides"][0]
-        entry_points["side_a"] = find_average_point(corners_a)
+        avg_a = find_average_point(corners_a)
+        shift = Vector(0, 0, 1) * (spec.a2_red / 2.0)
+        # entry_points["side_a"] = avg_a
+        entry_points["side_a"] = avg_a + shift
         
         # Find offset entry points for side B (obtuse)
         corners_b, _ = joint._calculate_entry_exit_frames(angle=angle, data_type="points")["sides"][1]
-        offset_dire_a = joint._calculate_screw_directions(angle=angle)["sides"][1]
-        entry_points["side_b"] = find_average_point(corners_b)
+        offset_dire_b = joint._calculate_screw_directions(angle=angle)["sides"][1]
+        avg_b = find_average_point(corners_b)
+        shift_2 = Vector(0, 0, -1) * (spec.a2_red / 2.0)
+        # entry_points["side_b"] = avg_b - shift
+        entry_points["side_b"] = avg_b + shift_2
+
 
         # Find offset entry points for bottom
         entry_bottom, _ = joint._calculate_entry_exit_frames(angle=angle, data_type="points")["bottom"]
@@ -681,7 +688,7 @@ class ScrewSolver:
                 cylinders.append(screw.cylinder)
         return cylinders
     
-    def add_drilling_features(self, joint, screws, target="main", depth_limited=True, tol=1e-3):
+    def add_drilling_features(self, joint, screws, target="main", depth_limited=True, tol=1e-1):
         """
         Add drilling features created at the joint to the beam(s).
 
@@ -772,6 +779,7 @@ def apply_screws(
     # 1. Wrap the joint with the corresponding class in JOINT_MAP if it exists
     for joint in model.joints:
         if joint.name not in ("TMultiStepJoint", "TStepJoint", "KBirdsmouthJoint",):
+        # if joint.name not in ("KBirdsmouthJoint",):
             continue  # temporary for testing only TMultiStepJoint, TStepJoint first
         
         joint_class = joint.__class__
@@ -812,7 +820,7 @@ def apply_screws(
         elif joint.entry_type == "krossed":
             entry_points = solver.populate_krossed_entry_points(joint, angle=skrew_angle, amount=screw_amount)
             # entry_point_grid = [[entry_points["side_a"]], [entry_points["side_b"]], [entry_points["bottom"]]]
-            entry_point_grid = [[entry_points["side_a"]], [entry_points["side_b"]]]
+            entry_point_grid = [[entry_points["side_a"]], [entry_points["side_b"]], ]
             screws = solver.populate_krossed_screws(joint, angle=skrew_angle, point_grid=entry_point_grid)
 
         else:
