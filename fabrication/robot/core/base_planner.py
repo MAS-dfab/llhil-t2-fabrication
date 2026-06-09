@@ -85,12 +85,13 @@ class BaseRobotPlanner():
         temp_state.robot_configuration = configuration
         return self.planner.forward_kinematics(temp_state, TargetMode.TOOL, self.group)
     
-    def get_ik_from_frame(self, target_frame):
+    def get_ik_from_frame(self, target_frame, path_constraints=[]):
         """Calculates the inverse kinematics configuration for a given target frame."""
         frame_target = FrameTarget(target_frame, target_mode=TargetMode.TOOL)
         options = {
             "return_full_configuration": True,
-            "allow_collisions": True
+            "allow_collisions": False,
+            "constraints": path_constraints
         }
         ik_config = self.planner.inverse_kinematics(frame_target, self.state, self.group, options=options)
         try:
@@ -102,14 +103,14 @@ class BaseRobotPlanner():
     def get_constrained_ik_from_frame(self, target_frame):
         frame_target = FrameTarget(target_frame, target_mode=TargetMode.TOOL)
         j_constraints = [
-            JointConstraint('robot12_joint_2', math.radians(-55), math.radians(1), math.radians(1)),
-            JointConstraint('robot12_joint_3', math.radians(55), math.radians(1), math.radians(1)),
+            JointConstraint('robot12_joint_2', math.radians(-40), math.radians(15), math.radians(-15)),
+            JointConstraint('robot12_joint_3', math.radians(40), math.radians(15), math.radians(-15)),
         ]
-        ik_options = {"constraint": j_constraints}
+        ik_options = {"constraints": j_constraints, "allow_collisions": False, "return_full_configuration": True}
         approach_config = self.planner.inverse_kinematics(frame_target, self.state, self.group, options=ik_options)
         return approach_config
 
-    def update_state_from_trajectory(self, trajectory):
+    def update_state_from_trajectory(self, trajectory, grp="robot12_eaXYZ"):
         """Updates the internal robot state to match the end of a trajectory."""
         if not trajectory or not trajectory.points:
             return
@@ -118,7 +119,7 @@ class BaseRobotPlanner():
         configuration = self.planner._build_configuration(
             jtp.joint_values, 
             trajectory.joint_names, 
-            self.group, 
+            grp, 
             return_full_configuration=False, 
             start_configuration=trajectory.start_configuration
         )
@@ -139,7 +140,7 @@ class BaseRobotPlanner():
     def get_approach_frame(self, target_frame, approach_distance=1.5, vector=None):
         """Generates an approach frame backed off along the Z-axis of the target frame."""
         if vector:
-            return target_frame.translated(vector.unitized() * -approach_distance)
+            return target_frame.translated(vector * -approach_distance)
         else:
             return target_frame.translated(target_frame.zaxis * -approach_distance)
 
@@ -151,23 +152,33 @@ class BaseRobotPlanner():
         waypoints = FrameWaypoints(frames_list, TargetMode.TOOL)
         self.state.robot_configuration = self.current_configuration
         plan_options = self.default_options.copy()
-        plan_options["path_constraints"] = list(self.default_options["path_constraints"])
+        # plan_options["path_constraints"] = list(self.default_options["path_constraints"])
         plan_options["avoid_collisions"] = avoid_collisions
         if path_constraints:
             plan_options["path_constraints"].extend(path_constraints)
+
         # plan_options["path_constraints"].append(JointConstraint('robot12_joint_2', math.radians(0), math.radians(85), math.radians(85), 1.0))
 
         trajectory = None
+        tool_moved_to_planning_group = False
         try:
             if planning_group:
+                self.state.set_tool_attached_to_group(self.state.get_attached_tool_id(self.group), planning_group, touch_links=["robot12_link_6"])
+                tool_moved_to_planning_group = True
                 trajectory = self.planner.plan_cartesian_motion(waypoints, self.state, group=planning_group, options=plan_options)
             else:
                 trajectory = self.planner.plan_cartesian_motion(waypoints, self.state, group=self.group, options=plan_options)
             print(f"Cartesian trajectory planned. Fraction: {trajectory.fraction}")
             self.trajectory_list.append(trajectory)
-            self.update_state_from_trajectory(trajectory)
+            if planning_group:
+                self.update_state_from_trajectory(trajectory, grp=planning_group)
+            else:
+                self.update_state_from_trajectory(trajectory)
         except Exception as e:
             print(f"Cartesian planning failed: {e}")
+        finally:
+            if tool_moved_to_planning_group:
+                self.state.set_tool_attached_to_group(self.state.get_attached_tool_id(planning_group), self.group, touch_links=["robot12_link_6"])
         return trajectory
 
     def get_motion_to_frame(self, target_frame, planning_group=None, path_constraints=None):
@@ -206,7 +217,8 @@ class BaseRobotPlanner():
             "allowed_planning_time": 10, 
             "num_planning_attempts": 100,
             "max_steps": 0.1,
-            "path_constraints": self.global_constraints
+            # "path_constraints": self.global_constraints
+            "path_constraints": []
             }
 
         trajectory = None

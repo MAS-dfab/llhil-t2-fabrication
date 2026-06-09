@@ -304,6 +304,37 @@ def main():
 
         player._cleanup_previous_compute()
 
+        # clear the QR highlight
+        if highlight_state["mesh"] is not None:
+            try:
+                player.viewer.remove_object(highlight_state["mesh"])
+            except Exception:
+                pass
+            highlight_state["mesh"] = None
+
+        trajectory_planner.state.robot_configuration = trajectory_planner.safe_configuration
+        if os.path.exists(EXPORT_PATH):
+            record = json_load(EXPORT_PATH)
+            trajectory_planner.update_state_from_trajectory(record["steps"]["return_to_safe"])
+        
+        rb_names = trajectory_planner.robot_cell.rigid_body_models.keys()
+        for rb_name in list(rb_names):
+            if rb_name != "t2_rfl_colmesh":
+                trajectory_planner.robot_cell.rigid_body_models.pop(rb_name)
+                trajectory_planner.state.rigid_body_states.pop(rb_name)
+
+        assembled_elements = []
+        assembled_elements.clear() 
+        for p in timber_model.plates[:1]:
+            p_mesh = p.geometry.to_viewmesh()[0]
+            assembled_elements.append(p_mesh)
+        for b in in_seq_beams[:trajectory_planner.seq_i]:
+            b_mesh = b.geometry.to_viewmesh()[0]
+            assembled_elements.append(b_mesh)
+
+        trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
+        player._draw_assembled_elements(assembled_elements)
+        
         if hasattr(trajectory_planner, 'workpiece_manager'):
             wm = trajectory_planner.workpiece_manager
             wm.rules.clear()
@@ -323,6 +354,15 @@ def main():
         if trajectory_planner._fetched_pickup_frame is None:
             print("ERROR: Fetch pickup frame first before computing.")
             return
+
+        try:
+            highlight_mesh = beam.geometry.to_viewmesh()[0]
+            highlight_mat = PhysicalMaterial(color=Color(1.0, 0.55, 0.0), roughness=0.4, opacity=0.9)
+            player.viewer.add_geometry(highlight_mesh, highlight_mat)
+            highlight_state["mesh"] = highlight_mesh
+        except Exception as e:
+            print("QR: highlight failed - {}".format(e))
+            traceback.print_exc()
 
         print("\n{}".format("X" * 40))
         print("PLANNING element {} of {}: {}".format(
@@ -369,6 +409,7 @@ def main():
             }
 
         merged_trajectory = combine_trajectories(valid)
+        json_dump(merged_trajectory, "C:\\Users\\paulj\\Downloads\\merged_trajectory.json")
 
         player.trajectory = merged_trajectory
         player.add_dynamic_workpieces(
