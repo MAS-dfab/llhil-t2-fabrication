@@ -241,6 +241,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
     # =========================================================================
     
     def pick_and_place_element(self, element_guid, timber_model):
+        self._start_frame = self.get_current_end_frame()
         element = timber_model.element_by_guid(element_guid)
 
         print("Picking and placing element:", element.name)
@@ -250,37 +251,29 @@ class TimberProcessPlanner(BaseRobotPlanner):
         self._last_place_frame = element_at_frame
 
         element_pickup_frame = self.calculate_element_pickup_frame()
-
+        
         # 1. Approach pickpoint
         print("getting element approach trajectory to pickpoint")
-        # approach_frame = self.get_approach_frame(element_pickup_frame, approach_distance=0.075)
         approach_frame = self.get_approach_frame(element_pickup_frame, approach_distance=0.15)
         self._last_approach_frame = approach_frame
-        # approach_config = self.get_constrained_ik_from_frame(approach_frame)
         approach_config = self.get_ik_from_frame(approach_frame)
         trajectories.append(self.get_motion_to_configuration(approach_config))
-        # trajectories.append(self.get_motion_to_frame(approach_frame))
 
 
         # 2. Pick Element at pickpoint
         print("getting element pick trajectory at pickpoint")
-        # gantry_constraints = self.get_gantry_constraints()
         trajectories.append(self.get_cartesian_trajectory([element_pickup_frame], planning_group="robot12", avoid_collisions=False))
 
         # Prepare mesh for attachment
         element_mesh_at = element_geometry.to_viewmesh()[0]
-        # adjusted_grasp_frame = element_grasp_frame.copy()
-        # adjusted_grasp_frame.point.z -= 0.08  # Account for gripper offset
         self.attach_workpiece(str(element.name), element_mesh_at, grasp_frame, attached_to_tool="schunk")
 
         # 3. Retract from pickpoint
         print("getting element retract trajectory at pickpoint")
-        # pick_retract_traj = self.get_retract_trajectory(retract_distance=0.3)
         retract_frame = element_pickup_frame.translated(element_pickup_frame.zaxis * -0.2)
-        # gantry_constraints = self.get_gantry_constraints()
         pick_retract_traj = self.get_cartesian_trajectory([retract_frame], planning_group="robot12", avoid_collisions=False)
         if pick_retract_traj is not None:
-            self._last_pick_retract_frame = pick_retract_traj.points[-1]  # stored as last joint point
+            # self._last_pick_retract_frame = pick_retract_traj.points[-1]
             # compute the actual retract frame from the pickup frame
             self._last_pick_retract_frame = element_pickup_frame.translated(element_pickup_frame.zaxis * -0.2)
         trajectories.append(pick_retract_traj)
@@ -289,22 +282,18 @@ class TimberProcessPlanner(BaseRobotPlanner):
         print("getting element approach trajectory to AT")
         at_insertion_vector = element.attributes.get("insertion_vector", None)
         element_at_approach_frame = self.get_approach_frame(element_at_frame, approach_distance=0.2, vector=at_insertion_vector)
+        self._last_place_approach_frame = element_at_approach_frame
         approach_config = self.get_constrained_ik_from_frame(element_at_approach_frame)
         trajectories.append(self.get_motion_to_configuration(approach_config))
-        # trajectories.append(self.get_motion_to_frame(element_at_approach_frame))
 
         # 6. Place at AT
         print("getting element place trajectory at AT")
-        # gantry_constraints = self.get_gantry_constraints()
-        # Overriding default options to disable collision avoidance for the final placement
         trajectories.append(self.get_cartesian_trajectory([element_at_frame], planning_group="robot12", avoid_collisions=False))
-        # trajectories.append(self.get_motion_to_frame(element_at_frame, path_constraints=gantry_constraints))
         
         self.detach_workpiece(str(element.name), element_at_frame)
 
         # 7. Retract from AT
         print("getting element retract trajectory at AT")
-        # place_retract_traj = self.get_retract_trajectory(retract_distance=0.2, avoid_collisions=False)
         place_retract_frame = element_at_frame.translated(element_at_frame.zaxis * -0.15)
         place_retract_traj = self.get_cartesian_trajectory([place_retract_frame], planning_group="robot12", avoid_collisions=False)
         if place_retract_traj is not None:
@@ -314,11 +303,9 @@ class TimberProcessPlanner(BaseRobotPlanner):
         # 8. Return to safe configuration
         print("getting trajectory back to safe configuration")
         end_config = self.get_end_configuration(element)
-
         trajectories.append(self.get_motion_to_configuration(end_config))
-        # trajectories.append(self.get_motion_to_configuration(self.inter_configuration))
+        self._end_frame = self.get_current_end_frame()
 
-        # json_dump(trajectories, "C:\\Users\\paulj\\Downloads\\element_trajs.json")
         return trajectories
 
     # =========================================================================

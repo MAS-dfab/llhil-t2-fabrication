@@ -14,9 +14,9 @@ HOME_JOINTS_R11 = [-2.04, 90.27, -2.45, -0.05, -49.14, 0.0]
 HOME_EXT_R11    = [17985.0, -2117.46, -4880.92, 0.0, 0.0, 0.0]
 
 # Speeds (mm/s)
-SPEED_FREE       = 500
+SPEED_FREE       = 99
 SPEED_HOLD       = 200
-SPEED_APPROACH_AT = 300
+SPEED_APPROACH_AT = 99
 SPEED_PICK       = 10
 SPEED_PLACE      = 10
 
@@ -102,9 +102,33 @@ def _ext_r11_from_last_point(trajectory):
 
 
 
-def execute_trajectory(abb11, abb12, trajectory, speed):
+def execute_trajectory(abb11, abb12, trajectory, speed, record):
     """Execute a JointTrajectory with R11 X and R12 Y/Z/joints in sync per point."""
     points = trajectory.points
+    start_point = record.get("start_frame").point
+    pick_app_point = record.get("approach_frame").point
+    pick_pickapp_distance = abs((pick_app_point - start_point).length)
+    print(pick_pickapp_distance)
+    first_ext_r11, first_ext_r12, _= _split_point(points[0])
+    last_ext_r11, last_ext_r12, _ = _split_point(points[-1])
+    X_distance = abs(last_ext_r11[0] - first_ext_r11[0])
+    Y_distance = abs(last_ext_r12[1] - first_ext_r12[1])
+    Z_distance = abs(last_ext_r12[2] - first_ext_r12[2])
+    XYZ_distance = math.sqrt(X_distance**2 + Y_distance**2 + Z_distance**2)
+    # YZ_distance = Y_distance if Y_distance > Z_distance else Z_distance
+    YZ_distance = math.sqrt((last_ext_r12[1] - first_ext_r12[1])**2 + (last_ext_r12[2] - first_ext_r12[2])**2)
+    print(X_distance, Y_distance, Z_distance, YZ_distance, XYZ_distance)
+    if X_distance > XYZ_distance:
+        m11_speed = speed
+        print(m11_speed)
+        m12_speed = speed * (XYZ_distance / X_distance) if X_distance > 0 else speed
+        print(m12_speed)
+    else:
+        m11_speed = speed * (X_distance / XYZ_distance) if XYZ_distance > 0 else speed
+        print(m11_speed)
+        m12_speed = speed
+        print(m12_speed)
+
     for i, pt in enumerate(points):
         ext_r11, ext_r12, j_r12 = _split_point(pt)
         is_last = (i == len(points) - 1)
@@ -113,8 +137,8 @@ def execute_trajectory(abb11, abb12, trajectory, speed):
 
         if is_first:
             # Send-and-wait for the first point so both robots reach a known state
-            m11 = rrc.MoveToJoints(HOME_JOINTS_R11, ext_r11, speed, rrc.Zone.FINE)
-            m12 = rrc.MoveToJoints(j_r12, ext_r12, speed, rrc.Zone.FINE)
+            m11 = rrc.MoveToJoints(HOME_JOINTS_R11, ext_r11, m11_speed, rrc.Zone.FINE)
+            m12 = rrc.MoveToJoints(j_r12, ext_r12, m12_speed, rrc.Zone.FINE)
             m11.feedback_level = rrc.FeedbackLevel.DONE
             m12.feedback_level = rrc.FeedbackLevel.DONE
             f11 = abb11.send(m11)
@@ -123,8 +147,8 @@ def execute_trajectory(abb11, abb12, trajectory, speed):
             f12.result(timeout=60.0)
         elif is_last:
             # Wait for both robots to finish the final point
-            m11 = rrc.MoveToJoints(HOME_JOINTS_R11, ext_r11, speed, zone)
-            m12 = rrc.MoveToJoints(j_r12, ext_r12, speed, zone)
+            m11 = rrc.MoveToJoints(HOME_JOINTS_R11, ext_r11, m11_speed, zone)
+            m12 = rrc.MoveToJoints(j_r12, ext_r12, m12_speed, zone)
             m11.feedback_level = rrc.FeedbackLevel.DONE
             m12.feedback_level = rrc.FeedbackLevel.DONE
             f11 = abb11.send(m11)
@@ -133,8 +157,8 @@ def execute_trajectory(abb11, abb12, trajectory, speed):
             f12.result(timeout=60.0)
         else:
             # Fire-and-forget; controller buffers the move queue
-            abb11.send(rrc.MoveToJoints(HOME_JOINTS_R11, ext_r11, speed, zone))
-            abb12.send(rrc.MoveToJoints(j_r12, ext_r12, speed, zone))
+            abb11.send(rrc.MoveToJoints(HOME_JOINTS_R11, ext_r11, m11_speed, zone))
+            abb12.send(rrc.MoveToJoints(j_r12, ext_r12, m12_speed, zone))
 
 
 # ── Main sequence ─────────────────────────────────────────────────────────────────
@@ -148,7 +172,7 @@ def execute_sequence(abb11, abb12, record):
 
     # 1. Approach to pick
     print("\n[1/7] approach_to_pick")
-    execute_trajectory(abb11, abb12, steps["approach_to_pick"], SPEED_FREE)
+    execute_trajectory(abb11, abb12, steps["approach_to_pick"], SPEED_FREE, record)
     # small pause to ensure we're settled at the end of the approach trajectory
 
     # Corrective Cartesian move to the exact approach frame before descending
@@ -195,24 +219,50 @@ def execute_sequence(abb11, abb12, record):
     # 5. Place at assembly target
     print("\n[5/7] place_at_AT")
 
-    # MoveL to exact stored place frame
-    place_ext_r12 = _ext_r12_from_last_point(steps["place_at_AT"])
-    place_ext_r11 = _ext_r11_from_last_point(steps["place_at_AT"])
-    m11 = rrc.MoveToJoints(HOME_JOINTS_R11, place_ext_r11, SPEED_PLACE, rrc.Zone.FINE)
-    m12 = rrc.MoveToRobtarget(place_frame, place_ext_r12, SPEED_PLACE, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR)
-    abb11.send_and_wait(m11, timeout=300.0)
-    abb12.send_and_wait(m12, timeout=300.0)
+    # Corrective Cartesian move to the exact approach frame before descending
+    print("  Corrective move to approach frame...")
+    place_approach_frame = record.get("place_approach_frame")
+    print("place_approach_frame:", place_approach_frame)
+    if place_approach_frame is not None:
+        # app_ext_r12 = _ext_r12_from_last_point(steps["approach_to_pick"])
+        app_ext_r11 = _ext_r11_from_last_point(steps["approach_to_AT"])
+        if abb11.send_and_wait(rrc.GetJoints())[1][0] - app_ext_r11[0] > 2:  # sanity check to avoid large unexpected moves
+            abb11.send_and_wait(rrc.MoveToJoints(HOME_JOINTS_R11, app_ext_r11, SPEED_HOLD, rrc.Zone.FINE), timeout=30.0)
+        
+        # small pause to ensure we're settled before the next move
+        print("  Moving linearly to approach frame...", place_approach_frame)
+        abb12.send_and_wait(rrc.MoveToFrame(place_approach_frame, SPEED_HOLD, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=30.0)
+
+    else:
+        print("  WARNING: no place_approach_frame in record, skipping corrective move.")
+
+    
+    print("\n[2/7] place")
+    time.sleep(1.2)  # small pause to ensure we're settled before the next move
+    # soft_move_on(abb12)
+    abb12.send_and_wait(rrc.MoveToFrame(place_frame, SPEED_PLACE, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=30.0)
+    # soft_move_off(abb12)
     abb12.send(rrc.PrintText("Stopping here for a bit"))
     abb12.send_and_wait(rrc.Stop(), timeout=100.0)
+
+    # # MoveL to exact stored place frame
+    # place_ext_r12 = _ext_r12_from_last_point(steps["place_at_AT"])
+    # place_ext_r11 = _ext_r11_from_last_point(steps["place_at_AT"])
+    # m11 = rrc.MoveToJoints(HOME_JOINTS_R11, place_ext_r11, SPEED_PLACE, rrc.Zone.FINE)
+    # m12 = rrc.MoveToRobtarget(place_frame, place_ext_r12, SPEED_PLACE, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR)
+    # abb11.send_and_wait(m11, timeout=300.0)
+    # abb12.send_and_wait(m12, timeout=300.0)
+    # abb12.send(rrc.PrintText("Stopping here for a bit"))
+    # abb12.send_and_wait(rrc.Stop(), timeout=100.0)
 
     # 6. Retract from assembly target
     print("\n[6/7] retract_from_AT")
     place_retract_frame = record.get("place_retract_frame")
     if place_retract_frame is not None:
         print("  MoveL to place retract frame")
-        # abb12.send_and_wait(rrc.MoveToFrame(place_retract_frame, SPEED_HOLD, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=60.0)
-        retract_ext_r12 = _ext_r12_from_first_point(steps["retract_from_AT"])
-        abb12.send_and_wait(rrc.MoveToRobtarget(place_retract_frame, retract_ext_r12, SPEED_PLACE, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR))
+        abb12.send_and_wait(rrc.MoveToFrame(place_retract_frame, SPEED_HOLD, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=60.0)
+        # retract_ext_r12 = _ext_r12_from_first_point(steps["retract_from_AT"])
+        # abb12.send_and_wait(rrc.MoveToRobtarget(place_retract_frame, retract_ext_r12, SPEED_PLACE, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR))
     else:
         print("  WARNING: no place_retract_frame in record, falling back to joint trajectory.")
         execute_trajectory(abb11, abb12, steps["retract_from_AT"], SPEED_HOLD)

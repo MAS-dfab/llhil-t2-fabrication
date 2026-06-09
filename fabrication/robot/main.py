@@ -391,14 +391,20 @@ def main():
             last_sequence["record"] = None
         else:
             _approach = getattr(trajectory_planner, "_last_approach_frame", None)
+            _place_approach = getattr(trajectory_planner, "_last_place_approach_frame", None)
             _place = getattr(trajectory_planner, "_last_place_frame", None)
             _pick_retract = getattr(trajectory_planner, "_last_pick_retract_frame", None)
             _place_retract = getattr(trajectory_planner, "_last_place_retract_frame", None)
+            _start = getattr(trajectory_planner, "_start_frame", None)
+            _end = getattr(trajectory_planner, "_end_frame", None)
             last_sequence["record"] = {
                 "index": trajectory_planner.seq_i,
                 "beam_guid": str(beam.guid),
+                "start_frame": _start.scaled(1000) if _start is not None else None,
+                "end_frame": _end.scaled(1000) if _end is not None else None,
                 "pickup_frame": trajectory_planner._fetched_pickup_frame,
                 "approach_frame": _approach.scaled(1000) if _approach is not None else None,
+                "place_approach_frame": _place_approach.scaled(1000) if _place_approach is not None else None,
                 "place_frame": _place.scaled(1000) if _place is not None else None,
                 "pick_retract_frame": _pick_retract.scaled(1000) if _pick_retract is not None else None,
                 "place_retract_frame": _place_retract.scaled(1000) if _place_retract is not None else None,
