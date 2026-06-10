@@ -48,6 +48,7 @@ from compas.geometry import Rotation
 from compas.geometry import Translation
 from compas.geometry import Vector
 from compas.scene import Scene
+from compas_timber.fabrication import Drilling
 from compas_timber.fabrication import JackRafterCut
 
 from easyhops.hop_job import HOPSJob
@@ -93,9 +94,18 @@ def override_features(beam):
             new_feature = f.__class__.from_plane_and_beam(plane, beam, ref_side_index)
             beam.remove_features(f)
             beam.add_feature(new_feature)
+        elif isinstance(f, Drilling):
+            # check if it's set on the opposite side compared to the beam's ref_side_index
+            if f.ref_side_index == (ref_side_index + 2) % 4:
+                line = f.line_from_params_and_element(beam)
+                new_feature = f.__class__.from_line_and_element(
+                    line, beam, f.diameter, ref_side_index=ref_side_index
+                )
+                beam.remove_features(f)
+                beam.add_feature(new_feature)
 
 
-def resolve_beam(model, index, hierarchy, level):
+def resolve_beam(model, index, hierarchy, level, names=None):
     """Return the single beam matching the given selection criteria.
 
     Type-mode (hierarchy is not None):
@@ -109,7 +119,31 @@ def resolve_beam(model, index, hierarchy, level):
     """
     warn = gh.GH_RuntimeMessageLevel.Warning
 
-    if hierarchy is not None:
+    if names is not None:
+        filtered = [b for b in model.beams if b.name in names]
+        total = len(filtered)
+
+        if total == 0:
+            ghenv.Component.AddRuntimeMessage(
+                warn,
+                "No beams found matching the provided names list.",
+            )
+            return None
+
+        if index is None or index < 0 or index >= total:
+            ghenv.Component.AddRuntimeMessage(
+                warn,
+                "index {} out of range. names filter matched {} beam(s) (0\u2013{}).".format(
+                    index, total, total - 1
+                ),
+            )
+            return None
+
+        beam = filtered[index]
+        print("[names] {}/{} | beam: {}".format(index + 1, total, beam.name))
+        return beam
+
+    elif hierarchy is not None:
         filtered = [
             b for b in model.beams if b.attributes.get("hierarchy") == hierarchy
         ]
@@ -229,7 +263,14 @@ def get_processing_report(beam):
 
 
 def _element_to_job(element, scale_factor=1000.0):
-    """Build a HOPSJob for *element* with explicit control over dispatch."""
+    """Build a HOPSJob for *element* with explicit control over dispatch.
+
+    Returns:
+        job              — HOPSJob
+        machining_report — list[str] comparing registered BTLx processings to
+                           the machinings actually produced (one entry per
+                           processing, plus a pass/fail summary line)
+    """
     job = HOPSJob.from_element(element, scale_factor=scale_factor)
     rsi = job.ref_side_index
     opp_rsi = (rsi + 2) % 4
@@ -237,51 +278,98 @@ def _element_to_job(element, scale_factor=1000.0):
     pre_flip = []
     post_flip = []
 
+    # Each entry: {"name": str, "rsi": int|str, "status": "ok"|"empty"|"skipped",
+    #              "count": int, "placement": str, "ops": list[str]}
+    conversion_log = []
+
+    def _dispatch(name, rsi_proc, machinings, placement):
+        ops = []
+        for m in machinings:
+            op = getattr(m, "OPERATION_TYPE", "?")
+            tool = getattr(m, "tool", None)
+            tool_name = type(tool).__name__ if tool is not None else "no-tool"
+            ops.append("{} / {}".format(op, tool_name))
+            m._processing_name = name  # tag for sorting
+        status = "ok" if machinings else "empty"
+        conversion_log.append(
+            {
+                "name": name,
+                "rsi": rsi_proc,
+                "status": status,
+                "count": len(machinings),
+                "placement": placement,
+                "ops": ops,
+            }
+        )
+
     for processing in element.features:
         processing = processing.scaled(scale_factor)
         name = processing.PROCESSING_NAME
+        rsi_proc = getattr(processing, "ref_side_index", "?")
 
         if name == "LongitudinalCut":
             machinings = LongitudinalCutStrategies.contouring(
                 processing, machine_ref_side_index=rsi, tool=CastorD61()
             )
             post_flip.extend(machinings)
+            _dispatch(name, rsi_proc, machinings, "post-flip")
 
         elif name == "Lap":
             machinings = LapStrategies.pocketing(
                 processing, machine_ref_side_index=rsi, tool=CastorD61()
             )
-            post_flip.extend(machinings)
             if (
                 processing.ref_side_index == opp_rsi
             ):  # introduce a flip if the lap is on the opposite side
                 pre_flip.extend(machinings)
+                _dispatch(name, rsi_proc, machinings, "pre-flip")
             else:
                 post_flip.extend(machinings)
+                _dispatch(name, rsi_proc, machinings, "post-flip")
 
         elif name == "JackRafterCut":
             assert processing.ref_side_index in (rsi, opp_rsi), (
                 f"Unexpected ref_side_index {processing.ref_side_index} for JackRafterCut"
             )
-            post_flip.extend(
-                JackRafterCutStrategies.sawing(
-                    processing, machine_ref_side_index=rsi, tool=SaegeD350()
-                )
+            machinings = JackRafterCutStrategies.sawing(
+                processing, machine_ref_side_index=rsi, tool=SaegeD350()
             )
+            post_flip.extend(machinings)
+            _dispatch(name, rsi_proc, machinings, "post-flip")
 
         elif name == "Drilling":
-            machinings = DrillingStrategies.pocketing(
-                processing, machine_ref_side_index=rsi, tool=SRSLD12()
-            )
-            if processing.ref_side_index == opp_rsi:
-                pre_flip.extend(machinings)
+            if processing.diameter == 4.0:
+                if processing.ref_side_index == opp_rsi:
+                    pre_flip.extend(
+                        DrillingStrategies.pre_drill(
+                            processing, machine_ref_side_index=rsi
+                        )
+                    )
+                    _dispatch(name, rsi_proc, [], "pre-flip (pre-drill)")
+                else:
+                    machinings = DrillingStrategies.drilling(
+                        processing, machine_ref_side_index=rsi, pre_drill=True
+                    )
+                    post_flip.extend(machinings)
+                    _dispatch(name, rsi_proc, machinings, "post-flip (pre-drill)")
             else:
-                post_flip.extend(machinings)
+                machinings = DrillingStrategies.pocketing(
+                    processing, machine_ref_side_index=rsi, tool=SRSLD12()
+                )
+                if processing.ref_side_index == opp_rsi:
+                    pre_flip.extend(machinings)
+                    _dispatch(name, rsi_proc, machinings, "pre-flip")
+                else:
+                    post_flip.extend(machinings)
+                    _dispatch(name, rsi_proc, machinings, "post-flip")
 
         elif name == "DoubleCut":
-            if processing.user_attributes.get("strategy", None) == "pocketing":
+            strategy = processing.user_attributes.get("strategy", None)
+            if strategy == "pocketing":
                 machinings = DoubleCutStrategies.pocketing(
-                    processing, machine_ref_side_index=rsi
+                    processing,
+                    machine_ref_side_index=rsi,
+                    first_cut=True,
                 )
             else:
                 machinings = DoubleCutStrategies.milling(
@@ -291,48 +379,124 @@ def _element_to_job(element, scale_factor=1000.0):
                     avoid_splintering=True,
                 )
             post_flip.extend(machinings)
+            _dispatch(
+                name,
+                rsi_proc,
+                machinings,
+                "post-flip (strategy={})".format(strategy or "milling"),
+            )
 
         elif name == "BirdsMouth":
             machinings = BirdsMouthStrategies.milling(
                 processing, machine_ref_side_index=rsi, avoid_splintering=True
             )
             post_flip.extend(machinings)
+            _dispatch(name, rsi_proc, machinings, "post-flip")
 
         elif name == "StepJoint":
             machinings = StepJointStrategies.milling(
                 processing, machine_ref_side_index=rsi
             )
             post_flip.extend(machinings)
+            _dispatch(name, rsi_proc, machinings, "post-flip")
 
-    # Sort pre-flip: milling before sawing
-    pre_flip.sort(
-        key=lambda m: {"SAWING": 0, "DRILLING": 1, "MILLING": 2}.get(
-            getattr(m, "OPERATION_TYPE", ""), 3
-        )
-    )
+        else:
+            conversion_log.append(
+                {
+                    "name": name,
+                    "rsi": rsi_proc,
+                    "status": "skipped",
+                    "count": 0,
+                    "placement": "-",
+                    "ops": [],
+                }
+            )
 
-    # Sort post-flip: milling before sawing
-    post_flip.sort(
-        key=lambda m: {"SAWING": 0, "DRILLING": 1, "MILLING": 2}.get(
-            getattr(m, "OPERATION_TYPE", ""), 3
+    # Sort order: operation type → tool position → processing name
+    # Lap is always last within each group.
+    OP_ORDER = {"SAWING": 1, "DRILLING": 0, "MILLING": 2}
+    PROCESSING_ORDER = {
+        "Drilling": 0,
+        "JackRafterCut": 1,
+        "LongitudinalCut": 2,
+        "DoubleCut": 2,
+        "BirdsMouth": 3,
+        "StepJoint": 8,  # always second last
+        "Lap": 9,  # always last
+    }
+
+    def _sort_key(m):
+        op_priority = OP_ORDER.get(getattr(m, "OPERATION_TYPE", ""), 3)
+        tool = getattr(m, "tool", None)
+        tool_position = getattr(tool, "position", 0) if tool is not None else 0
+        processing_priority = PROCESSING_ORDER.get(
+            getattr(m, "_processing_name", ""), 50
         )
-    )
+        return (op_priority, tool_position, processing_priority)
+
+    pre_flip.sort(key=_sort_key)
+    post_flip.sort(key=_sort_key)
 
     if pre_flip:
         job.add(pre_flip)
         job.add(MachineStop(message="flip beam 180deg", park_mode=ParkMode.RIGHT_FRONT))
     job.add(post_flip)
 
-    return job
+    # --- Build comparison report ---
+    n_total = len(conversion_log)
+    n_ok = sum(1 for e in conversion_log if e["status"] == "ok")
+    n_empty = sum(1 for e in conversion_log if e["status"] == "empty")
+    n_skipped = sum(1 for e in conversion_log if e["status"] == "skipped")
+    all_ok = n_ok == n_total
+
+    STATUS_ICON = {"ok": "[OK]     ", "empty": "[EMPTY]  ", "skipped": "[SKIPPED]"}
+
+    machining_report = [
+        "=== Conversion report: {} (beam rsi={}) ===".format(element.name, rsi),
+        "  Registered processings : {}".format(n_total),
+        "  Converted (>0 machinings): {}".format(n_ok),
+        "  Converted (0 machinings) : {}".format(n_empty),
+        "  Skipped (no handler)    : {}".format(n_skipped),
+        "  Result: {}".format(
+            "ALL CONVERTED"
+            if all_ok
+            else "WARNING: {} processing(s) not fully converted".format(
+                n_empty + n_skipped
+            )
+        ),
+        "  " + "-" * 56,
+    ]
+    for i, entry in enumerate(conversion_log):
+        icon = STATUS_ICON[entry["status"]]
+        machining_report.append(
+            "  {} #{:02d} {:22s} RSId:{} | {} | {} machining(s)".format(
+                icon, i, entry["name"], entry["rsi"], entry["placement"], entry["count"]
+            )
+        )
+        for op_str in entry["ops"]:
+            machining_report.append("           -> {}".format(op_str))
+
+    machining_report.append(
+        "  pre-flip machinings: {}  |  post-flip machinings: {}".format(
+            len(pre_flip), len(post_flip)
+        )
+    )
+
+    return job, machining_report
 
 
 def export_hop(beam, export_dir):
-    """Write a .hop file for beam into export_dir/<beam.name>.hop."""
+    """Write a .hop file for beam into export_dir/<beam.name>.hop.
+
+    Returns:
+        job              — HOPSJob
+        machining_report — list[str] describing what each processing produced
+    """
     os.makedirs(export_dir, exist_ok=True)
     hop_path = os.path.join(export_dir, beam.name + ".hop")
-    job = _element_to_job(beam)
+    job, machining_report = _element_to_job(beam)
     job.to_hop_file(hop_path)
-    return job
+    return machining_report
 
 
 # ---------------------------------------------------------------------------
@@ -340,7 +504,7 @@ def export_hop(beam, export_dir):
 # ---------------------------------------------------------------------------
 
 
-def run(filepath, index, hierarchy, export):
+def run(filepath, index, hierarchy, export, level=None, names=None):
     """Resolve one beam, visualise it, optionally export it, and return a processing report.
 
     Returns:
@@ -352,7 +516,7 @@ def run(filepath, index, hierarchy, export):
     export_dir = os.path.join(os.path.dirname(filepath), "hops")
 
     # Resolve beam
-    beam = resolve_beam(model, index, hierarchy)
+    beam = resolve_beam(model, index, hierarchy, level, names=names)
     if beam is None:
         return None, []
 
@@ -363,9 +527,11 @@ def run(filepath, index, hierarchy, export):
     geometry = visualize_geometry(beam)
 
     # Export HOP
-    export_hop(beam, export_dir, export)
+    machining_report = []
+    if export:
+        _, machining_report = export_hop(beam, export_dir)
 
     # Get processing report
     processing_report = get_processing_report(beam)
 
-    return geometry, processing_report
+    return geometry, processing_report + ["-" * 40] + machining_report
