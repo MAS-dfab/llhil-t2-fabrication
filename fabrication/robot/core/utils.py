@@ -78,13 +78,13 @@ def combine_trajectories(trajectories: list[JointTrajectory]) -> JointTrajectory
 
             # BULLETPROOF TIME CALCULATION
             # Safely capture any nanosecond overflow into seconds using divmod
-            print("Calculating new time_from_start for point:", point.time_from_start)
+            # print("Calculating new time_from_start for point:", point.time_from_start)
             total_nsecs = time_offset.nsecs + point.time_from_start.nsecs
             carry_secs, final_nsecs = divmod(total_nsecs, NANO_TO_SEC)
             
             new_secs = time_offset.secs + point.time_from_start.secs + carry_secs
             new_time = Duration(new_secs, final_nsecs)
-            print(new_time)
+            # print(new_time)
 
             new_point = JointTrajectoryPoint(
                 joint_values=ordered_values,

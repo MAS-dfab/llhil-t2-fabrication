@@ -42,7 +42,7 @@ class BaseRobotPlanner():
         
         # Default Options (Can be overridden by child classes)
         self.default_options = {
-            "max_step": 0.1,
+            "max_step": 0.01,
             "path_constraints": self.global_constraints
         }
         self.enforce_joint_limits()
@@ -188,7 +188,7 @@ class BaseRobotPlanner():
         plan_options = {
             "allowed_planning_time": 10, 
             "num_planning_attempts": 50,
-            "max_steps": 0.1,
+            "max_steps": 0.01,
             "path_constraints": self.global_constraints
             }
         if path_constraints:
@@ -216,7 +216,7 @@ class BaseRobotPlanner():
         plan_options = {
             "allowed_planning_time": 10, 
             "num_planning_attempts": 100,
-            "max_steps": 0.1,
+            "max_steps": 0.01,
             # "path_constraints": self.global_constraints
             "path_constraints": []
             }

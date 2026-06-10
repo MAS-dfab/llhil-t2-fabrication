@@ -3,6 +3,7 @@ import time
 
 import compas_rrc as rrc
 from compas.data import json_load
+from compas.geometry import distance_point_point
 
 # ── Configuration ───────────────────────────────────────────────────────────────
 SEQUENCE_FILE = "fabrication\\data\\fabrication_sequence.json"
@@ -100,40 +101,37 @@ def _ext_r11_from_last_point(trajectory):
     ext_r11, _, _ = _split_point(trajectory.points[-1])
     return ext_r11
 
-
-
-def execute_trajectory(abb11, abb12, trajectory, speed, record):
+def execute_trajectory(abb11, abb12, trajectory, speed):
     """Execute a JointTrajectory with R11 X and R12 Y/Z/joints in sync per point."""
     points = trajectory.points
-    start_point = record.get("start_frame").point
-    pick_app_point = record.get("approach_frame").point
-    pick_pickapp_distance = abs((pick_app_point - start_point).length)
-    print(pick_pickapp_distance)
-    first_ext_r11, first_ext_r12, _= _split_point(points[0])
-    last_ext_r11, last_ext_r12, _ = _split_point(points[-1])
-    X_distance = abs(last_ext_r11[0] - first_ext_r11[0])
-    Y_distance = abs(last_ext_r12[1] - first_ext_r12[1])
-    Z_distance = abs(last_ext_r12[2] - first_ext_r12[2])
-    XYZ_distance = math.sqrt(X_distance**2 + Y_distance**2 + Z_distance**2)
-    # YZ_distance = Y_distance if Y_distance > Z_distance else Z_distance
-    YZ_distance = math.sqrt((last_ext_r12[1] - first_ext_r12[1])**2 + (last_ext_r12[2] - first_ext_r12[2])**2)
-    print(X_distance, Y_distance, Z_distance, YZ_distance, XYZ_distance)
-    if X_distance > XYZ_distance:
-        m11_speed = speed
-        print(m11_speed)
-        m12_speed = speed * (XYZ_distance / X_distance) if X_distance > 0 else speed
-        print(m12_speed)
-    else:
-        m11_speed = speed * (X_distance / XYZ_distance) if XYZ_distance > 0 else speed
-        print(m11_speed)
-        m12_speed = speed
-        print(m12_speed)
 
     for i, pt in enumerate(points):
+        if i < len(points) - 1:
+            first_ext_r11, first_ext_r12, _= _split_point(pt)
+            last_ext_r11, last_ext_r12, _ = _split_point(points[i+1])
+        else:
+            first_ext_r11, first_ext_r12, _= _split_point(points[i-1])
+            last_ext_r11, last_ext_r12, _ = _split_point(pt)
+        X_distance = abs(last_ext_r11[0] - first_ext_r11[0])
+        Y_distance = abs(last_ext_r12[1] - first_ext_r12[1])
+        Z_distance = abs(last_ext_r12[2] - first_ext_r12[2])
+        XYZ_distance = math.sqrt(X_distance**2 + Y_distance**2 + Z_distance**2)
+        # YZ_distance = math.sqrt(Y_distance**2 + Z_distance**2)
+        if X_distance > XYZ_distance:
+            m11_speed = speed
+            print(m11_speed)
+            m12_speed = 0.90 * speed * (XYZ_distance / X_distance) if X_distance > 0 else speed
+            print(m12_speed)
+        else:
+            m11_speed = 0.9 * speed * (X_distance / XYZ_distance) if XYZ_distance > 0 else speed
+            print(m11_speed)
+            m12_speed = speed
+            print(m12_speed)
+
         ext_r11, ext_r12, j_r12 = _split_point(pt)
         is_last = (i == len(points) - 1)
         is_first = (i == 0)
-        zone = rrc.Zone.FINE if is_last else rrc.Zone.Z100
+        zone = rrc.Zone.FINE if is_last else rrc.Zone.Z0
 
         if is_first:
             # Send-and-wait for the first point so both robots reach a known state
@@ -172,7 +170,7 @@ def execute_sequence(abb11, abb12, record):
 
     # 1. Approach to pick
     print("\n[1/7] approach_to_pick")
-    execute_trajectory(abb11, abb12, steps["approach_to_pick"], SPEED_FREE, record)
+    execute_trajectory(abb11, abb12, steps["approach_to_pick"], SPEED_FREE)
     # small pause to ensure we're settled at the end of the approach trajectory
 
     # Corrective Cartesian move to the exact approach frame before descending
@@ -237,7 +235,7 @@ def execute_sequence(abb11, abb12, record):
         print("  WARNING: no place_approach_frame in record, skipping corrective move.")
 
     
-    print("\n[2/7] place")
+    # print("\n[2/7] place")
     time.sleep(1.2)  # small pause to ensure we're settled before the next move
     # soft_move_on(abb12)
     abb12.send_and_wait(rrc.MoveToFrame(place_frame, SPEED_PLACE, rrc.Zone.FINE, motion_type=rrc.Motion.LINEAR), timeout=30.0)
