@@ -30,6 +30,21 @@ def project_point_to_frame_along(point, direction, frame, tol=1e-6):
     t = num / denom
     return point + dire * t
 
+def project_point_to_frame_signed(point, direction, frame, tol=1e-6):
+    point = Point(*point)
+    dire = Vector(*direction).unitized()
+
+    P = frame.point
+    N = frame.normal.unitized()
+    denom = dot_vectors(dire, N)
+
+    if abs(denom) < tol:
+        raise ValueError("Direction is parallel to the plane.")
+
+    num = dot_vectors(P - point, N)
+    t = num / denom
+    return point + dire * t
+
 def is_same_xy_sign(direction):
     """Return True if direction.x and direction.y have the same sign (or zero)."""
     x, y = direction.x, direction.y
@@ -139,6 +154,9 @@ class BaseWrapper(object):
         
         elif self.entry_type == "krossed":
             return # Something
+
+        elif self.entry_type == "butt_krossed":
+            return -main_dire.unitized()
         
         else:
             raise ValueError("Invalid entry type.")
@@ -334,19 +352,158 @@ class TBJ(BaseWrapper):
         super().__init__(joint)
 
     def determine_entry_type(self):
-        # NOTE: maybe determine by is planar or not?
-        if self.is_planar:
-            if self.acute_angle > ScrewSpecification.ANGLE_THRESHOLD:
-                return "crossed"
-            return "aligned"
-        return "crossed"
+        return "butt_krossed"
 
-    @property
-    def interface_area(self):
-        pass
+    def _interface_plane(self):
+        return Plane.from_frame(self.cross_ref_frame)
+
+    def _project_vector_to_interface(self, vector):
+        normal = Vector(*self._interface_plane().normal).unitized()
+        projected = Vector(*vector) - normal * dot_vectors(vector, normal)
+        if projected.length <= 1e-6:
+            raise ValueError("Vector is perpendicular to the TButt interface plane.")
+        return projected.unitized()
+
+    def _interface_axes(self):
+        normal = Vector(*self._interface_plane().normal).unitized()
+        vertical = Vector(0,0,1)
+        width = Vector(*cross_vectors(vertical, normal)).unitized()
+        return vertical, width, normal
+
+    def _sort_interface_points(self, points):
+        center = find_average_point(points)
+        vertical, width, _ = self._interface_axes()
+
+        def vcoord(point):
+            return dot_vectors(point - center, vertical)
+
+        def wcoord(point):
+            return dot_vectors(point - center, width)
+
+        bottom = sorted(points, key=vcoord)[:2]
+        top = sorted(points, key=vcoord)[2:]
+        bottom = sorted(bottom, key=wcoord)
+        top = sorted(top, key=wcoord)
+        return (bottom[0], bottom[1], top[1], top[0])
+
+    def _find_interface_points(self):
+        interface_plane = self._interface_plane()
+        side_planes = [Plane.from_frame(side) for side in self.main_beam.ref_sides[:4]]
+        points = []
+
+        for i, side_a in enumerate(side_planes):
+            for side_b in side_planes[i + 1:]:
+                coords = intersection_plane_plane_plane(interface_plane, side_a, side_b)
+                if coords is None:
+                    continue
+                point = Point(*coords)
+                if any(point.distance_to_point(other) <= 1e-6 for other in points):
+                    continue
+                points.append(point)
+
+        return self._sort_interface_points(points)
+
+    def _butt_side_frames(self):
+        _, width, _ = self._interface_axes()
+        side_frames = list(self.main_beam.ref_sides[:4])
+
+        def side_score(frame):
+            normal = Vector(*frame.normal).unitized()
+            return dot_vectors(normal, width)
+
+        ordered = sorted(side_frames, key=side_score)
+        return ordered[0], ordered[-1]
+
+    def calculate_butt_krossed_screw_directions(self, angle=None):
+
+        away_from_joint = self.calculate_screw_direction()
+        towards_joint = -away_from_joint
+        vertical, _, _ = self._interface_axes()
+
+        candidates = [
+            towards_joint.rotated(math.radians(angle), vertical).unitized(),
+            towards_joint.rotated(math.radians(-angle), vertical).unitized(),
+        ]
+
+        directions = []
+        used = set()
+        for frame in self._butt_side_frames():
+            normal = Vector(*frame.normal).unitized()
+            candidate_index = min(
+                range(len(candidates)),
+                key=lambda index: dot_vectors(candidates[index], normal),
+            )
+            if candidate_index in used and len(candidates) == 2:
+                candidate_index = 1 - candidate_index
+            used.add(candidate_index)
+            directions.append(candidates[candidate_index])
+        return tuple(directions)
+
+    def project_butt_krossed_entry_points(self, target_point, angle=None):
+        side_frames = self._butt_side_frames()
+        directions = self.calculate_butt_krossed_screw_directions(angle=angle)
+        return tuple(
+            project_point_to_frame_signed(target_point, -direction, side_frame)
+            for side_frame, direction in zip(side_frames, directions)
+        )
+
+    def get_interface_boundary(self, data_type="points"):
+        pts_entry = list(self._find_interface_points())
+        if data_type == "points":
+            return pts_entry
+        if data_type == "frame":
+            return Frame.from_points(pts_entry[0], pts_entry[1], pts_entry[3])
+        if data_type == "polyline":
+            return Polyline(pts_entry + [pts_entry[0]])
+        return None
 
     def find_screw_boundaries(self, angle=None, flip=False, data_type="points"):
-        pass
+        if angle is not None and angle <= 0:
+            raise ValueError("Angle should be larger than 0.")
+
+        interface_pts = self.get_interface_boundary(data_type="points")
+        side_frames = self._butt_side_frames()
+        directions = self.calculate_butt_krossed_screw_directions(angle=angle)
+        exit_frame = self.cross_beam.opp_side(self.cross_beam_ref_side_index)
+
+        pts_entry = []
+        pts_exit = []
+        for side_frame, direction in zip(side_frames, directions):
+            pts_entry.append([
+                project_point_to_frame_signed(point, -direction, side_frame)
+                for point in interface_pts
+            ])
+            pts_exit.append([
+                project_point_to_frame_signed(point, direction, exit_frame)
+                for point in interface_pts
+            ])
+
+        if data_type == "points":
+            return tuple(pts_entry), tuple(pts_exit)
+
+        if data_type == "frame":
+            entry_frames = tuple(
+                Frame.from_points(points[0], points[1], points[3])
+                for points in pts_entry
+            )
+            exit_frames = tuple(
+                Frame.from_points(points[0], points[1], points[3])
+                for points in pts_exit
+            )
+            return entry_frames, exit_frames
+
+        if data_type == "polylines":
+            entry_polylines = [
+                Polyline(points + [points[0]])
+                for points in pts_entry
+            ]
+            exit_polylines = [
+                Polyline(points + [points[0]])
+                for points in pts_exit
+            ]
+            return entry_polylines, exit_polylines
+
+        raise ValueError("Unsupported data type.")
 
 
 # -----------------------------------

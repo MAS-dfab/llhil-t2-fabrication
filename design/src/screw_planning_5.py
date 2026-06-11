@@ -43,6 +43,7 @@ from compas.geometry import (
     Polyline,
     cross_vectors,
     angle_vectors,
+    intersection_line_line,
     KDTree,
     Point,
     Vector,
@@ -81,6 +82,9 @@ class ScrewSolver:
             "krossed": ScrewSpecification(
                 "crossed", spec_model=spec_model
             ),  # temp. use the same spec for "krossed" entry type
+            "butt_krossed": ScrewSpecification(
+                "crossed", spec_model=spec_model
+            ),
         }
 
         self.capacity_warnings = []
@@ -471,6 +475,47 @@ class ScrewSolver:
 
         return entry_points
 
+
+    def populate_butt_krossed_entry_points(self, joint, angle, amount: int = None):
+        """Create side-entry screw points aiming at the vertical center line of the interface."""
+        if joint.entry_type != "butt_krossed":
+            raise ValueError("Wrong entry type. Expected 'butt_krossed'.")
+
+        spec = self._spec_cache["butt_krossed"]
+        corners = joint.get_interface_boundary(data_type="points")
+
+        center_bottom = corners[0] + (corners[1] - corners[0]) * 0.5
+        center_top = corners[3] + (corners[2] - corners[3]) * 0.5
+        vertical_vec = Vector.from_start_end(center_bottom, center_top)
+        height = vertical_vec.length
+        vertical_dir = vertical_vec.unitized()
+
+
+        center = center_bottom + vertical_dir * (height * 0.5)
+        offset = max(spec.a1 * 0.75, 0.020)
+        target_offsets = (-offset,-(offset*0.5), (offset*0.5),offset)
+
+        point_grid = []
+        for i, offset in enumerate(target_offsets):
+            target = center + vertical_dir * offset
+            point_grid.append(
+                list(joint.project_butt_krossed_entry_points(target, angle=angle))
+            )
+        return point_grid
+    
+    @staticmethod
+    def _frame_from_value(value, prefer_last=False):
+        if hasattr(value, "point") and hasattr(value, "normal"):
+            return value
+
+        if isinstance(value, (list, tuple)):
+            values = reversed(value) if prefer_last else value
+            for item in values:
+                frame = ScrewSolver._frame_from_value(item, prefer_last=prefer_last)
+                if frame is not None:
+                    return frame
+
+        return None
     @staticmethod
     def generate_screw(
         entry_point, direction, interface, exit_frame, spec, screw_lengths
@@ -498,6 +543,9 @@ class ScrewSolver:
         Screw
             A screw instance with properties set based on the constraints.
         """
+        interface = ScrewSolver._frame_from_value(interface)
+        exit_frame = ScrewSolver._frame_from_value(exit_frame, prefer_last=True)
+ 
         dist_entry = project_point_to_frame_along(
             entry_point, direction, interface
         ).distance_to_point(entry_point)
@@ -772,6 +820,40 @@ class ScrewSolver:
 
         return screw_list
 
+    def populate_butt_krossed_screws(self, joint, angle, point_grid):
+        """Populate a fixed four-screw layout for TButtJoint."""
+        if joint.entry_type != "butt_krossed":
+            raise ValueError("Wrong entry type. Expected 'butt_krossed'.")
+
+        spec = self._spec_cache["butt_krossed"]
+        screw_lengths = sorted(spec.SCREW_LENGTHS, reverse=True)
+
+        interface = joint.get_interface_boundary(data_type="frame")
+        _, exit_frames = joint.find_screw_boundaries(angle=angle, data_type="frame")
+        directions = joint.calculate_butt_krossed_screw_directions(angle=angle)
+
+        screw_list = []
+        for i, row in enumerate(point_grid):
+            # choose always a diferent point per row.
+
+            for j, pt_entry in enumerate(row):
+                    if j != i % len(row):
+                        continue
+                    side_index = j % len(directions)
+                    screw = self.generate_screw(
+                        pt_entry,
+                        directions[side_index],
+                        interface,
+                        exit_frames[side_index],
+                        spec,
+                        screw_lengths,
+                    )
+                    screw.joint_guid = joint.guid
+                    screw.joint_type = joint.__class__.__name__
+                    screw.position = (i, j)
+                    screw_list.append(screw)
+        return screw_list
+
     def create_screw_cylinders(self, screw_list):
         cylinders = []
         for screw in screw_list:
@@ -876,6 +958,7 @@ def apply_screws(
             "TMultiStepJoint",
             "TStepJoint",
             "KBirdsmouthJoint",
+            "TButtJoint",
         ):
             # if joint.name not in ("KBirdsmouthJoint",):
             continue  # temporary for testing only TMultiStepJoint, TStepJoint first
@@ -932,6 +1015,14 @@ def apply_screws(
                 joint, angle=skrew_angle, point_grid=entry_point_grid
             )
 
+        elif joint.entry_type == "butt_krossed":
+            entry_point_grid = solver.populate_butt_krossed_entry_points(
+                joint, angle=skrew_angle, amount=screw_amount
+            )
+            screws = solver.populate_butt_krossed_screws(
+                joint, angle=skrew_angle, point_grid=entry_point_grid
+            )
+
         else:
             raise ValueError("Unknown entry type.")
 
@@ -960,6 +1051,11 @@ def apply_screws(
                 entry_face, exit_face = joint.find_screw_boundaries(
                     angle=skrew_angle, data_type="polylines"
                 )["sides"]
+            elif joint.entry_type == "butt_krossed":
+                interface = joint.get_interface_boundary(data_type="polyline")
+                entry_face, exit_face = joint.find_screw_boundaries(
+                    angle=skrew_angle, data_type="polylines"
+                )
             else:
                 interface = joint.get_interface_boundary(data_type="polyline")
                 entry_face, exit_face = joint.find_screw_boundaries(
