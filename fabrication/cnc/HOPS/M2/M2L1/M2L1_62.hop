@@ -1,0 +1,101 @@
+;MAKROTYP=0
+;INSTVERSION=
+;EXEVERSION=8.9.20.5[Hops.exe]
+;BILD=M0L1_62.WMF
+;INFO=M0L1_62
+;WZGV=7235C_219
+;WZGVCONFIG=
+;MASCHINE=HH7
+;NCNAME=
+;KOMMENTAR=
+;DX=0
+;DY=0
+;DZ=0
+;DIALOGDLL=Dialoge.Dll
+;DIALOGPROC=StandardFormAnzeigen
+;DIALOGKIND=0
+;AUTOSCRIPTSTART=1
+;BUTTONBILD=
+;DIMENSION_UNIT=0
+VARS
+   DX := 1329.1158417167146;*VAR*Piece Length
+   DY := 120.0;*VAR*Piece Height
+   DZ := 100.0;*VAR*Piece Thickness
+   RSI := 1;*VAR*ReferenceSideIndex (0-5)
+START
+FERTIGTEIL(DX,DY,DZ,0,0,0.000,0.000,0.000,'',0,0,0)
+CALL Park_V7 ( VAL MODE:=5,POSX:=0,POSY:=0)
+; ---------------------------------
+; Drilling_PreDrilling
+; ---------------------------------
+WZF(301,_VE,_V,_VA,_SD,_ANF,'1')
+EBENE0()
+HorzB (231.102,25.582,0,1,-8,0,-40,180,1,2,0,0)
+; ---------------------------------
+; Drilling_PreDrilling
+; ---------------------------------
+WZF(301,_VE,_V,_VA,_SD,_ANF,'1')
+EBENE0()
+HorzB (1060.899,45.795,0,1,-8,0,-40,1.616,1,2,0,0)
+; ---------------------------------
+; Drilling_PreDrilling
+; ---------------------------------
+WZF(301,_VE,_V,_VA,_SD,_ANF,'1')
+EBENE0()
+HorzB (1078.654,74.497,0,1,-8,0,-40,1.616,1,2,0,0)
+CALL MachineStop_V7 ( VAL MODE:=0,PARKMODE:=5,PARKPOSX:=0.000,PARKPOSY:=0.0,TYP:=0,R6:=0, STR:='flip beam 180deg',R7:=0)
+; ---------------------------------
+; Drilling_PreDrilling
+; ---------------------------------
+WZF(301,_VE,_V,_VA,_SD,_ANF,'1')
+EBENE0()
+HorzB (235.837,86.764,0,1,-8,0,-40,180,1,2,0,0)
+; ---------------------------------
+; Drilling_PreDrilling
+; ---------------------------------
+WZF(301,_VE,_V,_VA,_SD,_ANF,'1')
+EBENE0()
+HorzB (1054.981,83.773,0,1,-8,0,-40,-1.616,1,2,0,0)
+; ---------------------------------
+; Drilling_PreDrilling
+; ---------------------------------
+WZF(301,_VE,_V,_VA,_SD,_ANF,'1')
+EBENE0()
+HorzB (1072.736,55.070,0,1,-8,0,-40,-1.616,1,2,0,0)
+; ---------------------------------
+;JackRafterCut_Sawing
+; ---------------------------------
+WZS(201,_VE,_V,_VA,_SD,_ANF,'1')
+EBENE0()
+CALL _saege_lae_wi_V7 ( VAL SX:=-0.000,SY:=0,SZ:=0,LAENGE:=-141.329,SCHNITTWINKEL:=121.888,EZ:=-100,BL:=2,EINPASSEN:=0,EL:=_ANF,AL:=_ANF,PARALLEL:=0,K:=0,KW:=-0.000,BH:=2,RITZVERSATZ:=0,ESZ:=2,ESXY1:=7)
+; ---------------------------------
+;JackRafterCut_Sawing
+; ---------------------------------
+WZS(201,_VE,_V,_VA,_SD,_ANF,'1')
+EBENE0()
+CALL _saege_lae_wi_V7 ( VAL SX:=1244.887,SY:=120,SZ:=0,LAENGE:=141.102,SCHNITTWINKEL:=301.740,EZ:=-110,BL:=1,EINPASSEN:=0,EL:=_ANF,AL:=_ANF,PARALLEL:=0,K:=0,KW:=-40.820,BH:=2,RITZVERSATZ:=0,ESZ:=2,ESXY1:=1)
+; ---------------------------------
+;DoubleCut_Pocketing
+; ---------------------------------
+WZF(503,_VE,_V,_VA,_SD,_ANF,'1')
+EBENEF(170.849,51.842,0,49.180,301.740,1,2,0)
+KB ('9fef','',-35.124,0,0,'',0,0)
+CALL _KWGerade_V5 ( VAL NAME:='ridge_line',LAENGE:=-182.644,WINKEL:=60.292,Z:=0,INFO:='',ESD:=2)
+KG01 ('bottom_corner',0,0,0,'',1,2)
+KG01 ('top_corner',0,0,0,'',7,2)
+KG01ZuKB()
+/KSP ('???','???',104.0,0,1,_ANF,0.0,0.0,0.0,0,0,0,0,0.0,0.0,0,0,1,0.0,0.0,0,0.0,0.0)
+/KonturFraesen ('9fef','KSP','KEP',0,0,0,0,0,0,0,0)
+/EP(0,_ANF,0)
+KSP ('???','???',78.0,0,1,_ANF,0.0,0.0,0.0,0,0,0,0,0.0,0.0,0,0,1,0.0,0.0,0,0.0,0.0)
+KonturFraesen ('9fef','KSP','KEP',0,0,0,0,0,0,0,0)
+EP(0,_ANF,0)
+KSP ('???','???',52.0,0,1,_ANF,0.0,0.0,0.0,0,0,0,0,0.0,0.0,0,0,1,0.0,0.0,0,0.0,0.0)
+KonturFraesen ('9fef','KSP','KEP',0,0,0,0,0,0,0,0)
+EP(0,_ANF,0)
+KSP ('???','???',26.0,0,1,_ANF,0.0,0.0,0.0,0,0,0,0,0.0,0.0,0,0,1,0.0,0.0,0,0.0,0.0)
+KonturFraesen ('9fef','KSP','KEP',0,0,0,0,0,0,0,0)
+EP(0,_ANF,0)
+KSP ('???','???',0.0,0,1,_ANF,0.0,0.0,0.0,0,0,0,0,0.0,0.0,0,0,1,0.0,0.0,0,0.0,0.0)
+KonturFraesen ('9fef','KSP','KEP',0,0,0,0,0,0,0,0)
+EP(0,_ANF,0)
