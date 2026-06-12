@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <BTLx xmlns="https://www.design2machine.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="2.0.0" Language="en" xsi:schemaLocation="https://www.design2machine.com https://www.design2machine.com/btlx/btlx_2_0_0.xsd">
    <FileHistory>
-      <InitialExportProgram CompanyName="Gramazio Kohler Research" ProgramName="COMPAS_Timber" ProgramVersion="Compas: 2.15.1" ComputerName="PAPACHAP" UserName="kapso" FileName="" Date="2026-06-10" Time="11:34:53" Comment=""/>
+      <InitialExportProgram CompanyName="Gramazio Kohler Research" ProgramName="COMPAS_Timber" ProgramVersion="Compas: 2.15.1" ComputerName="PAPACHAP" UserName="kapso" FileName="" Date="2026-06-11" Time="17:26:46" Comment=""/>
    </FileHistory>
    <Project Name="COMPAS Timber Project">
       <Parts>
@@ -5664,22 +5664,6 @@
                   <Angle2>116.920</Angle2>
                   <Inclination2>49.180</Inclination2>
                </DoubleCut>
-               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
-                  <Orientation>start</Orientation>
-                  <StartX>0.000</StartX>
-                  <StartY>0.000</StartY>
-                  <StartDepth>0.000</StartDepth>
-                  <Angle>69.354</Angle>
-                  <Inclination>90.000</Inclination>
-               </JackRafterCut>
-               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
-                  <Orientation>end</Orientation>
-                  <StartX>925.673</StartX>
-                  <StartY>0.000</StartY>
-                  <StartDepth>0.000</StartDepth>
-                  <Angle>22.311</Angle>
-                  <Inclination>90.000</Inclination>
-               </JackRafterCut>
                <StepJoint Name="StepJoint" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="3">
                   <UserAttributes>
                      <UserAttribute Name="heel_angle" Value="105.75491482747677" Type="string"/>
@@ -5694,6 +5678,22 @@
                   <TenonWidth>40.000</TenonWidth>
                   <TenonHeight>40.000</TenonHeight>
                </StepJoint>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="2">
+                  <Orientation>start</Orientation>
+                  <StartX>37.679</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>110.646</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="2">
+                  <Orientation>end</Orientation>
+                  <StartX>681.985</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>157.689</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
             </Processings>
          </Part>
          <Part SingleMemberNumber="32" AssemblyNumber="" OrderNumber="32" Designation="Beam" Annotation="M0L0_37" Storey="" Group="" Package="" Material="" TimberGrade="" QualityGrade="" Count="1" Length="1181.475" Height="100.000" Width="100.000" Weight="0" ProcessingQuality="automatic" StoreyType="" ElementNumber="9da7" Layer="0" ModuleNumber="">
@@ -9305,6 +9305,15 @@
             <GrainDirection X="1" Y="0" Z="0" Align="no"/>
             <ReferenceSide Side="4" Align="yes"/>
             <Processings>
+               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="2">
+                  <StartX>259.581</StartX>
+                  <StartY>67.190</StartY>
+                  <Angle>0.000</Angle>
+                  <Inclination>20.000</Inclination>
+                  <DepthLimited>no</DepthLimited>
+                  <Depth>91.371</Depth>
+                  <Diameter>4.000</Diameter>
+               </Drilling>
                <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
                   <StartX>141.676</StartX>
                   <StartY>24.452</StartY>
@@ -9341,6 +9350,14 @@
                   <Depth>138.199</Depth>
                   <Diameter>4.000</Diameter>
                </Drilling>
+               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
+                  <Orientation>end</Orientation>
+                  <StartX>887.366</StartX>
+                  <StartY>0.000</StartY>
+                  <StartDepth>0.000</StartDepth>
+                  <Angle>24.663</Angle>
+                  <Inclination>90.000</Inclination>
+               </JackRafterCut>
                <StepJoint Name="StepJoint" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="3">
                   <UserAttributes>
                      <UserAttribute Name="heel_angle" Value="107.41484583784327" Type="string"/>
@@ -9369,23 +9386,6 @@
                   <Angle2>138.811</Angle2>
                   <Inclination2>111.053</Inclination2>
                </DoubleCut>
-               <Drilling Name="Drilling" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
-                  <StartX>-15.166</StartX>
-                  <StartY>32.810</StartY>
-                  <Angle>180.000</Angle>
-                  <Inclination>20.000</Inclination>
-                  <DepthLimited>no</DepthLimited>
-                  <Depth>110.000</Depth>
-                  <Diameter>4.000</Diameter>
-               </Drilling>
-               <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
-                  <Orientation>end</Orientation>
-                  <StartX>887.366</StartX>
-                  <StartY>0.000</StartY>
-                  <StartDepth>0.000</StartDepth>
-                  <Angle>24.663</Angle>
-                  <Inclination>90.000</Inclination>
-               </JackRafterCut>
                <JackRafterCut Name="JackRafterCut" Process="yes" Priority="0" ProcessID="0" ReferencePlaneID="4">
                   <Orientation>start</Orientation>
                   <StartX>-0.000</StartX>
