@@ -26,6 +26,7 @@ from compas.data import json_load
 # ── Configuration ────────────────────────────────────────────────────────────────
 SEQUENCE_FILE = "fabrication\\data\\fabrication_sequence.json"
 TOOL          = "t_dummy"
+TOOL_LOADED   = "t_t2_2526_load"
 WORKOBJECT    = "wobj0"
 
 # R11 home — arm joints are static throughout; only X external axis moves.
@@ -44,7 +45,7 @@ ZONE_FINE  = rrc.Zone.FINE
 ZONE_BLEND = rrc.Zone.Z1
 
 # Sync move timeout per waypoint
-SYNC_TIMEOUT = 240.0
+SYNC_TIMEOUT = 400.0
 
 
 # ── ROS ──────────────────────────────────────────────────────────────────────────
@@ -78,7 +79,7 @@ def soft_move_on(abb12):
             float_values=[40, 90],
             string_values=["XYRZ"],
         ),
-        timeout=10.0,
+        timeout=400.0,
     )
 
 
@@ -89,13 +90,13 @@ def soft_move_off(abb12):
             "r_A083_DeactSoftMove",
             feedback_level=rrc.FeedbackLevel.DONE,
         ),
-        timeout=10.0,   
+        timeout=400.0,   
     )
 
 
 # ── Gantry sync ───────────────────────────────────────────────────────────────────
 
-def sync_gantry_on(abb11, abb12, timeout=60.0):
+def sync_gantry_on(abb11, abb12, timeout=400.0):
     f11 = abb11.send(rrc.CustomInstruction(
         "r_A083_SyncGantryR11", feedback_level=rrc.FeedbackLevel.DONE))
     f12 = abb12.send(rrc.CustomInstruction(
@@ -105,7 +106,7 @@ def sync_gantry_on(abb11, abb12, timeout=60.0):
     print("  Gantry sync ON.")
 
 
-def sync_gantry_off(abb11, abb12, timeout=60.0):
+def sync_gantry_off(abb11, abb12, timeout=400.0):
     f11 = abb11.send(rrc.CustomInstruction(
         "r_A083_StopSyncR11", feedback_level=rrc.FeedbackLevel.DONE))
     f12 = abb12.send(rrc.CustomInstruction(
@@ -181,9 +182,9 @@ def execute_sequence(abb11, abb12, record):
 
     # ── 1. Approach to pick ──────────────────────────────────────────────────────────────────
     print("\n[1/7] approach_to_pick")
-    sync_gantry_on(abb11, abb12, timeout=60.0)
+    sync_gantry_on(abb11, abb12, timeout=400.0)
     execute_trajectory(abb11, abb12, steps["approach_to_pick"], SPEED_FREE)
-    sync_gantry_off(abb11, abb12, timeout=60.0)
+    sync_gantry_off(abb11, abb12, timeout=400.0)
 
     approach_frame = record.get("approach_frame")
     if approach_frame is not None:
@@ -191,7 +192,7 @@ def execute_sequence(abb11, abb12, record):
         abb12.send_and_wait(
             rrc.MoveToFrame(approach_frame, SPEED_HOLD, rrc.Zone.FINE,
                             motion_type=rrc.Motion.LINEAR),
-            timeout=30.0)
+            timeout=400.0)
     else:
         print("  WARNING: no approach_frame in record, skipping corrective move.")
 
@@ -202,22 +203,23 @@ def execute_sequence(abb11, abb12, record):
     abb12.send_and_wait(
         rrc.MoveToFrame(pickup_frame, SPEED_PICK, rrc.Zone.FINE,
                         motion_type=rrc.Motion.LINEAR),
-        timeout=30.0)
+        timeout=400.0)
     time.sleep(0.5)
     soft_move_off(abb12)
     # abb12.send(rrc.PrintText("Stopped after pick — press Play to continue"))
     time.sleep(2.0)
-    abb12.send_and_wait(rrc.Stop(), timeout=100.0)
+    abb12.send_and_wait(rrc.Stop(), timeout=400.0)
 
     # ── 3. Retract from pick ───────────────────────────────────────────────────────────────────
     print("\n[3/7] retract_from_pick")
+    abb12.send_and_wait(rrc.SetTool(TOOL_LOADED), timeout=5.0)
     pick_retract_frame = record.get("pick_retract_frame")
     if pick_retract_frame is not None:
         print("  MoveL to pick retract frame")
         abb12.send_and_wait(
             rrc.MoveToFrame(pick_retract_frame, SPEED_HOLD, rrc.Zone.FINE,
                             motion_type=rrc.Motion.LINEAR),
-            timeout=60.0)
+            timeout=400.0)
     else:
         print("  Fallback: joint trajectory retract from pick")
         sync_gantry_on(abb11, abb12)
@@ -232,9 +234,9 @@ def execute_sequence(abb11, abb12, record):
 
     # ── 5. Place at assembly target ───────────────────────────────────────────────────────
     print("\n[5/7] place_at_AT")
-    sync_gantry_on(abb11, abb12)
-    execute_trajectory(abb11, abb12, steps["place_at_AT"], SPEED_APPROACH_AT)
-    sync_gantry_off(abb11, abb12)
+    # sync_gantry_on(abb11, abb12)
+    # execute_trajectory(abb11, abb12, steps["place_at_AT"], SPEED_APPROACH_AT)
+    # sync_gantry_off(abb11, abb12)
 
     place_approach_frame = record.get("place_approach_frame")
     if place_approach_frame is not None:
@@ -242,7 +244,7 @@ def execute_sequence(abb11, abb12, record):
         abb12.send_and_wait(
             rrc.MoveToFrame(place_approach_frame, SPEED_HOLD, rrc.Zone.FINE,
                             motion_type=rrc.Motion.LINEAR),
-            timeout=30.0)
+            timeout=400.0)
     else:
         print("  WARNING: no place_approach_frame in record, skipping corrective move.")
 
@@ -251,19 +253,20 @@ def execute_sequence(abb11, abb12, record):
     abb12.send_and_wait(
         rrc.MoveToFrame(place_frame, SPEED_PLACE, rrc.Zone.FINE,
                         motion_type=rrc.Motion.LINEAR),
-        timeout=30.0)
-    abb12.send(rrc.PrintText("Stopped after place — press Play to continue"))
-    abb12.send_and_wait(rrc.Stop(), timeout=100.0)
+        timeout=400.0)
+    # abb12.send(rrc.PrintText("Stopped after place — press Play to continue"))
+    abb12.send_and_wait(rrc.Stop(), timeout=400.0)
 
     # ── 6. Retract from assembly target ────────────────────────────────────────────────────
     print("\n[6/7] retract_from_AT")
+    abb12.send_and_wait(rrc.SetTool(TOOL), timeout=5.0)
     place_retract_frame = record.get("place_retract_frame")
     if place_retract_frame is not None:
         print("  MoveL to place retract frame")
         abb12.send_and_wait(
             rrc.MoveToFrame(place_retract_frame, SPEED_PLACE, rrc.Zone.FINE,
                             motion_type=rrc.Motion.LINEAR),
-            timeout=60.0)
+            timeout=400.0)
     else:
         print("  Fallback: joint trajectory retract from AT")
         sync_gantry_on(abb11, abb12)
@@ -304,7 +307,7 @@ def main():
     except Exception as e:
         print("ERROR during execution: {}".format(e))
         import traceback
-        traceback.print_exc()
+        traceback.print_exc()       
 
     finally:
         disconnect_ros(ros)
