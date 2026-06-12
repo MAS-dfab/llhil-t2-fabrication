@@ -295,6 +295,8 @@ def main():
         print("\nAborted by user.")
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print("ERROR during execution: {}".format(e))
         
     finally:

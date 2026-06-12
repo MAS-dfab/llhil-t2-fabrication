@@ -65,7 +65,7 @@ def main():
     # 1. LOAD DATA
     # ---------------------------------------------------------
     print("Loading models...")
-    filepath_model = "fabrication\\data\\timber_models\\260608_v1_fabrication_model_2.json"
+    filepath_model = "fabrication\\data\\timber_models\\260603_v1_sequenced_timber_model.json"
 
     if not os.path.exists(filepath_model):
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
@@ -158,17 +158,18 @@ def main():
 
         # --- Fetch pickup frame (blocking, runs in MQTT thread) ---
         _set_label("fetching…", _COL_WAITING)
-        try:
-            trajectory_planner._fetched_pickup_frame = fetch_pickup_frame()
-            compute_state["done_once"] = False
-            _set_label("ready ✓", _COL_FETCHED)
-            print("QR: pickup frame ready for seq_i={}. Press Compute.".format(trajectory_planner.seq_i))
-        except RuntimeError as e:
-            from compas.geometry import Frame, Point, Vector
-            trajectory_planner._fetched_pickup_frame = Frame(point=Point(x=16040, y=5076, z=1009), xaxis=Vector(x=-1.000, y=-0.000, z=-0.000), yaxis=Vector(x=0.000, y=1.000, z=0.000)).rotated(math.radians(90), Vector(0,0,1), Point(x=16040, y=7076, z=1009))
-            compute_state["done_once"] = False
-            _set_label("retry — fetch failed", _COL_WAITING)
-            print("QR: fetch FAILED - {}".format(e))
+        if beam.attributes.get("assembly_method") == "robot":
+            try:
+                trajectory_planner._fetched_pickup_frame = fetch_pickup_frame()
+                compute_state["done_once"] = False
+                _set_label("ready ✓", _COL_FETCHED)
+                print("QR: pickup frame ready for seq_i={}. Press Compute.".format(trajectory_planner.seq_i))
+            except RuntimeError as e:
+                from compas.geometry import Frame, Point, Vector
+                trajectory_planner._fetched_pickup_frame = Frame(point=Point(x=16040, y=5076, z=1009), xaxis=Vector(x=-1.000, y=-0.000, z=-0.000), yaxis=Vector(x=0.000, y=1.000, z=0.000)).rotated(math.radians(90), Vector(0,0,1), Point(x=16040, y=7076, z=1009))
+                compute_state["done_once"] = False
+                _set_label("retry — fetch failed", _COL_WAITING)
+                print("QR: fetch FAILED - {}".format(e))
         
         buttons_to_del = []
         if beam.attributes.get("assembly_method") == "robot":
