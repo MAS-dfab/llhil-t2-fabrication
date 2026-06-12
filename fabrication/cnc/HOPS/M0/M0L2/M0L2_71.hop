@@ -144,6 +144,12 @@ HorzB (2168.139,0,75.000,4,-60,0,0,40.000,1,2,0,0)
 ; ---------------------------------
 WZS(201,_VE,_V,_VA,_SD,_ANF,'1')
 EBENE0()
+CALL _saege_y_V7 ( VAL SX:=150,SY:=_RY,SZ:=-3,EY:=0,EZ:=-2,BL:=2,EINPASSEN:=0,EL:=_WZR,AL:=_WZR,PARALLEL:=0,K:=0,KW:=0,BH:=0,RITZVERSATZ:=0.05,ESZ:=0,ESXY1:=0,ESY:=3)
+; ---------------------------------
+;JackRafterCut_Sawing
+; ---------------------------------
+WZS(201,_VE,_V,_VA,_SD,_ANF,'1')
+EBENE0()
 CALL _saege_lae_wi_V7 ( VAL SX:=226.658,SY:=0,SZ:=0,LAENGE:=-163.908,SCHNITTWINKEL:=121.335,EZ:=-100,BL:=2,EINPASSEN:=0,EL:=_ANF,AL:=_ANF,PARALLEL:=0,K:=0,KW:=0,BH:=2,RITZVERSATZ:=0,ESZ:=2,ESXY1:=7)
 ; ---------------------------------
 ;JackRafterCut_Sawing
