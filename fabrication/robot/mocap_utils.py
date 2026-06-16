@@ -6,7 +6,7 @@ if _ROCAP_PATH not in sys.path:
 
 from robot_workflow import _load_calib, collect_frames, average_frames, compute_robot_frame  # noqa: E402
 
-MOCAP_WS_URL = "ws://192.168.55.104:8765"  # rocap mocap WebSocket URL (IP of the machine running rocap)
+MOCAP_WS_URL = "ws://192.168.55.103:8765"  # rocap mocap WebSocket URL (IP of the machine running rocap)
 MOCAP_COLLECT_DURATION = 0.5  # seconds to average
 
 

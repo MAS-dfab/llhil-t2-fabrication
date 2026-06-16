@@ -241,7 +241,11 @@ class TimberProcessPlanner(BaseRobotPlanner):
     # =========================================================================
     
     def pick_and_place_element(self, element_guid, timber_model):
+
+        live_config = self.update_configuration_from_live_data()
+
         self._start_frame = self.get_current_end_frame()
+        print
         element = timber_model.element_by_guid(element_guid)
 
         print("Picking and placing element:", element.name)
@@ -265,8 +269,12 @@ class TimberProcessPlanner(BaseRobotPlanner):
         trajectories.append(self.get_cartesian_trajectory([element_pickup_frame], planning_group="robot12", avoid_collisions=False))
 
         # Prepare mesh for attachment
+        el_obb = element.compute_obb(inflate=0.04)
+        in_situ_el_geom_bb = el_obb.transformed(element.transformation_to_local())
+        
+        element_col_mesh_at = in_situ_el_geom_bb.to_mesh()
         element_mesh_at = element_geometry.to_viewmesh()[0]
-        self.attach_workpiece(str(element.name), element_mesh_at, grasp_frame, attached_to_tool="schunk")
+        self.attach_workpiece(str(element.name), element_mesh_at, element_col_mesh_at, grasp_frame, attached_to_tool="schunk")
 
         # 3. Retract from pickpoint
         print("getting element retract trajectory at pickpoint")

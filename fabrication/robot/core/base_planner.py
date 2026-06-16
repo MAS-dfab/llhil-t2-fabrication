@@ -15,6 +15,7 @@ from compas_fab.viewer import WorkpieceManager
 from compas_robots import ToolModel
 from compas_rrc import RosClient
 from compas.datastructures import Mesh
+from config.live_config import get_robot_data
 
 
 class BaseRobotPlanner():
@@ -74,6 +75,24 @@ class BaseRobotPlanner():
         self.planner.set_robot_cell_state(self.state)
         print("ROS client and MoveIt planner relaunched.")
 
+    def update_configuration_from_live_data(self):
+        data = get_robot_data()
+        if data is None:
+            print("Failed to fetch live robot data. Using current configuration.")
+            return self.current_configuration
+        else:
+            live_config = self.current_configuration.copy()
+            live_config["bridge1_joint_EA_X"] = data[0] * 0.001
+            live_config["robot12_joint_EA_Y"] = data[1] * 0.001
+            live_config["robot12_joint_EA_Z"] = data[2] * 0.001
+            live_config["robot12_joint_1"] = math.radians(data[3])
+            live_config["robot12_joint_2"] = math.radians(data[4])
+            live_config["robot12_joint_3"] = math.radians(data[5])
+            live_config["robot12_joint_4"] = math.radians(data[6])
+            live_config["robot12_joint_5"] = math.radians(data[7])
+            live_config["robot12_joint_6"] = math.radians(data[8])
+            self.state.robot_configuration.merge(live_config)
+            return live_config
 
     def get_current_end_frame(self):
         """Returns the current forward kinematics frame of the tool."""
@@ -289,7 +308,7 @@ class BaseRobotPlanner():
         print(f"Tool '{tool_name}' attached to '{connected_to}'.")
         return tool_model
 
-    def attach_workpiece(self, name, mesh, grasp_frame, attached_to_tool="gripper"):
+    def attach_workpiece(self, name, viz_mesh, col_mesh, grasp_frame, attached_to_tool="gripper"):
         """
         Generic method to attach a mesh to the robot's tool for pick and place.
         """
@@ -301,8 +320,8 @@ class BaseRobotPlanner():
         tool_col_mesh.transform(Transformation.from_frame(grasp_frame))
 
         
-        beam_tool_viz_mesh = mesh.copy()
-        beam_tool_col_mesh = mesh.copy()
+        beam_tool_viz_mesh = viz_mesh.copy()
+        beam_tool_col_mesh = col_mesh.copy()
 
         beam_tool_viz_mesh.join(tool_viz_mesh)
         beam_tool_col_mesh.join(tool_col_mesh)
