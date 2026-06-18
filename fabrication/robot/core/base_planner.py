@@ -121,14 +121,30 @@ class BaseRobotPlanner():
 
     def get_constrained_ik_from_frame(self, target_frame):
         frame_target = FrameTarget(target_frame, target_mode=TargetMode.TOOL)
-        j_constraints = [
+        j_constraints_0 = [
             JointConstraint('robot12_joint_2', math.radians(-40), math.radians(15), math.radians(-15)),
             JointConstraint('robot12_joint_3', math.radians(40), math.radians(15), math.radians(-15)),
             JointConstraint('robot12_joint_6', math.radians(0), math.radians(10), math.radians(-10)),
         ]
-        ik_options = {"constraints": j_constraints, "allow_collisions": False, "return_full_configuration": True, "max_results": 10000}
-        approach_config = self.planner.inverse_kinematics(frame_target, self.state, self.group, options=ik_options)
-        return approach_config
+        ik_options_0 = {"constraints": j_constraints_0, "allow_collisions": False, "return_full_configuration": True, "max_results": 10000000}
+
+        j_constraints_1 = [
+            JointConstraint('robot12_joint_2', math.radians(-40), math.radians(15), math.radians(-15)),
+            JointConstraint('robot12_joint_3', math.radians(40), math.radians(15), math.radians(-15)),
+            JointConstraint('robot12_joint_6', math.radians(180), math.radians(10), math.radians(-10)),
+        ]
+        ik_options_1 = {"constraints": j_constraints_1, "allow_collisions": False, "return_full_configuration": True, "max_results": 100000000}
+        try:
+            approach_config = self.planner.inverse_kinematics(frame_target, self.state, self.group, options=ik_options_0)
+            return approach_config
+        except Exception as e:
+            print("Error occurred while calculating constrained IK: {}".format(e))
+        try:
+            approach_config = self.planner.inverse_kinematics(frame_target, self.state, self.group, options=ik_options_1)
+            return approach_config
+        except Exception as e:
+            print("Error occurred while calculating constrained IK: {}".format(e))
+            return None
 
     def update_state_from_trajectory(self, trajectory, grp="robot12_eaXYZ"):
         """Updates the internal robot state to match the end of a trajectory."""
