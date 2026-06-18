@@ -39,7 +39,7 @@ from timber_config import (
     FP_THICKNESS, FP_SCREW_ROW_COUNT, FP_SCREW_COLUMN_COUNT, FP_SCREW_MINIMUM_SPACING, FP_SCREW_MINIMUM_OFFSET,
     MP_THICKNESS, MP_SCREW_ROW_COUNT, MP_SCREW_COLUMN_COUNT, MP_SCREW_MINIMUM_SPACING, MP_SCREW_MINIMUM_OFFSET,
     MAX_JOINT_DIST, TMULTI_HEEL_THRESHOLD, TMULTI_STEP_DEPTH, TMULTI_RISER_ANGLE,
-    KBIRD_MILL_DEPTH, KBIRD_MITER_TYPE, TBUTT_ANGLE_THRESHOLD
+    KBIRD_MILL_DEPTH, KBIRD_MITER_TYPE, TBIRD_MILL_DEPTH, TBUTT_MILL_DEPTH, TBUTT_ANGLE_THRESHOLD
 )
 
 # --------------------------------------
@@ -394,6 +394,7 @@ def apply_joints(
         model,
         max_distance=None,
         k_mill_depth=None,
+        tbird_mill_depth=None,
         k_miter_type=None,
         k_miter_flag=False,
         heel_threshold=None,
@@ -401,6 +402,7 @@ def apply_joints(
         riser_angle=None,
         x_lap_flip=False,
         debug=False,
+        tbutt_mill_depth=None,
         tbutt_angle_threshold=None
     ):
 
@@ -409,6 +411,10 @@ def apply_joints(
         max_distance = MAX_JOINT_DIST
     if k_mill_depth is None:
         k_mill_depth = KBIRD_MILL_DEPTH
+    if tbird_mill_depth is None:
+        tbird_mill_depth = TBIRD_MILL_DEPTH
+    if tbutt_mill_depth is None:
+        tbutt_mill_depth = TBUTT_MILL_DEPTH
     if heel_threshold is None:
         heel_threshold = TMULTI_HEEL_THRESHOLD
     if step_depth is None:
@@ -491,7 +497,7 @@ def apply_joints(
                     TButtJoint.create(model, ca, cb)
                 else:
                     # Non-planar T joints
-                    TBirdsmouthJoint.create(model, ca, cb)
+                    TBirdsmouthJoint.create(model, ca, cb, mill_depth=tbird_mill_depth)
 
         ### L Miter Joint for mid node
         if topo == JointTopology.TOPO_L and ca.attributes["has_middle_joint"] and cb.attributes["has_middle_joint"]:
