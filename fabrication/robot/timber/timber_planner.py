@@ -293,6 +293,12 @@ class TimberProcessPlanner(BaseRobotPlanner):
         self._last_place_approach_frame = element_at_approach_frame
         approach_config = self.get_constrained_ik_from_frame(element_at_approach_frame)
         trajectories.append(self.get_motion_to_configuration(approach_config))
+        self._glue_frame = None
+        if element.attributes.get('hierarchy') == "shoe":
+            glue_config = approach_config.copy()
+            glue_config["robot12_joint_5"] += math.radians(90 if glue_config["robot12_joint_5"] < 0 else -90)
+            print("getting element glue trajectory at AT")
+            self._glue_trajectory = self.get_motion_to_configuration(glue_config, update_state=False, update_trajectory_list=False)
 
         # 6. Place at AT
         print("getting element place trajectory at AT")

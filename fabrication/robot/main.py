@@ -398,6 +398,7 @@ def main():
             _place_retract = getattr(trajectory_planner, "_last_place_retract_frame", None)
             _start = getattr(trajectory_planner, "_start_frame", None)
             _end = getattr(trajectory_planner, "_end_frame", None)
+            _glue_trajectory = getattr(trajectory_planner, "_glue_trajectory", None)
             last_sequence["record"] = {
                 "index": trajectory_planner.seq_i,
                 "beam_guid": str(beam.guid),
@@ -409,6 +410,7 @@ def main():
                 "place_frame": _place.scaled(1000) if _place is not None else None,
                 "pick_retract_frame": _pick_retract.scaled(1000) if _pick_retract is not None else None,
                 "place_retract_frame": _place_retract.scaled(1000) if _place_retract is not None else None,
+                "glue_trajectory": _glue_trajectory,
                 "steps": {
                     name: element_trajectories[i] if i < len(element_trajectories) else None
                     for i, name in enumerate(STEP_NAMES)

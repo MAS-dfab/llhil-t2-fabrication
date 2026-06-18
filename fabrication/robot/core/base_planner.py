@@ -124,8 +124,9 @@ class BaseRobotPlanner():
         j_constraints = [
             JointConstraint('robot12_joint_2', math.radians(-40), math.radians(15), math.radians(-15)),
             JointConstraint('robot12_joint_3', math.radians(40), math.radians(15), math.radians(-15)),
+            JointConstraint('robot12_joint_6', math.radians(0), math.radians(10), math.radians(-10)),
         ]
-        ik_options = {"constraints": j_constraints, "allow_collisions": False, "return_full_configuration": True}
+        ik_options = {"constraints": j_constraints, "allow_collisions": False, "return_full_configuration": True, "max_results": 10000}
         approach_config = self.planner.inverse_kinematics(frame_target, self.state, self.group, options=ik_options)
         return approach_config
 
@@ -200,7 +201,7 @@ class BaseRobotPlanner():
                 self.state.set_tool_attached_to_group(self.state.get_attached_tool_id(planning_group), self.group, touch_links=["robot12_link_6"])
         return trajectory
 
-    def get_motion_to_frame(self, target_frame, planning_group=None, path_constraints=None):
+    def get_motion_to_frame(self, target_frame, planning_group=None, path_constraints=None, update_state=True, update_trajectory_list=True):
         """Plans a free-space (non-Cartesian) motion to a target frame."""
         frame_target = FrameTarget(target_frame, target_mode=TargetMode.TOOL)
         self.state.robot_configuration = self.current_configuration
@@ -220,13 +221,15 @@ class BaseRobotPlanner():
             else:
                 trajectory = self.planner.plan_motion(frame_target, self.state, group=self.group, options=plan_options)
             print(f"Free-space motion to frame planned. Fraction: {trajectory.fraction}")
-            self.trajectory_list.append(trajectory)
-            self.update_state_from_trajectory(trajectory)
+            if update_trajectory_list:
+                self.trajectory_list.append(trajectory)
+            if update_state:
+                self.update_state_from_trajectory(trajectory)
         except Exception as e:
             print(f"Free-space planning failed: {e}")
         return trajectory
 
-    def get_motion_to_configuration(self, target_configuration, planning_group=None):
+    def get_motion_to_configuration(self, target_configuration, planning_group=None, update_state=True, update_trajectory_list=True):
         """Plans a free-space motion to a specific joint configuration."""
         def_tol = ConfigurationTarget.generate_default_tolerances(target_configuration, 0.01, math.radians(0.1))
         config_target = ConfigurationTarget(target_configuration, def_tol[0], def_tol[1])
@@ -247,8 +250,10 @@ class BaseRobotPlanner():
             else:
                 trajectory = self.planner.plan_motion(config_target, self.state, group=self.group, options=plan_options)
             print(f"Motion to configuration planned. Fraction: {trajectory.fraction}")
-            self.trajectory_list.append(trajectory)
-            self.update_state_from_trajectory(trajectory)
+            if update_trajectory_list:
+                self.trajectory_list.append(trajectory)
+            if update_state:
+                self.update_state_from_trajectory(trajectory)
         except Exception as e:
             print(f"Configuration planning failed: {e}")
         return trajectory
