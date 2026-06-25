@@ -48,8 +48,10 @@ from compas.geometry import Rotation
 from compas.geometry import Translation
 from compas.geometry import Vector
 from compas.scene import Scene
-from compas_timber.fabrication import Drilling
+from compas.tolerance import TOL
+from compas_timber.fabrication import DoubleCut
 from compas_timber.fabrication import JackRafterCut
+from compas_timber.fabrication import JackRafterCutProxy
 
 from easyhops.hop_job import HOPSJob
 from easyhops.hop_core import ParkMode
@@ -65,15 +67,16 @@ from easyhops.tool_library import SaegeD350
 from easyhops.tool_library import CastorD61
 from easyhops.tool_library import SRSLD12
 
+TOOL_MAX_DEPTH = 100.0  # mm, maximum depth of cut for the tools used in this exporter
 
 # ---------------------------------------------------------------------------
 # Model loading
 # ---------------------------------------------------------------------------
 
 
-def load_model(filepath):
+def load_model(filepath, module):
     model_dict = json_load(filepath)
-    model = model_dict[0]["model"]
+    model = model_dict[module]["model"]
     model.process_joinery()
 
     return model
@@ -85,27 +88,42 @@ def load_model(filepath):
 
 
 def override_features(beam):
-    """Replace any JackRafterCut features on the beam with new features based on the same planes but with ref_side_index taken from beam attributes."""
+    """Ensure all JackRafterCut features are on ref_side or opp_side, and add opp_side cuts where the blade can't cut through in one pass."""
     ref_side_index = beam.attributes.get("ref_side_index", 0)
+    opp_side = (ref_side_index + 2) % 4
+    _, height = beam.get_dimensions_relative_to_side(ref_side_index)
 
-    for f in beam.features:
-        if isinstance(f, JackRafterCut):
-            plane = f.plane_from_params_and_beam(beam)
-            new_feature = f.__class__.from_plane_and_beam(plane, beam, ref_side_index)
-            beam.remove_features(f)
-            beam.add_feature(new_feature)
-        elif isinstance(f, Drilling):
-            # check if it's set on the opposite side compared to the beam's ref_side_index
-            if f.ref_side_index == (ref_side_index + 2) % 4:
-                line = f.line_from_params_and_element(beam)
-                new_feature = f.__class__.from_line_and_element(
-                    line, beam, f.diameter, ref_side_index=ref_side_index
+    for f in list(beam.features):
+        if isinstance(f, DoubleCut):
+            if f.user_attributes.get("strategy", None) == "pocketing":
+                planes = f.planes_from_params_and_beam(beam)
+                new_feature = f.__class__.from_planes_and_beam(
+                    planes, beam, ref_side_index
                 )
+                new_feature.user_attributes.update(f.user_attributes)
                 beam.remove_features(f)
                 beam.add_feature(new_feature)
+            continue
+
+        elif isinstance(f, JackRafterCut) or isinstance(f, JackRafterCutProxy):
+            plane = f.plane_from_params_and_beam(beam)
+            if f.ref_side_index in [ref_side_index, opp_side]:
+                inclination_rad = math.radians(f.inclination)
+                blade_path_mm = (height * 1000) / math.sin(inclination_rad)
+
+                if blade_path_mm > TOOL_MAX_DEPTH:
+                    beam.add_feature(
+                        f.__class__.from_plane_and_beam(
+                            plane, beam, ref_side_index=(f.ref_side_index + 2) % 4
+                        )
+                    )
+            else:
+                raise ValueError(
+                    f"Unexpected ref_side_index {f.ref_side_index} for {f.__class__.__name__} on beam {beam.name}"
+                )
 
 
-def resolve_beam(model, index, hierarchy, level, names=None):
+def resolve_beam(model, index, level, names=None):
     """Return the single beam matching the given selection criteria.
 
     Type-mode (hierarchy is not None):
@@ -118,7 +136,7 @@ def resolve_beam(model, index, hierarchy, level, names=None):
     Returns the beam, or None if no match (GH warning added in that case).
     """
     warn = gh.GH_RuntimeMessageLevel.Warning
-
+    hierarchy = None
     if names is not None:
         filtered = [b for b in model.beams if b.name in names]
         total = len(filtered)
@@ -331,25 +349,40 @@ def _element_to_job(element, scale_factor=1000.0):
             assert processing.ref_side_index in (rsi, opp_rsi), (
                 f"Unexpected ref_side_index {processing.ref_side_index} for JackRafterCut"
             )
-            machinings = JackRafterCutStrategies.sawing(
-                processing, machine_ref_side_index=rsi, tool=SaegeD350()
-            )
-            post_flip.extend(machinings)
-            _dispatch(name, rsi_proc, machinings, "post-flip")
+            if processing.ref_side_index == opp_rsi:
+                machinings = JackRafterCutStrategies.sawing(
+                    processing, machine_ref_side_index=opp_rsi, tool=SaegeD350()
+                )
+                pre_flip.extend(machinings)
+                _dispatch(name, rsi_proc, machinings, "pre-flip")
+            else:
+                machinings = JackRafterCutStrategies.sawing(
+                    processing, machine_ref_side_index=rsi, tool=SaegeD350()
+                )
+                post_flip.extend(machinings)
+                _dispatch(name, rsi_proc, machinings, "post-flip")
 
         elif name == "Drilling":
             if processing.diameter == 4.0:
                 if processing.ref_side_index == opp_rsi:
                     pre_flip.extend(
-                        DrillingStrategies.pre_drill(
-                            processing, machine_ref_side_index=rsi
+                        DrillingStrategies.pre_drilling(
+                            processing,
+                            machine_ref_side_index=opp_rsi,  # use opp_rsi to mill and add a 180 flip
                         )
                     )
                     _dispatch(name, rsi_proc, [], "pre-flip (pre-drill)")
                 else:
-                    machinings = DrillingStrategies.drilling(
-                        processing, machine_ref_side_index=rsi, pre_drill=True
+                    machinings = DrillingStrategies.pre_drilling(
+                        processing, machine_ref_side_index=rsi
                     )
+                    # skip the drilling if it's too steep
+                    if TOL.is_positive(abs(processing.inclination) - 20.0):
+                        machinings.extend(
+                            DrillingStrategies.drilling(
+                                processing, machine_ref_side_index=rsi
+                            )
+                        )
                     post_flip.extend(machinings)
                     _dispatch(name, rsi_proc, machinings, "post-flip (pre-drill)")
             else:
@@ -366,10 +399,24 @@ def _element_to_job(element, scale_factor=1000.0):
         elif name == "DoubleCut":
             strategy = processing.user_attributes.get("strategy", None)
             if strategy == "pocketing":
+                if processing.ref_side_index == opp_rsi:
+                    pre_flip.extend(
+                        DoubleCutStrategies.pocketing(
+                            processing,
+                            machine_ref_side_index=opp_rsi,  # use opp_rsi to mill and add a 180 flip
+                            first_cut=False,
+                        )
+                    )
+                    _dispatch(
+                        name,
+                        rsi_proc,
+                        [],
+                        "pre-flip (strategy=pocketing, first_cut)",
+                    )
                 machinings = DoubleCutStrategies.pocketing(
                     processing,
                     machine_ref_side_index=rsi,
-                    first_cut=True,
+                    first_cut=False,
                 )
             else:
                 machinings = DoubleCutStrategies.milling(
