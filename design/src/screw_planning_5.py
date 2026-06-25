@@ -25,15 +25,21 @@ Usage in grasshopper:
         screw_lines.AddRange(lines, path)
 """
 
-from joint_wrappers_3 import (
+import importlib
+import joint_wrappers_5 
+
+joint_wrappers_5 = importlib.reload(joint_wrappers_5)
+
+from joint_wrappers_5 import (
     TMSJ,
     TSJ,
     TBJ,
     TBMJ,
     KBMJ,
+    LMJ,
     project_point_to_frame_along,
     find_average_point,
-)  # NOTE: temp.
+)  
 from screw_spec_2 import ScrewSpecification
 from screw import Screw, RejectReason
 from compas.geometry import (
@@ -54,7 +60,9 @@ from compas_timber.connections import (
     TButtJoint,
     TBirdsmouthJoint,
     KBirdsmouthJoint,
+    LMiterJoint,
 )
+from compas_timber.errors import FeatureApplicationError
 from compas_timber.fabrication import Drilling
 import math
 
@@ -69,6 +77,7 @@ class ScrewSolver:
         TButtJoint: TBJ,
         TBirdsmouthJoint: TBMJ,
         KBirdsmouthJoint: KBMJ,
+        LMiterJoint: LMJ,
     }
 
     def __init__(self, model, spec_model="WT-plus-6.5"):
@@ -79,12 +88,10 @@ class ScrewSolver:
         self._spec_cache = {
             "aligned": ScrewSpecification("aligned", spec_model=spec_model),
             "crossed": ScrewSpecification("crossed", spec_model=spec_model),
-            "krossed": ScrewSpecification(
-                "crossed", spec_model=spec_model
-            ),  # temp. use the same spec for "krossed" entry type
-            "butt_krossed": ScrewSpecification(
-                "crossed", spec_model=spec_model
-            ),
+            "krossed": ScrewSpecification("crossed", spec_model=spec_model), 
+            "butt_krossed": ScrewSpecification("crossed", spec_model=spec_model),
+            "middle": ScrewSpecification("crossed", spec_model=spec_model),  
+
         }
 
         self.capacity_warnings = []
@@ -239,7 +246,7 @@ class ScrewSolver:
         spec = self._spec_cache["aligned"]
 
         if amount == 0:
-            return False, None
+            return True, []
 
         # 1. Calculate the maximum screw number in width and length
         max_w_num, max_l_num = self.calculate_screw_capacity(joint, angle=angle)
@@ -854,6 +861,27 @@ class ScrewSolver:
                     screw_list.append(screw)
         return screw_list
 
+    def populate_middle_screws(self, joint, angle, length=None):
+    
+        spec = self.get_specification(joint)
+        screw_lengths = sorted(spec.SCREW_LENGTHS, reverse=True)
+        screw_list = []
+
+        for i, item in enumerate(joint.populate_entry_points(angle=angle)):
+            beam_index = item.get("beam_index", i)
+            points = item["points"]
+            directions = item["directions"]
+            for j, (point, direction) in enumerate(zip(points, directions)):
+                screw = Screw(point, direction, spec.SCREW_DIAMETER)
+                screw.length = 0.150
+                screw.is_valid = True
+                screw.joint_guid = joint.guid
+                screw.joint_type = joint.__class__.__name__
+                screw.position = (beam_index, j)
+                screw_list.append(screw)
+        print(f"Populated {len(screw_list)} screws")
+        return screw_list
+
     def create_screw_cylinders(self, screw_list):
         cylinders = []
         for screw in screw_list:
@@ -892,7 +920,17 @@ class ScrewSolver:
             line = screw.line
             line = Line(line[0] - line.direction * tol, line[1])
 
-            for beam in beams:
+            if joint.entry_type == "middle" and target == "main":
+                beam_index = screw.position[0]
+                target_beams = (
+                    (joint.main_beam,)
+                    if beam_index == 0
+                    else (joint.cross_beam,)
+                )
+            else:
+                target_beams = beams
+
+            for beam in target_beams:
                 drilling = Drilling.from_line_and_element(
                     line, beam, ScrewSpecification.DRILLING_DIAMETER
                 )
@@ -959,6 +997,8 @@ def apply_screws(
             "TStepJoint",
             "KBirdsmouthJoint",
             "TButtJoint",
+            "LMiterJoint",
+
         ):
             # if joint.name not in ("KBirdsmouthJoint",):
             continue  # temporary for testing only TMultiStepJoint, TStepJoint first
@@ -980,7 +1020,7 @@ def apply_screws(
             screw_amount = None
         else:
             screw_amount = int(screw_map.get(str(joint.guid), -1))
-            if screw_amount == -1:
+            if screw_amount in (-1, 0):
                 screw_amount = 6
                 # raise ValueError(f"Screw amount for joint {joint.guid} not specified in screw_map.")
             if screw_amount == 2:
@@ -1022,7 +1062,9 @@ def apply_screws(
             screws = solver.populate_butt_krossed_screws(
                 joint, angle=skrew_angle, point_grid=entry_point_grid
             )
-
+        elif joint.entry_type == "middle":
+            screws = solver.populate_middle_screws(joint, angle=skrew_angle)
+            
         else:
             raise ValueError("Unknown entry type.")
 
@@ -1044,7 +1086,13 @@ def apply_screws(
             )
 
         if with_data:
-            if joint.name == "KBirdsmouthJoint":
+            if joint.name == "LMiterJoint":
+                entry_face, interface = joint.find_screw_boundaries(
+                    angle=skrew_angle, data_type="polyline"
+                )
+                exit_face = interface
+
+            elif joint.name == "KBirdsmouthJoint":
                 interface = joint.get_interface_boundary_horizontal(
                     data_type="polyline"
                 )
