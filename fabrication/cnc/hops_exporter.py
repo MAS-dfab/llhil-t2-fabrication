@@ -50,6 +50,7 @@ from compas.geometry import Vector
 from compas.scene import Scene
 from compas.tolerance import TOL
 from compas_timber.fabrication import DoubleCut
+from compas_timber.fabrication import Drilling
 from compas_timber.fabrication import JackRafterCut
 from compas_timber.fabrication import JackRafterCutProxy
 
@@ -87,7 +88,7 @@ def load_model(filepath, module):
 # ---------------------------------------------------------------------------
 
 
-def override_features(beam):
+def override_features(beam, allow_flip=False):
     """Ensure all JackRafterCut features are on ref_side or opp_side, and add opp_side cuts where the blade can't cut through in one pass."""
     ref_side_index = beam.attributes.get("ref_side_index", 0)
     opp_side = (ref_side_index + 2) % 4
@@ -121,6 +122,16 @@ def override_features(beam):
                 raise ValueError(
                     f"Unexpected ref_side_index {f.ref_side_index} for {f.__class__.__name__} on beam {beam.name}"
                 )
+
+        elif isinstance(f, Drilling):
+            if not allow_flip:
+                if f.ref_side_index == (ref_side_index + 2) % 4:
+                    line = f.line_from_params_and_element(beam)
+                    new_feature = f.__class__.from_line_and_element(
+                        line, beam, f.diameter, ref_side_index=ref_side_index
+                    )
+                    beam.add_feature(new_feature)
+                    beam.remove_features(f)
 
 
 def resolve_beam(model, index, level, names=None):
@@ -383,6 +394,12 @@ def _element_to_job(element, scale_factor=1000.0):
                                 processing, machine_ref_side_index=rsi
                             )
                         )
+                    else:
+                        print(
+                            "Skipping drilling for {} due to steep inclination ({:.1f} deg)".format(
+                                processing, processing.inclination
+                            )
+                        )
                     post_flip.extend(machinings)
                     _dispatch(name, rsi_proc, machinings, "post-flip (pre-drill)")
             else:
@@ -459,30 +476,54 @@ def _element_to_job(element, scale_factor=1000.0):
                 }
             )
 
-    # Sort order: operation type → tool position → processing name
-    # Lap is always last within each group.
-    OP_ORDER = {"SAWING": 1, "DRILLING": 0, "MILLING": 2}
-    PROCESSING_ORDER = {
+    # Sort order — two-tier:
+    #   Tier 1 (tool optimisation): operations whose (processing_name, tool_position)
+    #     appear in BOTH lists are "bridge" ops — placed last in pre_flip and first
+    #     in post_flip so the machine crosses the flip without a tool change.
+    #   Tier 2 (static order): everything else follows the per-list PROCESSING_ORDER.
+    OP_ORDER = {"SAWING": 2, "DRILLING": 0, "MILLING": 1}
+
+    POST_FLIP_PROCESSING_ORDER = {
+        "JackRafterCut": 9,
         "Drilling": 0,
-        "JackRafterCut": 1,
-        "LongitudinalCut": 2,
-        "DoubleCut": 2,
-        "BirdsMouth": 3,
-        "StepJoint": 8,  # always second last
-        "Lap": 9,  # always last
+        "Lap": 1,
+        "DoubleCut": 3,
+        "BirdsMouth": 2,
+    }
+    PRE_FLIP_PROCESSING_ORDER = {
+        "JackRafterCut": 0,
+        "Drilling": 9,
+        "Lap": 1,
+        "DoubleCut": 3,
+        "BirdsMouth": 2,
     }
 
-    def _sort_key(m):
-        op_priority = OP_ORDER.get(getattr(m, "OPERATION_TYPE", ""), 3)
+    def _sig(m):
         tool = getattr(m, "tool", None)
-        tool_position = getattr(tool, "position", 0) if tool is not None else 0
-        processing_priority = PROCESSING_ORDER.get(
-            getattr(m, "_processing_name", ""), 50
+        return (
+            getattr(m, "_processing_name", ""),
+            getattr(tool, "position", 0) if tool else 0,
         )
-        return (op_priority, tool_position, processing_priority)
 
-    pre_flip.sort(key=_sort_key)
-    post_flip.sort(key=_sort_key)
+    bridge_sigs = {_sig(m) for m in pre_flip} & {_sig(m) for m in post_flip}
+
+    def _sort_key(processing_order, bridge_priority):
+        def key(m):
+            op_priority = OP_ORDER.get(getattr(m, "OPERATION_TYPE", ""), 3)
+            tool = getattr(m, "tool", None)
+            tool_position = getattr(tool, "position", 0) if tool is not None else 0
+            if _sig(m) in bridge_sigs:
+                processing_priority = bridge_priority
+            else:
+                processing_priority = processing_order.get(
+                    getattr(m, "_processing_name", ""), 50
+                )
+            return (processing_priority, op_priority, tool_position)
+
+        return key
+
+    pre_flip.sort(key=_sort_key(PRE_FLIP_PROCESSING_ORDER, bridge_priority=99))
+    post_flip.sort(key=_sort_key(POST_FLIP_PROCESSING_ORDER, bridge_priority=-1))
 
     if pre_flip:
         job.add(pre_flip)
