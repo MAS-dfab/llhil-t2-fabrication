@@ -99,7 +99,7 @@ class TimberProcessPlanner(BaseRobotPlanner):
         configuration = self.robot_cell.zero_configuration(group=self.group)
         self.robot_cell.configuration_to_full_configuration(configuration)
         configuration = self.state.robot_configuration.copy()
-        configuration["bridge1_joint_EA_X"] = 16.0
+        configuration["bridge1_joint_EA_X"] = 14.0
         configuration["robot12_joint_EA_Y"] = -11.25
         configuration["robot12_joint_EA_Z"] = -4
         configuration["robot12_joint_1"] = math.radians(0)

@@ -182,51 +182,51 @@ def execute_sequence(abb11, abb12, record):
 
     soft_move_off(abb12)
 
-    # ── 1. Approach to pick ──────────────────────────────────────────────────────────────────
-    print("\n[1/7] approach_to_pick")
-    sync_gantry_on(abb11, abb12, timeout=400.0)
-    execute_trajectory(abb11, abb12, steps["approach_to_pick"], SPEED_FREE)
-    sync_gantry_off(abb11, abb12, timeout=400.0)
+    # # ── 1. Approach to pick ──────────────────────────────────────────────────────────────────
+    # print("\n[1/7] approach_to_pick")
+    # sync_gantry_on(abb11, abb12, timeout=400.0)
+    # execute_trajectory(abb11, abb12, steps["approach_to_pick"], SPEED_FREE)
+    # sync_gantry_off(abb11, abb12, timeout=400.0)
 
-    approach_frame = record.get("approach_frame")
-    if approach_frame is not None:
-        print("  Corrective move to approach frame...")
-        abb12.send_and_wait(
-            rrc.MoveToFrame(approach_frame, SPEED_HOLD, rrc.Zone.FINE,
-                            motion_type=rrc.Motion.LINEAR),
-            timeout=400.0)
-    else:
-        print("  WARNING: no approach_frame in record, skipping corrective move.")
+    # approach_frame = record.get("approach_frame")
+    # if approach_frame is not None:
+    #     print("  Corrective move to approach frame...")
+    #     abb12.send_and_wait(
+    #         rrc.MoveToFrame(approach_frame, SPEED_HOLD, rrc.Zone.FINE,
+    #                         motion_type=rrc.Motion.LINEAR),
+    #         timeout=400.0)
+    # else:
+    #     print("  WARNING: no approach_frame in record, skipping corrective move.")
 
-    # ── 2. Pick ─────────────────────────────────────────────────────────────────────────────
-    print("\n[2/7] pick")
-    time.sleep(1.2)
-    soft_move_on(abb12)
-    abb12.send_and_wait(
-        rrc.MoveToFrame(pickup_frame, SPEED_PICK, rrc.Zone.FINE,
-                        motion_type=rrc.Motion.LINEAR),
-        timeout=400.0)
-    time.sleep(0.5)
-    soft_move_off(abb12)
-    # abb12.send(rrc.PrintText("Stopped after pick — press Play to continue"))
-    time.sleep(2.0)
-    abb12.send_and_wait(rrc.Stop(), timeout=400.0)
+    # # ── 2. Pick ─────────────────────────────────────────────────────────────────────────────
+    # print("\n[2/7] pick")
+    # time.sleep(1.2)
+    # soft_move_on(abb12)
+    # abb12.send_and_wait(
+    #     rrc.MoveToFrame(pickup_frame, SPEED_PICK, rrc.Zone.FINE,
+    #                     motion_type=rrc.Motion.LINEAR),
+    #     timeout=400.0)
+    # time.sleep(0.5)
+    # soft_move_off(abb12)
+    # # abb12.send(rrc.PrintText("Stopped after pick — press Play to continue"))
+    # time.sleep(2.0)
+    # abb12.send_and_wait(rrc.Stop(), timeout=400.0)
 
-    # ── 3. Retract from pick ───────────────────────────────────────────────────────────────────
-    print("\n[3/7] retract_from_pick")
-    abb12.send_and_wait(rrc.SetTool(TOOL_LOADED), timeout=5.0)
-    pick_retract_frame = record.get("pick_retract_frame")
-    if pick_retract_frame is not None:
-        print("  MoveL to pick retract frame")
-        abb12.send_and_wait(
-            rrc.MoveToFrame(pick_retract_frame, SPEED_HOLD, rrc.Zone.FINE,
-                            motion_type=rrc.Motion.LINEAR),
-            timeout=400.0)
-    else:
-        print("  Fallback: joint trajectory retract from pick")
-        sync_gantry_on(abb11, abb12)
-        execute_trajectory(abb11, abb12, steps["retract_from_pick"], SPEED_HOLD)
-        sync_gantry_off(abb11, abb12)
+    # # ── 3. Retract from pick ───────────────────────────────────────────────────────────────────
+    # print("\n[3/7] retract_from_pick")
+    # abb12.send_and_wait(rrc.SetTool(TOOL_LOADED), timeout=5.0)
+    # pick_retract_frame = record.get("pick_retract_frame")
+    # if pick_retract_frame is not None:
+    #     print("  MoveL to pick retract frame")
+    #     abb12.send_and_wait(
+    #         rrc.MoveToFrame(pick_retract_frame, SPEED_HOLD, rrc.Zone.FINE,
+    #                         motion_type=rrc.Motion.LINEAR),
+    #         timeout=400.0)
+    # else:
+    #     print("  Fallback: joint trajectory retract from pick")
+    #     sync_gantry_on(abb11, abb12)
+    #     execute_trajectory(abb11, abb12, steps["retract_from_pick"], SPEED_HOLD)
+    #     sync_gantry_off(abb11, abb12)
 
     # ── 4. Approach to assembly target ─────────────────────────────────────────────────────
     print("\n[4/7] approach_to_AT")
@@ -235,18 +235,18 @@ def execute_sequence(abb11, abb12, record):
     sync_gantry_off(abb11, abb12)
     
     # ── glue trajectory ─────────────────────────────────────────────────────
-    print("\n[4/7] approach_to_glue")
-    if record.get("glue_trajectory") is not None:
-        print("MoveL to glue frame...")
-        sync_gantry_on(abb11, abb12)
-        execute_trajectory(abb11, abb12, record.get("glue_trajectory"), SPEED_APPROACH_AT, zone_blend=ZONE_FINE)
-        sync_gantry_off(abb11, abb12)
-        abb12.send_and_wait(rrc.Stop(), timeout=400.0)
-        sync_gantry_on(abb11, abb12)
-        execute_trajectory(abb11, abb12, record.get("glue_trajectory"), SPEED_APPROACH_AT, zone_blend=ZONE_FINE, reverse_trajectory=True)
-        sync_gantry_off(abb11, abb12)
-    else:
-        print("No glue trajectory found in record, skipping glue step.")
+    # print("\n[4/7] approach_to_glue")
+    # if record.get("glue_trajectory") is not None:
+    #     print("MoveL to glue frame...")
+    #     sync_gantry_on(abb11, abb12)
+    #     execute_trajectory(abb11, abb12, record.get("glue_trajectory"), SPEED_APPROACH_AT, zone_blend=ZONE_FINE)
+    #     sync_gantry_off(abb11, abb12)
+    #     abb12.send_and_wait(rrc.Stop(), timeout=400.0)
+    #     sync_gantry_on(abb11, abb12)
+    #     execute_trajectory(abb11, abb12, record.get("glue_trajectory"), SPEED_APPROACH_AT, zone_blend=ZONE_FINE, reverse_trajectory=True)
+    #     sync_gantry_off(abb11, abb12)
+    # else:
+    #     print("No glue trajectory found in record, skipping glue step.")
 
     # ── 5. Place at assembly target ───────────────────────────────────────────────────────
     print("\n[5/7] place_at_AT")

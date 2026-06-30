@@ -71,6 +71,9 @@ def main():
         raise FileNotFoundError("Could not find the model or nesting JSON files. Check your paths.")
 
     timber_model = json_load(filepath_model)[0].get("model")
+    for b in timber_model.beams:
+        non_joinery_features = [f for f in b.features if not f.is_joinery]
+        b.remove_features(non_joinery_features)
     timber_model.process_joinery()
 
     # ---------------------------------------------------------
@@ -211,7 +214,9 @@ def main():
             p_mesh = p.geometry.to_viewmesh()[0]
             assembled_elements.append(p_mesh)
         for b in in_seq_beams[:trajectory_planner.seq_i]:
-            b_mesh = b.geometry.to_viewmesh()[0]
+            el_obb = b.compute_obb()
+            b_mesh = el_obb.to_mesh()
+            # b_mesh = b.geometry.to_viewmesh()[0]
             assembled_elements.append(b_mesh)
 
         trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")
@@ -330,7 +335,9 @@ def main():
             p_mesh = p.geometry.to_viewmesh()[0]
             assembled_elements.append(p_mesh)
         for b in in_seq_beams[:trajectory_planner.seq_i]:
-            b_mesh = b.geometry.to_viewmesh()[0]
+            el_obb = b.compute_obb()
+            b_mesh = el_obb.to_mesh()
+            # b_mesh = b.geometry.to_viewmesh()[0]
             assembled_elements.append(b_mesh)
 
         trajectory_planner.add_rb_to_cell(meshes=assembled_elements, name="assembled_elements")

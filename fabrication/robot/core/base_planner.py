@@ -124,14 +124,14 @@ class BaseRobotPlanner():
         j_constraints_0 = [
             JointConstraint('robot12_joint_2', math.radians(-40), math.radians(15), math.radians(-15)),
             JointConstraint('robot12_joint_3', math.radians(40), math.radians(15), math.radians(-15)),
-            JointConstraint('robot12_joint_6', math.radians(0), math.radians(10), math.radians(-10)),
+            # JointConstraint('robot12_joint_6', math.radians(0), math.radians(10), math.radians(-10)),
         ]
         ik_options_0 = {"constraints": j_constraints_0, "allow_collisions": False, "return_full_configuration": True, "max_results": 10000000}
 
         j_constraints_1 = [
             JointConstraint('robot12_joint_2', math.radians(-40), math.radians(15), math.radians(-15)),
             JointConstraint('robot12_joint_3', math.radians(40), math.radians(15), math.radians(-15)),
-            JointConstraint('robot12_joint_6', math.radians(180), math.radians(10), math.radians(-10)),
+            # JointConstraint('robot12_joint_6', math.radians(180), math.radians(10), math.radians(-10)),
         ]
         ik_options_1 = {"constraints": j_constraints_1, "allow_collisions": False, "return_full_configuration": True, "max_results": 100000000}
         try:
