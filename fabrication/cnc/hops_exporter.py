@@ -88,10 +88,24 @@ def load_model(filepath, module):
 # ---------------------------------------------------------------------------
 
 
-def override_features(beam, allow_flip=False):
+def _reference_drilling(f, beam, target_index):
+    """Attempt to re-reference Drilling *f* onto ref_side *target_index*.
+
+    Returns the new feature, or None if the drill line doesn't reach that side.
+    """
+    line = f.line_from_params_and_element(beam)
+    try:
+        return f.__class__.from_line_and_element(
+            line, beam, f.diameter, ref_side_index=target_index
+        )
+    except Exception:
+        return None
+
+
+def override_features(beam, drilling_flip=False, cut_flip=False):
     """Ensure all JackRafterCut features are on ref_side or opp_side, and add opp_side cuts where the blade can't cut through in one pass."""
     ref_side_index = beam.attributes.get("ref_side_index", 0)
-    opp_side = (ref_side_index + 2) % 4
+    opp_side_index = (ref_side_index + 2) % 4
     _, height = beam.get_dimensions_relative_to_side(ref_side_index)
 
     for f in list(beam.features):
@@ -108,28 +122,51 @@ def override_features(beam, allow_flip=False):
 
         elif isinstance(f, JackRafterCut) or isinstance(f, JackRafterCutProxy):
             plane = f.plane_from_params_and_beam(beam)
-            if f.ref_side_index in [ref_side_index, opp_side]:
-                inclination_rad = math.radians(f.inclination)
-                blade_path_mm = (height * 1000) / math.sin(inclination_rad)
 
-                if blade_path_mm > TOOL_MAX_DEPTH:
-                    beam.add_feature(
-                        f.__class__.from_plane_and_beam(
-                            plane, beam, ref_side_index=(f.ref_side_index + 2) % 4
-                        )
+            if f.ref_side_index != ref_side_index and not cut_flip:
+                beam.remove_features(f)
+                f = f.__class__.from_plane_and_beam(plane, beam, ref_side_index)
+                beam.add_feature(f)
+
+            inclination_rad = math.radians(f.inclination)
+            blade_path_mm = (height * 1000) / math.sin(inclination_rad)
+            if inclination_rad > 0 and blade_path_mm > TOOL_MAX_DEPTH:
+                beam.add_feature(
+                    f.__class__.from_plane_and_beam(
+                        plane, beam, (f.ref_side_index + 2) % 4
                     )
-            else:
-                raise ValueError(
-                    f"Unexpected ref_side_index {f.ref_side_index} for {f.__class__.__name__} on beam {beam.name}"
                 )
 
         elif isinstance(f, Drilling):
-            if not allow_flip:
-                if f.ref_side_index == (ref_side_index + 2) % 4:
-                    line = f.line_from_params_and_element(beam)
-                    new_feature = f.__class__.from_line_and_element(
-                        line, beam, f.diameter, ref_side_index=ref_side_index
-                    )
+            if f.ref_side_index not in (ref_side_index, opp_side_index):
+                # on a side ref_side - try to override onto ref_side, falling back to opp_side only if flipping is allowed
+                new_feature = _reference_drilling(f, beam, ref_side_index)
+                if new_feature is None:
+                    if not drilling_flip:
+                        raise ValueError(
+                            "Drilling feature {} cannot be referenced onto ref_side_index {}, consider allowing "
+                            "drilling_flip=True to reference it onto the opposite side instead.".format(
+                                f, ref_side_index
+                            )
+                        )
+                    new_feature = _reference_drilling(f, beam, opp_side_index)
+
+                if new_feature is not None:
+                    beam.add_feature(new_feature)
+                    beam.remove_features(f)
+                # else: doesn't reach ref_side or opp_side even with flipping allowed - leave the feature as-is
+
+            elif f.ref_side_index == opp_side_index:
+                # already on the opposite side - only allowed to stay there if flipping is allowed
+                if not drilling_flip:
+                    new_feature = _reference_drilling(f, beam, ref_side_index)
+                    if new_feature is None:
+                        raise ValueError(
+                            "Drilling feature {} on opposite side cannot be re-referenced onto ref_side_index {}, "
+                            "consider allowing drilling_flip=True to keep it on the opposite side.".format(
+                                f, ref_side_index
+                            )
+                        )
                     beam.add_feature(new_feature)
                     beam.remove_features(f)
 
@@ -344,15 +381,18 @@ def _element_to_job(element, scale_factor=1000.0):
             _dispatch(name, rsi_proc, machinings, "post-flip")
 
         elif name == "Lap":
-            machinings = LapStrategies.pocketing(
-                processing, machine_ref_side_index=rsi, tool=CastorD61()
-            )
             if (
                 processing.ref_side_index == opp_rsi
             ):  # introduce a flip if the lap is on the opposite side
+                machinings = LapStrategies.pocketing(
+                    processing, machine_ref_side_index=opp_rsi, tool=CastorD61()
+                )
                 pre_flip.extend(machinings)
                 _dispatch(name, rsi_proc, machinings, "pre-flip")
             else:
+                machinings = LapStrategies.pocketing(
+                    processing, machine_ref_side_index=rsi, tool=CastorD61()
+                )
                 post_flip.extend(machinings)
                 _dispatch(name, rsi_proc, machinings, "post-flip")
 
@@ -376,19 +416,31 @@ def _element_to_job(element, scale_factor=1000.0):
         elif name == "Drilling":
             if processing.diameter == 4.0:
                 if processing.ref_side_index == opp_rsi:
-                    pre_flip.extend(
-                        DrillingStrategies.pre_drilling(
-                            processing,
-                            machine_ref_side_index=opp_rsi,  # use opp_rsi to mill and add a 180 flip
-                        )
+                    machinings = DrillingStrategies.pre_drilling(
+                        processing,
+                        machine_ref_side_index=opp_rsi,  # use opp_rsi to mill and add a 180 flip
                     )
+                    # skip the drilling if it's too steep
+                    if TOL.is_positive(abs(processing.inclination) - 15.0):
+                        machinings.extend(
+                            DrillingStrategies.drilling(
+                                processing, machine_ref_side_index=opp_rsi
+                            )
+                        )
+                    else:
+                        print(
+                            "Skipping drilling for {} due to steep inclination ({:.1f} deg)".format(
+                                processing, processing.inclination
+                            )
+                        )
+                    pre_flip.extend(machinings)
                     _dispatch(name, rsi_proc, [], "pre-flip (pre-drill)")
                 else:
                     machinings = DrillingStrategies.pre_drilling(
                         processing, machine_ref_side_index=rsi
                     )
                     # skip the drilling if it's too steep
-                    if TOL.is_positive(abs(processing.inclination) - 20.0):
+                    if TOL.is_positive(abs(processing.inclination) - 15.0):
                         machinings.extend(
                             DrillingStrategies.drilling(
                                 processing, machine_ref_side_index=rsi
@@ -416,12 +468,13 @@ def _element_to_job(element, scale_factor=1000.0):
         elif name == "DoubleCut":
             strategy = processing.user_attributes.get("strategy", None)
             if strategy == "pocketing":
+                first_cut = processing.inclination_1 > processing.inclination_2
                 if processing.ref_side_index == opp_rsi:
                     pre_flip.extend(
                         DoubleCutStrategies.pocketing(
                             processing,
                             machine_ref_side_index=opp_rsi,  # use opp_rsi to mill and add a 180 flip
-                            first_cut=False,
+                            first_cut=first_cut,
                         )
                     )
                     _dispatch(
@@ -431,9 +484,7 @@ def _element_to_job(element, scale_factor=1000.0):
                         "pre-flip (strategy=pocketing, first_cut)",
                     )
                 machinings = DoubleCutStrategies.pocketing(
-                    processing,
-                    machine_ref_side_index=rsi,
-                    first_cut=False,
+                    processing, machine_ref_side_index=rsi, first_cut=first_cut
                 )
             else:
                 machinings = DoubleCutStrategies.milling(
@@ -484,15 +535,15 @@ def _element_to_job(element, scale_factor=1000.0):
     OP_ORDER = {"SAWING": 2, "DRILLING": 0, "MILLING": 1}
 
     POST_FLIP_PROCESSING_ORDER = {
-        "JackRafterCut": 9,
+        "JackRafterCut": 1,
         "Drilling": 0,
-        "Lap": 1,
-        "DoubleCut": 3,
-        "BirdsMouth": 2,
+        "Lap": 2,
+        "DoubleCut": 4,
+        "BirdsMouth": 3,
     }
     PRE_FLIP_PROCESSING_ORDER = {
-        "JackRafterCut": 0,
-        "Drilling": 9,
+        "JackRafterCut": 9,
+        "Drilling": 0,
         "Lap": 1,
         "DoubleCut": 3,
         "BirdsMouth": 2,
